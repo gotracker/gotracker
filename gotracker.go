@@ -87,12 +87,6 @@ func main() {
 	flag.Parse()
 
 	var fn string
-	//fn = "celestial_fantasia.s3m"
-	//fn = "2nd_pm.s3m"
-	//fn = "2nd_skav.s3m"
-	//fn = "menutune.s3m"
-	//fn = "canyoufl.s3m"
-	//fn = "skyrider.S3M"
 	if len(flag.Args()) > 0 {
 		fn = flag.Arg(0)
 	}
@@ -107,7 +101,6 @@ func main() {
 		log.Fatal("Could not create song state!")
 		return
 	}
-	//ss.Pattern.CurrentOrder = 43
 	sampler.BaseClockRate = s3m.GetBaseClockRate()
 
 	fmt.Println(ss.SongData.Head.Name)

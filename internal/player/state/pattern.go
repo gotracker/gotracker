@@ -1,8 +1,8 @@
 package state
 
 import (
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/s3m"
+	"gotracker/internal/player/channel"
+	"gotracker/internal/s3m"
 )
 
 type PatternNum uint8

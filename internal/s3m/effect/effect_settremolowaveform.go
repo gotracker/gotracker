@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/player/oscillator"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/oscillator"
 )
 
 type EffectSetTremoloWaveform uint8 // 'S4x'

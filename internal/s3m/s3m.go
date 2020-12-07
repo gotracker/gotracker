@@ -4,10 +4,10 @@ package s3m
 import (
 	"bytes"
 	"encoding/binary"
+	"gotracker/internal/player/channel"
+	"gotracker/internal/s3m/util"
 	"log"
 	"os"
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/s3m/util"
 )
 
 type ChannelID uint8

@@ -1,9 +1,9 @@
 package intf
 
 import (
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/player/instrument"
-	"s3mplayer/internal/player/oscillator"
+	"gotracker/internal/player/channel"
+	"gotracker/internal/player/instrument"
+	"gotracker/internal/player/oscillator"
 )
 
 type Channel interface {

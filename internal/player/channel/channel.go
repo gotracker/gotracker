@@ -1,6 +1,6 @@
 package channel
 
-import "s3mplayer/internal/player/note"
+import "gotracker/internal/player/note"
 
 type What uint8
 

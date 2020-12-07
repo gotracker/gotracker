@@ -1,9 +1,9 @@
 package effect
 
 import (
+	"gotracker/internal/player/channel"
+	"gotracker/internal/player/intf"
 	"log"
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/player/intf"
 )
 
 func EffectFactory(mi intf.SharedMemory, data channel.Data) intf.Effect {

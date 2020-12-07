@@ -1,11 +1,11 @@
 package effect
 
 import (
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/oscillator"
+	"gotracker/internal/s3m/util"
 	"math"
 	"math/rand"
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/player/oscillator"
-	"s3mplayer/internal/s3m/util"
 )
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {

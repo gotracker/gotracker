@@ -2,17 +2,17 @@ package state
 
 import (
 	"fmt"
+	"gotracker/internal/player/channel"
+	"gotracker/internal/player/instrument"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/render"
+	"gotracker/internal/s3m"
+	s3mEffect "gotracker/internal/s3m/effect"
+	"gotracker/internal/s3m/util"
+	"gotracker/internal/s3m/volume"
 	"log"
 	"math"
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/player/instrument"
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/player/note"
-	"s3mplayer/internal/player/render"
-	"s3mplayer/internal/s3m"
-	s3mEffect "s3mplayer/internal/s3m/effect"
-	"s3mplayer/internal/s3m/util"
-	"s3mplayer/internal/s3m/volume"
 )
 
 type EffectFactory func(mi intf.SharedMemory, data channel.Data) intf.Effect

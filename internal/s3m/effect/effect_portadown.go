@@ -1,6 +1,6 @@
 package effect
 
-import "s3mplayer/internal/player/intf"
+import "gotracker/internal/player/intf"
 
 type EffectPortaDown uint8 // 'E'
 

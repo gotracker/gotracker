@@ -1,8 +1,8 @@
 package player
 
 import (
-	"s3mplayer/internal/player/render"
-	"s3mplayer/internal/player/state"
+	"gotracker/internal/player/render"
+	"gotracker/internal/player/state"
 )
 
 func RenderOneRow(ss *state.Song, sampler *render.Sampler) *render.RowRender {

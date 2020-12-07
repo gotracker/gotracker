@@ -1,8 +1,8 @@
 package instrument
 
 import (
-	"s3mplayer/internal/s3m"
-	"s3mplayer/internal/s3m/util"
+	"gotracker/internal/s3m"
+	"gotracker/internal/s3m/util"
 )
 
 type InstrumentInfo struct {

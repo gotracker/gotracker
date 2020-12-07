@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/player/oscillator"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/oscillator"
 )
 
 type EffectSetVibratoWaveform uint8 // 'S3x'

@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/s3m/util"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/s3m/util"
 )
 
 type EffectSetFinetune uint8 // 'S2x'

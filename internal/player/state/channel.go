@@ -1,13 +1,13 @@
 package state
 
 import (
+	"gotracker/internal/player/channel"
+	"gotracker/internal/player/instrument"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/oscillator"
+	"gotracker/internal/s3m/volume"
 	"math"
-	"s3mplayer/internal/player/channel"
-	"s3mplayer/internal/player/instrument"
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/player/note"
-	"s3mplayer/internal/player/oscillator"
-	"s3mplayer/internal/s3m/volume"
 )
 
 type CommandFunc func(int, *ChannelState, int, bool)

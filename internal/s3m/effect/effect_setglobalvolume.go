@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"s3mplayer/internal/player/intf"
-	"s3mplayer/internal/s3m/volume"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/s3m/volume"
 )
 
 type EffectSetGlobalVolume uint8 // 'V'

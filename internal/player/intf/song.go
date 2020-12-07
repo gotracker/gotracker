@@ -1,6 +1,6 @@
 package intf
 
-import "s3mplayer/internal/s3m/volume"
+import "gotracker/internal/s3m/volume"
 
 type Song interface {
 	SetCurrentOrder(uint8)

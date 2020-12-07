@@ -1,6 +1,6 @@
 package effect
 
-import "s3mplayer/internal/player/intf"
+import "gotracker/internal/player/intf"
 
 type EffectNoteCut uint8 // 'SCx'
 

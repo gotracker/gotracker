@@ -97,7 +97,7 @@ func main() {
 	}
 
 	ss := state.NewSong()
-	if err := ss.Load(fn); err != nil {
+	if err := s3m.Load(ss, fn); err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
 	}

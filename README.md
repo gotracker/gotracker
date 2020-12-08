@@ -54,7 +54,6 @@ Not well, but it's good enough to play some moderately complex stuff.
 * Setting the number of channels to more than 2 may cause WinMM and/or Gotracker to do unusual things. You might be able to get a hardware 4-channel capable card (such as the Aureal Vortex 2 AU8830) to work, but driver inconsistencies and weirdnesses in WinMM will undoubtedly cause needless strife.
 * Channel readouts are associated to the buffer being fed into WinMM, so the log line showing the row/channels being played might appear unattached to what's coming from the sound card.
 * Setting the default `C2SPD` value for the `s3m` package to something other than 8363 will cause some unusual behavior - Lower values will reduce the fidelity of the audio, but it will generally sound the same. However, the LFOs (vibrato, tremelo) will become significantly more pronounced the lower the `C2SPD` becomes. The inverse of the observed phenomenon occurs when the `C2SPD` value gets raised. At a certain point much higher than 8363, the LFOs become effectively useless.
-* Portamento-to-note is probably broken. It sounds weird, but I can't seem to track down what's wrong with it.
 
 
 ### Unknown bugs

@@ -1,6 +1,6 @@
 package intf
 
-import "gotracker/internal/s3m/volume"
+import "gotracker/internal/player/volume"
 
 type Song interface {
 	SetCurrentOrder(uint8)
@@ -14,4 +14,13 @@ type Song interface {
 	SetPatternDelay(int)
 	SetPatternLoopStart()
 	SetPatternLoopEnd(uint8)
+}
+
+type SongData interface {
+	GetOrderList() []uint8
+	GetPattern(uint8) Pattern
+	IsChannelEnabled(int) bool
+	NumInstruments() int
+	GetInstrument(int) Instrument
+	GetName() string
 }

@@ -4,7 +4,12 @@ package s3m
 import (
 	"bytes"
 	"encoding/binary"
-	"gotracker/internal/player/channel"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/state"
+	"gotracker/internal/player/volume"
+	"gotracker/internal/s3m/channel"
+	"gotracker/internal/s3m/effect"
 	"gotracker/internal/s3m/util"
 	"log"
 	"os"
@@ -138,10 +143,52 @@ type SCRSHeader struct {
 }
 
 type SampleFileFormat struct {
+	intf.Instrument
 	Filename string
 	Name     string
 	Info     SCRSHeader
 	Sample   []uint8
+	Id       uint8
+}
+
+func (sff *SampleFileFormat) IsInvalid() bool {
+	return false
+}
+
+func (sff *SampleFileFormat) GetC2Spd() uint16 {
+	return sff.Info.C2SpdL
+}
+
+func (sff *SampleFileFormat) SetC2Spd(c2spd uint16) {
+	sff.Info.C2SpdL = c2spd
+}
+
+func (sff *SampleFileFormat) GetVolume() volume.Volume {
+	return util.VolumeFromS3M(sff.Info.Volume)
+}
+
+func (sff *SampleFileFormat) IsLooped() bool {
+	return (sff.Info.Flags & 1) != 0
+}
+
+func (sff *SampleFileFormat) GetLoopBegin() int {
+	return int(sff.Info.LoopBeginL)
+}
+
+func (sff *SampleFileFormat) GetLoopEnd() int {
+	return int(sff.Info.LoopEndL)
+}
+
+func (sff *SampleFileFormat) GetLength() int {
+	return len(sff.Sample)
+}
+
+func (sff *SampleFileFormat) GetSample(pos int) volume.Volume {
+	return volume.FromS3MSample(sff.Sample[pos])
+}
+
+func (sff *SampleFileFormat) GetId() int {
+	return int(sff.Id)
 }
 
 type PackedPattern struct {
@@ -149,15 +196,78 @@ type PackedPattern struct {
 	Data   []byte
 }
 
+type RowData struct {
+	intf.Row
+	Channels [32]channel.Data
+}
+
+func (r RowData) GetChannels() []intf.ChannelData {
+	c := make([]intf.ChannelData, len(r.Channels))
+	for i, _ := range r.Channels {
+		c[i] = &r.Channels[i]
+	}
+
+	return c
+}
+
 type Pattern struct {
+	intf.Pattern
 	Packed PackedPattern
-	Rows   [64][32]channel.Data
+	Rows   [64]RowData
+}
+
+func (p Pattern) GetRow(row uint8) intf.Row {
+	return &p.Rows[row]
+}
+
+func (p Pattern) GetRows() []intf.Row {
+	rows := make([]intf.Row, len(p.Rows))
+	for i, pr := range p.Rows {
+		rows[i] = pr
+	}
+	return rows
 }
 
 type S3M struct {
+	intf.SongData
 	Head        S3MHeader
 	Instruments []SampleFileFormat
 	Patterns    []Pattern
+}
+
+func (s *S3M) GetOrderList() []uint8 {
+	return s.Head.OrderList
+}
+
+func (s *S3M) GetPatternsInterface() *[]intf.Pattern {
+	p := make([]intf.Pattern, len(s.Patterns))
+	for i, sp := range s.Patterns {
+		p[i] = sp
+	}
+	return &p
+}
+
+func (s *S3M) GetPattern(patNum uint8) intf.Pattern {
+	if int(patNum) >= len(s.Patterns) {
+		return nil
+	}
+	return &s.Patterns[patNum]
+}
+
+func (s *S3M) IsChannelEnabled(channelNum int) bool {
+	return s.Head.ChannelSettings[channelNum].IsEnabled()
+}
+
+func (s *S3M) NumInstruments() int {
+	return len(s.Instruments)
+}
+
+func (s *S3M) GetInstrument(instNum int) intf.Instrument {
+	return &s.Instruments[instNum]
+}
+
+func (s *S3M) GetName() string {
+	return s.Head.Name
 }
 
 func readFile(filename string) (*bytes.Buffer, error) {
@@ -245,7 +355,7 @@ func readPattern(data []byte, ptr ParaPointer) *Pattern {
 			}
 
 			channelNum := what.Channel()
-			var temp = &row[channelNum]
+			temp := &row.Channels[channelNum]
 
 			temp.What = what
 			temp.Note = 0
@@ -289,6 +399,7 @@ func ReadS3M(filename string) (*S3M, error) {
 		if sample == nil {
 			continue
 		}
+		sample.Id = uint8(instNum + 1)
 		song.Instruments[instNum] = *sample
 	}
 
@@ -306,4 +417,69 @@ func ReadS3M(filename string) (*S3M, error) {
 
 func GetBaseClockRate() float32 {
 	return util.S3MBaseClock
+}
+
+func Load(ss *state.Song, filename string) error {
+	s3mSong, err := ReadS3M(filename)
+	if err != nil {
+		return err
+	}
+
+	ss.EffectFactory = effect.EffectFactory
+	ss.Pattern.Patterns = s3mSong.GetPatternsInterface()
+	ss.Pattern.Orders = &s3mSong.Head.OrderList
+	ss.Pattern.Row.Ticks = int(s3mSong.Head.Info.InitialSpeed)
+	ss.Pattern.Row.Tempo = int(s3mSong.Head.Info.InitialTempo)
+
+	ss.GlobalVolume = util.VolumeFromS3M(s3mSong.Head.Info.GlobalVolume)
+	ss.SongData = s3mSong
+
+	// new method for determining active channels (uses S3M data I somehow overlooked before)
+	for i, cs := range s3mSong.Head.ChannelSettings {
+		if cs.IsEnabled() {
+			ss.NumChannels = i + 1
+		}
+	}
+
+	for i := 0; i < ss.NumChannels; i++ {
+		cs := &ss.Channels[i]
+		cs.Instrument = nil
+		cs.Pos = 0
+		cs.Period = 0
+		cs.SetStoredVolume(64, ss)
+		ch := s3mSong.Head.ChannelSettings[i]
+		if ch.IsEnabled() {
+			pf := s3mSong.Head.Panning[i]
+			if pf.IsValid() {
+				cs.Pan = pf.Value()
+			} else {
+				l := ch.GetChannel()
+				switch l {
+				case ChannelIDL1, ChannelIDL2, ChannelIDL3, ChannelIDL4, ChannelIDL5, ChannelIDL6, ChannelIDL7, ChannelIDL8:
+					cs.Pan = 0x03
+				case ChannelIDR1, ChannelIDR2, ChannelIDR3, ChannelIDR4, ChannelIDR5, ChannelIDR6, ChannelIDR7, ChannelIDR8:
+					cs.Pan = 0x0C
+				}
+			}
+		} else {
+			cs.Pan = 0x08 // center?
+		}
+		cs.Command = nil
+
+		cs.DisplayNote = note.EmptyNote
+		cs.DisplayInst = 0
+
+		cs.TargetPeriod = cs.Period
+		cs.TargetPos = cs.Pos
+		cs.TargetInst = cs.Instrument
+		cs.PortaTargetPeriod = cs.TargetPeriod
+		cs.NotePlayTick = 0
+		cs.RetriggerCount = 0
+		cs.TremorOn = true
+		cs.TremorTime = 0
+		cs.VibratoDelta = 0
+		cs.Cmd = nil
+	}
+
+	return nil
 }

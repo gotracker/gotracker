@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectFineVibrato uint8 // 'U'
 
@@ -26,4 +29,8 @@ func (e EffectFineVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 }
 
 func (e EffectFineVibrato) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectFineVibrato) String() string {
+	return fmt.Sprintf("U%0.2x", uint8(e))
 }

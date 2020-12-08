@@ -1,6 +1,11 @@
 package intf
 
+import (
+	"fmt"
+)
+
 type Effect interface {
+	fmt.Stringer
 	PreStart(cs Channel, ss Song)
 	Start(cs Channel, ss Song)
 	Tick(cs Channel, ss Song, currentTick int)

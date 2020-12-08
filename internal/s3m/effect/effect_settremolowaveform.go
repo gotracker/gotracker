@@ -1,6 +1,7 @@
 package effect
 
 import (
+	"fmt"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/oscillator"
 )
@@ -23,4 +24,8 @@ func (e EffectSetTremoloWaveform) Tick(cs intf.Channel, ss intf.Song, currentTic
 }
 
 func (e EffectSetTremoloWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectSetTremoloWaveform) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

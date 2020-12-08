@@ -1,5 +1,7 @@
 package util
 
+import "gotracker/internal/player/volume"
+
 const (
 	DefaultC2Spd = uint16(8363)
 
@@ -23,4 +25,28 @@ func CalcSemitonePeriod(semi uint8, c2spd uint16) float32 {
 	}
 
 	return (floatDefaultC2Spd * semitonePeriodTable[key]) / float32(uint32(c2spd)<<octave)
+}
+
+func VolumeFromS3M(vol uint8) volume.Volume {
+	var v volume.Volume
+	switch {
+	case vol == 255:
+		v = volume.VolumeUseInstVol
+	case vol >= 63:
+		v = volume.Volume(63.0) / 64.0
+	case vol < 63:
+		v = volume.Volume(vol) / 64.0
+	default:
+		v = 0.0
+	}
+	return v
+}
+
+func VolumeToS3M(v volume.Volume) uint8 {
+	switch {
+	case v == volume.VolumeUseInstVol:
+		return 255
+	default:
+		return uint8(v * 64.0)
+	}
 }

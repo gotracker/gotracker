@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectSampleOffset uint8 // 'O'
 
@@ -18,4 +21,8 @@ func (e EffectSampleOffset) Tick(cs intf.Channel, ss intf.Song, currentTick int)
 }
 
 func (e EffectSampleOffset) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectSampleOffset) String() string {
+	return fmt.Sprintf("O%0.2x", uint8(e))
 }

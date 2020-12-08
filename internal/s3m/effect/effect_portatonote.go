@@ -1,6 +1,10 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/s3m/channel"
+)
 
 type EffectPortaToNote uint8 // 'G'
 
@@ -11,7 +15,11 @@ func (e EffectPortaToNote) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
-	cmd := cs.GetData()
+	cmd := cs.GetData().(*channel.Data)
+	if cmd == nil {
+		return
+	}
+
 	if cmd.What.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 	}
@@ -36,4 +44,8 @@ func (e EffectPortaToNote) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 }
 
 func (e EffectPortaToNote) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectPortaToNote) String() string {
+	return fmt.Sprintf("G%0.2x", uint8(e))
 }

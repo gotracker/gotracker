@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectTremor uint8 // 'I'
 
@@ -19,4 +22,8 @@ func (e EffectTremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectTremor) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectTremor) String() string {
+	return fmt.Sprintf("I%0.2x", uint8(e))
 }

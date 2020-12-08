@@ -33,6 +33,7 @@ type ChannelState struct {
 	PortaTargetPeriod note.Period
 	NotePlayTick      int
 	NoteSemitone      note.Semitone
+	DoRetriggerNote   bool
 	RetriggerCount    uint8
 	TremorOn          bool
 	TremorTime        int
@@ -229,4 +230,10 @@ func (cs *ChannelState) SetRetriggerCount(cnt uint8) {
 // SetPan sets the active panning value of the channel (0 = full left, 15 = full right)
 func (cs *ChannelState) SetPan(pan uint8) {
 	cs.Pan = pan
+}
+
+// SetDoRetriggerNote sets the enablement flag for DoRetriggerNote
+// this gets reset on every row
+func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
+	cs.DoRetriggerNote = enabled
 }

@@ -57,4 +57,5 @@ type Channel interface {
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPan(uint8)
+	SetDoRetriggerNote(bool)
 }

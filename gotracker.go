@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	sampler render.Sampler
+	sampler       render.Sampler
+	startingOrder int
 )
 
 // Play starts a song playing
@@ -86,6 +87,7 @@ func main() {
 	flag.IntVar(&sampler.SampleRate, "s", 44100, "sample rate")
 	flag.IntVar(&sampler.Channels, "c", 2, "channels")
 	flag.IntVar(&sampler.BitsPerSample, "b", 16, "bits per sample")
+	flag.IntVar(&startingOrder, "o", -1, "starting order")
 
 	flag.Parse()
 
@@ -105,6 +107,9 @@ func main() {
 		return
 	}
 	sampler.BaseClockRate = s3m.GetBaseClockRate()
+	if startingOrder != -1 {
+		ss.Pattern.CurrentOrder = uint8(startingOrder)
+	}
 
 	fmt.Println(ss.SongData.GetName())
 

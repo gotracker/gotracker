@@ -103,7 +103,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			cs.TargetPeriod = cs.Period
 			cs.TargetPos = cs.Pos
 			cs.TargetInst = cs.Instrument
-			cs.PortaTargetPeriod = cs.TargetPeriod
+			cs.DoRetriggerNote = true
 			cs.NotePlayTick = 0
 			cs.RetriggerCount = 0
 			cs.TremorOn = true
@@ -167,6 +167,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 
 			if wantNoteCalc {
 				cs.TargetPeriod = ss.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
+				cs.PortaTargetPeriod = cs.TargetPeriod
 			}
 
 			if cs.ActiveEffect != nil {
@@ -260,7 +261,7 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 		}
 	}
 
-	if currentTick == cs.NotePlayTick {
+	if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
 		cs.Instrument = cs.TargetInst
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos

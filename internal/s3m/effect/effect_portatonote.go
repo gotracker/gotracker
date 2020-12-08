@@ -6,12 +6,15 @@ import (
 	"gotracker/internal/s3m/channel"
 )
 
-type EffectPortaToNote uint8 // 'G'
+// PortaToNote defines a portamento-to-note effect
+type PortaToNote uint8 // 'G'
 
-func (e EffectPortaToNote) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e PortaToNote) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectPortaToNote) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e PortaToNote) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
@@ -27,25 +30,26 @@ func (e EffectPortaToNote) Start(cs intf.Channel, ss intf.Song) {
 	cs.SetTargetPos(cs.GetPos())
 }
 
-func (e EffectPortaToNote) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e PortaToNote) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	mem := cs.GetMemory()
 	xx := mem.PortaToNote(uint8(e))
 
 	period := cs.GetPeriod()
 	ptp := cs.GetPortaTargetPeriod()
-	if currentTick != 0 && period != ptp {
+	if currentTick != 0 {
 		if period > ptp {
 			doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
 			doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
 		}
-		cs.SetTargetPeriod(cs.GetPeriod())
 	}
 }
 
-func (e EffectPortaToNote) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e PortaToNote) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectPortaToNote) String() string {
+func (e PortaToNote) String() string {
 	return fmt.Sprintf("G%0.2x", uint8(e))
 }

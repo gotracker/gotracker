@@ -2,6 +2,7 @@ package effect
 
 import (
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
 	"gotracker/internal/s3m/util"
 	"math"
@@ -21,37 +22,37 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 }
 
 func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
-	delta := amount * multiplier
-	cs.SetPeriod(cs.GetPeriod() - delta)
+	delta := int(amount * multiplier)
+	period := cs.GetPeriod()
+	cs.SetPeriod(period.AddInteger(-delta))
 }
 
-func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target float32) {
-	delta := amount * multiplier
-	newPeriod := cs.GetPeriod() - delta
-	if newPeriod < target {
-		newPeriod = target
+func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
+	delta := int(amount * multiplier)
+	period := cs.GetPeriod()
+	if period.AddInteger(-delta) < target {
+		period = target
 	}
-	cs.SetPeriod(newPeriod)
-	cs.SetTargetPeriod(newPeriod)
+	cs.SetPeriod(period)
 }
 
 func doPortaDown(cs intf.Channel, amount float32, multiplier float32) {
-	delta := amount * multiplier
-	cs.SetPeriod(cs.GetPeriod() + delta)
+	delta := int(amount * multiplier)
+	period := cs.GetPeriod()
+	cs.SetPeriod(period.AddInteger(delta))
 }
 
-func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target float32) {
+func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
 	delta := amount * multiplier
-	newPeriod := cs.GetPeriod() + delta
-	if newPeriod > target {
-		newPeriod = target
+	period := cs.GetPeriod()
+	if period.AddInteger(int(delta)) > target {
+		period = target
 	}
-	cs.SetPeriod(newPeriod)
-	cs.SetTargetPeriod(newPeriod)
+	cs.SetPeriod(period)
 }
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {
-	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator())
+	delta := note.Period(calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator()))
 	cs.SetVibratoDelta(delta)
 }
 
@@ -76,14 +77,14 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta uint8, arpSe
 		return
 	}
 	ns := cs.GetNoteSemitone()
-	var arpSemitoneTarget uint8
+	var arpSemitoneTarget note.Semitone
 	switch currentTick % 3 {
 	case 0:
 		arpSemitoneTarget = ns
 	case 1:
-		arpSemitoneTarget = ns + arpSemitoneADelta
+		arpSemitoneTarget = ns + note.Semitone(arpSemitoneADelta)
 	case 2:
-		arpSemitoneTarget = ns + arpSemitoneBDelta
+		arpSemitoneTarget = ns + note.Semitone(arpSemitoneBDelta)
 	}
 	newSemi := util.CalcSemitonePeriod(arpSemitoneTarget, inst.GetC2Spd())
 	cs.SetTargetPeriod(newSemi)

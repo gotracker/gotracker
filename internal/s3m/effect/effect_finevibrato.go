@@ -5,17 +5,21 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectFineVibrato uint8 // 'U'
+// FineVibrato defines an fine vibrato effect
+type FineVibrato uint8 // 'U'
 
-func (e EffectFineVibrato) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e FineVibrato) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectFineVibrato) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e FineVibrato) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 }
 
-func (e EffectFineVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e FineVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	mem := cs.GetMemory()
 	xy := mem.Vibrato(uint8(e))
 	if currentTick == 0 {
@@ -28,9 +32,10 @@ func (e EffectFineVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 	}
 }
 
-func (e EffectFineVibrato) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e FineVibrato) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectFineVibrato) String() string {
+func (e FineVibrato) String() string {
 	return fmt.Sprintf("U%0.2x", uint8(e))
 }

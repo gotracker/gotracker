@@ -17,6 +17,7 @@ var (
 	sampler render.Sampler
 )
 
+// Play starts a song playing
 func Play(ss *state.Song) <-chan render.RowRender {
 	out := make(chan render.RowRender, 64)
 	go func() {
@@ -35,6 +36,7 @@ func Play(ss *state.Song) <-chan render.RowRender {
 	return out
 }
 
+// WaveOut is a wave output device
 type WaveOut winmm.Device
 
 func openWaveOut() *WaveOut {
@@ -46,6 +48,7 @@ func openWaveOut() *WaveOut {
 	return (*WaveOut)(handle)
 }
 
+// Play starts the wave output device playing
 func (waveOut *WaveOut) Play(in <-chan render.RowRender) {
 	type RowWave struct {
 		Wave *winmm.Wave

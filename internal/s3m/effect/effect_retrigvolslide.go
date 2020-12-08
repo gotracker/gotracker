@@ -5,16 +5,20 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectRetrigVolumeSlide uint8 // 'Q'
+// RetrigVolumeSlide defines a retriggering volume slide effect
+type RetrigVolumeSlide uint8 // 'Q'
 
-func (e EffectRetrigVolumeSlide) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e RetrigVolumeSlide) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectRetrigVolumeSlide) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e RetrigVolumeSlide) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectRetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e RetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	x := uint8(e) >> 4
 	y := uint8(e) & 0x0F
 	if y == 0 {
@@ -60,9 +64,10 @@ func (e EffectRetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick
 	}
 }
 
-func (e EffectRetrigVolumeSlide) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e RetrigVolumeSlide) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectRetrigVolumeSlide) String() string {
+func (e RetrigVolumeSlide) String() string {
 	return fmt.Sprintf("Q%0.2x", uint8(e))
 }

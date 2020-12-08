@@ -5,12 +5,15 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectSetPanPosition uint8 // 'S8x'
+// SetPanPosition defines a set pan position effect
+type SetPanPosition uint8 // 'S8x'
 
-func (e EffectSetPanPosition) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetPanPosition) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectSetPanPosition) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetPanPosition) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -18,12 +21,14 @@ func (e EffectSetPanPosition) Start(cs intf.Channel, ss intf.Song) {
 	cs.SetPan(x)
 }
 
-func (e EffectSetPanPosition) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetPanPosition) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetPanPosition) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetPanPosition) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetPanPosition) String() string {
+func (e SetPanPosition) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

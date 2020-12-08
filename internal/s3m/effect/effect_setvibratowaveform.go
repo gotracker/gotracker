@@ -6,12 +6,15 @@ import (
 	"gotracker/internal/player/oscillator"
 )
 
-type EffectSetVibratoWaveform uint8 // 'S3x'
+// SetVibratoWaveform defines a set vibrato waveform effect
+type SetVibratoWaveform uint8 // 'S3x'
 
-func (e EffectSetVibratoWaveform) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetVibratoWaveform) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectSetVibratoWaveform) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetVibratoWaveform) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -20,12 +23,14 @@ func (e EffectSetVibratoWaveform) Start(cs intf.Channel, ss intf.Song) {
 	vib.Table = oscillator.WaveTableSelect(x)
 }
 
-func (e EffectSetVibratoWaveform) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetVibratoWaveform) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetVibratoWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetVibratoWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetVibratoWaveform) String() string {
+func (e SetVibratoWaveform) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

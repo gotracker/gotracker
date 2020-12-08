@@ -5,12 +5,15 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectFinePatternDelay uint8 // 'S6x'
+// FinePatternDelay defines an fine pattern delay effect
+type FinePatternDelay uint8 // 'S6x'
 
-func (e EffectFinePatternDelay) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e FinePatternDelay) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectFinePatternDelay) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e FinePatternDelay) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -18,12 +21,14 @@ func (e EffectFinePatternDelay) Start(cs intf.Channel, ss intf.Song) {
 	ss.AddRowTicks(int(x))
 }
 
-func (e EffectFinePatternDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e FinePatternDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectFinePatternDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e FinePatternDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectFinePatternDelay) String() string {
+func (e FinePatternDelay) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

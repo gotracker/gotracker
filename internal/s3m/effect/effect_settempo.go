@@ -5,19 +5,23 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectSetTempo uint8 // 'T'
+// SetTempo defines a set tempo effect
+type SetTempo uint8 // 'T'
 
-func (e EffectSetTempo) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetTempo) PreStart(cs intf.Channel, ss intf.Song) {
 	if e > 0x20 {
 		ss.SetTempo(int(e))
 	}
 }
 
-func (e EffectSetTempo) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetTempo) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectSetTempo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetTempo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	switch uint8(e >> 4) {
 	case 0: // decrease tempo
 		if currentTick != 0 {
@@ -35,9 +39,10 @@ func (e EffectSetTempo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	}
 }
 
-func (e EffectSetTempo) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetTempo) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetTempo) String() string {
+func (e SetTempo) String() string {
 	return fmt.Sprintf("T%0.2x", uint8(e))
 }

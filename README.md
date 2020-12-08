@@ -14,18 +14,27 @@ At the moment, just S3M (Screamtracker 3) files, but that could change with some
 
 ## What systems does it work on?
 
-If you take the time to extricate the Windows Multimedia (winmm) code from it, you could pretty easily make it operate on any system that Go works on. As it stands out-of-the-box, it only works on Windows 2000 or newer.
+* Windows (Windows 2000 or newer)
+  * WinMM (`WAVE_MAPPER` device)
+  * File (Wave/RIFF file)
+* Linux
+  * File (Wave/RIFF file)
 
 ## How do I build this thing?
 
 ### What you need
 
+For a Windows build, I recommend the following:
 * Windows 2000 (or newer) - I used Windows 10 Pro (Windows 10 Version 20H2)
 * MinGW-w64 with GCC/G++ - I used v8.0.0, but newer is probably ok [download here](https://sourceforge.net/projects/mingw-w64/)
   * You may need to add the `bin` folder in the MinGW-w64 install directory to your `PATH` environment variable.
 * Visual Studio Code
   * Go extension for VSCode v0.19.0 (or newer) 
   * Go v1.15.2 (though it will probably compile with Go v1.05 or newer)
+
+For a non-Windows (e.g.: Linux) build, I recommend the following:
+* Ubuntu 20.04 (or newer) - I used Ubuntu 20.04.1 LTS running in WSL2
+* GCC/G++ 8.0.0 or newer - I used GCC 9.3.0
 
 ### How to build (on Windows)
 

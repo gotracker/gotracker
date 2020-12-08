@@ -2,6 +2,7 @@ package intf
 
 import "gotracker/internal/player/volume"
 
+// Song is an interface to the song state
 type Song interface {
 	SetCurrentOrder(uint8)
 	SetCurrentRow(uint8)
@@ -16,6 +17,7 @@ type Song interface {
 	SetPatternLoopEnd(uint8)
 }
 
+// SongData is an interface to the song data
 type SongData interface {
 	GetOrderList() []uint8
 	GetPattern(uint8) Pattern

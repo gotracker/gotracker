@@ -2,6 +2,7 @@ package intf
 
 import "gotracker/internal/player/volume"
 
+// Instrument is an interface for instrument/sample data
 type Instrument interface {
 	IsInvalid() bool
 	GetC2Spd() uint16

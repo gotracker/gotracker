@@ -6,6 +6,7 @@ import (
 	"gotracker/internal/player/volume"
 )
 
+// ChannelData is an interface for channel data
 type ChannelData interface {
 	HasNote() bool
 	GetNote() note.Note
@@ -21,6 +22,7 @@ type ChannelData interface {
 	Channel() uint8
 }
 
+// Channel is an interface for channel state
 type Channel interface {
 	ResetRetriggerCount()
 	GetMemory() Memory

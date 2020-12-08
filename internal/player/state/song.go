@@ -10,8 +10,10 @@ import (
 	"math"
 )
 
+// EffectFactory is a function that generates a channel effect based on the input channel pattern data
 type EffectFactory func(mi intf.SharedMemory, data intf.ChannelData) intf.Effect
 
+// Song is the song state for the current playing song
 type Song struct {
 	intf.Song
 	SongData      intf.SongData
@@ -24,6 +26,7 @@ type Song struct {
 	GlobalVolume volume.Volume
 }
 
+// NewSong creates a new song structure and sets its default values
 func NewSong() *Song {
 	var ss = Song{}
 	ss.Pattern.CurrentOrder = 0
@@ -34,32 +37,7 @@ func NewSong() *Song {
 	return &ss
 }
 
-func (ss *Song) RenderNextRow(sampler *render.Sampler) []byte {
-	var pattern = ss.Pattern.GetRow()
-	if pattern == nil {
-		ss.Pattern.NextRow()
-		return nil
-	}
-
-	bSetOrder := false
-	nextOrder := uint8(0)
-	bSetRow := false
-	nextRow := uint8(0)
-
-	if bSetOrder || bSetRow {
-		if bSetOrder {
-			ss.Pattern.CurrentOrder = nextOrder
-		}
-		if bSetRow {
-			ss.Pattern.CurrentRow = nextRow
-		}
-	} else {
-		ss.Pattern.NextRow()
-	}
-
-	return []byte{}
-}
-
+// RenderOneRow renders the next single row from the song pattern data into a RowRender object
 func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 	ol := ss.SongData.GetOrderList()
 	if ss.Pattern.CurrentOrder < 0 || int(ss.Pattern.CurrentOrder) >= len(ol) {
@@ -385,38 +363,48 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 	}
 }
 
+// SetCurrentOrder sets the current order index
 func (ss *Song) SetCurrentOrder(order uint8) {
 	ss.Pattern.CurrentOrder = order
 }
 
+// SetCurrentRow sets the current row index
 func (ss *Song) SetCurrentRow(row uint8) {
 	ss.Pattern.CurrentRow = row
 }
 
+// SetTempo sets the desired tempo for the song
 func (ss *Song) SetTempo(tempo int) {
 	ss.Pattern.Row.Tempo = tempo
 }
 
+// DecreaseTempo reduces the tempo by the `delta` value
 func (ss *Song) DecreaseTempo(delta int) {
 	ss.Pattern.Row.Tempo -= delta
 }
 
+// IncreaseTempo increases the tempo by the `delta` value
 func (ss *Song) IncreaseTempo(delta int) {
 	ss.Pattern.Row.Tempo += delta
 }
 
+// SetGlobalVolume sets the global volume to the specified `vol` value
 func (ss *Song) SetGlobalVolume(vol volume.Volume) {
 	ss.GlobalVolume = vol
 }
 
+// SetTicks sets the number of ticks the row expects to play for
 func (ss *Song) SetTicks(ticks int) {
 	ss.Pattern.Row.Ticks = ticks
 }
 
+// AddRowTicks increases the number of ticks the row expects to play for
 func (ss *Song) AddRowTicks(ticks int) {
 	ss.Pattern.FinePatternDelay += ticks
 }
 
+// SetPatternDelay sets the repeat number for the row to `rept`
+// NOTE: this may be set 1 time (first in wins) and will be reset only by the next row being read in
 func (ss *Song) SetPatternDelay(rept int) {
 	if !ss.Pattern.RowHasPatternDelay {
 		ss.Pattern.RowHasPatternDelay = true
@@ -424,10 +412,12 @@ func (ss *Song) SetPatternDelay(rept int) {
 	}
 }
 
+// SetPatternLoopStart sets the pattern loop start position
 func (ss *Song) SetPatternLoopStart() {
 	ss.Pattern.LoopStart = ss.Pattern.CurrentRow
 }
 
+// SetPatternLoopEnd sets the loop end position (and total loops desired)
 func (ss *Song) SetPatternLoopEnd(loops uint8) {
 	ss.Pattern.LoopEnd = ss.Pattern.CurrentRow
 	ss.Pattern.LoopTotal = loops

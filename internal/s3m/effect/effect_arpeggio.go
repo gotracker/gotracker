@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectArpeggio uint8 // 'J'
 
@@ -20,4 +23,8 @@ func (e EffectArpeggio) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectArpeggio) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectArpeggio) String() string {
+	return fmt.Sprintf("J%0.2x", uint8(e))
 }

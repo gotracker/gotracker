@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectNoteDelay uint8 // 'SDx'
 
@@ -17,4 +20,8 @@ func (e EffectNoteDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectNoteDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectNoteDelay) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

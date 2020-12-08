@@ -1,6 +1,7 @@
 package effect
 
 import (
+	"fmt"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/oscillator"
 )
@@ -23,4 +24,8 @@ func (e EffectSetVibratoWaveform) Tick(cs intf.Channel, ss intf.Song, currentTic
 }
 
 func (e EffectSetVibratoWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectSetVibratoWaveform) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

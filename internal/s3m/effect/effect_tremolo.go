@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectTremolo uint8 // 'R'
 
@@ -24,4 +27,8 @@ func (e EffectTremolo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectTremolo) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectTremolo) String() string {
+	return fmt.Sprintf("R%0.2x", uint8(e))
 }

@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectOrderJump uint8 // 'B'
 
@@ -16,4 +19,8 @@ func (e EffectOrderJump) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectOrderJump) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectOrderJump) String() string {
+	return fmt.Sprintf("B%0.2x", uint8(e))
 }

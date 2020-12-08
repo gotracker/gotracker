@@ -2,24 +2,19 @@ package state
 
 import (
 	"fmt"
-	"gotracker/internal/player/channel"
-	"gotracker/internal/player/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
-	"gotracker/internal/s3m"
-	s3mEffect "gotracker/internal/s3m/effect"
+	"gotracker/internal/player/volume"
 	"gotracker/internal/s3m/util"
-	"gotracker/internal/s3m/volume"
-	"log"
 	"math"
 )
 
-type EffectFactory func(mi intf.SharedMemory, data channel.Data) intf.Effect
+type EffectFactory func(mi intf.SharedMemory, data intf.ChannelData) intf.Effect
 
 type Song struct {
 	intf.Song
-	SongData      *s3m.S3M
+	SongData      intf.SongData
 	EffectFactory EffectFactory
 
 	Channels     [32]ChannelState
@@ -29,91 +24,14 @@ type Song struct {
 	GlobalVolume volume.Volume
 }
 
-func CreateSongState(filename string) *Song {
-	song, err := s3m.ReadS3M(filename)
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-
-	var ss = &Song{}
-	ss.EffectFactory = s3mEffect.EffectFactory
-	ss.Pattern.Patterns = &song.Patterns
-	ss.Pattern.Orders = &song.Head.OrderList
-	ss.Pattern.Row.Ticks = int(song.Head.Info.InitialSpeed)
-	ss.Pattern.Row.Tempo = int(song.Head.Info.InitialTempo)
+func NewSong() *Song {
+	var ss = Song{}
 	ss.Pattern.CurrentOrder = 0
 	ss.Pattern.CurrentRow = 0
 	ss.SampleMult = 1.0
-	ss.GlobalVolume = volume.FromS3M(song.Head.Info.GlobalVolume)
-	ss.SongData = song
 	ss.NumChannels = 1
 
-	// old method for determining active channels
-	// for _, pattern := range *ss.Pattern.Patterns {
-	// 	if ss.NumChannels == 32 {
-	// 		break
-	// 	}
-	// 	for _, row := range pattern.Rows {
-	// 		if ss.NumChannels == 32 {
-	// 			break
-	// 		}
-	// 		for i := ss.NumChannels; i < 32; i++ {
-	// 			channel := row[i]
-	// 			if channel.What.HasCommand() || channel.What.HasNote() {
-	// 				ss.NumChannels = i + 1
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// new method for determining active channels (uses S3M data I somehow overlooked before)
-	for i, cs := range ss.SongData.Head.ChannelSettings {
-		if cs.IsEnabled() {
-			ss.NumChannels = i + 1
-		}
-	}
-
-	for i := 0; i < ss.NumChannels; i++ {
-		cs := &ss.Channels[i]
-		cs.Instrument = instrument.InstrumentInfo{}
-		cs.Pos = 0
-		cs.Period = 0
-		cs.SetStoredVolume(64, ss)
-		ch := song.Head.ChannelSettings[i]
-		if ch.IsEnabled() {
-			pf := song.Head.Panning[i]
-			if pf.IsValid() {
-				cs.Pan = pf.Value()
-			} else {
-				l := ch.GetChannel()
-				switch l {
-				case s3m.ChannelIDL1, s3m.ChannelIDL2, s3m.ChannelIDL3, s3m.ChannelIDL4, s3m.ChannelIDL5, s3m.ChannelIDL6, s3m.ChannelIDL7, s3m.ChannelIDL8:
-					cs.Pan = 0x03
-				case s3m.ChannelIDR1, s3m.ChannelIDR2, s3m.ChannelIDR3, s3m.ChannelIDR4, s3m.ChannelIDR5, s3m.ChannelIDR6, s3m.ChannelIDR7, s3m.ChannelIDR8:
-					cs.Pan = 0x0C
-				}
-			}
-		} else {
-			cs.Pan = 0x08 // center?
-		}
-		cs.Command = nil
-
-		cs.DisplayNote = note.EmptyNote
-		cs.DisplayInst = 0
-
-		cs.TargetPeriod = cs.Period
-		cs.TargetPos = cs.Pos
-		cs.TargetInst = cs.Instrument
-		cs.PortaTargetPeriod = cs.TargetPeriod
-		cs.NotePlayTick = 0
-		cs.RetriggerCount = 0
-		cs.TremorOn = true
-		cs.TremorTime = 0
-		cs.VibratoDelta = 0
-		cs.Cmd = nil
-	}
-	return ss
+	return &ss
 }
 
 func (ss *Song) RenderNextRow(sampler *render.Sampler) []byte {
@@ -143,12 +61,13 @@ func (ss *Song) RenderNextRow(sampler *render.Sampler) []byte {
 }
 
 func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
-	if ss.Pattern.CurrentOrder < 0 || int(ss.Pattern.CurrentOrder) >= len(ss.SongData.Head.OrderList) {
+	ol := ss.SongData.GetOrderList()
+	if ss.Pattern.CurrentOrder < 0 || int(ss.Pattern.CurrentOrder) >= len(ol) {
 		var done = &render.RowRender{}
 		done.Stop = true
 		return done
 	}
-	patNum := PatternNum(ss.SongData.Head.OrderList[ss.Pattern.CurrentOrder])
+	patNum := PatternNum(ol[ss.Pattern.CurrentOrder])
 	if patNum == NextPattern {
 		ss.Pattern.CurrentOrder++
 		return nil
@@ -159,14 +78,15 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 		return nil // this is supposed to be a song break
 	}
 
-	pattern := ss.SongData.Patterns[patNum]
-	if &pattern == nil {
+	pattern := ss.SongData.GetPattern(uint8(patNum))
+	if pattern == nil {
 		var done = &render.RowRender{}
 		done.Stop = true
 		return done
 	}
 
-	if ss.Pattern.CurrentRow < 0 || int(ss.Pattern.CurrentRow) >= len(pattern.Rows) {
+	rows := pattern.GetRows()
+	if ss.Pattern.CurrentRow < 0 || int(ss.Pattern.CurrentRow) >= len(rows) {
 		ss.Pattern.CurrentRow = 0
 		ss.Pattern.CurrentOrder++
 		return nil
@@ -182,16 +102,16 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 	var finalData = &render.RowRender{}
 	finalData.Stop = false
 
-	if int(ss.Pattern.CurrentRow) > len(pattern.Rows) {
+	if int(ss.Pattern.CurrentRow) > len(rows) {
 		orderRestart = true
 		ss.Pattern.CurrentOrder++
 	} else {
 		myCurrentOrder := ss.Pattern.CurrentOrder
 		myCurrentRow := ss.Pattern.CurrentRow
 
-		row := &pattern.Rows[myCurrentRow]
-		for channelNum, channel := range row {
-			if !ss.SongData.Head.ChannelSettings[channelNum].IsEnabled() {
+		row := rows[myCurrentRow]
+		for channelNum, channel := range row.GetChannels() {
+			if !ss.SongData.IsChannelEnabled(channelNum) {
 				continue
 			}
 
@@ -208,64 +128,66 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			cs.TremorOn = true
 			cs.TremorTime = 0
 			cs.VibratoDelta = 0
-			cs.Cmd = &row[channelNum]
+			cs.Cmd = channel
 
 			wantNoteCalc := false
 
-			if channel.What.HasNote() {
+			if channel.HasNote() {
 				cs.VibratoOscillator.Pos = 0
 				cs.TremoloOscillator.Pos = 0
-				cs.TargetInst = instrument.InstrumentInfo{}
-				if channel.Instrument == 0 {
+				cs.TargetInst = nil
+				inst := channel.GetInstrument()
+				if inst == 0 {
 					// use current
 					cs.TargetInst = cs.Instrument
 					cs.TargetPos = 0
-				} else if int(channel.Instrument) > len(ss.SongData.Instruments) {
-					cs.TargetInst = instrument.InstrumentInfo{}
+				} else if int(inst) > ss.SongData.NumInstruments() {
+					cs.TargetInst = nil
 				} else {
-					cs.TargetInst.Sample = &ss.SongData.Instruments[channel.Instrument-1]
-					cs.TargetInst.Id = channel.Instrument
+					cs.TargetInst = ss.SongData.GetInstrument(int(inst) - 1)
 					cs.TargetPos = 0
-					if !cs.TargetInst.IsInvalid() {
-						cs.SetStoredVolume(cs.TargetInst.Sample.Info.Volume, ss)
+					if cs.TargetInst != nil {
+						vol := cs.TargetInst.GetVolume()
+						cs.SetStoredVolume(vol, ss)
 					}
 				}
 
-				if channel.Note.IsInvalid() {
+				n := channel.GetNote()
+				if n.IsInvalid() {
 					cs.TargetPeriod = 0
 					cs.DisplayNote = note.EmptyNote
 					cs.DisplayInst = 0
-				} else if !cs.TargetInst.IsInvalid() {
-					cs.NoteSemitone = channel.Note.Semitone()
-					cs.TargetC2Spd = cs.TargetInst.C2Spd()
+				} else if cs.TargetInst != nil {
+					cs.NoteSemitone = n.Semitone()
+					cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
 					wantNoteCalc = true
-					cs.DisplayNote = channel.Note
-					cs.DisplayInst = cs.TargetInst.Id
+					cs.DisplayNote = n
+					cs.DisplayInst = uint8(cs.TargetInst.GetId())
 				}
 			} else {
 				cs.DisplayNote = note.EmptyNote
 				cs.DisplayInst = 0
 			}
 
-			if channel.What.HasVolume() {
-				if channel.Volume == 255 {
-					if !cs.Instrument.IsInvalid() {
-						cs.SetStoredVolume(cs.Instrument.Sample.Info.Volume, ss)
+			if channel.HasVolume() {
+				v := channel.GetVolume()
+				if v == volume.VolumeUseInstVol {
+					sample := cs.TargetInst
+					if sample != nil {
+						vol := sample.GetVolume()
+						cs.SetStoredVolume(vol, ss)
 					}
 				} else {
-					cs.SetStoredVolume(channel.Volume, ss)
+					cs.SetStoredVolume(v, ss)
 				}
 			}
 
-			cs.ActiveEffect = ss.EffectFactory(cs, *cs.Cmd)
+			cs.ActiveEffect = ss.EffectFactory(cs, cs.Cmd)
 
 			if wantNoteCalc {
 				cs.TargetPeriod = util.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
 			}
 
-			if cs.Cmd.What.HasCommand() {
-				cs.SetEffectSharedMemoryIfNonZero(cs.Cmd.Info)
-			}
 			if cs.ActiveEffect != nil {
 				cs.ActiveEffect.PreStart(cs, ss)
 			}
@@ -290,7 +212,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			c.Volume = ".."
 			c.Effect = "..."
 
-			if !cs.Instrument.IsInvalid() && cs.Period != 0 {
+			if cs.TargetInst != nil && cs.Period != 0 {
 				c.Note = cs.DisplayNote.String()
 			}
 
@@ -299,12 +221,12 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			}
 
 			if cs.Cmd != nil {
-				if cs.Cmd.What.HasVolume() {
-					c.Volume = fmt.Sprintf("%0.2d", cs.Cmd.Volume)
+				if cs.Cmd.HasVolume() {
+					c.Volume = fmt.Sprintf("%0.2d", uint8(cs.Cmd.GetVolume()*64.0))
 				}
 
-				if cs.Cmd.What.HasCommand() {
-					c.Effect = fmt.Sprintf("%c%0.2x", cs.Cmd.Command+'@', cs.Cmd.Info)
+				if cs.ActiveEffect != nil {
+					c.Effect = cs.ActiveEffect.String()
 				}
 			}
 			rowText[ch] = c
@@ -390,37 +312,49 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			if cs.Command != nil {
 				cs.Command(ch, cs, simulatedTick, lastTick)
 			}
-			if !cs.Instrument.IsInvalid() && cs.Period != 0 {
+			sample := cs.Instrument
+			if sample != nil && cs.Period != 0 {
 				period := cs.Period + cs.VibratoDelta
 				samplerAdd := samplerSpeed / period
 
-				vol := volume.FromS3M(cs.ActiveVolume) * cs.LastGlobalVolume
+				vol := cs.ActiveVolume * cs.LastGlobalVolume
 				pan := volume.Volume(cs.Pan) / 16.0
 				volL := vol * (1.0 - pan)
 				volR := vol * pan
 
+				sampleLen := sample.GetLength()
+
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {
-						if (cs.Instrument.Sample.Info.Flags & 1) != 0 {
-							if int(cs.Pos) >= int(cs.Instrument.Sample.Info.LoopEndL) {
-								cs.Pos = float32(cs.Instrument.Sample.Info.LoopBeginL)
+						if sample.IsLooped() {
+							newPos := cs.Pos
+							begLoop := float32(sample.GetLoopBegin())
+							endLoop := float32(sample.GetLoopEnd())
+							for {
+								oldNewPos := newPos
+								delta := newPos - endLoop
+								if delta < 0 {
+									break
+								}
+								newPos = begLoop + delta
+								if newPos == oldNewPos {
+									break // don't allow infinite loops
+								}
 							}
-							if cs.Pos < 0 {
-								cs.Pos = 0
-							}
+							cs.Pos = float32(newPos)
 						}
-						if int(cs.Pos) < len(cs.Instrument.Sample.Sample) {
-							samp := (volume.Volume(cs.Instrument.Sample.Sample[int(cs.Pos)]) - 128.0) / 128.0
+						if cs.Pos < 0 {
+							cs.Pos = 0
+						}
+						if int(cs.Pos) < sampleLen {
+							samp := sample.GetSample(int(cs.Pos))
 							if sampler.Channels == 1 {
 								data[tickPos] += samp * vol
 							} else {
 								data[tickPos] += samp * volL
 								data[tickPos+1] += samp * volR
 							}
-						}
-						cs.Pos += samplerAdd
-						if cs.Pos < 0 {
-							cs.Pos = 0
+							cs.Pos += samplerAdd
 						}
 					}
 					tickPos += sampler.Channels
@@ -440,10 +374,10 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 	for _, sample := range data {
 		sample *= sampleDivisor
 		if sampler.BitsPerSample == 8 {
-			rowRender.RenderData[oidx] = sample.ToByte()
+			rowRender.RenderData[oidx] = uint8(sample.ToSample(sampler.BitsPerSample))
 			oidx++
 		} else {
-			val := int16(sample * 16384.0)
+			val := uint16(sample.ToSample(sampler.BitsPerSample))
 			rowRender.RenderData[oidx] = byte(val & 0xFF)
 			rowRender.RenderData[oidx+1] = byte(val >> 8)
 			oidx += 2

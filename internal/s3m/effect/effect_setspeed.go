@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectSetSpeed uint8 // 'A'
 
@@ -18,4 +21,8 @@ func (e EffectSetSpeed) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectSetSpeed) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectSetSpeed) String() string {
+	return fmt.Sprintf("A%0.2x", uint8(e))
 }

@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectRetrigVolumeSlide uint8 // 'Q'
 
@@ -58,4 +61,8 @@ func (e EffectRetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick
 }
 
 func (e EffectRetrigVolumeSlide) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectRetrigVolumeSlide) String() string {
+	return fmt.Sprintf("Q%0.2x", uint8(e))
 }

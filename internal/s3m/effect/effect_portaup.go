@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectPortaUp uint8 // 'F'
 
@@ -33,4 +36,8 @@ func (e EffectPortaUp) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectPortaUp) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectPortaUp) String() string {
+	return fmt.Sprintf("F%0.2x", uint8(e))
 }

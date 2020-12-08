@@ -1,6 +1,7 @@
 package effect
 
 import (
+	"fmt"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/s3m/util"
 )
@@ -58,4 +59,8 @@ func (e EffectSetFinetune) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 }
 
 func (e EffectSetFinetune) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectSetFinetune) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
-	v := cs.GetActiveVolume()
+	v := util.VolumeToS3M(cs.GetActiveVolume())
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 64 {
 		vol = 63
@@ -17,7 +17,7 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	if vol < 0 {
 		vol = 0
 	}
-	cs.SetActiveVolume(uint8(vol))
+	cs.SetActiveVolume(util.VolumeFromS3M(uint8(vol)))
 }
 
 func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
@@ -72,7 +72,7 @@ func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
 
 func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta uint8, arpSemitoneBDelta uint8) {
 	inst := cs.GetInstrument()
-	if inst.IsInvalid() {
+	if inst == nil || inst.IsInvalid() {
 		return
 	}
 	ns := cs.GetNoteSemitone()
@@ -85,7 +85,7 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta uint8, arpSe
 	case 2:
 		arpSemitoneTarget = ns + arpSemitoneBDelta
 	}
-	newSemi := util.CalcSemitonePeriod(arpSemitoneTarget, inst.C2Spd())
+	newSemi := util.CalcSemitonePeriod(arpSemitoneTarget, inst.GetC2Spd())
 	cs.SetTargetPeriod(newSemi)
 	cs.SetTargetInst(inst)
 	cs.SetTargetPos(cs.GetPos())
@@ -102,11 +102,11 @@ var (
 )
 
 func doVolSlideTwoThirds(cs intf.Channel) {
-	vol := cs.GetActiveVolume()
+	vol := util.VolumeToS3M(cs.GetActiveVolume())
 	if vol >= 64 {
 		vol = 63
 	}
-	cs.SetActiveVolume(volSlideTwoThirdsTable[vol])
+	cs.SetActiveVolume(util.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
 }
 
 func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {

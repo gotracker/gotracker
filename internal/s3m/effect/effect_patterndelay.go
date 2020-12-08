@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectPatternDelay uint8 // 'SEx'
 
@@ -16,4 +19,8 @@ func (e EffectPatternDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int)
 }
 
 func (e EffectPatternDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectPatternDelay) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

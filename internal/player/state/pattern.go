@@ -1,8 +1,7 @@
 package state
 
 import (
-	"gotracker/internal/player/channel"
-	"gotracker/internal/s3m"
+	"gotracker/internal/player/intf"
 )
 
 type PatternNum uint8
@@ -12,22 +11,27 @@ const (
 	InvalidPattern = PatternNum(255)
 )
 
-type Row struct {
+type RowSettings struct {
 	Ticks int
 	Tempo int
+}
+
+type Row struct {
+	intf.Row
+	Channels [32]intf.ChannelData
 }
 
 type PatternState struct {
 	CurrentOrder uint8
 	CurrentRow   uint8
 
-	Row Row
+	Row RowSettings
 
 	RowHasPatternDelay bool
 	PatternDelay       int
 	FinePatternDelay   int
 
-	Patterns *[]s3m.Pattern
+	Patterns *[]intf.Pattern
 	Orders   *[]uint8
 
 	LoopStart   uint8
@@ -74,7 +78,7 @@ func (state *PatternState) NextRow() {
 	}
 }
 
-func (state *PatternState) GetRow() *[32]channel.Data {
+func (state *PatternState) GetRow() *Row {
 	var patNum = state.GetPatNum()
 	switch patNum {
 	case InvalidPattern:
@@ -86,8 +90,37 @@ func (state *PatternState) GetRow() *[32]channel.Data {
 		}
 	default:
 		{
-			var pattern = &(*state.Patterns)[patNum]
-			return &pattern.Rows[state.CurrentRow]
+			var pattern = (*state.Patterns)[patNum]
+			if row, ok := pattern.GetRow(state.CurrentRow).(*Row); ok {
+				return row
+			}
+			return nil
+		}
+	}
+}
+
+func (state *PatternState) GetRows() []*Row {
+	var patNum = state.GetPatNum()
+	switch patNum {
+	case InvalidPattern:
+		return nil
+	case NextPattern:
+		{
+			state.NextRow()
+			return state.GetRows()
+		}
+	default:
+		{
+			var pattern = (*state.Patterns)[patNum]
+			pr := pattern.GetRows()
+
+			rows := make([]*Row, len(pr))
+			for i, prr := range pr {
+				if r, ok := prr.(*Row); ok {
+					rows[i] = r
+				}
+			}
+			return rows
 		}
 	}
 }

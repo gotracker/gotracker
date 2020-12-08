@@ -1,12 +1,10 @@
 package state
 
 import (
-	"gotracker/internal/player/channel"
-	"gotracker/internal/player/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
-	"gotracker/internal/s3m/volume"
+	"gotracker/internal/player/volume"
 	"math"
 )
 
@@ -15,11 +13,11 @@ type CommandFunc func(int, *ChannelState, int, bool)
 type ChannelState struct {
 	intf.Channel
 	intf.SharedMemory
-	Instrument   instrument.InstrumentInfo
+	Instrument   intf.Instrument
 	Pos          float32
 	Period       float32
-	StoredVolume uint8
-	ActiveVolume uint8
+	StoredVolume volume.Volume
+	ActiveVolume volume.Volume
 	Pan          uint8
 
 	Command      CommandFunc
@@ -30,7 +28,7 @@ type ChannelState struct {
 
 	TargetPeriod      float32
 	TargetPos         float32
-	TargetInst        instrument.InstrumentInfo
+	TargetInst        intf.Instrument
 	PortaTargetPeriod float32
 	NotePlayTick      int
 	NoteSemitone      uint8
@@ -40,7 +38,7 @@ type ChannelState struct {
 	VibratoDelta      float32
 	memory            Memory
 	effectLastNonZero uint8
-	Cmd               *channel.Data
+	Cmd               intf.ChannelData
 	freezePlayback    bool
 	LastGlobalVolume  volume.Volume
 	VibratoOscillator oscillator.Oscillator
@@ -48,11 +46,7 @@ type ChannelState struct {
 	TargetC2Spd       uint16
 }
 
-func (cs *ChannelState) SetStoredVolume(vol uint8, ss *Song) {
-	if vol >= 64 {
-		vol = 63
-	}
-
+func (cs *ChannelState) SetStoredVolume(vol volume.Volume, ss *Song) {
 	cs.StoredVolume = vol
 	cs.ActiveVolume = vol
 	cs.LastGlobalVolume = ss.GlobalVolume
@@ -91,15 +85,15 @@ func (cs *ChannelState) GetMemory() intf.Memory {
 	return &cs.memory
 }
 
-func (cs *ChannelState) GetActiveVolume() uint8 {
+func (cs *ChannelState) GetActiveVolume() volume.Volume {
 	return cs.ActiveVolume
 }
 
-func (cs *ChannelState) SetActiveVolume(vol uint8) {
+func (cs *ChannelState) SetActiveVolume(vol volume.Volume) {
 	cs.ActiveVolume = vol
 }
 
-func (cs *ChannelState) GetData() *channel.Data {
+func (cs *ChannelState) GetData() intf.ChannelData {
 	return cs.Cmd
 }
 
@@ -147,16 +141,16 @@ func (cs *ChannelState) SetTremorTime(time int) {
 	cs.TremorTime = time
 }
 
-func (cs *ChannelState) GetInstrument() *instrument.InstrumentInfo {
-	return &cs.Instrument
+func (cs *ChannelState) GetInstrument() intf.Instrument {
+	return cs.Instrument
 }
 
-func (cs *ChannelState) GetTargetInst() *instrument.InstrumentInfo {
-	return &cs.TargetInst
+func (cs *ChannelState) GetTargetInst() intf.Instrument {
+	return cs.TargetInst
 }
 
-func (cs *ChannelState) SetTargetInst(inst *instrument.InstrumentInfo) {
-	cs.TargetInst = *inst
+func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
+	cs.TargetInst = inst
 }
 
 func (cs *ChannelState) GetNoteSemitone() uint8 {

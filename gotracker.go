@@ -96,14 +96,14 @@ func main() {
 		return
 	}
 
-	ss := state.CreateSongState(fn)
-	if ss == nil {
-		log.Fatal("Could not create song state!")
+	ss := state.NewSong()
+	if err := ss.Load(fn); err != nil {
+		log.Fatalf("Could not create song state! err[%v]", err)
 		return
 	}
 	sampler.BaseClockRate = s3m.GetBaseClockRate()
 
-	fmt.Println(ss.SongData.Head.Name)
+	fmt.Println(ss.SongData.GetName())
 
 	waveOut := openWaveOut()
 

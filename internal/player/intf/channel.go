@@ -1,21 +1,36 @@
 package intf
 
 import (
-	"gotracker/internal/player/channel"
-	"gotracker/internal/player/instrument"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
+	"gotracker/internal/player/volume"
 )
+
+type ChannelData interface {
+	HasNote() bool
+	GetNote() note.Note
+
+	HasInstrument() bool
+	GetInstrument() uint8
+
+	HasVolume() bool
+	GetVolume() volume.Volume
+
+	HasCommand() bool
+
+	Channel() uint8
+}
 
 type Channel interface {
 	ResetRetriggerCount()
 	GetMemory() Memory
 	SetEffectSharedMemoryIfNonZero(uint8)
 	GetEffectSharedMemory(uint8) uint8
-	GetActiveVolume() uint8
-	SetActiveVolume(uint8)
+	GetActiveVolume() volume.Volume
+	SetActiveVolume(volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
-	GetData() *channel.Data
+	GetData() ChannelData
 	GetPortaTargetPeriod() float32
 	SetPortaTargetPeriod(float32)
 	GetTargetPeriod() float32
@@ -29,9 +44,9 @@ type Channel interface {
 	SetTremorOn(bool)
 	GetTremorTime() int
 	SetTremorTime(int)
-	GetInstrument() *instrument.InstrumentInfo
-	GetTargetInst() *instrument.InstrumentInfo
-	SetTargetInst(*instrument.InstrumentInfo)
+	GetInstrument() Instrument
+	GetTargetInst() Instrument
+	SetTargetInst(Instrument)
 	GetNoteSemitone() uint8
 	SetTargetPos(float32)
 	GetPos() float32

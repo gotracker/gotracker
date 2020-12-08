@@ -1,6 +1,9 @@
 package effect
 
-import "gotracker/internal/player/intf"
+import (
+	"fmt"
+	"gotracker/internal/player/intf"
+)
 
 type EffectNoteCut uint8 // 'SCx'
 
@@ -20,4 +23,8 @@ func (e EffectNoteCut) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 func (e EffectNoteCut) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+}
+
+func (e EffectNoteCut) String() string {
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

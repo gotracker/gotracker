@@ -9,8 +9,13 @@ package winmm
 import "C"
 
 import (
-	"log"
 	"unsafe"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrWinMM = errors.New("WinMM error")
 )
 
 // Wave is the holder for a single buffer that is heading out to the wave mapper device
@@ -25,7 +30,7 @@ type Device struct {
 }
 
 // WaveOutOpen starts up a wave mapper device
-func WaveOutOpen(channels int, samplesPerSec int, bitsPerSample int) *Device {
+func WaveOutOpen(channels int, samplesPerSec int, bitsPerSample int) (*Device, error) {
 	phwo := Device{}
 	phwo.handle = (*C.HWAVEOUT)(C.malloc(512))
 	uDeviceID := C.WAVE_MAPPER
@@ -42,10 +47,9 @@ func WaveOutOpen(channels int, samplesPerSec int, bitsPerSample int) *Device {
 	fdwOpen := C.DWORD(C.CALLBACK_NULL)
 	result := C.waveOutOpen(phwo.handle, C.UINT(uDeviceID), &pwfx, dwCallback, dwCallbackInstance, fdwOpen)
 	if result != C.MMSYSERR_NOERROR {
-		log.Panicf("WinMM Err: %d", result)
-		return nil
+		return nil, errors.Wrapf(ErrWinMM, "result %d", result)
 	}
-	return &phwo
+	return &phwo, nil
 }
 
 // WaveOutWrite writes data out to the wave mapper device

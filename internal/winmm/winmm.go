@@ -5,6 +5,7 @@ package winmm
 // #cgo LDFLAGS: -lwinmm
 // #include <Windows.h>
 // #include <Mmreg.h>
+// #include <stdlib.h>
 import "C"
 
 import (
@@ -69,8 +70,13 @@ func WaveOutWrite(hwo Device, data []byte) *Wave {
 func WaveOutFinished(hwo Device, wave *Wave) bool {
 	szHdr := C.UINT(unsafe.Sizeof(wave.hdr))
 	result := C.waveOutUnprepareHeader(*hwo.handle, &wave.hdr, szHdr)
-	//C.free(wave.lpData)
-	return result == C.MMSYSERR_NOERROR
+	if result == C.WAVERR_STILLPLAYING {
+		// we can't continue, since we're still playing
+		return false
+	}
+	// everything else is 'recoverable'
+	C.free(wave.lpData)
+	return true
 }
 
 // WaveOutClose disposes of a wave mapper device

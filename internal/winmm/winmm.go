@@ -2,16 +2,15 @@
 
 package winmm
 
+// #cgo LDFLAGS: -lwinmm
+// #include <Windows.h>
+// #include <Mmreg.h>
+import "C"
+
 import (
 	"log"
 	"unsafe"
 )
-
-/*
-#include <Windows.h>
-*/
-// #cgo LDFLAGS: -lwinmm
-import "C"
 
 // Wave is the holder for a single buffer that is heading out to the wave mapper device
 type Wave struct {

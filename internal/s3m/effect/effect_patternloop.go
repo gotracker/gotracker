@@ -5,12 +5,15 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectPatternLoop uint8 // 'SBx'
+// PatternLoop defines a pattern loop effect
+type PatternLoop uint8 // 'SBx'
 
-func (e EffectPatternLoop) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e PatternLoop) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectPatternLoop) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e PatternLoop) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xF
@@ -23,12 +26,14 @@ func (e EffectPatternLoop) Start(cs intf.Channel, ss intf.Song) {
 	}
 }
 
-func (e EffectPatternLoop) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e PatternLoop) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectPatternLoop) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e PatternLoop) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectPatternLoop) String() string {
+func (e PatternLoop) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

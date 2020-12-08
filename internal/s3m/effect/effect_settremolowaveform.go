@@ -6,12 +6,15 @@ import (
 	"gotracker/internal/player/oscillator"
 )
 
-type EffectSetTremoloWaveform uint8 // 'S4x'
+// SetTremoloWaveform defines a set tremolo waveform effect
+type SetTremoloWaveform uint8 // 'S4x'
 
-func (e EffectSetTremoloWaveform) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetTremoloWaveform) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectSetTremoloWaveform) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetTremoloWaveform) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -20,12 +23,14 @@ func (e EffectSetTremoloWaveform) Start(cs intf.Channel, ss intf.Song) {
 	trem.Table = oscillator.WaveTableSelect(x)
 }
 
-func (e EffectSetTremoloWaveform) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetTremoloWaveform) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetTremoloWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetTremoloWaveform) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetTremoloWaveform) String() string {
+func (e SetTremoloWaveform) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

@@ -8,10 +8,6 @@ var (
 	VolumeUseInstVol = Volume(math.Inf(-1))
 )
 
-func FromS3MSample(vol uint8) Volume {
-	return (Volume(vol) - 128.0) / 128.0
-}
-
 func (v Volume) ToSample(bitsPerSample int) uint32 {
 	switch bitsPerSample {
 	case 8:

@@ -5,16 +5,18 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectPortaVolumeSlide struct { // 'L'
+// PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
+type PortaVolumeSlide struct { // 'L'
 	intf.CombinedEffect
 }
 
-func NewEffectPortaVolumeSlide(val uint8) EffectPortaVolumeSlide {
-	pvs := EffectPortaVolumeSlide{}
-	pvs.Effects = append(pvs.Effects, EffectVolumeSlide(val), EffectPortaToNote(0x00))
+// NewPortaVolumeSlide creates a new PortaVolumeSlide object
+func NewPortaVolumeSlide(val uint8) PortaVolumeSlide {
+	pvs := PortaVolumeSlide{}
+	pvs.Effects = append(pvs.Effects, VolumeSlide(val), PortaToNote(0x00))
 	return pvs
 }
 
-func (e EffectPortaVolumeSlide) String() string {
-	return fmt.Sprintf("L%0.2x", uint8(e.Effects[0].(EffectVolumeSlide)))
+func (e PortaVolumeSlide) String() string {
+	return fmt.Sprintf("L%0.2x", uint8(e.Effects[0].(VolumeSlide)))
 }

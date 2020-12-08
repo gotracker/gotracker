@@ -14,9 +14,11 @@ import (
 )
 
 var (
-	sampler render.Sampler
+	sampler       render.Sampler
+	startingOrder int
 )
 
+// Play starts a song playing
 func Play(ss *state.Song) <-chan render.RowRender {
 	out := make(chan render.RowRender, 64)
 	go func() {
@@ -35,6 +37,7 @@ func Play(ss *state.Song) <-chan render.RowRender {
 	return out
 }
 
+// WaveOut is a wave output device
 type WaveOut winmm.Device
 
 func openWaveOut() *WaveOut {
@@ -46,6 +49,7 @@ func openWaveOut() *WaveOut {
 	return (*WaveOut)(handle)
 }
 
+// Play starts the wave output device playing
 func (waveOut *WaveOut) Play(in <-chan render.RowRender) {
 	type RowWave struct {
 		Wave *winmm.Wave
@@ -83,6 +87,7 @@ func main() {
 	flag.IntVar(&sampler.SampleRate, "s", 44100, "sample rate")
 	flag.IntVar(&sampler.Channels, "c", 2, "channels")
 	flag.IntVar(&sampler.BitsPerSample, "b", 16, "bits per sample")
+	flag.IntVar(&startingOrder, "o", -1, "starting order")
 
 	flag.Parse()
 
@@ -102,6 +107,9 @@ func main() {
 		return
 	}
 	sampler.BaseClockRate = s3m.GetBaseClockRate()
+	if startingOrder != -1 {
+		ss.Pattern.CurrentOrder = uint8(startingOrder)
+	}
 
 	fmt.Println(ss.SongData.GetName())
 

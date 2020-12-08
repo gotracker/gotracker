@@ -3,12 +3,15 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 	"gotracker/internal/s3m/util"
 )
 
-type EffectSetFinetune uint8 // 'S2x'
+// SetFinetune defines a mod-style set finetune effect
+type SetFinetune uint8 // 'S2x'
 
-func (e EffectSetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
 	x := uint8(e) & 0xf
 
 	var multiplier float32
@@ -48,19 +51,22 @@ func (e EffectSetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
 	default:
 		multiplier = 1.0
 	}
-	cs.GetTargetInst().SetC2Spd(uint16(float32(util.DefaultC2Spd) * multiplier))
+	cs.GetTargetInst().SetC2Spd(note.C2SPD(float32(util.DefaultC2Spd) * multiplier))
 }
 
-func (e EffectSetFinetune) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetFinetune) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectSetFinetune) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetFinetune) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetFinetune) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetFinetune) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetFinetune) String() string {
+func (e SetFinetune) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

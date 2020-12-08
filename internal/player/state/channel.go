@@ -16,7 +16,7 @@ type ChannelState struct {
 	intf.SharedMemory
 	Instrument   intf.Instrument
 	Pos          float32
-	Period       float32
+	Period       note.Period
 	StoredVolume volume.Volume
 	ActiveVolume volume.Volume
 	Pan          uint8
@@ -27,16 +27,17 @@ type ChannelState struct {
 	DisplayNote note.Note
 	DisplayInst uint8
 
-	TargetPeriod      float32
+	TargetPeriod      note.Period
 	TargetPos         float32
 	TargetInst        intf.Instrument
-	PortaTargetPeriod float32
+	PortaTargetPeriod note.Period
 	NotePlayTick      int
-	NoteSemitone      uint8
+	NoteSemitone      note.Semitone
+	DoRetriggerNote   bool
 	RetriggerCount    uint8
 	TremorOn          bool
 	TremorTime        int
-	VibratoDelta      float32
+	VibratoDelta      note.Period
 	memory            Memory
 	effectLastNonZero uint8
 	Cmd               intf.ChannelData
@@ -44,7 +45,7 @@ type ChannelState struct {
 	LastGlobalVolume  volume.Volume
 	VibratoOscillator oscillator.Oscillator
 	TremoloOscillator oscillator.Oscillator
-	TargetC2Spd       uint16
+	TargetC2Spd       note.C2SPD
 }
 
 // SetStoredVolume sets the stored volume value for the channel
@@ -112,27 +113,27 @@ func (cs *ChannelState) GetData() intf.ChannelData {
 }
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period
-func (cs *ChannelState) GetPortaTargetPeriod() float32 {
+func (cs *ChannelState) GetPortaTargetPeriod() note.Period {
 	return cs.PortaTargetPeriod
 }
 
 // SetPortaTargetPeriod sets the current target portamento (to note) sampler period
-func (cs *ChannelState) SetPortaTargetPeriod(period float32) {
+func (cs *ChannelState) SetPortaTargetPeriod(period note.Period) {
 	cs.PortaTargetPeriod = period
 }
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState) GetTargetPeriod() float32 {
+func (cs *ChannelState) GetTargetPeriod() note.Period {
 	return cs.TargetPeriod
 }
 
 // SetTargetPeriod sets the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState) SetTargetPeriod(period float32) {
+func (cs *ChannelState) SetTargetPeriod(period note.Period) {
 	cs.TargetPeriod = period
 }
 
 // SetVibratoDelta sets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState) SetVibratoDelta(delta float32) {
+func (cs *ChannelState) SetVibratoDelta(delta note.Period) {
 	cs.VibratoDelta = delta
 }
 
@@ -182,7 +183,7 @@ func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
 }
 
 // GetNoteSemitone returns the note semitone for the channel
-func (cs *ChannelState) GetNoteSemitone() uint8 {
+func (cs *ChannelState) GetNoteSemitone() note.Semitone {
 	return cs.NoteSemitone
 }
 
@@ -192,13 +193,13 @@ func (cs *ChannelState) SetTargetPos(pos float32) {
 }
 
 // GetPeriod returns the current sampler period of the active instrument
-func (cs *ChannelState) GetPeriod() float32 {
+func (cs *ChannelState) GetPeriod() note.Period {
 	return cs.Period
 }
 
 // SetPeriod sets the current sampler period of the active instrument
-func (cs *ChannelState) SetPeriod(period float32) {
-	cs.Period = float32(math.Max(float64(period), 0))
+func (cs *ChannelState) SetPeriod(period note.Period) {
+	cs.Period = note.Period(math.Max(float64(period), 0))
 }
 
 // GetPos returns the sample position of the active instrument
@@ -229,4 +230,10 @@ func (cs *ChannelState) SetRetriggerCount(cnt uint8) {
 // SetPan sets the active panning value of the channel (0 = full left, 15 = full right)
 func (cs *ChannelState) SetPan(pan uint8) {
 	cs.Pan = pan
+}
+
+// SetDoRetriggerNote sets the enablement flag for DoRetriggerNote
+// this gets reset on every row
+func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
+	cs.DoRetriggerNote = enabled
 }

@@ -5,22 +5,27 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectPatternDelay uint8 // 'SEx'
+// PatternDelay defines a pattern delay effect
+type PatternDelay uint8 // 'SEx'
 
-func (e EffectPatternDelay) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e PatternDelay) PreStart(cs intf.Channel, ss intf.Song) {
 	ss.SetPatternDelay(int(uint8(e) & 0x0F))
 }
 
-func (e EffectPatternDelay) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e PatternDelay) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectPatternDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e PatternDelay) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectPatternDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e PatternDelay) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectPatternDelay) String() string {
+func (e PatternDelay) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

@@ -5,24 +5,29 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectSetSpeed uint8 // 'A'
+// SetSpeed defines a set speed effect
+type SetSpeed uint8 // 'A'
 
-func (e EffectSetSpeed) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetSpeed) PreStart(cs intf.Channel, ss intf.Song) {
 	if e != 0 {
 		ss.SetTicks(int(e))
 	}
 }
 
-func (e EffectSetSpeed) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetSpeed) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectSetSpeed) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetSpeed) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetSpeed) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetSpeed) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetSpeed) String() string {
+func (e SetSpeed) String() string {
 	return fmt.Sprintf("A%0.2x", uint8(e))
 }

@@ -5,12 +5,15 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectStereoControl uint8 // 'SAx'
+// StereoControl defines a set stereo control effect
+type StereoControl uint8 // 'SAx'
 
-func (e EffectStereoControl) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e StereoControl) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectStereoControl) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e StereoControl) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -22,12 +25,14 @@ func (e EffectStereoControl) Start(cs intf.Channel, ss intf.Song) {
 	}
 }
 
-func (e EffectStereoControl) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e StereoControl) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectStereoControl) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e StereoControl) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectStereoControl) String() string {
+func (e StereoControl) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

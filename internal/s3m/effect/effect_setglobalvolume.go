@@ -6,22 +6,27 @@ import (
 	"gotracker/internal/s3m/util"
 )
 
-type EffectSetGlobalVolume uint8 // 'V'
+// SetGlobalVolume defines a set global volume effect
+type SetGlobalVolume uint8 // 'V'
 
-func (e EffectSetGlobalVolume) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e SetGlobalVolume) PreStart(cs intf.Channel, ss intf.Song) {
 	ss.SetGlobalVolume(util.VolumeFromS3M(uint8(e)))
 }
 
-func (e EffectSetGlobalVolume) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e SetGlobalVolume) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectSetGlobalVolume) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e SetGlobalVolume) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectSetGlobalVolume) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e SetGlobalVolume) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectSetGlobalVolume) String() string {
+func (e SetGlobalVolume) String() string {
 	return fmt.Sprintf("V%0.2x", uint8(e))
 }

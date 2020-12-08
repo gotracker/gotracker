@@ -1,18 +1,24 @@
 package util
 
-import "gotracker/internal/player/volume"
+import (
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/volume"
+)
 
 const (
-	DefaultC2Spd = uint16(8363)
+	// DefaultC2Spd is the default C2SPD for S3M files
+	DefaultC2Spd = note.C2SPD(8363)
 
 	floatDefaultC2Spd = float32(DefaultC2Spd)
 
+	// S3MBaseClock is the base clock speed of S3M files
 	S3MBaseClock = floatDefaultC2Spd * 1712.0
 )
 
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
-func CalcSemitonePeriod(semi uint8, c2spd uint16) float32 {
+// CalcSemitonePeriod calculates the semitone period for S3M notes
+func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD) note.Period {
 	key := int(semi) % len(semitonePeriodTable)
 	octave := uint(int(semi) / len(semitonePeriodTable))
 
@@ -24,9 +30,11 @@ func CalcSemitonePeriod(semi uint8, c2spd uint16) float32 {
 		c2spd = DefaultC2Spd
 	}
 
-	return (floatDefaultC2Spd * semitonePeriodTable[key]) / float32(uint32(c2spd)<<octave)
+	period := (note.Period(floatDefaultC2Spd*semitonePeriodTable[key]) / note.Period(uint32(c2spd)<<octave))
+	return period.AddInteger(0)
 }
 
+// VolumeFromS3M converts an S3M volume to a player volume
 func VolumeFromS3M(vol uint8) volume.Volume {
 	var v volume.Volume
 	switch {
@@ -42,6 +50,7 @@ func VolumeFromS3M(vol uint8) volume.Volume {
 	return v
 }
 
+// VolumeToS3M converts a player volume to an S3M volume
 func VolumeToS3M(v volume.Volume) uint8 {
 	switch {
 	case v == volume.VolumeUseInstVol:
@@ -49,4 +58,14 @@ func VolumeToS3M(v volume.Volume) uint8 {
 	default:
 		return uint8(v * 64.0)
 	}
+}
+
+// VolumeFromS3M8BitSample converts an S3M 8-bit sample volume to a player volume
+func VolumeFromS3M8BitSample(vol uint8) volume.Volume {
+	return (volume.Volume(vol) - 128.0) / 128.0
+}
+
+// VolumeFromS3M16BitSample converts an S3M 16-bit sample volume to a player volume
+func VolumeFromS3M16BitSample(vol uint16) volume.Volume {
+	return (volume.Volume(vol) - 32768.0) / 32768.0
 }

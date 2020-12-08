@@ -150,8 +150,8 @@ type ModuleHeader struct {
 	Special               ParaPointer
 }
 
-// S3MHeader is a mildly-decoded S3M header definition
-type S3MHeader struct {
+// Header is a mildly-decoded S3M header definition
+type Header struct {
 	Name               string
 	Info               ModuleHeader
 	ChannelSettings    [32]ChannelSetting
@@ -213,7 +213,7 @@ type SampleFileFormat struct {
 	Info     SCRSHeader
 	Sample   []uint8
 	ID       uint8
-	C2Spd    uint16
+	C2Spd    note.C2SPD
 	Volume   volume.Volume
 }
 
@@ -224,12 +224,12 @@ func (sff *SampleFileFormat) IsInvalid() bool {
 
 // GetC2Spd returns the C2SPD value for the instrument
 // This may get mutated if a finetune command is processed
-func (sff *SampleFileFormat) GetC2Spd() uint16 {
+func (sff *SampleFileFormat) GetC2Spd() note.C2SPD {
 	return sff.C2Spd
 }
 
 // SetC2Spd sets the C2SPD value for the instrument
-func (sff *SampleFileFormat) SetC2Spd(c2spd uint16) {
+func (sff *SampleFileFormat) SetC2Spd(c2spd note.C2SPD) {
 	sff.C2Spd = c2spd
 }
 
@@ -260,11 +260,11 @@ func (sff *SampleFileFormat) GetLength() int {
 
 // GetSample returns the sample at position `pos` in the instrument
 func (sff *SampleFileFormat) GetSample(pos int) volume.Volume {
-	return volume.FromS3MSample(sff.Sample[pos])
+	return util.VolumeFromS3M8BitSample(sff.Sample[pos])
 }
 
-// GetId returns the instrument number (1-based)
-func (sff *SampleFileFormat) GetId() int {
+// GetID returns the instrument number (1-based)
+func (sff *SampleFileFormat) GetID() int {
 	return int(sff.ID)
 }
 
@@ -314,7 +314,7 @@ func (p Pattern) GetRows() []intf.Row {
 // S3M is the full definition of the song data of an S3M file
 type S3M struct {
 	intf.SongData
-	Head        S3MHeader
+	Head        Header
 	Instruments []SampleFileFormat
 	Patterns    []Pattern
 }
@@ -380,8 +380,8 @@ func getString(bytearray []byte) string {
 	return s
 }
 
-func readHeader(buffer *bytes.Buffer) *S3MHeader {
-	var head = S3MHeader{}
+func readHeader(buffer *bytes.Buffer) *Header {
+	var head = Header{}
 	binary.Read(buffer, binary.LittleEndian, &head.Info)
 	head.Name = getString(head.Info.Name[:])
 	head.OrderList = make([]uint8, head.Info.OrderCount)
@@ -405,13 +405,15 @@ func readSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	buffer := bytes.NewBuffer(data[pos:])
 	var sample = SampleFileFormat{}
 	binary.Read(buffer, binary.LittleEndian, &sample.Info)
-	if sample.Info.C2SpdL == 0 {
-		sample.Info.C2SpdL = util.DefaultC2Spd
-	}
 	sample.Filename = getString(sample.Info.Filename[:])
 	sample.Name = getString(sample.Info.SampleName[:])
 	sample.Sample = make([]uint8, sample.Info.Length)
-	sample.C2Spd = sample.Info.C2SpdL
+	if sample.Info.C2SpdL != 0 {
+		sample.C2Spd = note.C2SPD(sample.Info.C2SpdL)
+	} else {
+		sample.C2Spd = util.DefaultC2Spd
+	}
+
 	sample.Volume = util.VolumeFromS3M(sample.Info.Volume)
 
 	pos = (int(sample.Info.MemSegL) + int(sample.Info.MemSegH)*65536) * 16
@@ -476,6 +478,7 @@ func readPattern(data []byte, ptr ParaPointer) *Pattern {
 	return pattern
 }
 
+// ReadS3M reads an S3M file from drive
 func ReadS3M(filename string) (*S3M, error) {
 	buffer, err := readFile(filename)
 	if err != nil {
@@ -508,17 +511,20 @@ func ReadS3M(filename string) (*S3M, error) {
 	return song, nil
 }
 
+// GetBaseClockRate returns the base clock rate for the S3M player
 func GetBaseClockRate() float32 {
 	return util.S3MBaseClock
 }
 
+// Load loads an S3M file into the song state `ss`
 func Load(ss *state.Song, filename string) error {
 	s3mSong, err := ReadS3M(filename)
 	if err != nil {
 		return err
 	}
 
-	ss.EffectFactory = effect.EffectFactory
+	ss.EffectFactory = effect.Factory
+	ss.CalcSemitonePeriod = util.CalcSemitonePeriod
 	ss.Pattern.Patterns = s3mSong.GetPatternsInterface()
 	ss.Pattern.Orders = s3mSong.Head.OrderList
 	ss.Pattern.Row.Ticks = int(s3mSong.Head.Info.InitialSpeed)

@@ -5,17 +5,21 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectVibrato uint8 // 'H'
+// Vibrato defines a vibrato effect
+type Vibrato uint8 // 'H'
 
-func (e EffectVibrato) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e Vibrato) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectVibrato) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e Vibrato) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 }
 
-func (e EffectVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e Vibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	mem := cs.GetMemory()
 	xy := mem.Vibrato(uint8(e))
 	if currentTick == 0 {
@@ -28,9 +32,10 @@ func (e EffectVibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	}
 }
 
-func (e EffectVibrato) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e Vibrato) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectVibrato) String() string {
+func (e Vibrato) String() string {
 	return fmt.Sprintf("H%0.2x", uint8(e))
 }

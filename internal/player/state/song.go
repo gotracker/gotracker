@@ -6,18 +6,21 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/volume"
-	"gotracker/internal/s3m/util"
 	"math"
 )
 
 // EffectFactory is a function that generates a channel effect based on the input channel pattern data
 type EffectFactory func(mi intf.SharedMemory, data intf.ChannelData) intf.Effect
 
+// SemitoneCalculator is the function used to calculate a note semitone
+type SemitoneCalculator func(noteSemi note.Semitone, c2spd note.C2SPD) note.Period
+
 // Song is the song state for the current playing song
 type Song struct {
 	intf.Song
-	SongData      intf.SongData
-	EffectFactory EffectFactory
+	SongData           intf.SongData
+	EffectFactory      EffectFactory
+	CalcSemitonePeriod SemitoneCalculator
 
 	Channels     [32]ChannelState
 	NumChannels  int
@@ -100,7 +103,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			cs.TargetPeriod = cs.Period
 			cs.TargetPos = cs.Pos
 			cs.TargetInst = cs.Instrument
-			cs.PortaTargetPeriod = cs.TargetPeriod
+			cs.DoRetriggerNote = true
 			cs.NotePlayTick = 0
 			cs.RetriggerCount = 0
 			cs.TremorOn = true
@@ -140,7 +143,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 					cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
 					wantNoteCalc = true
 					cs.DisplayNote = n
-					cs.DisplayInst = uint8(cs.TargetInst.GetId())
+					cs.DisplayInst = uint8(cs.TargetInst.GetID())
 				}
 			} else {
 				cs.DisplayNote = note.EmptyNote
@@ -163,7 +166,8 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 			cs.ActiveEffect = ss.EffectFactory(cs, cs.Cmd)
 
 			if wantNoteCalc {
-				cs.TargetPeriod = util.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
+				cs.TargetPeriod = ss.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
+				cs.PortaTargetPeriod = cs.TargetPeriod
 			}
 
 			if cs.ActiveEffect != nil {
@@ -257,7 +261,7 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 		}
 	}
 
-	if currentTick == cs.NotePlayTick {
+	if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
 		cs.Instrument = cs.TargetInst
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
@@ -293,7 +297,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			sample := cs.Instrument
 			if sample != nil && cs.Period != 0 {
 				period := cs.Period + cs.VibratoDelta
-				samplerAdd := samplerSpeed / period
+				samplerAdd := samplerSpeed / float32(period)
 
 				vol := cs.ActiveVolume * cs.LastGlobalVolume
 				pan := volume.Volume(cs.Pan) / 16.0

@@ -5,22 +5,27 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectRowJump uint8 // 'C'
+// RowJump defines a row jump effect
+type RowJump uint8 // 'C'
 
-func (e EffectRowJump) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e RowJump) PreStart(cs intf.Channel, ss intf.Song) {
 	ss.SetCurrentRow(uint8((e>>4)*10 + (e & 0x0f)))
 }
 
-func (e EffectRowJump) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e RowJump) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectRowJump) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e RowJump) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
-func (e EffectRowJump) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e RowJump) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectRowJump) String() string {
+func (e RowJump) String() string {
 	return fmt.Sprintf("C%0.2x", uint8(e))
 }

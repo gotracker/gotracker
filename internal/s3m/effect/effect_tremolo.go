@@ -5,16 +5,20 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectTremolo uint8 // 'R'
+// Tremolo defines a tremolo effect
+type Tremolo uint8 // 'R'
 
-func (e EffectTremolo) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e Tremolo) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectTremolo) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e Tremolo) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectTremolo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e Tremolo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	xy := cs.GetEffectSharedMemory(uint8(e))
 	if currentTick == 0 {
 		trem := cs.GetTremoloOscillator()
@@ -26,9 +30,10 @@ func (e EffectTremolo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	}
 }
 
-func (e EffectTremolo) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e Tremolo) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectTremolo) String() string {
+func (e Tremolo) String() string {
 	return fmt.Sprintf("R%0.2x", uint8(e))
 }

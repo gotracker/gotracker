@@ -6,7 +6,8 @@ import (
 	"log"
 )
 
-func EffectFactory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
+// Factory produces an effect for the provided channel pattern data
+func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 	cd, ok := data.(*channel.Data)
 	if !ok {
 		return nil
@@ -19,51 +20,65 @@ func EffectFactory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 	mi.SetEffectSharedMemoryIfNonZero(cd.Info)
 	switch cd.Command + '@' {
 	case 'A': // Set Speed
-		return EffectSetSpeed(cd.Info)
+		return SetSpeed(cd.Info)
 	case 'B': // Pattern Jump
-		return EffectOrderJump(cd.Info)
+		return OrderJump(cd.Info)
 	case 'C': // Pattern Break
-		return EffectRowJump(cd.Info)
+		return RowJump(cd.Info)
 	case 'D': // Volume Slide / Fine Volume Slide
-		return EffectVolumeSlide(cd.Info)
+		return VolumeSlide(cd.Info)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		return EffectPortaDown(cd.Info)
+		xx := mi.GetEffectSharedMemory(uint8(cd.Info))
+		x := xx >> 4
+		if x == 0x0F {
+			return FinePortaDown(cd.Info)
+		} else if x == 0x0E {
+			return ExtraFinePortaDown(cd.Info)
+		}
+		return PortaDown(cd.Info)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		return EffectPortaUp(cd.Info)
+		xx := mi.GetEffectSharedMemory(uint8(cd.Info))
+		x := xx >> 4
+		if x == 0x0F {
+			return FinePortaUp(cd.Info)
+		} else if x == 0x0E {
+			return ExtraFinePortaUp(cd.Info)
+		}
+		return PortaUp(cd.Info)
 	case 'G': // Porta to note
-		return EffectPortaToNote(cd.Info)
+		return PortaToNote(cd.Info)
 	case 'H': // Vibrato
-		return EffectVibrato(cd.Info)
+		return Vibrato(cd.Info)
 	case 'I': // Tremor
-		return EffectTremor(cd.Info)
+		return Tremor(cd.Info)
 	case 'J': // Arpeggio
-		return EffectArpeggio(cd.Info)
+		return Arpeggio(cd.Info)
 	case 'K': // Vibrato+Volume Slide
-		return NewEffectVibratoVolumeSlide(cd.Info)
+		return NewVibratoVolumeSlide(cd.Info)
 	case 'L': // Porta+Volume Slide
-		return NewEffectPortaVolumeSlide(cd.Info)
+		return NewPortaVolumeSlide(cd.Info)
 	case 'M': // unused
 	case 'N': // unused
 	case 'O': // Sample Offset
-		return EffectSampleOffset(cd.Info)
+		return SampleOffset(cd.Info)
 	case 'P': // unused
 	case 'Q': // Retrig + Volume Slide
-		return EffectRetrigVolumeSlide(cd.Info)
+		return RetrigVolumeSlide(cd.Info)
 	case 'R': // Tremolo
-		return EffectTremolo(cd.Info)
+		return Tremolo(cd.Info)
 	case 'S': // Special
-		return determineSpecialActiveEffect(mi, cd)
+		return specialEffect(mi, cd)
 	case 'T': // Set Tempo
-		return EffectSetTempo(cd.Info)
+		return SetTempo(cd.Info)
 	case 'U': // Fine Vibrato
-		return EffectFineVibrato(cd.Info)
+		return FineVibrato(cd.Info)
 	case 'V': // Global Volume
-		return EffectSetGlobalVolume(cd.Info)
+		return SetGlobalVolume(cd.Info)
 	}
 	return nil
 }
 
-func determineSpecialActiveEffect(mi intf.SharedMemory, cd *channel.Data) intf.Effect {
+func specialEffect(mi intf.SharedMemory, cd *channel.Data) intf.Effect {
 	var cmd = mi.GetEffectSharedMemory(cd.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
@@ -77,27 +92,27 @@ func determineSpecialActiveEffect(mi intf.SharedMemory, cd *channel.Data) intf.E
 			log.Panicf("%c%0.2x", cd.Command+'@', cd.Info)
 		}
 	case 0x2: // Set FineTune
-		return EffectSetFinetune(cd.Info)
+		return SetFinetune(cd.Info)
 	case 0x3: // Set Vibrato Waveform
-		return EffectSetVibratoWaveform(cd.Info)
+		return SetVibratoWaveform(cd.Info)
 	case 0x4: // Set Tremolo Waveform
-		return EffectSetTremoloWaveform(cd.Info)
+		return SetTremoloWaveform(cd.Info)
 	case 0x5: // unused
 	case 0x6: // Fine Pattern Delay
-		return EffectFinePatternDelay(cd.Info)
+		return FinePatternDelay(cd.Info)
 	case 0x7: // unused
 	case 0x8: // Set Pan Position
-		return EffectSetPanPosition(cd.Info)
+		return SetPanPosition(cd.Info)
 	case 0xA: // Stereo Control
-		return EffectStereoControl(cd.Info)
+		return StereoControl(cd.Info)
 	case 0xB: // Pattern Loop
-		return EffectPatternLoop(cd.Info)
+		return PatternLoop(cd.Info)
 	case 0xC: // Note Cut
-		return EffectNoteCut(cd.Info)
+		return NoteCut(cd.Info)
 	case 0xD: // Note Delay
-		return EffectNoteDelay(cd.Info)
+		return NoteDelay(cd.Info)
 	case 0xE: // Pattern Delay
-		return EffectPatternDelay(cd.Info)
+		return PatternDelay(cd.Info)
 	case 0xF: // Funk Repeat (invert loop)
 		{
 			// TODO

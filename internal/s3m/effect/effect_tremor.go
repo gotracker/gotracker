@@ -5,25 +5,30 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type EffectTremor uint8 // 'I'
+// Tremor defines a tremor effect
+type Tremor uint8 // 'I'
 
-func (e EffectTremor) PreStart(cs intf.Channel, ss intf.Song) {
+// PreStart triggers when the effect enters onto the channel state
+func (e Tremor) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
-func (e EffectTremor) Start(cs intf.Channel, ss intf.Song) {
+// Start triggers on the first tick, but before the Tick() function is called
+func (e Tremor) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 }
 
-func (e EffectTremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+// Tick is called on every tick
+func (e Tremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 	xy := cs.GetEffectSharedMemory(uint8(e))
 	x := int((xy >> 4) + 1)
 	y := int((xy & 0x0f) + 1)
 	doTremor(cs, currentTick, x, y)
 }
 
-func (e EffectTremor) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+// Stop is called on the last tick of the row, but after the Tick() function is called
+func (e Tremor) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
 }
 
-func (e EffectTremor) String() string {
+func (e Tremor) String() string {
 	return fmt.Sprintf("I%0.2x", uint8(e))
 }

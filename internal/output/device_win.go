@@ -69,4 +69,5 @@ func (d *winmmDevice) Close() {
 
 func init() {
 	deviceMap["winmm"] = newWinMMDevice
+	DefaultOutputDeviceName = "winmm"
 }

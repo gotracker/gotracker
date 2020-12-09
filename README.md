@@ -19,6 +19,7 @@ At the moment, just S3M (Screamtracker 3) files, but that could change with some
   * File (Wave/RIFF file)
 * Linux
   * File (Wave/RIFF file)
+  * PulseAudio (via optional build flag)
 
 ## How do I build this thing?
 
@@ -35,6 +36,10 @@ For a Windows build, I recommend the following:
 For a non-Windows (e.g.: Linux) build, I recommend the following:
 * Ubuntu 20.04 (or newer) - I used Ubuntu 20.04.1 LTS running in WSL2
 * GCC/G++ 8.0.0 or newer - I used GCC 9.3.0
+* Go v1.15.2 (or newer)
+* If you want PulseAudio support, there are a few other things to include (install via apt/yum/dnf):
+  * libpulse-dev
+  * pulseaudio
 
 ### How to build (on Windows)
 
@@ -45,6 +50,20 @@ For a non-Windows (e.g.: Linux) build, I recommend the following:
    go build
    ```
    When the command completes, you should now have the gotracker.exe file. Drag an .S3M file on top of it!
+
+### How to build (on Linux, without PulseAudio support)
+
+1. Build the player with the following command
+   ```bash
+   go build
+   ```
+
+### How to build (on Linux, with PulseAudio support)
+
+1. Build the player with the following command
+   ```bash
+   go build -tags=pulseaudio
+   ```
 
 ## How does it work?
 

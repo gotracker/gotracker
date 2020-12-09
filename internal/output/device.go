@@ -20,6 +20,9 @@ type Device interface {
 type createOutputDeviceFunc func(settings Settings) (Device, error)
 
 var (
+	// DefaultOutputDeviceName is the default device name
+	DefaultOutputDeviceName = "file"
+
 	deviceMap = make(map[string]createOutputDeviceFunc)
 )
 

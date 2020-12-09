@@ -11,11 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// DefaultOutputDeviceName specifies the default device for windows playback
-	DefaultOutputDeviceName = "winmm"
-)
-
 type winmmDevice device
 
 func newWinMMDevice(settings Settings) (Device, error) {

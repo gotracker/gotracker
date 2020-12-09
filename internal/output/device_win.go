@@ -3,7 +3,6 @@
 package output
 
 import (
-	"strings"
 	"time"
 
 	"gotracker/internal/output/winmm"
@@ -68,11 +67,6 @@ func (d *winmmDevice) Close() {
 	winmm.WaveOutClose(hwo)
 }
 
-// CreateOutputDevice creates an output device based on the provided settings
-func CreateOutputDevice(settings Settings) (Device, error) {
-	switch strings.ToLower(settings.Name) {
-	case "winmm":
-		return newWinMMDevice(settings)
-	}
-	return createGeneralDevice(settings)
+func init() {
+	deviceMap["winmm"] = newWinMMDevice
 }

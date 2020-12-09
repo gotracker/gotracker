@@ -3,18 +3,12 @@
 package output
 
 import (
-	"strings"
 	"time"
 
 	"gotracker/internal/output/winmm"
 	"gotracker/internal/player/render"
 
 	"github.com/pkg/errors"
-)
-
-const (
-	// DefaultOutputDeviceName specifies the default device for windows playback
-	DefaultOutputDeviceName = "winmm"
 )
 
 type winmmDevice device
@@ -68,11 +62,7 @@ func (d *winmmDevice) Close() {
 	winmm.WaveOutClose(hwo)
 }
 
-// CreateOutputDevice creates an output device based on the provided settings
-func CreateOutputDevice(settings Settings) (Device, error) {
-	switch strings.ToLower(settings.Name) {
-	case "winmm":
-		return newWinMMDevice(settings)
-	}
-	return createGeneralDevice(settings)
+func init() {
+	deviceMap["winmm"] = newWinMMDevice
+	DefaultOutputDeviceName = "winmm"
 }

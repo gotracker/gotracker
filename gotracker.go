@@ -87,10 +87,10 @@ func main() {
 		log.Fatalln(err)
 		return
 	}
+	defer waveOut.Close()
 
 	var buffers <-chan render.RowRender
 
 	buffers = Play(ss)
 	waveOut.Play(buffers)
-	waveOut.Close()
 }

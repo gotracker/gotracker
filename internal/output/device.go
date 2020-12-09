@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"gotracker/internal/player/render"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -16,6 +15,24 @@ type RowOutputFunc func(row render.RowRender)
 type Device interface {
 	Play(in <-chan render.RowRender)
 	Close()
+}
+
+type createOutputDeviceFunc func(settings Settings) (Device, error)
+
+var (
+	// DefaultOutputDeviceName is the default device name
+	DefaultOutputDeviceName = "file"
+
+	deviceMap = make(map[string]createOutputDeviceFunc)
+)
+
+// CreateOutputDevice creates an output device based on the provided settings
+func CreateOutputDevice(settings Settings) (Device, error) {
+	if factory, ok := deviceMap[settings.Name]; ok && factory != nil {
+		return factory(settings)
+	}
+
+	return nil, errors.New("device not supported")
 }
 
 type device struct {
@@ -114,10 +131,6 @@ func (d *fileDevice) Close() {
 	i.f.Close()
 }
 
-func createGeneralDevice(settings Settings) (Device, error) {
-	switch strings.ToLower(settings.Name) {
-	case "file":
-		return newFileDevice(settings)
-	}
-	return nil, errors.New("not supported")
+func init() {
+	deviceMap["file"] = newFileDevice
 }

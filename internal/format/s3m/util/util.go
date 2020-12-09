@@ -97,3 +97,8 @@ func ModPeriodToNote(period uint16) note.Note {
 func MODSampleToS3MSample(sample uint8) uint8 {
 	return sample - 0x80
 }
+
+// BE16ToLE16 converts a big-endian uint16 to a little-endian uint16
+func BE16ToLE16(be uint16) uint16 {
+	return (be >> 8) | ((be & 0xFF) << 8)
+}

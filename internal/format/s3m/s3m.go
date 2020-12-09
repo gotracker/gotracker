@@ -463,7 +463,7 @@ func readMODPattern(buffer *bytes.Buffer, channels int) *Pattern {
 	for r := 0; r < 64; r++ {
 		for c := 0; c < channels; c++ {
 			var data [4]uint8
-			binary.Read(buffer, binary.LittleEndian, &data)
+			buffer.Read(data[:])
 			sampleNumber := (data[0] & 0xF0) | (data[2] >> 4)
 			samplePeriod := (uint16(data[0]&0x0F) << 8) | uint16(data[1])
 			effect := (data[2] & 0x0F)
@@ -607,21 +607,57 @@ func readMODPattern(buffer *bytes.Buffer, channels int) *Pattern {
 
 func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *SampleFileFormat {
 	var sample = SampleFileFormat{}
-	sample.Filename = fmt.Sprintf("inst%0.2d.bin", num)
+	sample.Filename = fmt.Sprintf("inst%0.2d.bin", num+1)
 	sample.Name = getString(inst.Name[:])
-	sl := inst.Len>>8 | ((inst.Len & 0xFF) << 8)
-	sample.C2Spd = util.DefaultC2Spd
+	sl := util.BE16ToLE16(inst.Len)
+
+	switch inst.FineTune {
+	case 0:
+		sample.C2Spd = 8363
+	case 1:
+		sample.C2Spd = 8413
+	case 2:
+		sample.C2Spd = 8463
+	case 3:
+		sample.C2Spd = 8529
+	case 4:
+		sample.C2Spd = 8581
+	case 5:
+		sample.C2Spd = 8651
+	case 6:
+		sample.C2Spd = 8723
+	case 7:
+		sample.C2Spd = 8757
+	case 8:
+		sample.C2Spd = 7895
+	case 9:
+		sample.C2Spd = 7941
+	case 10:
+		sample.C2Spd = 7985
+	case 11:
+		sample.C2Spd = 8046
+	case 12:
+		sample.C2Spd = 8107
+	case 13:
+		sample.C2Spd = 8169
+	case 14:
+		sample.C2Spd = 8232
+	case 15:
+		sample.C2Spd = 8280
+	default:
+		sample.C2Spd = 8363
+	}
 
 	sample.Volume = util.VolumeFromS3M(inst.Volume)
-	sample.Info.LoopBeginL = inst.LoopStart>>8 | ((inst.LoopStart & 0xFF) << 8)
-	sample.Info.LoopEndL = inst.LoopEnd>>8 | ((inst.LoopEnd & 0xFF) << 8)
-	if sample.Info.LoopBeginL < sample.Info.LoopEndL {
+	sample.Info.LoopBeginL = util.BE16ToLE16(inst.LoopStart)
+	sample.Info.LoopEndL = util.BE16ToLE16(inst.LoopEnd)
+	if sample.Info.LoopBeginL != sample.Info.LoopEndL {
 		sample.Info.Flags = 1
 	}
 
 	samps := make([]uint8, sl)
 	buffer.Read(samps)
-	sample.Sample = make([]uint8, sl)
+	sample.Sample = samps
 	for i, s := range samps {
 		sample.Sample[i] = util.MODSampleToS3MSample(s)
 	}
@@ -762,15 +798,15 @@ type modSig struct {
 var (
 	sigChannels = [...]modSig{
 		// amiga / protracker
-		modSig{"M.K.", 4},
+		{"M.K.", 4},
 		// fasttracker
-		modSig{"6CHN", 6}, modSig{"8CHN", 8},
+		{"6CHN", 6}, {"8CHN", 8},
 		// (unusual)
-		modSig{"10CH", 10}, modSig{"11CH", 11}, modSig{"12CH", 12}, modSig{"13CH", 13}, modSig{"14CH", 14},
-		modSig{"15CH", 15}, modSig{"16CH", 16}, modSig{"17CH", 17}, modSig{"18CH", 18}, modSig{"19CH", 19},
-		modSig{"20CH", 20}, modSig{"21CH", 21}, modSig{"22CH", 22}, modSig{"23CH", 23}, modSig{"24CH", 24},
-		modSig{"25CH", 25}, modSig{"26CH", 26}, modSig{"27CH", 27}, modSig{"28CH", 28}, modSig{"29CH", 29},
-		modSig{"30CH", 30}, modSig{"31CH", 31}, modSig{"32CH", 32},
+		{"10CH", 10}, {"11CH", 11}, {"12CH", 12}, {"13CH", 13}, {"14CH", 14},
+		{"15CH", 15}, {"16CH", 16}, {"17CH", 17}, {"18CH", 18}, {"19CH", 19},
+		{"20CH", 20}, {"21CH", 21}, {"22CH", 22}, {"23CH", 23}, {"24CH", 24},
+		{"25CH", 25}, {"26CH", 26}, {"27CH", 27}, {"28CH", 28}, {"29CH", 29},
+		{"30CH", 30}, {"31CH", 31}, {"32CH", 32},
 	}
 )
 

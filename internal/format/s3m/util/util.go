@@ -69,3 +69,31 @@ func VolumeFromS3M8BitSample(vol uint8) volume.Volume {
 func VolumeFromS3M16BitSample(vol uint16) volume.Volume {
 	return (volume.Volume(vol) - 32768.0) / 32768.0
 }
+
+type modPeriods []uint16
+
+var (
+	modPeriodTable = [12]uint16{
+		27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496,
+	}
+)
+
+// ModPeriodToNote convers a MOD format period to a note
+func ModPeriodToNote(period uint16) note.Note {
+	lastP := uint16(65535)
+	for o := 0; o < 9; o++ {
+		for k, pv := range modPeriodTable {
+			p := pv >> o
+			if period < lastP && period >= p {
+				return note.Note((uint8(o) << 4) | uint8(k&0x0F))
+			}
+			lastP = p
+		}
+	}
+	return note.Note(0)
+}
+
+// MODSampleToS3MSample converts an 8 bit MOD sample to an 8 bit S3M sample
+func MODSampleToS3MSample(sample uint8) uint8 {
+	return sample - 0x80
+}

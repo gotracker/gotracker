@@ -4,13 +4,15 @@ package s3m
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"fmt"
+	"gotracker/internal/format/s3m/channel"
+	"gotracker/internal/format/s3m/effect"
+	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 	"gotracker/internal/player/volume"
-	"gotracker/internal/s3m/channel"
-	"gotracker/internal/s3m/effect"
-	"gotracker/internal/s3m/util"
 	"log"
 	"os"
 )
@@ -311,8 +313,8 @@ func (p Pattern) GetRows() []intf.Row {
 	return rows
 }
 
-// S3M is the full definition of the song data of an S3M file
-type S3M struct {
+// Song is the full definition of the song data of an Song file
+type Song struct {
 	intf.SongData
 	Head        Header
 	Instruments []SampleFileFormat
@@ -320,12 +322,12 @@ type S3M struct {
 }
 
 // GetOrderList returns the list of all pattern orders for the song
-func (s *S3M) GetOrderList() []uint8 {
+func (s *Song) GetOrderList() []uint8 {
 	return s.Head.OrderList
 }
 
 // GetPatternsInterface returns an interface to all the patterns
-func (s *S3M) GetPatternsInterface() []intf.Pattern {
+func (s *Song) GetPatternsInterface() []intf.Pattern {
 	p := make([]intf.Pattern, len(s.Patterns))
 	for i, sp := range s.Patterns {
 		p[i] = sp
@@ -334,7 +336,7 @@ func (s *S3M) GetPatternsInterface() []intf.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s *S3M) GetPattern(patNum uint8) intf.Pattern {
+func (s *Song) GetPattern(patNum uint8) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
@@ -342,22 +344,22 @@ func (s *S3M) GetPattern(patNum uint8) intf.Pattern {
 }
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled
-func (s *S3M) IsChannelEnabled(channelNum int) bool {
+func (s *Song) IsChannelEnabled(channelNum int) bool {
 	return s.Head.ChannelSettings[channelNum].IsEnabled()
 }
 
 // NumInstruments returns the number of instruments in the song
-func (s *S3M) NumInstruments() int {
+func (s *Song) NumInstruments() int {
 	return len(s.Instruments)
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *S3M) GetInstrument(instNum int) intf.Instrument {
+func (s *Song) GetInstrument(instNum int) intf.Instrument {
 	return &s.Instruments[instNum]
 }
 
 // GetName returns the name of the song
-func (s *S3M) GetName() string {
+func (s *Song) GetName() string {
 	return s.Head.Name
 }
 
@@ -380,9 +382,12 @@ func getString(bytearray []byte) string {
 	return s
 }
 
-func readHeader(buffer *bytes.Buffer) *Header {
+func readS3MHeader(buffer *bytes.Buffer) (*Header, error) {
 	var head = Header{}
 	binary.Read(buffer, binary.LittleEndian, &head.Info)
+	if getString(head.Info.SCRM[:]) != "SCRM" {
+		return nil, errors.New("invalid file format")
+	}
 	head.Name = getString(head.Info.Name[:])
 	head.OrderList = make([]uint8, head.Info.OrderCount)
 	binary.Read(buffer, binary.LittleEndian, &head.ChannelSettings)
@@ -394,10 +399,236 @@ func readHeader(buffer *bytes.Buffer) *Header {
 	if head.Info.DefaultPanValueFlag == 252 {
 		binary.Read(buffer, binary.LittleEndian, &head.Panning)
 	}
-	return &head
+	return &head, nil
 }
 
-func readSample(data []byte, ptr ParaPointer) *SampleFileFormat {
+type modHeader struct {
+	Name       [20]byte
+	Samples    [31]modSample
+	SongLen    uint8
+	RestartPos uint8
+	Order      [128]uint8
+	Sig        [4]uint8
+}
+
+type modSample struct {
+	Name      [22]byte
+	Len       uint16
+	FineTune  uint8
+	Volume    uint8
+	LoopStart uint16
+	LoopEnd   uint16
+}
+
+func readMODHeader(channels int, buffer *bytes.Buffer) (*Header, *modHeader, error) {
+	head := Header{}
+
+	mh := modHeader{}
+	binary.Read(buffer, binary.LittleEndian, &mh)
+
+	numPatterns := 0
+	head.OrderList = make([]uint8, mh.SongLen)
+	for i, o := range mh.Order {
+		if i < int(mh.SongLen) {
+			head.OrderList[i] = o
+		}
+		if numPatterns-1 < int(o) {
+			numPatterns = int(o) + 1
+		}
+	}
+
+	head.Name = getString(mh.Name[:])
+	head.Info.PatternCount = uint16(numPatterns)
+	head.Info.OrderCount = uint16(mh.SongLen)
+	head.Info.InitialSpeed = 6
+	head.Info.InitialTempo = 125
+	head.Info.GlobalVolume = 64
+
+	for i := 0; i < 32; i++ {
+		if i >= channels {
+			head.ChannelSettings[i] = 255
+		} else if i%1 == 0 {
+			head.ChannelSettings[i] = ChannelSetting(uint8(ChannelIDL1) + uint8(i)>>1)
+		} else {
+			head.ChannelSettings[i] = ChannelSetting(uint8(ChannelIDR1) + uint8(i)>>1)
+		}
+	}
+
+	return &head, &mh, nil
+}
+
+func readMODPattern(buffer *bytes.Buffer, channels int) *Pattern {
+	pattern := Pattern{}
+
+	for r := 0; r < 64; r++ {
+		for c := 0; c < channels; c++ {
+			var data [4]uint8
+			binary.Read(buffer, binary.LittleEndian, &data)
+			sampleNumber := (data[0] & 0xF0) | (data[2] >> 4)
+			samplePeriod := (uint16(data[0]&0x0F) << 8) | uint16(data[1])
+			effect := (data[2] & 0x0F)
+			effectParameter := data[3]
+
+			cd := &pattern.Rows[r].Channels[c]
+			cd.What = channel.What(c)
+
+			if sampleNumber != 0 || samplePeriod != 0 {
+				cd.What = cd.What | channel.What(0x20)
+				cd.Instrument = sampleNumber
+				cd.Note = util.ModPeriodToNote(samplePeriod * 4)
+			}
+			cd.Volume = 255
+			if effect != 0 || cd.Info != 0 {
+				cd.Info = effectParameter
+				switch effect {
+				case 0xF: // Set Speed / Tempo
+					cd.What = cd.What | channel.What(0x80)
+					if cd.Info < 0x20 {
+						cd.Command = 'A' - '@' // Set Speed
+					} else {
+						cd.Command = 'T' - '@' // Tempo
+					}
+				case 0xB: // Pattern Jump
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'B' - '@'
+				case 0xD: // Pattern Break
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'C' - '@'
+				case 0xA: // Volume Slide
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'D' - '@'
+				case 0x2: // Porta Down
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'E' - '@'
+				case 0x1: // Porta Up
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'F' - '@'
+				case 0x3: // Porta to Note
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'G' - '@'
+				case 0x4: // Vibrato
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'H' - '@'
+				case 0x0: // Arpeggio
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'J' - '@'
+				case 0x6: // Vibrato+VolSlide
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'K' - '@'
+				case 0x5: // Porta+VolSlide
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'L' - '@'
+				case 0x9: // Sample Offset
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'O' - '@'
+				case 0x7: // Tremolo
+					cd.What = cd.What | channel.What(0x80)
+					cd.Command = 'R' - '@'
+				case 0xC: // Set Volume
+					cd.What = cd.What | channel.What(0x40)
+					cd.Volume = cd.Info
+				}
+
+				if effect == 0xE {
+					// special
+					switch effectParameter >> 4 {
+					case 0xA: // Fine VolSlide down
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'D' - '@'
+						cd.Info = 0xF0 | (effectParameter & 0x0F)
+					case 0xB: // Fine VolSlide up
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = ((effectParameter & 0x0F) << 4) | 0x0F
+					case 0x2: // Fine Porta Down
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'E' - '@'
+						cd.Info = 0xF0 | (effectParameter & 0x0F)
+					case 0x1: // Fine Porta Up
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'F' - '@'
+						cd.Info = 0xF0 | (effectParameter & 0x0F)
+					case 0x9: // Retrig+VolSlide
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'Q' - '@'
+						cd.Info = (effectParameter & 0x0F)
+					case 0x0: // Set Filter on/off
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x00 | (effectParameter & 0x0F)
+					case 0x3: // Set Glissando on/off
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x10 | (effectParameter & 0x0F)
+					case 0x5: // Set FineTune
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x20 | (effectParameter & 0x0F)
+					case 0x4: // Set Vibrato Waveform
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x30 | (effectParameter & 0x0F)
+					case 0x7: // Set Tremolo Waveform
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x40 | (effectParameter & 0x0F)
+					case 0x8: // Set Pan Position
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0x80 | (effectParameter & 0x0F)
+					case 0x6: // Pattern Loop
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0xB0 | (effectParameter & 0x0F)
+					case 0xC: // Note Cut
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0xC0 | (effectParameter & 0x0F)
+					case 0xD: // Note Delay
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0xD0 | (effectParameter & 0x0F)
+					case 0xE: // Pattern Delay
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0xE0 | (effectParameter & 0x0F)
+					case 0xF: // Funk Repeat
+						cd.What = cd.What | channel.What(0x80)
+						cd.Command = 'S' - '@'
+						cd.Info = 0xF0 | (effectParameter & 0x0F)
+					}
+				}
+			}
+		}
+	}
+
+	return &pattern
+}
+
+func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *SampleFileFormat {
+	var sample = SampleFileFormat{}
+	sample.Filename = fmt.Sprintf("inst%0.2d.bin", num)
+	sample.Name = getString(inst.Name[:])
+	sl := inst.Len>>8 | ((inst.Len & 0xFF) << 8)
+	sample.C2Spd = util.DefaultC2Spd
+
+	sample.Volume = util.VolumeFromS3M(inst.Volume)
+	sample.Info.LoopBeginL = inst.LoopStart>>8 | ((inst.LoopStart & 0xFF) << 8)
+	sample.Info.LoopEndL = inst.LoopEnd>>8 | ((inst.LoopEnd & 0xFF) << 8)
+	if sample.Info.LoopBeginL < sample.Info.LoopEndL {
+		sample.Info.Flags = 1
+	}
+
+	samps := make([]uint8, sl)
+	buffer.Read(samps)
+	sample.Sample = make([]uint8, sl)
+	for i, s := range samps {
+		sample.Sample[i] = util.MODSampleToS3MSample(s)
+	}
+	return &sample
+}
+
+func readS3MSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	pos := int(ptr) * 16
 	if pos >= len(data) {
 		return nil
@@ -421,7 +652,7 @@ func readSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	return &sample
 }
 
-func readPattern(data []byte, ptr ParaPointer) *Pattern {
+func readS3MPattern(data []byte, ptr ParaPointer) *Pattern {
 	pos := int(ptr) * 16
 	if pos >= len(data) {
 		return nil
@@ -478,20 +709,32 @@ func readPattern(data []byte, ptr ParaPointer) *Pattern {
 	return pattern
 }
 
-// ReadS3M reads an S3M file from drive
-func ReadS3M(filename string) (*S3M, error) {
+type format struct {
+	intf.Format
+}
+
+var (
+	// S3M is the exported interface to the S3M file loader
+	S3M = format{}
+)
+
+func readS3M(filename string) (*Song, error) {
 	buffer, err := readFile(filename)
 	if err != nil {
 		return nil, err
 	}
 	data := buffer.Bytes()
 
-	var song = new(S3M)
-	song.Head = *readHeader(buffer)
+	song := Song{}
+	if h, err := readS3MHeader(buffer); err != nil {
+		return nil, err
+	} else if h != nil {
+		song.Head = *h
+	}
 
 	song.Instruments = make([]SampleFileFormat, len(song.Head.InstrumentPointers))
 	for instNum, ptr := range song.Head.InstrumentPointers {
-		var sample = readSample(data, ptr)
+		var sample = readS3MSample(data, ptr)
 		if sample == nil {
 			continue
 		}
@@ -501,27 +744,100 @@ func ReadS3M(filename string) (*S3M, error) {
 
 	song.Patterns = make([]Pattern, len(song.Head.PatternPointers))
 	for patNum, ptr := range song.Head.PatternPointers {
-		var pattern = readPattern(data, ptr)
+		var pattern = readS3MPattern(data, ptr)
 		if pattern == nil {
 			continue
 		}
 		song.Patterns[patNum] = *pattern
 	}
 
-	return song, nil
+	return &song, nil
 }
 
-// GetBaseClockRate returns the base clock rate for the S3M player
-func GetBaseClockRate() float32 {
-	return util.S3MBaseClock
+type modSig struct {
+	sig      string
+	channels int
 }
 
-// Load loads an S3M file into the song state `ss`
-func Load(ss *state.Song, filename string) error {
-	s3mSong, err := ReadS3M(filename)
+var (
+	sigChannels = [...]modSig{
+		// amiga / protracker
+		modSig{"M.K.", 4},
+		// fasttracker
+		modSig{"6CHN", 6}, modSig{"8CHN", 8},
+		// (unusual)
+		modSig{"10CH", 10}, modSig{"11CH", 11}, modSig{"12CH", 12}, modSig{"13CH", 13}, modSig{"14CH", 14},
+		modSig{"15CH", 15}, modSig{"16CH", 16}, modSig{"17CH", 17}, modSig{"18CH", 18}, modSig{"19CH", 19},
+		modSig{"20CH", 20}, modSig{"21CH", 21}, modSig{"22CH", 22}, modSig{"23CH", 23}, modSig{"24CH", 24},
+		modSig{"25CH", 25}, modSig{"26CH", 26}, modSig{"27CH", 27}, modSig{"28CH", 28}, modSig{"29CH", 29},
+		modSig{"30CH", 30}, modSig{"31CH", 31}, modSig{"32CH", 32},
+	}
+)
+
+func readMOD(filename string) (*Song, error) {
+	buffer, err := readFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	data := buffer.Bytes()
+
+	song := Song{}
+
+	sig := getString(data[1080:1084])
+	numCh := 0
+	for _, s := range sigChannels {
+		if s.sig == sig {
+			numCh = s.channels
+			break
+		}
+	}
+
+	if numCh == 0 {
+		return nil, errors.New("invalid file format")
+	}
+
+	h, mh, err := readMODHeader(numCh, buffer)
+	if err != nil {
+		return nil, err
+	}
+	song.Head = *h
+
+	song.Patterns = make([]Pattern, song.Head.Info.PatternCount)
+	for i := 0; i < int(song.Head.Info.PatternCount); i++ {
+		var pattern = readMODPattern(buffer, numCh)
+		if pattern == nil {
+			continue
+		}
+		song.Patterns[i] = *pattern
+	}
+
+	song.Instruments = make([]SampleFileFormat, len(mh.Samples))
+	for instNum, inst := range mh.Samples {
+		var sample = readMODSample(buffer, instNum, inst)
+		if sample == nil {
+			continue
+		}
+		sample.ID = uint8(instNum + 1)
+		song.Instruments[instNum] = *sample
+	}
+
+	return &song, nil
+}
+
+// LoadMOD loads a MOD file and upgrades it into an S3M file internally
+func LoadMOD(s intf.Song, filename string) error {
+	return load(s, filename, readMOD)
+}
+
+type readerFunc func(filename string) (*Song, error)
+
+func load(s intf.Song, filename string, reader readerFunc) error {
+	s3mSong, err := reader(filename)
 	if err != nil {
 		return err
 	}
+
+	ss := s.(*state.Song)
 
 	ss.EffectFactory = effect.Factory
 	ss.CalcSemitonePeriod = util.CalcSemitonePeriod
@@ -533,7 +849,6 @@ func Load(ss *state.Song, filename string) error {
 	ss.GlobalVolume = util.VolumeFromS3M(s3mSong.Head.Info.GlobalVolume)
 	ss.SongData = s3mSong
 
-	// new method for determining active channels (uses S3M data I somehow overlooked before)
 	for i, cs := range s3mSong.Head.ChannelSettings {
 		if cs.IsEnabled() {
 			ss.NumChannels = i + 1
@@ -581,4 +896,14 @@ func Load(ss *state.Song, filename string) error {
 	}
 
 	return nil
+}
+
+// GetBaseClockRate returns the base clock rate for the S3M player
+func (f format) GetBaseClockRate() float32 {
+	return util.S3MBaseClock
+}
+
+// Load loads an S3M file into the song state `s`
+func (f format) Load(s intf.Song, filename string) error {
+	return load(s, filename, readS3M)
 }

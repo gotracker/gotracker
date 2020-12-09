@@ -1,10 +1,10 @@
 package channel
 
 import (
+	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/volume"
-	"gotracker/internal/s3m/util"
 )
 
 type What uint8

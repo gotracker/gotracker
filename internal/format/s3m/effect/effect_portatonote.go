@@ -2,8 +2,8 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/s3m/channel"
 )
 
 // PortaToNote defines a portamento-to-note effect

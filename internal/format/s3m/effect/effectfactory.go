@@ -1,8 +1,8 @@
 package effect
 
 import (
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/s3m/channel"
 	"log"
 )
 

@@ -1,10 +1,10 @@
 package effect
 
 import (
+	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
-	"gotracker/internal/s3m/util"
 	"math"
 	"math/rand"
 )

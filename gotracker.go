@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 
+	"gotracker/internal/format"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
-	"gotracker/internal/s3m"
 )
 
 // flags
@@ -67,11 +67,12 @@ func main() {
 	sampler.BitsPerSample = outputSettings.BitsPerSample
 
 	ss := state.NewSong()
-	if err := s3m.Load(ss, fn); err != nil {
+	if fmt, err := format.Load(ss, fn); err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
+	} else if fmt != nil {
+		sampler.BaseClockRate = fmt.GetBaseClockRate()
 	}
-	sampler.BaseClockRate = s3m.GetBaseClockRate()
 	if startingOrder != -1 {
 		ss.Pattern.CurrentOrder = uint8(startingOrder)
 	}

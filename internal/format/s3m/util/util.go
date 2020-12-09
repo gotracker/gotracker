@@ -10,9 +10,10 @@ const (
 	DefaultC2Spd = note.C2SPD(8363)
 
 	floatDefaultC2Spd = float32(DefaultC2Spd)
+	c2Period          = float32(1712)
 
 	// S3MBaseClock is the base clock speed of S3M files
-	S3MBaseClock = floatDefaultC2Spd * 1712.0
+	S3MBaseClock = floatDefaultC2Spd * c2Period
 )
 
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}

@@ -1,6 +1,8 @@
 package state
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -329,7 +331,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 							cs.Pos = 0
 						}
 						if int(cs.Pos) < sampleLen {
-							samp := sample.GetSample(int(cs.Pos))
+							samp := sample.GetSample(cs.Pos)
 							if sampler.Channels == 1 {
 								data[tickPos] += samp * vol
 							} else {
@@ -350,21 +352,20 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 		ss.SampleMult = volume.Volume(math.Max(float64(ss.SampleMult), math.Abs(float64(sample))))
 	}
 
-	rowRender.RenderData = make([]byte, sampler.Channels*(sampler.BitsPerSample/8)*samples)
-	oidx := 0
-	sampleDivisor := 1.0 / ss.SampleMult
-	for _, sample := range data {
-		sample *= sampleDivisor
-		if sampler.BitsPerSample == 8 {
-			rowRender.RenderData[oidx] = uint8(sample.ToSample(sampler.BitsPerSample))
-			oidx++
+	bps := int(sampler.BitsPerSample / 8)
+	writer := bytes.NewBuffer(rowRender.RenderData)
+	sampleDivisor := volume.Volume(4)
+	for _, s := range data {
+		s /= sampleDivisor
+		if bps == 1 {
+			val := uint8(s.ToSample(sampler.BitsPerSample))
+			binary.Write(writer, binary.LittleEndian, val)
 		} else {
-			val := uint16(sample.ToSample(sampler.BitsPerSample))
-			rowRender.RenderData[oidx] = byte(val & 0xFF)
-			rowRender.RenderData[oidx+1] = byte(val >> 8)
-			oidx += 2
+			val := uint16(s.ToSample(sampler.BitsPerSample))
+			binary.Write(writer, binary.LittleEndian, val)
 		}
 	}
+	rowRender.RenderData = writer.Bytes()
 }
 
 // SetCurrentOrder sets the current order index

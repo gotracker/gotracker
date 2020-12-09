@@ -189,8 +189,19 @@ func (sff *SampleFileFormat) GetLength() int {
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (sff *SampleFileFormat) GetSample(pos int) volume.Volume {
-	return util.VolumeFromS3M8BitSample(sff.Sample[pos])
+func (sff *SampleFileFormat) GetSample(pos float32) volume.Volume {
+	i := int(pos)
+	if i >= 0 && i < len(sff.Sample) {
+		t := pos - float32(i)
+		if t == 0 || i == len(sff.Sample)-1 {
+			return util.VolumeFromS3M8BitSample(sff.Sample[i])
+		}
+		v0 := util.VolumeFromS3M8BitSample(sff.Sample[i])
+		v1 := util.VolumeFromS3M8BitSample(sff.Sample[i+1])
+		v := v0 + volume.Volume(t)*(v1-v0)
+		return v
+	}
+	return util.VolumeFromS3M8BitSample(uint8(0))
 }
 
 // GetID returns the instrument number (1-based)

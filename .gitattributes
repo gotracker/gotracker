@@ -1,0 +1,11 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+*.go text
+*.md text
+LICENSE text
+go.mod text
+go.sum text
+
+*.s3m binary
+*.mod binary

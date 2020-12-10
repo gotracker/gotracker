@@ -233,8 +233,8 @@ func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *SampleFileFor
 	sample.C2Spd = finetuneC2Spds[inst.FineTune&0xF]
 
 	sample.Volume = util.VolumeFromS3M(inst.Volume)
-	sample.LoopBegin = int(util.BE16ToLE16(inst.LoopStart)) * 2
-	loopLen := int(util.BE16ToLE16(inst.LoopEnd)) * 2
+	sample.LoopBegin = float32(util.BE16ToLE16(inst.LoopStart)) * 2
+	loopLen := float32(util.BE16ToLE16(inst.LoopEnd)) * 2
 	sample.LoopEnd = sample.LoopBegin + loopLen
 	if loopLen > 2 {
 		sample.Looped = true

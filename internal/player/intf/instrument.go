@@ -12,9 +12,9 @@ type Instrument interface {
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
 	IsLooped() bool
-	GetLoopBegin() int
-	GetLoopEnd() int
+	GetLoopBegin() float32
+	GetLoopEnd() float32
 	GetSample(float32) volume.Volume
-	GetLength() int
+	GetLength() float32
 	GetID() int
 }

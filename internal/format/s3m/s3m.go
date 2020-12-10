@@ -143,8 +143,8 @@ type SampleFileFormat struct {
 	C2Spd     note.C2SPD
 	Volume    volume.Volume
 	Looped    bool
-	LoopBegin int
-	LoopEnd   int
+	LoopBegin float32
+	LoopEnd   float32
 }
 
 // IsInvalid always returns false (valid)
@@ -174,18 +174,18 @@ func (sff *SampleFileFormat) IsLooped() bool {
 }
 
 // GetLoopBegin returns the loop start position
-func (sff *SampleFileFormat) GetLoopBegin() int {
+func (sff *SampleFileFormat) GetLoopBegin() float32 {
 	return sff.LoopBegin
 }
 
 // GetLoopEnd returns the loop end position
-func (sff *SampleFileFormat) GetLoopEnd() int {
+func (sff *SampleFileFormat) GetLoopEnd() float32 {
 	return sff.LoopEnd
 }
 
 // GetLength returns the length of the instrument
-func (sff *SampleFileFormat) GetLength() int {
-	return len(sff.Sample)
+func (sff *SampleFileFormat) GetLength() float32 {
+	return float32(len(sff.Sample))
 }
 
 // GetSample returns the sample at position `pos` in the instrument

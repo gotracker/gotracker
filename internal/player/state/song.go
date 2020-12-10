@@ -1,14 +1,11 @@
 package state
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/volume"
-	"math"
 )
 
 // EffectFactory is a function that generates a channel effect based on the input channel pattern data
@@ -271,6 +268,8 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 }
 
 func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Sampler) {
+	mixer := sampler.Mixer()
+
 	samplerSpeed := sampler.GetSamplerSpeed()
 	tickSamples := 2.5 * float32(sampler.SampleRate) / float32(ss.Pattern.Row.Tempo)
 
@@ -284,7 +283,11 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	samples := int(tickSamples * float32(ticksThisRow))
 
-	data := make([]volume.Volume, sampler.Channels*samples)
+	data := mixer.NewMixBuffer(sampler.Channels, samples)
+	panmix := make([]volume.Volume, sampler.Channels)
+	if sampler.Channels == 1 {
+		panmix[0] = 1.0
+	}
 
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
@@ -302,11 +305,14 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 				samplerAdd := samplerSpeed / float32(period)
 
 				vol := cs.ActiveVolume * cs.LastGlobalVolume
-				pan := volume.Volume(cs.Pan) / 16.0
-				volL := vol * (1.0 - pan)
-				volR := vol * pan
-
-				sampleLen := sample.GetLength()
+				switch sampler.Channels {
+				case 1:
+					panmix[0] = vol
+				case 2:
+					pan := volume.Volume(cs.Pan) / 16.0
+					panmix[0] = vol * (1.0 - pan)
+					panmix[1] = vol * pan
+				}
 
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {
@@ -325,47 +331,24 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 									break // don't allow infinite loops
 								}
 							}
-							cs.Pos = float32(newPos)
+							cs.Pos = newPos
 						}
 						if cs.Pos < 0 {
 							cs.Pos = 0
 						}
-						if int(cs.Pos) < sampleLen {
-							samp := sample.GetSample(cs.Pos)
-							if sampler.Channels == 1 {
-								data[tickPos] += samp * vol
-							} else {
-								data[tickPos] += samp * volL
-								data[tickPos+1] += samp * volR
-							}
-							cs.Pos += samplerAdd
+						samp := sample.GetSample(cs.Pos)
+						for c, pm := range panmix {
+							data[c][tickPos+s] += samp * pm
 						}
+						cs.Pos += samplerAdd
 					}
-					tickPos += sampler.Channels
 				}
 			}
+			tickPos += int(tickSamples)
 		}
 	}
 
-	ss.SampleMult = 1.0
-	for _, sample := range data {
-		ss.SampleMult = volume.Volume(math.Max(float64(ss.SampleMult), math.Abs(float64(sample))))
-	}
-
-	bps := int(sampler.BitsPerSample / 8)
-	writer := bytes.NewBuffer(rowRender.RenderData)
-	sampleDivisor := volume.Volume(4)
-	for _, s := range data {
-		s /= sampleDivisor
-		if bps == 1 {
-			val := uint8(s.ToSample(sampler.BitsPerSample))
-			binary.Write(writer, binary.LittleEndian, val)
-		} else {
-			val := uint16(s.ToSample(sampler.BitsPerSample))
-			binary.Write(writer, binary.LittleEndian, val)
-		}
-	}
-	rowRender.RenderData = writer.Bytes()
+	rowRender.RenderData = sampler.ToRenderData(data)
 }
 
 // SetCurrentOrder sets the current order index

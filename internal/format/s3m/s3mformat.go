@@ -116,8 +116,8 @@ func readS3MSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	sample.Name = getString(si.SampleName[:])
 	sample.Sample = make([]uint8, si.Length)
 	sample.Looped = si.Flags.IsLooped()
-	sample.LoopBegin = int(si.LoopBeginL)
-	sample.LoopEnd = int(si.LoopEndL)
+	sample.LoopBegin = float32(si.LoopBeginL)
+	sample.LoopEnd = float32(si.LoopEndL)
 	if si.C2SpdL != 0 {
 		sample.C2Spd = note.C2SPD(si.C2SpdL)
 	} else {

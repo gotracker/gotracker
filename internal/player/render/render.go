@@ -2,6 +2,7 @@ package render
 
 import "fmt"
 
+// ChannelDisplay is a render output of tracker channel information
 type ChannelDisplay struct {
 	Note       string
 	Instrument string
@@ -9,8 +10,10 @@ type ChannelDisplay struct {
 	Effect     string
 }
 
+// RowDisplay is an array of ChannelDisplays
 type RowDisplay []ChannelDisplay
 
+// NewRowText creates an array of ChannelDisplay information
 func NewRowText(channels int) RowDisplay {
 	return make([]ChannelDisplay, channels)
 }
@@ -30,6 +33,7 @@ func (rt RowDisplay) String(options ...interface{}) string {
 	return str + "|"
 }
 
+//RowRender is the final output of a single row's data
 type RowRender struct {
 	RenderData []byte
 	Stop       bool

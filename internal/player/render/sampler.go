@@ -31,14 +31,14 @@ func (s *Sampler) Mixer() *mixer.Mixer {
 
 // ToRenderData converts a mixbuffer into a byte stream intended to be
 // output to the output sound device
-func (s *Sampler) ToRenderData(data mixer.MixBuffer) []byte {
+func (s *Sampler) ToRenderData(data mixer.MixBuffer, mixedChannels int) []byte {
 	if len(data) == 0 {
 		return nil
 	}
 	samples := len(data[0])
 	bps := int(s.BitsPerSample / 8)
 	writer := &bytes.Buffer{}
-	samplePostMultiply := volume.Volume(0.25)
+	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
 	for i := 0; i < samples; i++ {
 		for c := 0; c < s.Channels; c++ {
 			v := data[c][i] * samplePostMultiply

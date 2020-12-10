@@ -6,6 +6,7 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/volume"
+	"math"
 )
 
 // EffectFactory is a function that generates a channel effect based on the input channel pattern data
@@ -299,6 +300,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			if cs.Command != nil {
 				cs.Command(ch, cs, simulatedTick, lastTick)
 			}
+
 			sample := cs.Instrument
 			if sample != nil && cs.Period != 0 {
 				period := cs.Period + cs.VibratoDelta
@@ -309,17 +311,20 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 				case 1:
 					panmix[0] = vol
 				case 2:
-					pan := volume.Volume(cs.Pan) / 16.0
-					panmix[0] = vol * (1.0 - pan)
-					panmix[1] = vol * pan
+					pan := float64(cs.Pan) / 16.0
+					pangle := math.Pi * pan / 2.0
+					pl := volume.Volume(math.Cos(pangle))
+					pr := volume.Volume(math.Sin(pangle))
+					panmix[0] = vol * pl
+					panmix[1] = vol * pr
 				}
 
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {
 						if sample.IsLooped() {
 							newPos := cs.Pos
-							begLoop := float32(sample.GetLoopBegin())
-							endLoop := float32(sample.GetLoopEnd())
+							begLoop := sample.GetLoopBegin()
+							endLoop := sample.GetLoopEnd()
 							for {
 								oldNewPos := newPos
 								delta := newPos - endLoop
@@ -348,7 +353,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 		}
 	}
 
-	rowRender.RenderData = sampler.ToRenderData(data)
+	rowRender.RenderData = sampler.ToRenderData(data, ss.NumChannels)
 }
 
 // SetCurrentOrder sets the current order index

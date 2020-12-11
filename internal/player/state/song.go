@@ -309,14 +309,12 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 				vol := cs.ActiveVolume * cs.LastGlobalVolume
 				switch sampler.Channels {
 				case 1:
-					panmix[0] = vol
+					panmix[0] = 1.0
 				case 2:
 					pan := float64(cs.Pan) / 16.0
 					pangle := math.Pi * pan / 2.0
-					pl := volume.Volume(math.Cos(pangle))
-					pr := volume.Volume(math.Sin(pangle))
-					panmix[0] = vol * pl
-					panmix[1] = vol * pr
+					panmix[0] = volume.Volume(math.Cos(pangle))
+					panmix[1] = volume.Volume(math.Sin(pangle))
 				}
 
 				for s := 0; s < int(tickSamples); s++ {
@@ -341,15 +339,15 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 						if cs.Pos < 0 {
 							cs.Pos = 0
 						}
-						samp := sample.GetSample(cs.Pos)
+						samp := sample.GetSample(cs.Pos) * vol
 						for c, pm := range panmix {
-							data[c][tickPos+s] += samp * pm
+							data[c][tickPos] += samp * pm
 						}
 						cs.Pos += samplerAdd
 					}
+					tickPos++
 				}
 			}
-			tickPos += int(tickSamples)
 		}
 	}
 

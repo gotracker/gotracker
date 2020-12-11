@@ -58,11 +58,18 @@ func readMODHeader(channels int, buffer *bytes.Buffer) (*Header, *modHeader, err
 	for i := 0; i < 32; i++ {
 		if i >= channels {
 			head.ChannelSettings[i] = 255
-		} else if i%1 == 0 {
+			continue
+		}
+
+		isLeft := (i & 1) != 0
+		if isLeft {
 			head.ChannelSettings[i] = ChannelSetting(uint8(ChannelIDL1) + uint8(i)>>1)
+			head.Panning[i] = PanningFlagValid | PanningFlags(0x03) // left-ish
 		} else {
 			head.ChannelSettings[i] = ChannelSetting(uint8(ChannelIDR1) + uint8(i)>>1)
+			head.Panning[i] = PanningFlagValid | PanningFlags(0x0C) // right-ish
 		}
+
 	}
 
 	return &head, &mh, nil

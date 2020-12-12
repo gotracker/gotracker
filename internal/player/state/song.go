@@ -295,10 +295,9 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 		tickPos := 0
 		for tick := 0; tick < ticksThisRow; tick++ {
-			simulatedTick := tick % ss.Pattern.Row.Ticks
 			var lastTick = (tick+1 == ticksThisRow)
 			if cs.Command != nil {
-				cs.Command(ch, cs, simulatedTick, lastTick)
+				cs.Command(ch, cs, tick, lastTick)
 			}
 
 			sample := cs.Instrument
@@ -319,23 +318,6 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {
-						if sample.IsLooped() {
-							newPos := cs.Pos
-							begLoop := sample.GetLoopBegin()
-							endLoop := sample.GetLoopEnd()
-							for {
-								oldNewPos := newPos
-								delta := newPos - endLoop
-								if delta < 0 {
-									break
-								}
-								newPos = begLoop + delta
-								if newPos == oldNewPos {
-									break // don't allow infinite loops
-								}
-							}
-							cs.Pos = newPos
-						}
 						if cs.Pos < 0 {
 							cs.Pos = 0
 						}

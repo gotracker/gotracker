@@ -195,8 +195,20 @@ func (sff *SampleFileFormat) GetLength() float32 {
 
 // GetSample returns the sample at position `pos` in the instrument
 func (sff *SampleFileFormat) GetSample(pos float32) volume.Volume {
+	if pos < 0 {
+		return volume.Volume(0)
+	}
+
+	if sff.Looped {
+		pos = util.CalcLoopedSamplePos(pos, sff.LoopBegin, sff.LoopEnd)
+	}
+
+	if int(pos) >= len(sff.Sample) {
+		return volume.Volume(0)
+	}
+
 	i := int(pos)
-	if i >= 0 && i < len(sff.Sample) {
+	if i >= 0 {
 		t := pos - float32(i)
 		if t == 0 || i == len(sff.Sample)-1 {
 			return util.VolumeFromS3M8BitSample(sff.Sample[i])

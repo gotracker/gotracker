@@ -75,3 +75,19 @@ func VolumeFromS3M16BitSample(vol uint16) volume.Volume {
 func BE16ToLE16(be uint16) uint16 {
 	return (be >> 8) | ((be & 0xFF) << 8)
 }
+
+// CalcLoopedSamplePos creates a circular buffer of a sample once the position passes the loopEnd position
+func CalcLoopedSamplePos(pos float32, loopBegin float32, loopEnd float32) float32 {
+	for {
+		oldPos := pos
+		delta := pos - loopEnd
+		if delta < 0 {
+			break
+		}
+		pos = loopBegin + delta
+		if pos == oldPos {
+			break // don't allow infinite loops
+		}
+	}
+	return pos
+}

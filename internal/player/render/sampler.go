@@ -53,3 +53,16 @@ func (s *Sampler) ToRenderData(data mixer.MixBuffer, mixedChannels int) []byte {
 	}
 	return writer.Bytes()
 }
+
+// GetPanMixer returns the panning mixer that can generate a matrix
+// based on input pan value
+func (s *Sampler) GetPanMixer() mixer.PanMixer {
+	switch s.Channels {
+	case 1:
+		return mixer.PanMixerMono
+	case 2:
+		return mixer.PanMixerStereo
+	}
+
+	return nil
+}

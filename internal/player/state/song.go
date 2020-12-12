@@ -6,7 +6,6 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/volume"
-	"math"
 )
 
 // EffectFactory is a function that generates a channel effect based on the input channel pattern data
@@ -284,11 +283,9 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	samples := int(tickSamples * float32(ticksThisRow))
 
+	panmixer := sampler.GetPanMixer()
+
 	data := mixer.NewMixBuffer(sampler.Channels, samples)
-	panmix := make([]volume.Volume, sampler.Channels)
-	if sampler.Channels == 1 {
-		panmix[0] = 1.0
-	}
 
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
@@ -306,15 +303,8 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 				samplerAdd := samplerSpeed / float32(period)
 
 				vol := cs.ActiveVolume * cs.LastGlobalVolume
-				switch sampler.Channels {
-				case 1:
-					panmix[0] = 1.0
-				case 2:
-					pan := float64(cs.Pan) / 16.0
-					pangle := math.Pi * pan / 2.0
-					panmix[0] = volume.Volume(math.Cos(pangle))
-					panmix[1] = volume.Volume(math.Sin(pangle))
-				}
+
+				panmix := panmixer.GetMixingMatrix(float32(cs.Pan) / 16.0)
 
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {

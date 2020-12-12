@@ -24,7 +24,6 @@ type Song struct {
 	Channels     [32]ChannelState
 	NumChannels  int
 	Pattern      PatternState
-	SampleMult   volume.Volume
 	GlobalVolume volume.Volume
 }
 
@@ -33,7 +32,6 @@ func NewSong() *Song {
 	var ss = Song{}
 	ss.Pattern.CurrentOrder = 0
 	ss.Pattern.CurrentRow = 0
-	ss.SampleMult = 1.0
 	ss.NumChannels = 1
 
 	return &ss

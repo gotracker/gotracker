@@ -231,8 +231,8 @@ var (
 	}
 )
 
-func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *SampleFileFormat {
-	var sample = SampleFileFormat{}
+func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *Instrument {
+	var sample = Instrument{}
 	sample.Filename = fmt.Sprintf("inst%0.2d.bin", num+1)
 	sample.Name = getString(inst.Name[:])
 	sl := util.BE16ToLE16(inst.Len) * 2
@@ -315,7 +315,7 @@ func readMOD(filename string) (*Song, error) {
 		song.Patterns[i] = *pattern
 	}
 
-	song.Instruments = make([]SampleFileFormat, len(mh.Samples))
+	song.Instruments = make([]Instrument, len(mh.Samples))
 	for instNum, inst := range mh.Samples {
 		var sample = readMODSample(buffer, instNum, inst)
 		if sample == nil {

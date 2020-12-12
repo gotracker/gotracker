@@ -5,8 +5,6 @@ import (
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/volume"
 )
 
 // ChannelID is the S3M value for a channel specification (found within the ChanenlSetting header block)
@@ -137,100 +135,6 @@ type Header struct {
 	Panning            [32]PanningFlags
 }
 
-// SampleFileFormat is the mildly-decoded S3M instrument/sample header
-type SampleFileFormat struct {
-	intf.Instrument
-	//Info      SCRSHeader
-	Filename    string
-	Name        string
-	Sample      []uint8
-	Length      int
-	ID          uint8
-	C2Spd       note.C2SPD
-	Volume      volume.Volume
-	Looped      bool
-	LoopBegin   float32
-	LoopEnd     float32
-	NumChannels int
-}
-
-// IsInvalid always returns false (valid)
-func (sff *SampleFileFormat) IsInvalid() bool {
-	return false
-}
-
-// GetC2Spd returns the C2SPD value for the instrument
-// This may get mutated if a finetune command is processed
-func (sff *SampleFileFormat) GetC2Spd() note.C2SPD {
-	return sff.C2Spd
-}
-
-// SetC2Spd sets the C2SPD value for the instrument
-func (sff *SampleFileFormat) SetC2Spd(c2spd note.C2SPD) {
-	sff.C2Spd = c2spd
-}
-
-// GetVolume returns the default volume value for the instrument
-func (sff *SampleFileFormat) GetVolume() volume.Volume {
-	return sff.Volume
-}
-
-// IsLooped returns true if the instrument has the loop flag set
-func (sff *SampleFileFormat) IsLooped() bool {
-	return sff.Looped
-}
-
-// GetLoopBegin returns the loop start position
-func (sff *SampleFileFormat) GetLoopBegin() float32 {
-	return sff.LoopBegin
-}
-
-// GetLoopEnd returns the loop end position
-func (sff *SampleFileFormat) GetLoopEnd() float32 {
-	return sff.LoopEnd
-}
-
-// GetLength returns the length of the instrument
-func (sff *SampleFileFormat) GetLength() float32 {
-	return float32(sff.Length)
-}
-
-// GetSample returns the sample at position `pos` in the instrument
-func (sff *SampleFileFormat) GetSample(pos float32) volume.VolumeMatrix {
-	o := make(volume.VolumeMatrix, sff.NumChannels)
-	if pos < 0 {
-		return o
-	}
-
-	if sff.Looped {
-		pos = util.CalcLoopedSamplePos(pos, sff.LoopBegin, sff.LoopEnd)
-	}
-
-	if int(pos) >= sff.Length {
-		return o
-	}
-
-	i := int(pos)
-	if i >= 0 {
-		t := pos - float32(i)
-		for c := 0; c < sff.NumChannels; c++ {
-			v0 := util.VolumeFromS3M8BitSample(sff.Sample[i*sff.NumChannels+c])
-			if t == 0 || i == sff.Length-1 {
-				o[c] = v0
-			} else {
-				v1 := util.VolumeFromS3M8BitSample(sff.Sample[(i+1)*sff.NumChannels+c])
-				o[c] = v0 + volume.Volume(t)*(v1-v0)
-			}
-		}
-	}
-	return o
-}
-
-// GetID returns the instrument number (1-based)
-func (sff *SampleFileFormat) GetID() int {
-	return int(sff.ID)
-}
-
 // RowData is the data for each row
 type RowData struct {
 	intf.Row
@@ -272,7 +176,7 @@ func (p Pattern) GetRows() []intf.Row {
 type Song struct {
 	intf.SongData
 	Head        Header
-	Instruments []SampleFileFormat
+	Instruments []Instrument
 	Patterns    []Pattern
 }
 

@@ -103,13 +103,13 @@ func readS3MHeader(buffer *bytes.Buffer) (*Header, error) {
 	return &head, nil
 }
 
-func readS3MSample(data []byte, ptr ParaPointer) *SampleFileFormat {
+func readS3MSample(data []byte, ptr ParaPointer) *Instrument {
 	pos := int(ptr) * 16
 	if pos >= len(data) {
 		return nil
 	}
 	buffer := bytes.NewBuffer(data[pos:])
-	sample := SampleFileFormat{}
+	sample := Instrument{}
 	si := SCRSHeader{}
 	binary.Read(buffer, binary.LittleEndian, &si)
 	sample.Filename = getString(si.Filename[:])
@@ -208,7 +208,7 @@ func readS3M(filename string) (*Song, error) {
 		song.Head = *h
 	}
 
-	song.Instruments = make([]SampleFileFormat, len(song.Head.InstrumentPointers))
+	song.Instruments = make([]Instrument, len(song.Head.InstrumentPointers))
 	for instNum, ptr := range song.Head.InstrumentPointers {
 		var sample = readS3MSample(data, ptr)
 		if sample == nil {

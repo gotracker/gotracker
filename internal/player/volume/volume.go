@@ -10,6 +10,8 @@ var (
 	VolumeUseInstVol = Volume(math.Inf(-1))
 )
 
+type VolumeMatrix []Volume
+
 type uint24 struct {
 	Hi uint8
 	Lo uint16
@@ -29,4 +31,24 @@ func (v Volume) ToSample(bitsPerSample int) interface{} {
 		return uint32(v * 2147483648.0)
 	}
 	return 0
+}
+
+// Apply multiplies the volume to 0..n samples, then returns an array of the results
+func (v Volume) Apply(samp ...Volume) VolumeMatrix {
+	o := make(VolumeMatrix, len(samp))
+	for i, s := range samp {
+		o[i] = s * v
+	}
+	return o
+}
+
+// Apply takes a volume matrix and multiplies it my incoming volumes
+func (m VolumeMatrix) Apply(samp ...Volume) VolumeMatrix {
+	o := make(VolumeMatrix, len(m))
+	for _, s := range samp {
+		for i, v := range s.Apply(m...) {
+			o[i] += v
+		}
+	}
+	return o
 }

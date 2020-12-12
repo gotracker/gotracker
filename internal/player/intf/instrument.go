@@ -14,7 +14,7 @@ type Instrument interface {
 	IsLooped() bool
 	GetLoopBegin() float32
 	GetLoopEnd() float32
-	GetSample(float32) volume.Volume
+	GetSample(float32) volume.VolumeMatrix
 	GetLength() float32
 	GetID() int
 }

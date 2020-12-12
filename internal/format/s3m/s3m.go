@@ -141,15 +141,17 @@ type Header struct {
 type SampleFileFormat struct {
 	intf.Instrument
 	//Info      SCRSHeader
-	Filename  string
-	Name      string
-	Sample    []uint8
-	ID        uint8
-	C2Spd     note.C2SPD
-	Volume    volume.Volume
-	Looped    bool
-	LoopBegin float32
-	LoopEnd   float32
+	Filename    string
+	Name        string
+	Sample      []uint8
+	Length      int
+	ID          uint8
+	C2Spd       note.C2SPD
+	Volume      volume.Volume
+	Looped      bool
+	LoopBegin   float32
+	LoopEnd     float32
+	NumChannels int
 }
 
 // IsInvalid always returns false (valid)
@@ -190,35 +192,38 @@ func (sff *SampleFileFormat) GetLoopEnd() float32 {
 
 // GetLength returns the length of the instrument
 func (sff *SampleFileFormat) GetLength() float32 {
-	return float32(len(sff.Sample))
+	return float32(sff.Length)
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (sff *SampleFileFormat) GetSample(pos float32) volume.Volume {
+func (sff *SampleFileFormat) GetSample(pos float32) volume.VolumeMatrix {
+	o := make(volume.VolumeMatrix, sff.NumChannels)
 	if pos < 0 {
-		return volume.Volume(0)
+		return o
 	}
 
 	if sff.Looped {
 		pos = util.CalcLoopedSamplePos(pos, sff.LoopBegin, sff.LoopEnd)
 	}
 
-	if int(pos) >= len(sff.Sample) {
-		return volume.Volume(0)
+	if int(pos) >= sff.Length {
+		return o
 	}
 
 	i := int(pos)
 	if i >= 0 {
 		t := pos - float32(i)
-		if t == 0 || i == len(sff.Sample)-1 {
-			return util.VolumeFromS3M8BitSample(sff.Sample[i])
+		for c := 0; c < sff.NumChannels; c++ {
+			v0 := util.VolumeFromS3M8BitSample(sff.Sample[i*sff.NumChannels+c])
+			if t == 0 || i == sff.Length-1 {
+				o[c] = v0
+			} else {
+				v1 := util.VolumeFromS3M8BitSample(sff.Sample[(i+1)*sff.NumChannels+c])
+				o[c] = v0 + volume.Volume(t)*(v1-v0)
+			}
 		}
-		v0 := util.VolumeFromS3M8BitSample(sff.Sample[i])
-		v1 := util.VolumeFromS3M8BitSample(sff.Sample[i+1])
-		v := v0 + volume.Volume(t)*(v1-v0)
-		return v
 	}
-	return volume.Volume(0)
+	return o
 }
 
 // GetID returns the instrument number (1-based)

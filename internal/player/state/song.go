@@ -309,7 +309,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 						if cs.Pos < 0 {
 							cs.Pos = 0
 						}
-						samp := vol.Apply(sample.GetSample(cs.Pos))
+						samp := vol.Apply(sample.GetSample(cs.Pos)...)
 						pannedSample := panmix.Apply(samp...)
 						data.MixInAt(tickPos, pannedSample)
 						cs.Pos += samplerAdd

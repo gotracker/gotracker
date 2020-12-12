@@ -247,7 +247,9 @@ func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *SampleFileFor
 		sample.Looped = true
 	}
 
-	samps := make([]uint8, sl)
+	sample.Length = int(sl)
+	sample.NumChannels = 1
+	samps := make([]uint8, sample.Length)
 	buffer.Read(samps)
 	sample.Sample = samps
 	for i, s := range samps {

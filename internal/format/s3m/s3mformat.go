@@ -114,7 +114,6 @@ func readS3MSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	binary.Read(buffer, binary.LittleEndian, &si)
 	sample.Filename = getString(si.Filename[:])
 	sample.Name = getString(si.SampleName[:])
-	sample.Sample = make([]uint8, si.Length)
 	sample.Looped = si.Flags.IsLooped()
 	sample.LoopBegin = float32(si.LoopBeginL)
 	sample.LoopEnd = float32(si.LoopEndL)
@@ -125,9 +124,16 @@ func readS3MSample(data []byte, ptr ParaPointer) *SampleFileFormat {
 	}
 
 	sample.Volume = util.VolumeFromS3M(si.Volume)
+	sample.NumChannels = 1
+	if si.Flags.IsStereo() {
+		sample.NumChannels = 2
+	}
 
+	sample.Length = int(si.Length)
+	sample.Sample = make([]uint8, sample.Length)
 	pos = (int(si.MemSegL) + int(si.MemSegH)*65536) * 16
-	copy(sample.Sample, data[pos:pos+int(si.Length)])
+	dataLen := sample.Length * sample.NumChannels
+	copy(sample.Sample, data[pos:pos+dataLen])
 	return &sample
 }
 

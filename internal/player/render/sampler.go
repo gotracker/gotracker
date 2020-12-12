@@ -36,19 +36,13 @@ func (s *Sampler) ToRenderData(data mixer.MixBuffer, mixedChannels int) []byte {
 		return nil
 	}
 	samples := len(data[0])
-	bps := int(s.BitsPerSample / 8)
 	writer := &bytes.Buffer{}
 	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
 	for i := 0; i < samples; i++ {
 		for c := 0; c < s.Channels; c++ {
 			v := data[c][i] * samplePostMultiply
-			if bps == 1 {
-				val := uint8(v.ToSample(s.BitsPerSample))
-				binary.Write(writer, binary.LittleEndian, val)
-			} else {
-				val := uint16(v.ToSample(s.BitsPerSample))
-				binary.Write(writer, binary.LittleEndian, val)
-			}
+			val := v.ToSample(s.BitsPerSample)
+			binary.Write(writer, binary.LittleEndian, val)
 		}
 	}
 	return writer.Bytes()

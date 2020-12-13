@@ -15,6 +15,7 @@ type Song interface {
 	SetPatternDelay(int)
 	SetPatternLoopStart()
 	SetPatternLoopEnd(uint8)
+	CanPatternLoop() bool
 }
 
 // SongData is an interface to the song data

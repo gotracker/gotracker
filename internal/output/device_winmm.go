@@ -63,6 +63,9 @@ func (d *winmmDevice) Close() {
 }
 
 func init() {
-	deviceMap["winmm"] = newWinMMDevice
-	DefaultOutputDeviceName = "winmm"
+	deviceMap["winmm"] = deviceDetails{
+		create:   newWinMMDevice,
+		kind:     outputDeviceKindSoundCard,
+		priority: outputDevicePriorityWinmm,
+	}
 }

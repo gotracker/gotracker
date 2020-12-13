@@ -41,6 +41,9 @@ func (d *pulseaudioDevice) Close() {
 }
 
 func init() {
-	deviceMap["pulseaudio"] = newPulseAudioDevice
-	DefaultOutputDeviceName = "pulseaudio"
+	deviceMap["pulseaudio"] = deviceDetails{
+		create:   newPulseAudioDevice,
+		kind:     outputDeviceKindSoundCard,
+		priority: outputDevicePriorityPulseAudio,
+	}
 }

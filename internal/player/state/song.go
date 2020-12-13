@@ -25,6 +25,8 @@ type Song struct {
 	NumChannels  int
 	Pattern      PatternState
 	GlobalVolume volume.Volume
+
+	PatternLoopEnabled bool
 }
 
 // NewSong creates a new song structure and sets its default values
@@ -33,6 +35,7 @@ func NewSong() *Song {
 	ss.Pattern.CurrentOrder = 0
 	ss.Pattern.CurrentRow = 0
 	ss.NumChannels = 1
+	ss.PatternLoopEnabled = true
 
 	return &ss
 }
@@ -279,11 +282,11 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	ticksThisRow := int(ss.Pattern.Row.Ticks)*rowLoops + extraTicks
 
-	samples := int(tickSamples * float32(ticksThisRow))
+	samplesThisRow := int(tickSamples * float32(ticksThisRow))
 
 	panmixer := sampler.GetPanMixer()
 
-	data := mixer.NewMixBuffer(sampler.Channels, samples)
+	data := mixer.NewMixBuffer(sampler.Channels, samplesThisRow)
 
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
@@ -385,4 +388,19 @@ func (ss *Song) SetPatternLoopEnd(loops uint8) {
 		ss.Pattern.LoopEnabled = true
 		ss.Pattern.LoopCount = 0
 	}
+}
+
+// DisableFeatures disables specified features
+func (ss *Song) DisableFeatures(features []intf.Feature) {
+	for _, feature := range features {
+		switch feature {
+		case intf.FeaturePatternLoop:
+			ss.PatternLoopEnabled = false
+		}
+	}
+}
+
+// CanPatternLoop returns true if the song is allowed to pattern loop
+func (ss *Song) CanPatternLoop() bool {
+	return ss.PatternLoopEnabled
 }

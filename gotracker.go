@@ -43,6 +43,8 @@ func Play(ss *state.Song) <-chan render.RowRender {
 }
 
 func main() {
+	output.Setup()
+
 	flag.IntVar(&outputSettings.SamplesPerSecond, "s", 44100, "sample rate")
 	flag.IntVar(&outputSettings.Channels, "c", 2, "channels")
 	flag.IntVar(&outputSettings.BitsPerSample, "b", 16, "bits per sample")
@@ -83,7 +85,7 @@ func main() {
 		fmt.Printf("[%0.2d:%0.2d] %s\n", row.Order, row.Row, row.RowText.String(13))
 	}
 
-	waveOut, err := output.CreateOutputDevice(outputSettings)
+	waveOut, disableFeatures, err := output.CreateOutputDevice(outputSettings)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -91,6 +93,8 @@ func main() {
 	defer waveOut.Close()
 
 	var buffers <-chan render.RowRender
+
+	ss.DisableFeatures(disableFeatures)
 
 	buffers = Play(ss)
 	waveOut.Play(buffers)

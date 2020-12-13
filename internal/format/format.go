@@ -12,6 +12,7 @@ var (
 	supportedFormats = make(map[string]intf.Format)
 )
 
+// Load loads the a file into a song
 func Load(ss *state.Song, filename string) (intf.Format, error) {
 	for _, fmt := range supportedFormats {
 		if err := fmt.Load(ss, filename); err == nil {

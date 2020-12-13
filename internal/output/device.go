@@ -1,7 +1,7 @@
 package output
 
 import (
-	"gotracker/internal/player/intf"
+	"gotracker/internal/player/feature"
 	"gotracker/internal/player/render"
 
 	"github.com/pkg/errors"
@@ -20,7 +20,7 @@ type deviceDetails struct {
 	create         createOutputDeviceFunc
 	kind           outputDeviceKind
 	priority       outputDevicePriority
-	featureDisable []intf.Feature
+	featureDisable []feature.Feature
 }
 
 var (
@@ -31,7 +31,7 @@ var (
 )
 
 // CreateOutputDevice creates an output device based on the provided settings
-func CreateOutputDevice(settings Settings) (Device, []intf.Feature, error) {
+func CreateOutputDevice(settings Settings) (Device, []feature.Feature, error) {
 	if details, ok := deviceMap[settings.Name]; ok && details.create != nil {
 		if dev, err := details.create(settings); err != nil {
 			return nil, nil, err

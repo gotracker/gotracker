@@ -1,7 +1,7 @@
 package output
 
 import (
-	"gotracker/internal/player/intf"
+	"gotracker/internal/player/feature"
 	"path"
 	"strings"
 
@@ -26,8 +26,8 @@ func init() {
 		create:   newFileDevice,
 		kind:     outputDeviceKindFile,
 		priority: outputDevicePriorityFile,
-		featureDisable: []intf.Feature{
-			intf.FeaturePatternLoop,
+		featureDisable: []feature.Feature{
+			feature.FeaturePatternLoop,
 		},
 	}
 }

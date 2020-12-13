@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
@@ -391,10 +392,10 @@ func (ss *Song) SetPatternLoopEnd(loops uint8) {
 }
 
 // DisableFeatures disables specified features
-func (ss *Song) DisableFeatures(features []intf.Feature) {
-	for _, feature := range features {
-		switch feature {
-		case intf.FeaturePatternLoop:
+func (ss *Song) DisableFeatures(features []feature.Feature) {
+	for _, f := range features {
+		switch f {
+		case feature.FeaturePatternLoop:
 			ss.PatternLoopEnabled = false
 		}
 	}

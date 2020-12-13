@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,9 +20,10 @@ func (e VolumeSlide) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e VolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	v := cs.GetEffectSharedMemory(uint8(e))
-	x := uint8(v >> 4)
-	y := uint8(v & 0x0F)
+	mem := cs.GetMemory().(*channel.Memory)
+	xy := mem.LastNonZero(uint8(e))
+	x := uint8(xy >> 4)
+	y := uint8(xy & 0x0F)
 
 	if x == 0 { // decrease every tick
 		if y == 0x0F {

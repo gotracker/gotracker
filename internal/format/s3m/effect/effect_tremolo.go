@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,7 +20,8 @@ func (e Tremolo) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e Tremolo) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	xy := cs.GetEffectSharedMemory(uint8(e))
+	mem := cs.GetMemory().(*channel.Memory)
+	xy := mem.LastNonZero(uint8(e))
 	if currentTick == 0 {
 		trem := cs.GetTremoloOscillator()
 		trem.Pos = 0

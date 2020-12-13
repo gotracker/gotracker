@@ -9,7 +9,7 @@ import (
 )
 
 // EffectFactory is a function that generates a channel effect based on the input channel pattern data
-type EffectFactory func(mi intf.SharedMemory, data intf.ChannelData) intf.Effect
+type EffectFactory func(mi intf.Memory, data intf.ChannelData) intf.Effect
 
 // SemitoneCalculator is the function used to calculate a note semitone
 type SemitoneCalculator func(noteSemi note.Semitone, c2spd note.C2SPD) note.Period
@@ -160,7 +160,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 				}
 			}
 
-			cs.ActiveEffect = ss.EffectFactory(cs, cs.Cmd)
+			cs.ActiveEffect = ss.EffectFactory(cs.GetMemory(), cs.Cmd)
 
 			if wantNoteCalc {
 				cs.TargetPeriod = ss.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)

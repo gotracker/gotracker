@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -15,7 +16,7 @@ func (e SampleOffset) PreStart(cs intf.Channel, ss intf.Song) {
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SampleOffset) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
-	mem := cs.GetMemory()
+	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.SampleOffset(uint8(e))
 	cs.SetTargetPos(float32(xx) * 0x100)
 }

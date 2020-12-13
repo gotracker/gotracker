@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,7 +20,8 @@ func (e Tremor) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e Tremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	xy := cs.GetEffectSharedMemory(uint8(e))
+	mem := cs.GetMemory().(*channel.Memory)
+	xy := mem.LastNonZero(uint8(e))
 	x := int((xy >> 4) + 1)
 	y := int((xy & 0x0f) + 1)
 	doTremor(cs, currentTick, x, y)

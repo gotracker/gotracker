@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -20,7 +21,7 @@ func (e Vibrato) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e Vibrato) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	mem := cs.GetMemory()
+	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.Vibrato(uint8(e))
 	if currentTick == 0 {
 		vib := cs.GetVibratoOscillator()

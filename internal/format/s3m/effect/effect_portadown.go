@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -20,7 +21,8 @@ func (e PortaDown) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e PortaDown) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	xx := cs.GetEffectSharedMemory(uint8(e))
+	mem := cs.GetMemory().(*channel.Memory)
+	xx := mem.LastNonZero(uint8(e))
 
 	if currentTick != 0 {
 		doPortaDown(cs, float32(xx), 4)

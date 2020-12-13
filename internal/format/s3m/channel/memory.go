@@ -1,12 +1,16 @@
-package state
+package channel
+
+import "gotracker/internal/player/intf"
 
 // Memory is the storage object for custom effect/command values
 type Memory struct {
+	intf.Memory
 	portaToNote   uint8
 	vibrato       uint8
 	sampleOffset  uint8
 	tempoDecrease uint8
 	tempoIncrease uint8
+	lastNonZero   uint8
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -42,4 +46,9 @@ func (m *Memory) TempoDecrease(input uint8) uint8 {
 // TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
 func (m *Memory) TempoIncrease(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.tempoIncrease)
+}
+
+// LastNonZero gets or sets the most recent non-zero value (or input)
+func (m *Memory) LastNonZero(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.lastNonZero)
 }

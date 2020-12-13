@@ -27,8 +27,6 @@ type ChannelData interface {
 type Channel interface {
 	ResetRetriggerCount()
 	GetMemory() Memory
-	SetEffectSharedMemoryIfNonZero(uint8)
-	GetEffectSharedMemory(uint8) uint8
 	GetActiveVolume() volume.Volume
 	SetActiveVolume(volume.Volume)
 	FreezePlayback()

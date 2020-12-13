@@ -7,7 +7,7 @@ import (
 )
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
+func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 	cd, ok := data.(*channel.Data)
 	if !ok {
 		return nil
@@ -17,7 +17,8 @@ func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 		return nil
 	}
 
-	mi.SetEffectSharedMemoryIfNonZero(cd.Info)
+	mem := mi.(*channel.Memory)
+	mem.LastNonZero(cd.Info)
 	switch cd.Command + '@' {
 	case 'A': // Set Speed
 		return SetSpeed(cd.Info)
@@ -28,7 +29,7 @@ func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 	case 'D': // Volume Slide / Fine Volume Slide
 		return VolumeSlide(cd.Info)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		xx := mi.GetEffectSharedMemory(uint8(cd.Info))
+		xx := mem.LastNonZero(uint8(cd.Info))
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaDown(cd.Info)
@@ -37,7 +38,7 @@ func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 		}
 		return PortaDown(cd.Info)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		xx := mi.GetEffectSharedMemory(uint8(cd.Info))
+		xx := mem.LastNonZero(uint8(cd.Info))
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaUp(cd.Info)
@@ -67,7 +68,7 @@ func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 	case 'R': // Tremolo
 		return Tremolo(cd.Info)
 	case 'S': // Special
-		return specialEffect(mi, cd)
+		return specialEffect(mem, cd)
 	case 'T': // Set Tempo
 		return SetTempo(cd.Info)
 	case 'U': // Fine Vibrato
@@ -78,8 +79,8 @@ func Factory(mi intf.SharedMemory, data intf.ChannelData) intf.Effect {
 	return nil
 }
 
-func specialEffect(mi intf.SharedMemory, cd *channel.Data) intf.Effect {
-	var cmd = mi.GetEffectSharedMemory(cd.Info)
+func specialEffect(mem *channel.Memory, cd *channel.Data) intf.Effect {
+	var cmd = mem.LastNonZero(cd.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
 		{

@@ -14,7 +14,6 @@ type commandFunc func(int, *ChannelState, int, bool)
 // ChannelState is the state of a single channel
 type ChannelState struct {
 	intf.Channel
-	intf.SharedMemory
 	Instrument   intf.Instrument
 	Pos          float32
 	Period       note.Period
@@ -39,7 +38,7 @@ type ChannelState struct {
 	TremorOn          bool
 	TremorTime        int
 	VibratoDelta      note.Period
-	memory            Memory
+	Memory            intf.Memory
 	effectLastNonZero uint8
 	Cmd               intf.ChannelData
 	freezePlayback    bool
@@ -95,7 +94,7 @@ func (cs *ChannelState) ResetRetriggerCount() {
 
 // GetMemory returns the interface to the custom effect memory module
 func (cs *ChannelState) GetMemory() intf.Memory {
-	return &cs.memory
+	return cs.Memory
 }
 
 // GetActiveVolume returns the current active volume on the channel

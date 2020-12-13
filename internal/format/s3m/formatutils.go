@@ -2,6 +2,7 @@ package s3m
 
 import (
 	"bytes"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/effect"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
@@ -59,6 +60,7 @@ func load(s intf.Song, filename string, reader readerFunc) error {
 		cs.Pos = 0
 		cs.Period = 0
 		cs.SetStoredVolume(64, ss)
+		cs.Memory = &channel.Memory{}
 		ch := s3mSong.Head.ChannelSettings[i]
 		if ch.IsEnabled() {
 			pf := s3mSong.Head.Panning[i]

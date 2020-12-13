@@ -30,7 +30,7 @@ func (e PortaToNote) Start(cs intf.Channel, ss intf.Song) {
 
 // Tick is called on every tick
 func (e PortaToNote) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
-	mem := cs.GetMemory()
+	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.PortaToNote(uint8(e))
 
 	period := cs.GetPeriod()

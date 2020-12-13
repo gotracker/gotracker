@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -17,7 +18,8 @@ func (e ExtraFinePortaDown) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
-	xx := cs.GetEffectSharedMemory(uint8(e))
+	mem := cs.GetMemory().(*channel.Memory)
+	xx := mem.LastNonZero(uint8(e))
 	y := xx & 0x0F
 
 	doPortaDown(cs, float32(y), 1)

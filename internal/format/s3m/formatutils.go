@@ -63,18 +63,18 @@ func load(s intf.Song, filename string, reader readerFunc) error {
 		if ch.IsEnabled() {
 			pf := s3mSong.Head.Panning[i]
 			if pf.IsValid() {
-				cs.Pan = pf.Value()
+				cs.Pan = util.PanningFromS3M(pf.Value())
 			} else {
 				l := ch.GetChannel()
 				switch l {
 				case ChannelIDL1, ChannelIDL2, ChannelIDL3, ChannelIDL4, ChannelIDL5, ChannelIDL6, ChannelIDL7, ChannelIDL8:
-					cs.Pan = 0x03
+					cs.Pan = util.PanningFromS3M(0x03)
 				case ChannelIDR1, ChannelIDR2, ChannelIDR3, ChannelIDR4, ChannelIDR5, ChannelIDR6, ChannelIDR7, ChannelIDR8:
-					cs.Pan = 0x0C
+					cs.Pan = util.PanningFromS3M(0x0C)
 				}
 			}
 		} else {
-			cs.Pan = 0x08 // center?
+			cs.Pan = util.PanningFromS3M(0x08) // center?
 		}
 		cs.Command = nil
 

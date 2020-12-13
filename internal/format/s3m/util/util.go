@@ -2,7 +2,9 @@ package util
 
 import (
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/panning"
 	"gotracker/internal/player/volume"
+	"math"
 )
 
 const (
@@ -90,4 +92,14 @@ func CalcLoopedSamplePos(pos float32, loopBegin float32, loopEnd float32) float3
 		}
 	}
 	return pos
+}
+
+// PanningFromS3M returns a radian panning position from an S3M panning value
+func PanningFromS3M(pos uint8) panning.Position {
+	prad := float64(pos) * math.Pi / 32.0
+
+	return panning.Position{
+		Angle:    float32(prad),
+		Distance: 1.0,
+	}
 }

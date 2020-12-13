@@ -4,6 +4,7 @@ import (
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
+	"gotracker/internal/player/panning"
 	"gotracker/internal/player/volume"
 	"math"
 )
@@ -19,7 +20,7 @@ type ChannelState struct {
 	Period       note.Period
 	StoredVolume volume.Volume
 	ActiveVolume volume.Volume
-	Pan          uint8
+	Pan          panning.Position
 
 	Command      commandFunc
 	ActiveEffect intf.Effect
@@ -228,7 +229,7 @@ func (cs *ChannelState) SetRetriggerCount(cnt uint8) {
 }
 
 // SetPan sets the active panning value of the channel (0 = full left, 15 = full right)
-func (cs *ChannelState) SetPan(pan uint8) {
+func (cs *ChannelState) SetPan(pan panning.Position) {
 	cs.Pan = pan
 }
 

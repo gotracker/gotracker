@@ -1,13 +1,14 @@
 package mixer
 
 import (
+	"gotracker/internal/player/panning"
 	"gotracker/internal/player/volume"
 	"math"
 )
 
 // PanMixer is a mixer that's specialized for mixing multichannel audio content
 type PanMixer interface {
-	GetMixingMatrix(float32) volume.VolumeMatrix
+	GetMixingMatrix(panning.Position) volume.VolumeMatrix
 }
 
 var (
@@ -16,13 +17,17 @@ var (
 
 	// PanMixerStereo is a mixer that's specialized for mixing stereo audio content
 	PanMixerStereo PanMixer = &panMixerStereo{}
+
+	// PanMixerQuad is a mixer that's specialized for mixing quadraphonic audio content
+	PanMixerQuad PanMixer = &panMixerQuad{}
 )
 
 type panMixerMono struct {
 	PanMixer
 }
 
-func (p panMixerMono) GetMixingMatrix(pan float32) volume.VolumeMatrix {
+func (p panMixerMono) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix {
+	// distance and angle are ignored on mono
 	return volume.VolumeMatrix{1.0}
 }
 
@@ -30,9 +35,24 @@ type panMixerStereo struct {
 	PanMixer
 }
 
-func (p panMixerStereo) GetMixingMatrix(pan float32) volume.VolumeMatrix {
-	pangle := math.Pi * float64(pan) / 2.0
-	l := volume.Volume(math.Cos(pangle))
-	r := volume.Volume(math.Sin(pangle))
+func (p panMixerStereo) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix {
+	pangle := float64(pan.Angle)
+	d := volume.Volume(pan.Distance)
+	l := d * volume.Volume(math.Cos(pangle))
+	r := d * volume.Volume(math.Sin(pangle))
 	return volume.VolumeMatrix{l, r}
+}
+
+type panMixerQuad struct {
+	PanMixer
+}
+
+func (p panMixerQuad) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix {
+	pangle := float64(pan.Angle)
+	d := volume.Volume(pan.Distance)
+	lf := d * volume.Volume(math.Cos(pangle))
+	rf := d * volume.Volume(math.Sin(pangle))
+	lr := d * volume.Volume(math.Sin(pangle+math.Pi/2.0))
+	rr := d * volume.Volume(math.Cos(pangle-math.Pi/2.0))
+	return volume.VolumeMatrix{lf, rf, lr, rr}
 }

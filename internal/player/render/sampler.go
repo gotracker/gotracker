@@ -56,6 +56,8 @@ func (s *Sampler) GetPanMixer() mixer.PanMixer {
 		return mixer.PanMixerMono
 	case 2:
 		return mixer.PanMixerStereo
+	case 4:
+		return mixer.PanMixerQuad
 	}
 
 	return nil

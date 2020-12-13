@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 )
 
@@ -18,7 +19,7 @@ func (e SetPanPosition) Start(cs intf.Channel, ss intf.Song) {
 
 	x := uint8(e) & 0xf
 
-	cs.SetPan(x)
+	cs.SetPan(util.PanningFromS3M(x))
 }
 
 // Tick is called on every tick

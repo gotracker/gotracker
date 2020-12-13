@@ -3,6 +3,7 @@ package intf
 import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
+	"gotracker/internal/player/panning"
 	"gotracker/internal/player/volume"
 )
 
@@ -56,6 +57,6 @@ type Channel interface {
 	SetNotePlayTick(int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
-	SetPan(uint8)
+	SetPan(panning.Position)
 	SetDoRetriggerNote(bool)
 }

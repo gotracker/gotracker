@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,9 +20,9 @@ func (e StereoControl) Start(cs intf.Channel, ss intf.Song) {
 	x := uint8(e) & 0xf
 
 	if x > 7 {
-		cs.SetPan(x - 8)
+		cs.SetPan(util.PanningFromS3M(x - 8))
 	} else {
-		cs.SetPan(x + 8)
+		cs.SetPan(util.PanningFromS3M(x + 8))
 	}
 }
 

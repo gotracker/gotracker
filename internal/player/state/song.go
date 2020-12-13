@@ -302,7 +302,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 				vol := cs.ActiveVolume * cs.LastGlobalVolume
 
-				panmix := panmixer.GetMixingMatrix(float32(cs.Pan) / 16.0)
+				panmix := panmixer.GetMixingMatrix(cs.Pan)
 
 				for s := 0; s < int(tickSamples); s++ {
 					if !cs.PlaybackFrozen() {

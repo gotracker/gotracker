@@ -7,6 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	// ErrDeviceNotSupported is returned when the requested device is not supported
+	ErrDeviceNotSupported = errors.New("device not supported")
+)
+
 // RowOutputFunc defines the callback for when a row is output on the device
 type RowOutputFunc func(row render.RowRender)
 
@@ -40,7 +45,7 @@ func CreateOutputDevice(settings Settings) (Device, []feature.Feature, error) {
 		}
 	}
 
-	return nil, nil, errors.New("device not supported")
+	return nil, nil, errors.Wrap(ErrDeviceNotSupported, settings.Name)
 }
 
 type device struct {

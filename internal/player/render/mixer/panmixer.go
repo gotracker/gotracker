@@ -56,3 +56,18 @@ func (p panMixerQuad) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix 
 	rr := d * volume.Volume(math.Cos(pangle-math.Pi/2.0))
 	return volume.VolumeMatrix{lf, rf, lr, rr}
 }
+
+// GetPanMixer returns the panning mixer that can generate a matrix
+// based on input pan value
+func GetPanMixer(channels int) PanMixer {
+	switch channels {
+	case 1:
+		return PanMixerMono
+	case 2:
+		return PanMixerStereo
+	case 4:
+		return PanMixerQuad
+	}
+
+	return nil
+}

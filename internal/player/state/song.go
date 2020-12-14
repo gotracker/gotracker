@@ -5,6 +5,7 @@ import (
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/panning"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
 	"gotracker/internal/player/sample"
@@ -289,12 +290,17 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	panmixer := sampler.GetPanMixer()
 
-	data := mix.NewMixBuffer(sampler.Channels, samplesThisRow)
+	centerPanning := panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	mixChan, mixDone := data.C()
+	for len(rowRender.RenderData) < ss.NumChannels {
+		rowRender.RenderData = append(rowRender.RenderData, nil)
+	}
+	rowRender.SamplesLen = samplesThisRow
 
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
+
+		rowRender.RenderData[ch] = make([]render.Data, ticksThisRow)
 
 		tickPos := 0
 		for tick := 0; tick < ticksThisRow; tick++ {
@@ -305,26 +311,34 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 			sample := cs.Instrument
 			if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
+				// make a stand-alone data buffer for this channel for this tick
+				data := mix.NewMixBuffer(sampler.Channels, tickSamples)
+				mixChan, mixDone := data.C()
+
 				period := cs.Period + cs.VibratoDelta
 				samplerAdd := samplerSpeed / float32(period)
 				mixData := mixer.SampleMixIn{
 					Sample:       sample,
 					SamplePos:    cs.Pos,
 					SamplePeriod: samplerAdd,
-					StaticVol:    cs.ActiveVolume * cs.LastGlobalVolume,
-					VolMatrix:    panmixer.GetMixingMatrix(cs.Pan),
-					MixPos:       tickPos,
+					StaticVol:    volume.Volume(1.0),
+					VolMatrix:    centerPanning,
+					MixPos:       0,
 					MixLen:       tickSamples,
 				}
 				mixChan <- mixData
 				cs.Pos.Add(samplerAdd * float32(tickSamples))
+				rowRender.RenderData[ch][tick] = render.Data{
+					Data:       data,
+					Pan:        cs.Pan,
+					Volume:     cs.ActiveVolume * cs.LastGlobalVolume,
+					SamplesLen: tickSamples,
+					Flush:      mixDone,
+				}
 			}
 			tickPos += tickSamples
 		}
 	}
-	mixDone()
-
-	rowRender.RenderData = sampler.ToRenderData(data, ss.NumChannels)
 }
 
 // SetCurrentOrder sets the current order index

@@ -1,6 +1,8 @@
 package mixer
 
 import (
+	"bytes"
+	"encoding/binary"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
@@ -62,4 +64,33 @@ func (m *MixBuffer) mixIn(d SampleMixIn) {
 		pos++
 		spos.Add(d.SamplePeriod)
 	}
+}
+
+// Add will mix in another MixBuffer's data
+func (m *MixBuffer) Add(pos int, rhs MixBuffer, volMtx volume.VolumeMatrix) {
+	sdata := make(volume.VolumeMatrix, len(*m))
+	for i := 0; i < len(rhs[0]); i++ {
+		for c := 0; c < len(rhs); c++ {
+			sdata[c] = rhs[c][i]
+		}
+		sd := volMtx.Apply(sdata...)
+		for c, s := range sd {
+			(*m)[c][pos+i] += s
+		}
+	}
+}
+
+// ToRenderData converts a mixbuffer into a byte stream intended to be
+// output to the output sound device
+func (m *MixBuffer) ToRenderData(samples int, bitsPerSample int, mixedChannels int) []byte {
+	writer := &bytes.Buffer{}
+	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
+	for i := 0; i < samples; i++ {
+		for _, buf := range *m {
+			v := buf[i] * samplePostMultiply
+			val := v.ToSample(bitsPerSample)
+			binary.Write(writer, binary.LittleEndian, val)
+		}
+	}
+	return writer.Bytes()
 }

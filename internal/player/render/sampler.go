@@ -1,10 +1,7 @@
 package render
 
 import (
-	"bytes"
-	"encoding/binary"
 	"gotracker/internal/player/render/mixer"
-	"gotracker/internal/player/volume"
 )
 
 // Sampler is a container of sampler/mixer settings
@@ -36,29 +33,11 @@ func (s *Sampler) ToRenderData(data mixer.MixBuffer, mixedChannels int) []byte {
 		return nil
 	}
 	samples := len(data[0])
-	writer := &bytes.Buffer{}
-	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
-	for i := 0; i < samples; i++ {
-		for c := 0; c < s.Channels; c++ {
-			v := data[c][i] * samplePostMultiply
-			val := v.ToSample(s.BitsPerSample)
-			binary.Write(writer, binary.LittleEndian, val)
-		}
-	}
-	return writer.Bytes()
+	return data.ToRenderData(samples, s.BitsPerSample, mixedChannels)
 }
 
 // GetPanMixer returns the panning mixer that can generate a matrix
 // based on input pan value
 func (s *Sampler) GetPanMixer() mixer.PanMixer {
-	switch s.Channels {
-	case 1:
-		return mixer.PanMixerMono
-	case 2:
-		return mixer.PanMixerStereo
-	case 4:
-		return mixer.PanMixerQuad
-	}
-
-	return nil
+	return mixer.GetPanMixer(s.Channels)
 }

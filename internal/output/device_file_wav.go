@@ -3,12 +3,18 @@ package output
 import (
 	"bufio"
 	"gotracker/internal/player/render"
+	"gotracker/internal/player/render/mixer"
 	"os"
 
 	"github.com/pkg/errors"
 )
 
-type fileDeviceWav device
+type fileDeviceWav struct {
+	device
+	channels      int
+	bitsPerSample int
+	mix           mixer.Mixer
+}
 
 type fileInternalWav struct {
 	f  *os.File
@@ -22,7 +28,10 @@ const (
 )
 
 func newFileWavDevice(settings Settings) (Device, error) {
-	fd := fileDeviceWav{}
+	fd := fileDeviceWav{
+		channels:      settings.Channels,
+		bitsPerSample: settings.BitsPerSample,
+	}
 	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0)
 	if err != nil {
 		return nil, err
@@ -66,9 +75,25 @@ func newFileWavDevice(settings Settings) (Device, error) {
 // Play starts the wave output device playing
 func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 	i := (d.internal.(*fileInternalWav))
+	panmixer := mixer.GetPanMixer(d.channels)
 	for row := range in {
-		i.w.Write(row.RenderData)
-		i.sz += uint32(len(row.RenderData))
+		data := d.mix.NewMixBuffer(d.channels, row.SamplesLen)
+		for _, rdata := range row.RenderData {
+			pos := 0
+			for _, cdata := range rdata {
+				if cdata.Flush != nil {
+					cdata.Flush()
+				}
+				if len(cdata.Data) > 0 {
+					volMtx := cdata.Volume.Apply(panmixer.GetMixingMatrix(cdata.Pan)...)
+					data.Add(pos, cdata.Data, volMtx)
+				}
+				pos += cdata.SamplesLen
+			}
+		}
+		mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
+		i.w.Write(mixedData)
+		i.sz += uint32(len(mixedData))
 	}
 }
 

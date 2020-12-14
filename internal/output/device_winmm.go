@@ -34,7 +34,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 		Row  render.RowRender
 	}
 
-	hwo := *(d.internal.(*winmm.WaveOut))
+	hwo := d.internal.(*winmm.WaveOut)
 
 	out := make(chan RowWave, 3)
 	go func() {
@@ -58,7 +58,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 
 // Close closes the wave output device
 func (d *winmmDevice) Close() {
-	hwo := *(d.internal.(*winmm.WaveOut))
+	hwo := d.internal.(*winmm.WaveOut)
 	hwo.Close()
 }
 

@@ -2,6 +2,7 @@ package mixer
 
 import (
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 	"time"
 )
@@ -12,7 +13,7 @@ type ChannelMixBuffer volume.VolumeMatrix
 // SampleMixIn is the parameters for mixing in a sample into a MixBuffer
 type SampleMixIn struct {
 	Sample       intf.Instrument
-	SamplePos    float32
+	SamplePos    sample.Pos
 	SamplePeriod float32
 	StaticVol    volume.Volume
 	VolMatrix    volume.VolumeMatrix
@@ -59,6 +60,6 @@ func (m *MixBuffer) mixIn(d SampleMixIn) {
 			(*m)[c][pos] += s
 		}
 		pos++
-		spos += d.SamplePeriod
+		spos.Add(d.SamplePeriod)
 	}
 }

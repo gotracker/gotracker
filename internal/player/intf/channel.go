@@ -4,6 +4,7 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
 	"gotracker/internal/player/panning"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 )
 
@@ -49,9 +50,9 @@ type Channel interface {
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)
 	GetNoteSemitone() note.Semitone
-	SetTargetPos(float32)
-	GetPos() float32
-	SetPos(float32)
+	SetTargetPos(sample.Pos)
+	GetPos() sample.Pos
+	SetPos(sample.Pos)
 	SetNotePlayTick(int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)

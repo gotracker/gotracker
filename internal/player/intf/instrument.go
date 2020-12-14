@@ -2,6 +2,7 @@ package intf
 
 import (
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 )
 
@@ -12,9 +13,9 @@ type Instrument interface {
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
 	IsLooped() bool
-	GetLoopBegin() float32
-	GetLoopEnd() float32
-	GetSample(float32) volume.VolumeMatrix
-	GetLength() float32
+	GetLoopBegin() sample.Pos
+	GetLoopEnd() sample.Pos
+	GetSample(sample.Pos) volume.VolumeMatrix
+	GetLength() sample.Pos
 	GetID() int
 }

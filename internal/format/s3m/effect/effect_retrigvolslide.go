@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/sample"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect
@@ -28,7 +29,7 @@ func (e RetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 	rt := cs.GetRetriggerCount() + 1
 	cs.SetRetriggerCount(rt)
 	if rt >= x {
-		cs.SetPos(0)
+		cs.SetPos(sample.Pos{})
 		cs.ResetRetriggerCount()
 		switch x {
 		case 1:

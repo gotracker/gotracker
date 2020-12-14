@@ -115,8 +115,8 @@ func readS3MSample(data []byte, ptr ParaPointer) *Instrument {
 	sample.Filename = getString(si.Filename[:])
 	sample.Name = getString(si.SampleName[:])
 	sample.Looped = si.Flags.IsLooped()
-	sample.LoopBegin = float32(si.LoopBeginL)
-	sample.LoopEnd = float32(si.LoopEndL)
+	sample.LoopBegin = int(si.LoopBeginL)
+	sample.LoopEnd = int(si.LoopEndL)
 	if si.C2SpdL != 0 {
 		sample.C2Spd = note.C2SPD(si.C2SpdL)
 	} else {
@@ -128,11 +128,15 @@ func readS3MSample(data []byte, ptr ParaPointer) *Instrument {
 	if si.Flags.IsStereo() {
 		sample.NumChannels = 2
 	}
+	sample.BitsPerSample = 8
+	if si.Flags.Is16BitSample() {
+		sample.BitsPerSample = 16
+	}
 
 	sample.Length = int(si.Length)
 	sample.Sample = make([]uint8, sample.Length)
 	pos = (int(si.MemSegL) + int(si.MemSegH)*65536) * 16
-	dataLen := sample.Length * sample.NumChannels
+	dataLen := sample.Length * sample.NumChannels * sample.BitsPerSample / 8
 	copy(sample.Sample, data[pos:pos+dataLen])
 	return &sample
 }

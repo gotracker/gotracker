@@ -235,20 +235,21 @@ func readMODSample(buffer *bytes.Buffer, num int, inst modSample) *Instrument {
 	var sample = Instrument{}
 	sample.Filename = fmt.Sprintf("inst%0.2d.bin", num+1)
 	sample.Name = getString(inst.Name[:])
-	sl := util.BE16ToLE16(inst.Len) * 2
+	sl := int(util.BE16ToLE16(inst.Len)) * 2
 
 	sample.C2Spd = finetuneC2Spds[inst.FineTune&0xF]
 
 	sample.Volume = util.VolumeFromS3M(inst.Volume)
-	sample.LoopBegin = float32(util.BE16ToLE16(inst.LoopStart)) * 2
-	loopLen := float32(util.BE16ToLE16(inst.LoopEnd)) * 2
+	sample.LoopBegin = int(util.BE16ToLE16(inst.LoopStart)) * 2
+	loopLen := int(util.BE16ToLE16(inst.LoopEnd)) * 2
 	sample.LoopEnd = sample.LoopBegin + loopLen
 	if loopLen > 2 {
 		sample.Looped = true
 	}
 
-	sample.Length = int(sl)
+	sample.Length = sl
 	sample.NumChannels = 1
+	sample.BitsPerSample = 8
 	samps := make([]uint8, sample.Length)
 	buffer.Read(samps)
 	sample.Sample = samps

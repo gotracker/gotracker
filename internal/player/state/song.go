@@ -7,6 +7,7 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 )
 
@@ -123,12 +124,12 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 				if inst == 0 {
 					// use current
 					cs.TargetInst = cs.Instrument
-					cs.TargetPos = 0
+					cs.TargetPos = sample.Pos{}
 				} else if int(inst) > ss.SongData.NumInstruments() {
 					cs.TargetInst = nil
 				} else {
 					cs.TargetInst = ss.SongData.GetInstrument(int(inst) - 1)
-					cs.TargetPos = 0
+					cs.TargetPos = sample.Pos{}
 					if cs.TargetInst != nil {
 						vol := cs.TargetInst.GetVolume()
 						cs.SetStoredVolume(vol, ss)
@@ -315,7 +316,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 					MixPos:       tickPos,
 					MixLen:       tickSamples,
 				}
-				cs.Pos += samplerAdd * float32(tickSamples)
+				cs.Pos.Add(samplerAdd * float32(tickSamples))
 			}
 			tickPos += tickSamples
 		}

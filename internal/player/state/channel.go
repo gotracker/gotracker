@@ -5,6 +5,7 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
 	"gotracker/internal/player/panning"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 	"math"
 )
@@ -15,7 +16,7 @@ type commandFunc func(int, *ChannelState, int, bool)
 type ChannelState struct {
 	intf.Channel
 	Instrument   intf.Instrument
-	Pos          float32
+	Pos          sample.Pos
 	Period       note.Period
 	StoredVolume volume.Volume
 	ActiveVolume volume.Volume
@@ -28,7 +29,7 @@ type ChannelState struct {
 	DisplayInst uint8
 
 	TargetPeriod      note.Period
-	TargetPos         float32
+	TargetPos         sample.Pos
 	TargetInst        intf.Instrument
 	PortaTargetPeriod note.Period
 	NotePlayTick      int
@@ -188,7 +189,7 @@ func (cs *ChannelState) GetNoteSemitone() note.Semitone {
 }
 
 // SetTargetPos returns the soon-to-be-committed sample position of the instrument
-func (cs *ChannelState) SetTargetPos(pos float32) {
+func (cs *ChannelState) SetTargetPos(pos sample.Pos) {
 	cs.TargetPos = pos
 }
 
@@ -203,12 +204,12 @@ func (cs *ChannelState) SetPeriod(period note.Period) {
 }
 
 // GetPos returns the sample position of the active instrument
-func (cs *ChannelState) GetPos() float32 {
+func (cs *ChannelState) GetPos() sample.Pos {
 	return cs.Pos
 }
 
 // SetPos sets the sample position of the active instrument
-func (cs *ChannelState) SetPos(pos float32) {
+func (cs *ChannelState) SetPos(pos sample.Pos) {
 	cs.Pos = pos
 }
 

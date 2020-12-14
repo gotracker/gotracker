@@ -149,3 +149,9 @@ func (p *Period) AddInteger(delta int) Period {
 	*p = Period(int(*p) + delta)
 	return *p
 }
+
+// Add adds the current period to a delta value then returns the resulting period
+func (p *Period) Add(delta float32) Period {
+	*p += Period(delta)
+	return *p
+}

@@ -7,6 +7,7 @@ import (
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/sample"
 	"gotracker/internal/player/state"
 	"os"
 )
@@ -57,7 +58,7 @@ func load(s intf.Song, filename string, reader readerFunc) error {
 	for i := 0; i < ss.NumChannels; i++ {
 		cs := &ss.Channels[i]
 		cs.Instrument = nil
-		cs.Pos = 0
+		cs.Pos = sample.Pos{}
 		cs.Period = 0
 		cs.SetStoredVolume(64, ss)
 		cs.Memory = &channel.Memory{}

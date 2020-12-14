@@ -78,7 +78,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | Tags | Notes |
 |--------|---------|
 | `s3m` | Unknown/unhandled commands (effects) will cause a panic. There aren't many left, but there are still some laying around. |
-| `player` | The rendering system is atrocious - it originally was designed only to work with S3M, but I decided to rework some of it to be more flexible. I didn't get very far, but it was enough to be miserable to look at. |
+| `player` | The rendering system is fairly bad - it originally was designed only to work with S3M, but I decided to rework some of it to be more flexible. I managed to pull most of the mixing functionality out into somewhat generic structures/algorithms, but it still needs a lot of work. |
 | `s3m` | Attempting to load a corrupted S3M file may cause the deserializer to panic or go running off into the weeds indefinitely. |
 | `mod` | MOD file support is generally terrible. |
 | `s3m` | Attempting to play an S3M file with Adlib/OPL2 instruments has unexpected behavior. |

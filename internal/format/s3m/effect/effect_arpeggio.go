@@ -17,6 +17,7 @@ func (e Arpeggio) PreStart(cs intf.Channel, ss intf.Song) {
 func (e Arpeggio) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
+	cs.SetPos(cs.GetTargetPos())
 }
 
 // Tick is called on every tick

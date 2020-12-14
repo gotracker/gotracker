@@ -307,7 +307,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
 				period := cs.Period + cs.VibratoDelta
 				samplerAdd := samplerSpeed / float32(period)
-				mixChan <- mixer.SampleMixIn{
+				mixData := mixer.SampleMixIn{
 					Sample:       sample,
 					SamplePos:    cs.Pos,
 					SamplePeriod: samplerAdd,
@@ -316,6 +316,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 					MixPos:       tickPos,
 					MixLen:       tickSamples,
 				}
+				mixChan <- mixData
 				cs.Pos.Add(samplerAdd * float32(tickSamples))
 			}
 			tickPos += tickSamples

@@ -50,6 +50,7 @@ type Channel interface {
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)
 	GetNoteSemitone() note.Semitone
+	GetTargetPos() sample.Pos
 	SetTargetPos(sample.Pos)
 	GetPos() sample.Pos
 	SetPos(sample.Pos)

@@ -188,7 +188,12 @@ func (cs *ChannelState) GetNoteSemitone() note.Semitone {
 	return cs.NoteSemitone
 }
 
-// SetTargetPos returns the soon-to-be-committed sample position of the instrument
+// GetTargetPos returns the soon-to-be-committed sample position of the instrument
+func (cs *ChannelState) GetTargetPos() sample.Pos {
+	return cs.TargetPos
+}
+
+// SetTargetPos sets the soon-to-be-committed sample position of the instrument
 func (cs *ChannelState) SetTargetPos(pos sample.Pos) {
 	cs.TargetPos = pos
 }

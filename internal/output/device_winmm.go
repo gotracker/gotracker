@@ -16,7 +16,7 @@ type winmmDevice device
 func newWinMMDevice(settings Settings) (Device, error) {
 	d := winmmDevice{}
 	var err error
-	d.internal, err = winmm.WaveOutOpen(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
+	d.internal, err = winmm.New(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
 	if err != nil {
 		return nil, err
 	}
@@ -30,17 +30,17 @@ func newWinMMDevice(settings Settings) (Device, error) {
 // Play starts the wave output device playing
 func (d *winmmDevice) Play(in <-chan render.RowRender) {
 	type RowWave struct {
-		Wave *winmm.Wave
+		Wave *winmm.WaveOutData
 		Row  render.RowRender
 	}
 
-	hwo := *(d.internal.(*winmm.Device))
+	hwo := *(d.internal.(*winmm.WaveOut))
 
 	out := make(chan RowWave, 3)
 	go func() {
 		for row := range in {
 			var rowWave RowWave
-			rowWave.Wave = winmm.WaveOutWrite(hwo, row.RenderData)
+			rowWave.Wave = hwo.Write(row.RenderData)
 			rowWave.Row = row
 			out <- rowWave
 		}
@@ -50,7 +50,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 		if d.onRowOutput != nil {
 			d.onRowOutput(rowWave.Row)
 		}
-		for !winmm.WaveOutFinished(hwo, rowWave.Wave) {
+		for !hwo.IsHeaderFinished(rowWave.Wave) {
 			time.Sleep(time.Microsecond * 1)
 		}
 	}
@@ -58,8 +58,8 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 
 // Close closes the wave output device
 func (d *winmmDevice) Close() {
-	hwo := *(d.internal.(*winmm.Device))
-	winmm.WaveOutClose(hwo)
+	hwo := *(d.internal.(*winmm.WaveOut))
+	hwo.Close()
 }
 
 func init() {

@@ -6,6 +6,7 @@ import (
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
+	"gotracker/internal/player/render/mixer"
 	"gotracker/internal/player/volume"
 )
 
@@ -270,10 +271,10 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 }
 
 func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Sampler) {
-	mixer := sampler.Mixer()
+	mix := sampler.Mixer()
 
 	samplerSpeed := sampler.GetSamplerSpeed()
-	tickSamples := 2.5 * float32(sampler.SampleRate) / float32(ss.Pattern.Row.Tempo)
+	tickSamples := int(2.5 * float32(sampler.SampleRate) / float32(ss.Pattern.Row.Tempo))
 
 	rowLoops := 1
 	if ss.Pattern.RowHasPatternDelay {
@@ -283,11 +284,13 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	ticksThisRow := int(ss.Pattern.Row.Ticks)*rowLoops + extraTicks
 
-	samplesThisRow := int(tickSamples * float32(ticksThisRow))
+	samplesThisRow := int(ticksThisRow) * tickSamples
 
 	panmixer := sampler.GetPanMixer()
 
-	data := mixer.NewMixBuffer(sampler.Channels, samplesThisRow)
+	data := mix.NewMixBuffer(sampler.Channels, samplesThisRow)
+
+	mixChan, mixDone := data.C()
 
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
@@ -300,29 +303,24 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			}
 
 			sample := cs.Instrument
-			if sample != nil && cs.Period != 0 {
+			if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
 				period := cs.Period + cs.VibratoDelta
 				samplerAdd := samplerSpeed / float32(period)
-
-				vol := cs.ActiveVolume * cs.LastGlobalVolume
-
-				panmix := panmixer.GetMixingMatrix(cs.Pan)
-
-				for s := 0; s < int(tickSamples); s++ {
-					if !cs.PlaybackFrozen() {
-						if cs.Pos < 0 {
-							cs.Pos = 0
-						}
-						samp := vol.Apply(sample.GetSample(cs.Pos)...)
-						pannedSample := panmix.Apply(samp...)
-						data.MixInAt(tickPos, pannedSample)
-						cs.Pos += samplerAdd
-					}
-					tickPos++
+				mixChan <- mixer.SampleMixIn{
+					Sample:       sample,
+					SamplePos:    cs.Pos,
+					SamplePeriod: samplerAdd,
+					StaticVol:    cs.ActiveVolume * cs.LastGlobalVolume,
+					VolMatrix:    panmixer.GetMixingMatrix(cs.Pan),
+					MixPos:       tickPos,
+					MixLen:       tickSamples,
 				}
+				cs.Pos += samplerAdd * float32(tickSamples)
 			}
+			tickPos += tickSamples
 		}
 	}
+	mixDone()
 
 	rowRender.RenderData = sampler.ToRenderData(data, ss.NumChannels)
 }

@@ -6,6 +6,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"gotracker/internal/output/win32"
+
 	"github.com/pkg/errors"
 )
 
@@ -24,41 +26,18 @@ var (
 	waveOutClose           = winmmDll.NewProc("waveOutClose")
 )
 
-type w32HWAVEOUT uintptr
-
-type w32WAVEHDR struct {
-	lpData          uintptr
-	dwBufferLength  uint32
-	dwBytesRecorded uint32
-	dwUser          uintptr
-	dwFlags         uint32
-	dwLoops         uint32
-	lpNext          uintptr
-	reserved        uintptr
-}
-
 // WaveOutData is a structure holding the header and the go version of the data
 // sent out to the sound device (for garbage collection reasons)
 type WaveOutData struct {
-	hdr  w32WAVEHDR
+	hdr  win32.WAVEHDR
 	data []uint8
 }
 
 // WaveOut is a sound device for the windows multimedia system
 type WaveOut struct {
-	handle    w32HWAVEOUT
+	handle    win32.HWAVEOUT
 	buffers   [3]WaveOutData
 	available chan *WaveOutData
-}
-
-type w32WAVEFORMATEX struct {
-	wFormatTag      uint16
-	nChannels       uint16
-	nSamplesPerSec  uint32
-	nAvgBytesPerSec uint32
-	nBlockAlign     uint16
-	wBitsPerSample  uint16
-	cbSize          uint16
 }
 
 // New creates a new WaveOut device based on the parameters provided
@@ -73,19 +52,19 @@ func New(channels int, samplesPerSec int, bitsPerSample int) (*WaveOut, error) {
 		} else {
 			next = &w.buffers[0]
 		}
-		w.buffers[i].hdr.lpNext = uintptr(unsafe.Pointer(&next.hdr))
+		w.buffers[i].hdr.LpNext = uintptr(unsafe.Pointer(&next.hdr))
 		w.available <- &w.buffers[i]
 	}
 
-	wfx := w32WAVEFORMATEX{
-		wFormatTag:     uint16(0x0001), // WAVE_FORMAT_PCM
-		nChannels:      uint16(channels),
-		nSamplesPerSec: uint32(samplesPerSec),
-		wBitsPerSample: uint16(bitsPerSample),
+	wfx := win32.WAVEFORMATEX{
+		WFormatTag:     win32.WAVE_FORMAT_PCM,
+		NChannels:      uint16(channels),
+		NSamplesPerSec: uint32(samplesPerSec),
+		WBitsPerSample: uint16(bitsPerSample),
 	}
-	wfx.cbSize = uint16(unsafe.Sizeof(wfx))
-	wfx.nBlockAlign = uint16(channels * bitsPerSample / 8)
-	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * uint32(wfx.nBlockAlign)
+	wfx.CbSize = uint16(unsafe.Sizeof(wfx))
+	wfx.NBlockAlign = uint16(channels * bitsPerSample / 8)
+	wfx.NAvgBytesPerSec = wfx.NSamplesPerSec * uint32(wfx.NBlockAlign)
 
 	result, _, _ := waveOutOpen.Call(
 		uintptr(unsafe.Pointer(&w.handle)), // phwo
@@ -107,8 +86,8 @@ func (w *WaveOut) Write(data []byte) *WaveOutData {
 	wave := <-w.available
 
 	wave.data = data
-	wave.hdr.lpData = uintptr(unsafe.Pointer(&wave.data[0]))
-	wave.hdr.dwBufferLength = uint32(len(wave.data))
+	wave.hdr.LpData = uintptr(unsafe.Pointer(&wave.data[0]))
+	wave.hdr.DwBufferLength = uint32(len(wave.data))
 
 	waveOutPrepareHeader.Call(
 		uintptr(w.handle),                  // hwo
@@ -130,7 +109,7 @@ func (w *WaveOut) IsHeaderFinished(hdr *WaveOutData) bool {
 		uintptr(w.handle),                 // hwo
 		uintptr(unsafe.Pointer(&hdr.hdr)), // pwh
 		uintptr(unsafe.Sizeof(hdr.hdr)))   // cbwh
-	if result == 33 { // WAVERR_STILLPLAYING
+	if result == win32.WAVERR_STILLPLAYING {
 		return false
 	}
 

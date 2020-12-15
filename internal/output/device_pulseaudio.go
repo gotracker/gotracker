@@ -13,6 +13,7 @@ type pulseaudioDevice struct {
 	channels      int
 	bitsPerSample int
 	mix           mixer.Mixer
+	pa            *pulseaudio.Client
 }
 
 func newPulseAudioDevice(settings Settings) (Device, error) {
@@ -26,15 +27,13 @@ func newPulseAudioDevice(settings Settings) (Device, error) {
 		return nil, err
 	}
 
-	d.internal = play
+	d.pa = play
 	d.onRowOutput = settings.OnRowOutput
 	return &d, nil
 }
 
 // Play starts the wave output device playing
 func (d *pulseaudioDevice) Play(in <-chan render.RowRender) {
-	play := d.internal.(*pulseaudio.Client)
-
 	panmixer := mixer.GetPanMixer(d.channels)
 	for row := range in {
 		data := d.mix.NewMixBuffer(d.channels, row.SamplesLen)
@@ -52,7 +51,7 @@ func (d *pulseaudioDevice) Play(in <-chan render.RowRender) {
 			}
 		}
 		mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
-		play.Output(mixedData)
+		d.pa.Output(mixedData)
 		if d.onRowOutput != nil {
 			d.onRowOutput(row)
 		}
@@ -61,8 +60,9 @@ func (d *pulseaudioDevice) Play(in <-chan render.RowRender) {
 
 // Close closes the wave output device
 func (d *pulseaudioDevice) Close() {
-	play := *(d.internal.(*pulseaudio.Client))
-	play.Close()
+	if d.pa != nil {
+		d.pa.Close()
+	}
 }
 
 func init() {

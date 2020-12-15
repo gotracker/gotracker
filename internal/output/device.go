@@ -38,11 +38,11 @@ var (
 // CreateOutputDevice creates an output device based on the provided settings
 func CreateOutputDevice(settings Settings) (Device, []feature.Feature, error) {
 	if details, ok := deviceMap[settings.Name]; ok && details.create != nil {
-		if dev, err := details.create(settings); err != nil {
+		dev, err := details.create(settings)
+		if err != nil {
 			return nil, nil, err
-		} else {
-			return dev, details.featureDisable, nil
 		}
+		return dev, details.featureDisable, nil
 	}
 
 	return nil, nil, errors.Wrap(ErrDeviceNotSupported, settings.Name)
@@ -52,8 +52,6 @@ type device struct {
 	Device
 
 	onRowOutput RowOutputFunc
-
-	internal interface{}
 }
 
 // Settings is the settings for configuring an output device

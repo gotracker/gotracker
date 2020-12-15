@@ -18,4 +18,5 @@ const (
 	outputDevicePriorityFile
 	outputDevicePriorityPulseAudio
 	outputDevicePriorityWinmm
+	outputDevicePriorityDSound
 )

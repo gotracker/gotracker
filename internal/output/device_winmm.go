@@ -5,7 +5,7 @@ package output
 import (
 	"time"
 
-	"gotracker/internal/output/winmm"
+	"gotracker/internal/output/win32/winmm"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
 
@@ -17,6 +17,7 @@ type winmmDevice struct {
 	channels      int
 	bitsPerSample int
 	mix           mixer.Mixer
+	waveout       *winmm.WaveOut
 }
 
 func newWinMMDevice(settings Settings) (Device, error) {
@@ -25,11 +26,11 @@ func newWinMMDevice(settings Settings) (Device, error) {
 		bitsPerSample: settings.BitsPerSample,
 	}
 	var err error
-	d.internal, err = winmm.New(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
+	d.waveout, err = winmm.New(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
 	if err != nil {
 		return nil, err
 	}
-	if d.internal == nil {
+	if d.waveout == nil {
 		return nil, errors.New("could not create winmm device")
 	}
 	d.onRowOutput = settings.OnRowOutput
@@ -42,8 +43,6 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 		Wave *winmm.WaveOutData
 		Row  render.RowRender
 	}
-
-	hwo := d.internal.(*winmm.WaveOut)
 
 	out := make(chan RowWave, 3)
 	panmixer := mixer.GetPanMixer(d.channels)
@@ -65,7 +64,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 			}
 			mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
 			rowWave := RowWave{
-				Wave: hwo.Write(mixedData),
+				Wave: d.waveout.Write(mixedData),
 				Row:  row,
 			}
 			out <- rowWave
@@ -76,7 +75,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 		if d.onRowOutput != nil {
 			d.onRowOutput(rowWave.Row)
 		}
-		for !hwo.IsHeaderFinished(rowWave.Wave) {
+		for !d.waveout.IsHeaderFinished(rowWave.Wave) {
 			time.Sleep(time.Microsecond * 1)
 		}
 	}
@@ -84,8 +83,9 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 
 // Close closes the wave output device
 func (d *winmmDevice) Close() {
-	hwo := d.internal.(*winmm.WaveOut)
-	hwo.Close()
+	if d.waveout != nil {
+		d.waveout.Close()
+	}
 }
 
 func init() {

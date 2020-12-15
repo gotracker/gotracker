@@ -14,9 +14,7 @@ type fileDeviceWav struct {
 	channels      int
 	bitsPerSample int
 	mix           mixer.Mixer
-}
 
-type fileInternalWav struct {
 	f  *os.File
 	w  *bufio.Writer
 	sz uint32
@@ -64,17 +62,14 @@ func newFileWavDevice(settings Settings) (Device, error) {
 	w.Write([]byte{'d', 'a', 't', 'a'}) // Subchunk2ID
 	w.Write([]byte{0, 0, 0, 0})         // Subchunk2Size
 
-	fd.internal = &fileInternalWav{
-		f: f,
-		w: w,
-	}
+	fd.f = f
+	fd.w = w
 
 	return &fd, nil
 }
 
 // Play starts the wave output device playing
 func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
-	i := (d.internal.(*fileInternalWav))
 	panmixer := mixer.GetPanMixer(d.channels)
 	for row := range in {
 		data := d.mix.NewMixBuffer(d.channels, row.SamplesLen)
@@ -92,23 +87,21 @@ func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 			}
 		}
 		mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
-		i.w.Write(mixedData)
-		i.sz += uint32(len(mixedData))
+		d.w.Write(mixedData)
+		d.sz += uint32(len(mixedData))
 	}
 }
 
 // Close closes the wave output device
 func (d *fileDeviceWav) Close() {
-	i := (d.internal.(*fileInternalWav))
-
-	i.w.Flush()
-	i.w = nil
-	i.f.Seek(fileChunkSizePos, 0)
-	chunkSize := 36 + i.sz
-	i.f.Write([]byte{uint8(chunkSize), uint8(chunkSize >> 8), uint8(chunkSize >> 16), uint8(chunkSize >> 24)}) // ChunkSize
-	i.f.Seek(fileSubchunk2SizePos, 0)
-	i.f.Write([]byte{uint8(i.sz), uint8(i.sz >> 8), uint8(i.sz >> 16), uint8(i.sz >> 24)}) // Subchunk2Size
-	i.f.Close()
+	d.w.Flush()
+	d.w = nil
+	d.f.Seek(fileChunkSizePos, 0)
+	chunkSize := 36 + d.sz
+	d.f.Write([]byte{uint8(chunkSize), uint8(chunkSize >> 8), uint8(chunkSize >> 16), uint8(chunkSize >> 24)}) // ChunkSize
+	d.f.Seek(fileSubchunk2SizePos, 0)
+	d.f.Write([]byte{uint8(d.sz), uint8(d.sz >> 8), uint8(d.sz >> 16), uint8(d.sz >> 24)}) // Subchunk2Size
+	d.f.Close()
 }
 
 func init() {

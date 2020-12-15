@@ -4,6 +4,7 @@ package dsound
 
 import (
 	"gotracker/internal/output/win32"
+	"reflect"
 	"syscall"
 	"unsafe"
 
@@ -99,30 +100,35 @@ func (b *Buffer) GetStatus() (win32.DSBSTATUS, error) {
 	return status, nil
 }
 
-// Segment is a buffer segment obtained during the Lock call
-type Segment struct {
-	Ptr unsafe.Pointer
-	Len uint32
-}
-
 // Lock locks the buffer for writing
-func (b *Buffer) Lock(offset int, numBytes int) ([]Segment, error) {
+func (b *Buffer) Lock(offset int, numBytes int) ([][]byte, error) {
 	var flags uint32
-	segments := make([]Segment, 2)
+	segments := make([][]byte, 2)
+	segs := []*reflect.SliceHeader{
+		(*reflect.SliceHeader)(unsafe.Pointer(&segments[0])),
+		(*reflect.SliceHeader)(unsafe.Pointer(&segments[1])),
+	}
 	retVal, _, _ := syscall.Syscall9(b.vtbl.Lock, 8, uintptr(unsafe.Pointer(b)), uintptr(offset), uintptr(numBytes),
-		uintptr(unsafe.Pointer(&segments[0].Ptr)), uintptr(unsafe.Pointer(&segments[0].Len)),
-		uintptr(unsafe.Pointer(&segments[1].Ptr)), uintptr(unsafe.Pointer(&segments[1].Len)),
+		uintptr(unsafe.Pointer(&segs[0].Data)), uintptr(unsafe.Pointer(&segs[0].Len)),
+		uintptr(unsafe.Pointer(&segs[1].Data)), uintptr(unsafe.Pointer(&segs[1].Len)),
 		uintptr(flags), 0)
 	if retVal != 0 {
 		return nil, errors.Errorf("DirectSoundBuffer.Lock returned %0.8x", retVal)
 	}
+	for i, _ := range segs {
+		segs[i].Cap = segs[i].Len
+	}
 	return segments, nil
 }
 
-func (b *Buffer) Unlock(segments []Segment) error {
+func (b *Buffer) Unlock(segments [][]byte) error {
+	segs := []*reflect.SliceHeader{
+		(*reflect.SliceHeader)(unsafe.Pointer(&segments[0])),
+		(*reflect.SliceHeader)(unsafe.Pointer(&segments[1])),
+	}
 	retVal, _, _ := syscall.Syscall6(b.vtbl.Unlock, 5, uintptr(unsafe.Pointer(b)),
-		uintptr(segments[0].Ptr), uintptr(segments[0].Len),
-		uintptr(segments[1].Ptr), uintptr(segments[1].Len),
+		segs[0].Data, uintptr(segs[0].Len),
+		segs[1].Data, uintptr(segs[1].Len),
 		0)
 	if retVal != 0 {
 		return errors.Errorf("DirectSoundBuffer.Unlock returned %0.8x", retVal)

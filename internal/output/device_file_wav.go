@@ -11,9 +11,7 @@ import (
 
 type fileDeviceWav struct {
 	device
-	channels      int
-	bitsPerSample int
-	mix           mixer.Mixer
+	mix mixer.Mixer
 
 	f  *os.File
 	w  *bufio.Writer
@@ -27,8 +25,10 @@ const (
 
 func newFileWavDevice(settings Settings) (Device, error) {
 	fd := fileDeviceWav{
-		channels:      settings.Channels,
-		bitsPerSample: settings.BitsPerSample,
+		mix: mixer.Mixer{
+			Channels:      settings.Channels,
+			BitsPerSample: settings.BitsPerSample,
+		},
 	}
 	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0)
 	if err != nil {
@@ -70,9 +70,9 @@ func newFileWavDevice(settings Settings) (Device, error) {
 
 // Play starts the wave output device playing
 func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
-	panmixer := mixer.GetPanMixer(d.channels)
+	panmixer := mixer.GetPanMixer(d.mix.Channels)
 	for row := range in {
-		data := d.mix.NewMixBuffer(d.channels, row.SamplesLen)
+		data := d.mix.NewMixBuffer(row.SamplesLen)
 		for _, rdata := range row.RenderData {
 			pos := 0
 			for _, cdata := range rdata {
@@ -86,7 +86,7 @@ func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 				pos += cdata.SamplesLen
 			}
 		}
-		mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
+		mixedData := data.ToRenderData(row.SamplesLen, d.mix.BitsPerSample, len(row.RenderData))
 		d.w.Write(mixedData)
 		d.sz += uint32(len(mixedData))
 	}

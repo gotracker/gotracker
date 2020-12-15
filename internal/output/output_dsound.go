@@ -8,7 +8,6 @@ import (
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
 	"time"
-	"unsafe"
 
 	"github.com/pkg/errors"
 )
@@ -20,16 +19,17 @@ type dsoundDevice struct {
 	lpdsbPrimary *dsound.Buffer
 	wfx          *win32.WAVEFORMATEX
 
-	channels      int
-	bitsPerSample int
-	mix           mixer.Mixer
+	mix mixer.Mixer
 }
 
 func newDSoundDevice(settings Settings) (Device, error) {
-	d := dsoundDevice{}
+	d := dsoundDevice{
+		mix: mixer.Mixer{
+			Channels:      settings.Channels,
+			BitsPerSample: settings.BitsPerSample,
+		},
+	}
 	preferredDeviceName := ""
-	d.channels = settings.Channels
-	d.bitsPerSample = settings.BitsPerSample
 
 	ds, err := dsound.NewDSound(preferredDeviceName)
 	if err != nil {
@@ -60,7 +60,7 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 	}
 
 	out := make(chan RowWave, 3)
-	panmixer := mixer.GetPanMixer(d.channels)
+	panmixer := mixer.GetPanMixer(d.mix.Channels)
 	go func() {
 		for row := range in {
 			var rowWave RowWave
@@ -74,22 +74,7 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 				lpdsb.Release()
 				continue
 			}
-			data := d.mix.NewMixBuffer(d.channels, row.SamplesLen)
-			for _, rdata := range row.RenderData {
-				pos := 0
-				for _, cdata := range rdata {
-					if cdata.Flush != nil {
-						cdata.Flush()
-					}
-					if len(cdata.Data) > 0 {
-						volMtx := cdata.Volume.Apply(panmixer.GetMixingMatrix(cdata.Pan)...)
-						data.Add(pos, cdata.Data, volMtx)
-					}
-					pos += cdata.SamplesLen
-				}
-			}
-			mixedData := data.ToRenderData(row.SamplesLen, d.bitsPerSample, len(row.RenderData))
-			copy((*(*[]byte)(unsafe.Pointer(&segments[0].Ptr))), mixedData)
+			d.mix.FlattenTo(segments[0], panmixer, row.SamplesLen, row.RenderData)
 			if err := lpdsb.Unlock(segments); err != nil {
 				lpdsb.Release()
 				continue

@@ -300,7 +300,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 	for ch := 0; ch < ss.NumChannels; ch++ {
 		cs := &ss.Channels[ch]
 
-		rowRender.RenderData[ch] = make([]render.Data, ticksThisRow)
+		rowRender.RenderData[ch] = make([]mixer.Data, ticksThisRow)
 
 		tickPos := 0
 		for tick := 0; tick < ticksThisRow; tick++ {
@@ -312,7 +312,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 			sample := cs.Instrument
 			if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
 				// make a stand-alone data buffer for this channel for this tick
-				data := mix.NewMixBuffer(sampler.Channels, tickSamples)
+				data := mix.NewMixBuffer(tickSamples)
 				mixChan, mixDone := data.C()
 
 				period := cs.Period + cs.VibratoDelta
@@ -328,7 +328,7 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 				}
 				mixChan <- mixData
 				cs.Pos.Add(samplerAdd * float32(tickSamples))
-				rowRender.RenderData[ch][tick] = render.Data{
+				rowRender.RenderData[ch][tick] = mixer.Data{
 					Data:       data,
 					Pan:        cs.Pan,
 					Volume:     cs.ActiveVolume * cs.LastGlobalVolume,

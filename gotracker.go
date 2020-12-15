@@ -20,7 +20,7 @@ var (
 
 // local vars
 var (
-	sampler render.Sampler
+	sampler *render.Sampler
 )
 
 // Play starts a song playing
@@ -28,7 +28,7 @@ func Play(ss *state.Song) <-chan render.RowRender {
 	out := make(chan render.RowRender, 64)
 	go func() {
 		for {
-			renderData := player.RenderOneRow(ss, &sampler)
+			renderData := player.RenderOneRow(ss, sampler)
 			if renderData != nil {
 				if renderData.Stop {
 					break
@@ -64,9 +64,7 @@ func main() {
 		return
 	}
 
-	sampler.SampleRate = outputSettings.SamplesPerSecond
-	sampler.Channels = outputSettings.Channels
-	sampler.BitsPerSample = outputSettings.BitsPerSample
+	sampler = render.NewSampler(outputSettings.SamplesPerSecond, outputSettings.Channels, outputSettings.BitsPerSample)
 
 	ss := state.NewSong()
 	if fmt, err := format.Load(ss, fn); err != nil {

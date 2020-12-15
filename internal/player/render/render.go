@@ -2,9 +2,7 @@ package render
 
 import (
 	"fmt"
-	"gotracker/internal/player/panning"
 	"gotracker/internal/player/render/mixer"
-	"gotracker/internal/player/volume"
 )
 
 // ChannelDisplay is a render output of tracker channel information
@@ -38,21 +36,9 @@ func (rt RowDisplay) String(options ...interface{}) string {
 	return str + "|"
 }
 
-// Data is a single buffer of data at a specific panning position
-type Data struct {
-	Data       mixer.MixBuffer
-	Pan        panning.Position
-	Volume     volume.Volume
-	SamplesLen int
-	Flush      func()
-}
-
-// ChannelData is a single channel's data
-type ChannelData []Data
-
 //RowRender is the final output of a single row's data
 type RowRender struct {
-	RenderData []ChannelData
+	RenderData []mixer.ChannelData
 	SamplesLen int
 	Stop       bool
 	Order      int

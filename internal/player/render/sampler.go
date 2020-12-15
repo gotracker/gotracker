@@ -7,11 +7,21 @@ import (
 // Sampler is a container of sampler/mixer settings
 type Sampler struct {
 	SampleRate    int
-	Channels      int
-	BitsPerSample int
 	BaseClockRate float32
 
 	mixer mixer.Mixer
+}
+
+// NewSampler returns a new sampler object based on the input settings
+func NewSampler(samplesPerSec int, channels int, bitsPerSample int) *Sampler {
+	s := Sampler{
+		SampleRate: samplesPerSec,
+		mixer: mixer.Mixer{
+			Channels:      channels,
+			BitsPerSample: bitsPerSample,
+		},
+	}
+	return &s
 }
 
 // GetSamplerSpeed returns the current sampler speed
@@ -33,11 +43,11 @@ func (s *Sampler) ToRenderData(data mixer.MixBuffer, mixedChannels int) []byte {
 		return nil
 	}
 	samples := len(data[0])
-	return data.ToRenderData(samples, s.BitsPerSample, mixedChannels)
+	return data.ToRenderData(samples, s.mixer.BitsPerSample, mixedChannels)
 }
 
 // GetPanMixer returns the panning mixer that can generate a matrix
 // based on input pan value
 func (s *Sampler) GetPanMixer() mixer.PanMixer {
-	return mixer.GetPanMixer(s.Channels)
+	return mixer.GetPanMixer(s.mixer.Channels)
 }

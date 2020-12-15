@@ -94,3 +94,31 @@ func (m *MixBuffer) ToRenderData(samples int, bitsPerSample int, mixedChannels i
 	}
 	return writer.Bytes()
 }
+
+// ToRenderDataWithBuf converts a mixbuffer into a byte stream intended to be
+// output to the output sound device
+func (m *MixBuffer) ToRenderDataWithBuf(out []byte, samples int, bitsPerSample int, mixedChannels int) {
+	pos := 0
+	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
+	for i := 0; i < samples; i++ {
+		for _, buf := range *m {
+			v := buf[i] * samplePostMultiply
+			val := v.ToSample(bitsPerSample)
+			switch d := val.(type) {
+			case uint8:
+				out[pos] = d
+				pos++
+			case uint16:
+				binary.LittleEndian.PutUint16(out[pos:], d)
+				pos += 2
+			case uint32:
+				binary.LittleEndian.PutUint32(out[pos:], d)
+				pos += 4
+			default:
+				writer := &bytes.Buffer{}
+				binary.Write(writer, binary.LittleEndian, val)
+				pos += copy(out[pos:], writer.Bytes())
+			}
+		}
+	}
+}

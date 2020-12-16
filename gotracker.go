@@ -10,6 +10,8 @@ import (
 	"gotracker/internal/player"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
+
+	progressBar "github.com/cheggaaa/pb"
 )
 
 // flags
@@ -79,8 +81,32 @@ func main() {
 
 	fmt.Println(ss.SongData.GetName())
 
-	outputSettings.OnRowOutput = func(row render.RowRender) {
-		fmt.Printf("[%0.2d:%0.2d] %s\n", row.Order, row.Row, row.RowText.String(13))
+	var (
+		progress  *progressBar.ProgressBar
+		lastOrder int
+	)
+
+	defer func() {
+		if progress != nil {
+			progress.Set64(progress.Total)
+			progress.Finish()
+		}
+	}()
+
+	outputSettings.OnRowOutput = func(deviceKind output.DeviceKind, row render.RowRender) {
+		switch deviceKind {
+		case output.DeviceKindSoundCard:
+			fmt.Printf("[%0.2d:%0.2d] %s\n", row.Order, row.Row, row.RowText.String())
+		case output.DeviceKindFile:
+			if progress == nil {
+				progress = progressBar.StartNew(len(ss.SongData.GetOrderList()))
+				lastOrder = row.Order
+			}
+			if lastOrder != row.Order {
+				progress.Increment()
+				lastOrder = row.Order
+			}
+		}
 	}
 
 	waveOut, disableFeatures, err := output.CreateOutputDevice(outputSettings)

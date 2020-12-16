@@ -16,6 +16,9 @@ type pulseaudioDevice struct {
 
 func newPulseAudioDevice(settings Settings) (Device, error) {
 	d := pulseaudioDevice{
+		device: device{
+			onRowOutput: settings.OnRowOutput,
+		},
 		mix: mixer.Mixer{
 			Channels:      settings.Channels,
 			BitsPerSample: settings.BitsPerSample,
@@ -28,7 +31,6 @@ func newPulseAudioDevice(settings Settings) (Device, error) {
 	}
 
 	d.pa = play
-	d.onRowOutput = settings.OnRowOutput
 	return &d, nil
 }
 
@@ -39,7 +41,7 @@ func (d *pulseaudioDevice) Play(in <-chan render.RowRender) {
 		mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.RenderData)
 		d.pa.Output(mixedData)
 		if d.onRowOutput != nil {
-			d.onRowOutput(row)
+			d.onRowOutput(DeviceKindSoundCard, row)
 		}
 	}
 }
@@ -54,7 +56,7 @@ func (d *pulseaudioDevice) Close() {
 func init() {
 	deviceMap["pulseaudio"] = deviceDetails{
 		create:   newPulseAudioDevice,
-		kind:     outputDeviceKindSoundCard,
-		priority: outputDevicePriorityPulseAudio,
+		kind:     DeviceKindSoundCard,
+		priority: devicePriorityPulseAudio,
 	}
 }

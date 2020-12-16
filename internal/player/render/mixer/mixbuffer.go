@@ -97,8 +97,8 @@ func (m *MixBuffer) ToRenderData(samples int, bitsPerSample int, mixedChannels i
 
 // ToIntStream converts a mixbuffer into an int stream intended to be
 // output to the output sound device
-func (m *MixBuffer) ToIntStream(samples int, mixedChannels int) [][]int32 {
-	data := make([][]int32, len(*m))
+func (m *MixBuffer) ToIntStream(outputChannels int, samples int, bitsPerSample int, mixedChannels int) [][]int32 {
+	data := make([][]int32, outputChannels)
 	for c := range data {
 		data[c] = make([]int32, samples)
 	}
@@ -106,8 +106,7 @@ func (m *MixBuffer) ToIntStream(samples int, mixedChannels int) [][]int32 {
 	for i := 0; i < samples; i++ {
 		for c, buf := range *m {
 			v := buf[i] * samplePostMultiply
-			val := v.ToSample(32)
-			data[c][i] = val.(int32)
+			data[c][i] = v.ToIntSample(bitsPerSample)
 		}
 	}
 	return data
@@ -133,14 +132,14 @@ func (m *MixBuffer) ToRenderDataWithBufs(outBuffers [][]byte, samples int, bitsP
 			v := buf[i] * samplePostMultiply
 			val := v.ToSample(bitsPerSample)
 			switch d := val.(type) {
-			case uint8:
-				out[pos] = d
+			case int8:
+				out[pos] = uint8(d)
 				pos++
-			case uint16:
-				binary.LittleEndian.PutUint16(out[pos:], d)
+			case int16:
+				binary.LittleEndian.PutUint16(out[pos:], uint16(d))
 				pos += 2
-			case uint32:
-				binary.LittleEndian.PutUint32(out[pos:], d)
+			case int32:
+				binary.LittleEndian.PutUint32(out[pos:], uint32(d))
 				pos += 4
 			default:
 				writer := &bytes.Buffer{}

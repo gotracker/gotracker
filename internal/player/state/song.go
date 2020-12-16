@@ -31,6 +31,7 @@ type Song struct {
 	GlobalVolume volume.Volume
 
 	PatternLoopEnabled bool
+	playedOrders       []uint8 // when PatternLoopEnabled is false, this is used to detect loops
 }
 
 // NewSong creates a new song structure and sets its default values
@@ -40,6 +41,7 @@ func NewSong() *Song {
 	ss.Pattern.CurrentRow = 0
 	ss.NumChannels = 1
 	ss.PatternLoopEnabled = true
+	ss.playedOrders = make([]uint8, 0)
 
 	return &ss
 }
@@ -222,6 +224,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 		finalData.RowText = rowText
 	}
 
+	currentOrder := ss.Pattern.CurrentOrder
 	if !rowRestart {
 		if orderRestart {
 			ss.Pattern.CurrentRow = 0
@@ -249,6 +252,10 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 	if ss.Pattern.CurrentRow >= 64 {
 		ss.Pattern.CurrentRow = 0
 		ss.Pattern.CurrentOrder++
+	}
+
+	if !ss.PatternLoopEnabled && currentOrder != ss.Pattern.CurrentOrder {
+		ss.playedOrders = append(ss.playedOrders, ss.Pattern.CurrentOrder)
 	}
 
 	return finalData
@@ -343,6 +350,13 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 // SetCurrentOrder sets the current order index
 func (ss *Song) SetCurrentOrder(order uint8) {
+	if !ss.PatternLoopEnabled {
+		for _, o := range ss.playedOrders {
+			if o == order {
+				return
+			}
+		}
+	}
 	ss.Pattern.CurrentOrder = order
 }
 
@@ -409,7 +423,7 @@ func (ss *Song) SetPatternLoopEnd(loops uint8) {
 func (ss *Song) DisableFeatures(features []feature.Feature) {
 	for _, f := range features {
 		switch f {
-		case feature.FeaturePatternLoop:
+		case feature.PatternLoop:
 			ss.PatternLoopEnabled = false
 		}
 	}

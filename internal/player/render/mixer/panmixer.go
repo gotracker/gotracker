@@ -9,6 +9,7 @@ import (
 // PanMixer is a mixer that's specialized for mixing multichannel audio content
 type PanMixer interface {
 	GetMixingMatrix(panning.Position) volume.VolumeMatrix
+	Channels() int
 }
 
 var (
@@ -31,6 +32,10 @@ func (p panMixerMono) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix 
 	return volume.VolumeMatrix{1.0}
 }
 
+func (p panMixerMono) Channels() int {
+	return 1
+}
+
 type panMixerStereo struct {
 	PanMixer
 }
@@ -41,6 +46,10 @@ func (p panMixerStereo) GetMixingMatrix(pan panning.Position) volume.VolumeMatri
 	l := d * volume.Volume(math.Cos(pangle))
 	r := d * volume.Volume(math.Sin(pangle))
 	return volume.VolumeMatrix{l, r}
+}
+
+func (p panMixerStereo) Channels() int {
+	return 2
 }
 
 type panMixerQuad struct {
@@ -55,6 +64,10 @@ func (p panMixerQuad) GetMixingMatrix(pan panning.Position) volume.VolumeMatrix 
 	lr := d * volume.Volume(math.Sin(pangle+math.Pi/2.0))
 	rr := d * volume.Volume(math.Cos(pangle-math.Pi/2.0))
 	return volume.VolumeMatrix{lf, rf, lr, rr}
+}
+
+func (p panMixerQuad) Channels() int {
+	return 4
 }
 
 // GetPanMixer returns the panning mixer that can generate a matrix

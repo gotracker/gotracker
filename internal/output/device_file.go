@@ -24,10 +24,10 @@ func newFileDevice(settings Settings) (Device, error) {
 func init() {
 	deviceMap["file"] = deviceDetails{
 		create:   newFileDevice,
-		kind:     outputDeviceKindFile,
-		priority: outputDevicePriorityFile,
+		kind:     DeviceKindFile,
+		priority: devicePriorityFile,
 		featureDisable: []feature.Feature{
-			feature.FeaturePatternLoop,
+			feature.PatternLoop,
 		},
 	}
 }

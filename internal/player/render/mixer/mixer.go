@@ -50,7 +50,7 @@ func (m *Mixer) FlattenToInts(panmixer PanMixer, samplesLen int, row []ChannelDa
 			pos += cdata.SamplesLen
 		}
 	}
-	return data.ToIntStream(samplesLen, len(row))
+	return data.ToIntStream(panmixer.Channels(), samplesLen, m.BitsPerSample, len(row))
 }
 
 // FlattenTo will to a final saturation mix of all the row's channel data into a single output buffer

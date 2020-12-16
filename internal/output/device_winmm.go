@@ -20,6 +20,9 @@ type winmmDevice struct {
 
 func newWinMMDevice(settings Settings) (Device, error) {
 	d := winmmDevice{
+		device: device{
+			onRowOutput: settings.OnRowOutput,
+		},
 		mix: mixer.Mixer{
 			Channels:      settings.Channels,
 			BitsPerSample: settings.BitsPerSample,
@@ -33,7 +36,6 @@ func newWinMMDevice(settings Settings) (Device, error) {
 	if d.waveout == nil {
 		return nil, errors.New("could not create winmm device")
 	}
-	d.onRowOutput = settings.OnRowOutput
 	return &d, nil
 }
 
@@ -59,7 +61,7 @@ func (d *winmmDevice) Play(in <-chan render.RowRender) {
 	}()
 	for rowWave := range out {
 		if d.onRowOutput != nil {
-			d.onRowOutput(rowWave.Row)
+			d.onRowOutput(DeviceKindSoundCard, rowWave.Row)
 		}
 		for !d.waveout.IsHeaderFinished(rowWave.Wave) {
 			time.Sleep(time.Microsecond * 1)
@@ -77,7 +79,7 @@ func (d *winmmDevice) Close() {
 func init() {
 	deviceMap["winmm"] = deviceDetails{
 		create:   newWinMMDevice,
-		kind:     outputDeviceKindSoundCard,
-		priority: outputDevicePriorityWinmm,
+		kind:     DeviceKindSoundCard,
+		priority: devicePriorityWinmm,
 	}
 }

@@ -24,6 +24,9 @@ type dsoundDevice struct {
 
 func newDSoundDevice(settings Settings) (Device, error) {
 	d := dsoundDevice{
+		device: device{
+			onRowOutput: settings.OnRowOutput,
+		},
 		mix: mixer.Mixer{
 			Channels:      settings.Channels,
 			BitsPerSample: settings.BitsPerSample,
@@ -48,7 +51,6 @@ func newDSoundDevice(settings Settings) (Device, error) {
 	d.lpdsbPrimary = lpdsbPrimary
 	d.wfx = wfx
 
-	d.onRowOutput = settings.OnRowOutput
 	return &d, nil
 }
 
@@ -137,7 +139,7 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 			playPos, _, _ := lpdsb.GetCurrentPosition()
 			if playPos+playBase >= rowWave.PlayOffset {
 				if d.onRowOutput != nil {
-					d.onRowOutput(rowWave.Row)
+					d.onRowOutput(DeviceKindSoundCard, rowWave.Row)
 				}
 				break
 			}
@@ -159,7 +161,7 @@ func (d *dsoundDevice) Close() {
 func init() {
 	deviceMap["directsound"] = deviceDetails{
 		create:   newDSoundDevice,
-		kind:     outputDeviceKindSoundCard,
-		priority: outputDevicePriorityDirectSound,
+		kind:     DeviceKindSoundCard,
+		priority: devicePriorityDirectSound,
 	}
 }

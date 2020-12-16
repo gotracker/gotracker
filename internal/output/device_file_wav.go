@@ -26,12 +26,15 @@ const (
 
 func newFileWavDevice(settings Settings) (Device, error) {
 	fd := fileDeviceWav{
+		device: device{
+			onRowOutput: settings.OnRowOutput,
+		},
 		mix: mixer.Mixer{
 			Channels:      settings.Channels,
 			BitsPerSample: settings.BitsPerSample,
 		},
 	}
-	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0)
+	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -77,18 +80,22 @@ func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 		mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.RenderData)
 		d.w.Write(mixedData)
 		d.sz += uint32(len(mixedData))
+		if d.onRowOutput != nil {
+			d.onRowOutput(DeviceKindFile, row)
+		}
 	}
 }
 
 // Close closes the wave output device
 func (d *fileDeviceWav) Close() {
 	d.w.Flush()
-	d.w = nil
 	chunkSize := 36 + d.sz
 	d.f.Seek(wavFileChunkSizePos, 0)
 	binary.Write(d.w, binary.LittleEndian, uint32(chunkSize)) // ChunkSize
 	d.f.Seek(wavFileSubchunk2SizePos, 0)
 	binary.Write(d.w, binary.LittleEndian, uint32(d.sz)) // Subchunk2Size
+	d.w.Flush()
+	d.w = nil
 	d.f.Close()
 }
 

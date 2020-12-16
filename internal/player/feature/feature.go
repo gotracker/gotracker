@@ -6,6 +6,6 @@ type Feature int
 const (
 	featureUnknown = Feature(iota)
 
-	// FeaturePatternLoop describes the pattern loop feature
-	FeaturePatternLoop
+	// PatternLoop describes the pattern loop feature
+	PatternLoop
 )

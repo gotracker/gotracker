@@ -13,7 +13,7 @@ var (
 )
 
 // RowOutputFunc defines the callback for when a row is output on the device
-type RowOutputFunc func(row render.RowRender)
+type RowOutputFunc func(deviceKind DeviceKind, row render.RowRender)
 
 // Device is an interface to output device operations
 type Device interface {
@@ -23,8 +23,8 @@ type Device interface {
 
 type deviceDetails struct {
 	create         createOutputDeviceFunc
-	kind           outputDeviceKind
-	priority       outputDevicePriority
+	kind           DeviceKind
+	priority       devicePriority
 	featureDisable []feature.Feature
 }
 
@@ -65,7 +65,7 @@ type Settings struct {
 }
 
 func calculateOptimalDefaultOutputDeviceName() string {
-	preferredPriority := outputDevicePriority(0)
+	preferredPriority := devicePriority(0)
 	preferredName := "none"
 	for name, details := range deviceMap {
 		if details.priority > preferredPriority {

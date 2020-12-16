@@ -12,7 +12,7 @@ var (
 
 type VolumeMatrix []Volume
 
-type uint24 struct {
+type Int24 struct {
 	Hi int8
 	Lo uint16
 }
@@ -26,7 +26,22 @@ func (v Volume) ToSample(bitsPerSample int) interface{} {
 		return int16(v * 32678.0)
 	case 24:
 		s := int32(v * 8388608.0)
-		return uint24{Hi: int8(s >> 16), Lo: uint16(s & 65535)}
+		return Int24{Hi: int8(s >> 16), Lo: uint16(s & 65535)}
+	case 32:
+		return int32(v * 2147483648.0)
+	}
+	return 0
+}
+
+// ToIntSample returns a volume as an int32 value ranged to the bits per sample provided
+func (v Volume) ToIntSample(bitsPerSample int) int32 {
+	switch bitsPerSample {
+	case 8:
+		return int32(v * 128.0)
+	case 16:
+		return int32(v * 32678.0)
+	case 24:
+		return int32(v * 8388608.0)
 	case 32:
 		return int32(v * 2147483648.0)
 	}

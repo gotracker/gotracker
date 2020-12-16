@@ -1,10 +1,10 @@
-// +build windows,dsound
+// +build windows,directsound
 
 package output
 
 import (
 	"gotracker/internal/output/win32"
-	"gotracker/internal/output/win32/dsound"
+	"gotracker/internal/output/win32/directsound"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
 	"time"
@@ -15,8 +15,8 @@ import (
 type dsoundDevice struct {
 	device
 
-	ds           *dsound.DirectSound
-	lpdsbPrimary *dsound.Buffer
+	ds           *directsound.DirectSound
+	lpdsbPrimary *directsound.Buffer
 	wfx          *win32.WAVEFORMATEX
 
 	mix mixer.Mixer
@@ -31,7 +31,7 @@ func newDSoundDevice(settings Settings) (Device, error) {
 	}
 	preferredDeviceName := ""
 
-	ds, err := dsound.NewDSound(preferredDeviceName)
+	ds, err := directsound.NewDSound(preferredDeviceName)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,21 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 	}
 	defer notify.Release()
 
+	pn := []directsound.PositionNotify{
+		{
+			Offset:      uint32(playbackSize - int(d.wfx.NBlockAlign)),
+			EventNotify: event,
+		},
+	}
+
+	if err := notify.SetNotificationPositions(pn); err != nil {
+		return
+	}
+
 	// play (looping)
 	lpdsb.Play(true)
+
+	done := make(chan struct{})
 
 	go func() {
 		writePos := 0
@@ -90,7 +103,7 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 			var rowWave RowWave
 			//_, writePos, err := lpdsb.GetCurrentPosition()
 			numBytes := row.SamplesLen * int(d.wfx.NBlockAlign)
-			segments, err := lpdsb.Lock(writePos, numBytes)
+			segments, err := lpdsb.Lock(writePos%playbackSize, numBytes)
 			if err != nil {
 				continue
 			}
@@ -99,28 +112,30 @@ func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 				continue
 			}
 			rowWave.Row = row
-			writePos = (writePos + numBytes) % playbackSize
+			writePos += numBytes
 			rowWave.PlayOffset = uint32(writePos)
 			out <- rowWave
 		}
 		close(out)
+		done <- struct{}{}
 	}()
-	prevPlay := uint32(0)
+	playBase := uint32(0)
+	go func() {
+		eventCh, closeFunc := win32.EventToChannel(event)
+		defer closeFunc()
+		for {
+			select {
+			case <-eventCh:
+				playBase += uint32(playbackSize)
+			case <-done:
+				return
+			}
+		}
+	}()
 	for rowWave := range out {
 		for {
 			playPos, _, _ := lpdsb.GetCurrentPosition()
-			triggered := false
-			if prevPlay <= playPos {
-				if playPos >= rowWave.PlayOffset {
-					triggered = true
-				}
-			} else {
-				if playPos <= rowWave.PlayOffset {
-					triggered = true
-				}
-			}
-			prevPlay = playPos
-			if triggered {
+			if playPos+playBase >= rowWave.PlayOffset {
 				if d.onRowOutput != nil {
 					d.onRowOutput(rowWave.Row)
 				}

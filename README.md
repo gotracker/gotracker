@@ -17,10 +17,11 @@ At the moment, just S3M (Screamtracker 3) files and very terribly simulated MOD 
 * Windows (Windows 2000 or newer)
   * WinMM (`WAVE_MAPPER` device)
   * File (Wave/RIFF file)
-  * PulseAudio (via optional build flag) - NOTE: Not recommended except for WSL (Linux) builds!
+  * DirectSound (via optional build flag: `directsound`)
+  * PulseAudio (via optional build flag: `pulseaudio`) - NOTE: Not recommended except for WSL (Linux) builds!
 * Linux
   * File (Wave/RIFF file)
-  * PulseAudio (via optional build flag)
+  * PulseAudio (via optional build flag: `pulseaudio`)
 
 ## How do I build this thing?
 
@@ -53,12 +54,20 @@ For a non-Windows (e.g.: Linux) build, I recommend the following:
    go build
    ```
 
-### How to build (on Linux, with PulseAudio support)
+### How to build (on Linux or Windows, with PulseAudio support)
 
 1. Build the player with the following command
    ```bash
    go build -tags=pulseaudio
    ```
+
+NOTE: In order to use PulseAudio, you must have your `PULSE_SERVER` connection string environment variable configured:
+* e.g.:
+  ```bash
+  PULSE_SERVER=tcp:127.0.0.1:4713
+  ```
+  (*Take note that there are bugs associated with TCP connection strings; see bugs section below*)
+  For more information about the `PULSE_SERVER` environment variable, please see the [PulseAudio documentation](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/ServerStrings/).
 
 ## How does it work?
 
@@ -79,8 +88,8 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `player` | Channel readouts are associated to the buffer being fed into the output device, so the log line showing the row/channels being played might appear unattached to what's coming from the sound system. |
 | `s3m` | Setting the default `C2SPD` value for the `s3m` package to something other than 8363 will cause some unusual behavior - Lower values will reduce the fidelity of the audio, but it will generally sound the same. However, the LFOs (vibrato, tremelo) will become significantly more pronounced the lower the `C2SPD` becomes. The inverse of the observed phenomenon occurs when the `C2SPD` value gets raised. At a certain point much higher than 8363, the LFOs become effectively useless. |
 | `player` `mixing` | The mixer still uses some simple saturation mixing techniques, but it's a lot better than it used to be. |
-| `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`", make sure to append the port `:4713` to the end of the `PULSE_SERVER` environment variable. I will create a pull request to their repo soon-ish in hopes to fix this in a reasonable way. |
-| `windows` `directsound` | DirectSound integration is genuinely bad. There's a bug with position notifications not being allowed to be set on an already-playing buffer, which breaks note display support. It's currently simulated via brute-force position testing in the playback loop. |
+| `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`" specifically when using a TCP connection string, make sure to append the default port specifier of `:4713` to the end of the `PULSE_SERVER` environment variable. I will create a pull request to their repo soon-ish in hopes to fix this in a reasonable way. |
+| `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
 
 
 ### Unknown bugs

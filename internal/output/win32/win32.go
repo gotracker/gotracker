@@ -146,6 +146,30 @@ func WaitForSingleObject(handle HANDLE, duration time.Duration) error {
 	return nil
 }
 
+// EventToChannel turns an event handle into a channel
+func EventToChannel(event HANDLE) (<-chan struct{}, func()) {
+	ch := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		defer close(ch)
+		for {
+			select {
+			case <-done:
+				return
+			default:
+			}
+			if err := WaitForSingleObjectInfinite(event); err != nil {
+				done <- struct{}{}
+			}
+			ch <- struct{}{}
+		}
+	}()
+	return ch, func() {
+		done <- struct{}{}
+	}
+}
+
 // CreateEvent creates a handle for event operations
 func CreateEvent() (HANDLE, error) {
 	retVal, _, _ := createEventProc.Call(0, 0, 0)

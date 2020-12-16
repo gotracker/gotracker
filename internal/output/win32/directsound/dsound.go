@@ -1,6 +1,6 @@
-// +build windows,dsound
+// +build windows,directsound
 
-package dsound
+package directsound
 
 import (
 	"gotracker/internal/output/win32"

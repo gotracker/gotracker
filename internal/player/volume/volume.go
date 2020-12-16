@@ -13,7 +13,7 @@ var (
 type VolumeMatrix []Volume
 
 type uint24 struct {
-	Hi uint8
+	Hi int8
 	Lo uint16
 }
 
@@ -21,14 +21,14 @@ type uint24 struct {
 func (v Volume) ToSample(bitsPerSample int) interface{} {
 	switch bitsPerSample {
 	case 8:
-		return uint8(v * 128.0)
+		return int8(v * 128.0)
 	case 16:
-		return uint16(v * 32678.0)
+		return int16(v * 32678.0)
 	case 24:
-		s := uint32(v * 8388608.0)
-		return uint24{Hi: uint8(s >> 16), Lo: uint16(s & 65535)}
+		s := int32(v * 8388608.0)
+		return uint24{Hi: int8(s >> 16), Lo: uint16(s & 65535)}
 	case 32:
-		return uint32(v * 2147483648.0)
+		return int32(v * 2147483648.0)
 	}
 	return 0
 }

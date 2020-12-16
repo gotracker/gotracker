@@ -95,6 +95,24 @@ func (m *MixBuffer) ToRenderData(samples int, bitsPerSample int, mixedChannels i
 	return writer.Bytes()
 }
 
+// ToIntStream converts a mixbuffer into an int stream intended to be
+// output to the output sound device
+func (m *MixBuffer) ToIntStream(samples int, mixedChannels int) [][]int32 {
+	data := make([][]int32, len(*m))
+	for c := range data {
+		data[c] = make([]int32, samples)
+	}
+	samplePostMultiply := 1.0 / volume.Volume(mixedChannels)
+	for i := 0; i < samples; i++ {
+		for c, buf := range *m {
+			v := buf[i] * samplePostMultiply
+			val := v.ToSample(32)
+			data[c][i] = val.(int32)
+		}
+	}
+	return data
+}
+
 // ToRenderDataWithBufs converts a mixbuffer into a byte stream intended to be
 // output to the output sound device
 func (m *MixBuffer) ToRenderDataWithBufs(outBuffers [][]byte, samples int, bitsPerSample int, mixedChannels int) {

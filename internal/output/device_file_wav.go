@@ -2,6 +2,7 @@ package output
 
 import (
 	"bufio"
+	"encoding/binary"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/render/mixer"
 	"os"
@@ -19,8 +20,8 @@ type fileDeviceWav struct {
 }
 
 const (
-	fileChunkSizePos     = 4
-	fileSubchunk2SizePos = 40
+	wavFileChunkSizePos     = 4
+	wavFileSubchunk2SizePos = 40
 )
 
 func newFileWavDevice(settings Settings) (Device, error) {
@@ -39,28 +40,29 @@ func newFileWavDevice(settings Settings) (Device, error) {
 		return nil, errors.New("unexpected file error")
 	}
 
+	byteRate := settings.SamplesPerSecond * settings.Channels * settings.BitsPerSample / 8
+	blockAlign := settings.Channels * settings.BitsPerSample / 8
+
 	w := bufio.NewWriter(f)
 	// RIFF header
-	w.Write([]byte{'R', 'I', 'F', 'F'}) // ChunkID
-	w.Write([]byte{0, 0, 0, 0})         // ChunkSize
-	w.Write([]byte{'W', 'A', 'V', 'E'}) // Format
+	w.Write([]byte{'R', 'I', 'F', 'F'})             // ChunkID
+	binary.Write(w, binary.LittleEndian, uint32(0)) // ChunkSize
+	w.Write([]byte{'W', 'A', 'V', 'E'})             // Format
 
 	// fmt header
-	w.Write([]byte{'f', 'm', 't', ' '})                                      // Subchunk1ID
-	w.Write([]byte{16, 0, 0, 0})                                             // Subchunk1Size
-	w.Write([]byte{1, 0})                                                    // AudioFormat (1 = PCM)
-	w.Write([]byte{uint8(settings.Channels), uint8(settings.Channels >> 8)}) // NumChannels
-	w.Write([]byte{uint8(settings.SamplesPerSecond), uint8(settings.SamplesPerSecond >> 8),
-		uint8(settings.SamplesPerSecond >> 16), uint8(settings.SamplesPerSecond >> 24)}) // SampleRate
-	byteRate := settings.SamplesPerSecond * settings.Channels * settings.BitsPerSample / 8
-	w.Write([]byte{uint8(byteRate), uint8(byteRate >> 8), uint8(byteRate >> 16), uint8(byteRate >> 24)}) // ByteRate
-	blockAlign := settings.Channels * settings.BitsPerSample / 8
-	w.Write([]byte{uint8(blockAlign), uint8(blockAlign >> 8)})                         // BlockAlign
-	w.Write([]byte{uint8(settings.BitsPerSample), uint8(settings.BitsPerSample >> 8)}) // BitsPerSample
+	w.Write([]byte{'f', 'm', 't', ' '})              // Subchunk1ID
+	binary.Write(w, binary.LittleEndian, uint32(16)) // Subchunk1Size
+	// = win32.WAVEFORMATEX (before the CbSize)
+	binary.Write(w, binary.LittleEndian, uint16(0x001))                     // AudioFormat // = win32.WAVE_FORMAT_PCM
+	binary.Write(w, binary.LittleEndian, uint16(settings.Channels))         // NumChannels
+	binary.Write(w, binary.LittleEndian, uint32(settings.SamplesPerSecond)) // SampleRate
+	binary.Write(w, binary.LittleEndian, uint32(byteRate))                  // ByteRate
+	binary.Write(w, binary.LittleEndian, uint16(blockAlign))                // BlockAlign
+	binary.Write(w, binary.LittleEndian, uint16(settings.BitsPerSample))    // BitsPerSample
 
 	// data header
-	w.Write([]byte{'d', 'a', 't', 'a'}) // Subchunk2ID
-	w.Write([]byte{0, 0, 0, 0})         // Subchunk2Size
+	w.Write([]byte{'d', 'a', 't', 'a'})             // Subchunk2ID
+	binary.Write(w, binary.LittleEndian, uint32(0)) // Subchunk2Size
 
 	fd.f = f
 	fd.w = w
@@ -72,21 +74,7 @@ func newFileWavDevice(settings Settings) (Device, error) {
 func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 	panmixer := mixer.GetPanMixer(d.mix.Channels)
 	for row := range in {
-		data := d.mix.NewMixBuffer(row.SamplesLen)
-		for _, rdata := range row.RenderData {
-			pos := 0
-			for _, cdata := range rdata {
-				if cdata.Flush != nil {
-					cdata.Flush()
-				}
-				if len(cdata.Data) > 0 {
-					volMtx := cdata.Volume.Apply(panmixer.GetMixingMatrix(cdata.Pan)...)
-					data.Add(pos, cdata.Data, volMtx)
-				}
-				pos += cdata.SamplesLen
-			}
-		}
-		mixedData := data.ToRenderData(row.SamplesLen, d.mix.BitsPerSample, len(row.RenderData))
+		mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.RenderData)
 		d.w.Write(mixedData)
 		d.sz += uint32(len(mixedData))
 	}
@@ -96,11 +84,11 @@ func (d *fileDeviceWav) Play(in <-chan render.RowRender) {
 func (d *fileDeviceWav) Close() {
 	d.w.Flush()
 	d.w = nil
-	d.f.Seek(fileChunkSizePos, 0)
 	chunkSize := 36 + d.sz
-	d.f.Write([]byte{uint8(chunkSize), uint8(chunkSize >> 8), uint8(chunkSize >> 16), uint8(chunkSize >> 24)}) // ChunkSize
-	d.f.Seek(fileSubchunk2SizePos, 0)
-	d.f.Write([]byte{uint8(d.sz), uint8(d.sz >> 8), uint8(d.sz >> 16), uint8(d.sz >> 24)}) // Subchunk2Size
+	d.f.Seek(wavFileChunkSizePos, 0)
+	binary.Write(d.w, binary.LittleEndian, uint32(chunkSize)) // ChunkSize
+	d.f.Seek(wavFileSubchunk2SizePos, 0)
+	binary.Write(d.w, binary.LittleEndian, uint32(d.sz)) // Subchunk2Size
 	d.f.Close()
 }
 

@@ -35,6 +35,24 @@ func (m *Mixer) Flatten(panmixer PanMixer, samplesLen int, row []ChannelData) []
 	return data.ToRenderData(samplesLen, m.BitsPerSample, len(row))
 }
 
+func (m *Mixer) FlattenToInts(panmixer PanMixer, samplesLen int, row []ChannelData) [][]int32 {
+	data := m.NewMixBuffer(samplesLen)
+	for _, rdata := range row {
+		pos := 0
+		for _, cdata := range rdata {
+			if cdata.Flush != nil {
+				cdata.Flush()
+			}
+			if len(cdata.Data) > 0 {
+				volMtx := cdata.Volume.Apply(panmixer.GetMixingMatrix(cdata.Pan)...)
+				data.Add(pos, cdata.Data, volMtx)
+			}
+			pos += cdata.SamplesLen
+		}
+	}
+	return data.ToIntStream(samplesLen, len(row))
+}
+
 // FlattenTo will to a final saturation mix of all the row's channel data into a single output buffer
 func (m *Mixer) FlattenTo(resultBuffers [][]byte, panmixer PanMixer, samplesLen int, row []ChannelData) {
 	data := m.NewMixBuffer(samplesLen)

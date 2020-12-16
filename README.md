@@ -16,11 +16,15 @@ At the moment, just S3M (Screamtracker 3) files and very terribly simulated MOD 
 
 * Windows (Windows 2000 or newer)
   * WinMM (`WAVE_MAPPER` device)
-  * File (Wave/RIFF file)
+  * File
+    * Wave/RIFF file (built-in)
+    * Flac (via optional build flag: `flac`)
   * DirectSound (via optional build flag: `directsound`)
   * PulseAudio (via optional build flag: `pulseaudio`) - NOTE: Not recommended except for WSL (Linux) builds!
 * Linux
-  * File (Wave/RIFF file)
+  * File
+    * Wave/RIFF file (built-in)
+    * Flac (via optional build flag: `flac`)
   * PulseAudio (via optional build flag: `pulseaudio`)
 
 ## How do I build this thing?
@@ -90,6 +94,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `player` `mixing` | The mixer still uses some simple saturation mixing techniques, but it's a lot better than it used to be. |
 | `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`" specifically when using a TCP connection string, make sure to append the default port specifier of `:4713` to the end of the `PULSE_SERVER` environment variable. I will create a pull request to their repo soon-ish in hopes to fix this in a reasonable way. |
 | `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
+| `flac` | Flac encoding is still very beta. |
 
 
 ### Unknown bugs

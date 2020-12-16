@@ -37,7 +37,7 @@ func newDSoundDevice(settings Settings) (Device, error) {
 	}
 	d.ds = ds
 	if d.ds == nil {
-		return nil, errors.New("could not create dsound device")
+		return nil, errors.New("could not create directsound device")
 	}
 
 	lpdsbPrimary, wfx, err := ds.CreateSoundBufferPrimary(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
@@ -157,9 +157,9 @@ func (d *dsoundDevice) Close() {
 }
 
 func init() {
-	deviceMap["dsound"] = deviceDetails{
+	deviceMap["directsound"] = deviceDetails{
 		create:   newDSoundDevice,
 		kind:     outputDeviceKindSoundCard,
-		priority: outputDevicePriorityDSound,
+		priority: outputDevicePriorityDirectSound,
 	}
 }

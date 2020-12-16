@@ -36,7 +36,7 @@ func (m *Mixer) Flatten(panmixer PanMixer, samplesLen int, row []ChannelData) []
 }
 
 // FlattenTo will to a final saturation mix of all the row's channel data into a single output buffer
-func (m *Mixer) FlattenTo(resultBuffer []byte, panmixer PanMixer, samplesLen int, row []ChannelData) {
+func (m *Mixer) FlattenTo(resultBuffers [][]byte, panmixer PanMixer, samplesLen int, row []ChannelData) {
 	data := m.NewMixBuffer(samplesLen)
 	for _, rdata := range row {
 		pos := 0
@@ -51,5 +51,5 @@ func (m *Mixer) FlattenTo(resultBuffer []byte, panmixer PanMixer, samplesLen int
 			pos += cdata.SamplesLen
 		}
 	}
-	data.ToRenderDataWithBuf(resultBuffer, samplesLen, m.BitsPerSample, len(row))
+	data.ToRenderDataWithBufs(resultBuffers, samplesLen, m.BitsPerSample, len(row))
 }

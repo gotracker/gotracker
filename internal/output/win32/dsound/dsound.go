@@ -128,7 +128,7 @@ func (ds *DirectSound) CreateSoundBufferPrimary(channels int, samplesPerSec int,
 // CreateSoundBufferSecondary creates a secondary sound buffer
 func (ds *DirectSound) CreateSoundBufferSecondary(wfx *win32.WAVEFORMATEX, bufferSize int) (*Buffer, error) {
 	bd := dsBufferDesc{
-		Flags:       win32.DSBCAPS_GETCURRENTPOSITION2 | win32.DSBCAPS_GLOBALFOCUS | win32.DSBCAPS_CTRLPOSITIONNOTIFY,
+		Flags:       win32.DSBCAPS_GETCURRENTPOSITION2 | win32.DSBCAPS_GLOBALFOCUS | win32.DSBCAPS_CTRLALL,
 		BufferBytes: uint32(bufferSize),
 		WfxFormat:   wfx,
 	}

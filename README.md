@@ -80,6 +80,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `s3m` | Setting the default `C2SPD` value for the `s3m` package to something other than 8363 will cause some unusual behavior - Lower values will reduce the fidelity of the audio, but it will generally sound the same. However, the LFOs (vibrato, tremelo) will become significantly more pronounced the lower the `C2SPD` becomes. The inverse of the observed phenomenon occurs when the `C2SPD` value gets raised. At a certain point much higher than 8363, the LFOs become effectively useless. |
 | `player` `mixing` | The mixer still uses some simple saturation mixing techniques, but it's a lot better than it used to be. |
 | `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`", make sure to append the port `:4713` to the end of the `PULSE_SERVER` environment variable. I will create a pull request to their repo soon-ish in hopes to fix this in a reasonable way. |
+| `windows` `directsound` | DirectSound integration is genuinely bad. There's a bug with position notifications not being allowed to be set on an already-playing buffer, which breaks note display support. It's currently simulated via brute-force position testing in the playback loop. |
 
 
 ### Unknown bugs

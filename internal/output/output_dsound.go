@@ -55,52 +55,79 @@ func newDSoundDevice(settings Settings) (Device, error) {
 // Play starts the wave output device playing
 func (d *dsoundDevice) Play(in <-chan render.RowRender) {
 	type RowWave struct {
-		LpDsb *dsound.Buffer
-		Row   render.RowRender
+		PlayOffset uint32
+		Row        render.RowRender
 	}
+
+	event, err := win32.CreateEvent()
+	if err != nil {
+		return
+	}
+	defer win32.CloseHandle(event)
 
 	out := make(chan RowWave, 3)
 	panmixer := mixer.GetPanMixer(d.mix.Channels)
+
+	playbackSize := int(d.wfx.NAvgBytesPerSec * 2)
+	lpdsb, err := d.ds.CreateSoundBufferSecondary(d.wfx, playbackSize)
+	if err != nil {
+		return
+	}
+	defer lpdsb.Release()
+
+	notify, err := lpdsb.GetNotify()
+	if err != nil {
+		return
+	}
+	defer notify.Release()
+
+	// play (looping)
+	lpdsb.Play(true)
+
 	go func() {
+		writePos := 0
 		for row := range in {
 			var rowWave RowWave
+			//_, writePos, err := lpdsb.GetCurrentPosition()
 			numBytes := row.SamplesLen * int(d.wfx.NBlockAlign)
-			lpdsb, err := d.ds.CreateSoundBufferSecondary(d.wfx, numBytes)
+			segments, err := lpdsb.Lock(writePos, numBytes)
 			if err != nil {
 				continue
 			}
-			segments, err := lpdsb.Lock(0, numBytes)
-			if err != nil {
-				lpdsb.Release()
-				continue
-			}
-			d.mix.FlattenTo(segments[0], panmixer, row.SamplesLen, row.RenderData)
+			d.mix.FlattenTo(segments, panmixer, row.SamplesLen, row.RenderData)
 			if err := lpdsb.Unlock(segments); err != nil {
-				lpdsb.Release()
 				continue
 			}
-			rowWave.LpDsb = lpdsb
 			rowWave.Row = row
+			writePos = (writePos + numBytes) % playbackSize
+			rowWave.PlayOffset = uint32(writePos)
 			out <- rowWave
 		}
 		close(out)
 	}()
+	prevPlay := uint32(0)
 	for rowWave := range out {
-		rowWave.LpDsb.Play(false)
-		if d.onRowOutput != nil {
-			d.onRowOutput(rowWave.Row)
-		}
 		for {
-			status, err := rowWave.LpDsb.GetStatus()
-			if err != nil {
+			playPos, _, _ := lpdsb.GetCurrentPosition()
+			triggered := false
+			if prevPlay <= playPos {
+				if playPos >= rowWave.PlayOffset {
+					triggered = true
+				}
+			} else {
+				if playPos <= rowWave.PlayOffset {
+					triggered = true
+				}
+			}
+			prevPlay = playPos
+			if triggered {
+				if d.onRowOutput != nil {
+					d.onRowOutput(rowWave.Row)
+				}
 				break
 			}
-			if (status & win32.DSBSTATUS_PLAYING) == 0 {
-				break
-			}
-			time.Sleep(time.Microsecond * 1)
+			time.Sleep(time.Millisecond * 1)
 		}
-		rowWave.LpDsb.Release()
 	}
 }
 

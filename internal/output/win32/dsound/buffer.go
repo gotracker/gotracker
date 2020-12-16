@@ -58,6 +58,18 @@ func (b *Buffer) Release() error {
 	return nil
 }
 
+// GetNotify returns the notification interface
+func (b *Buffer) GetNotify() (*Notify, error) {
+	guidIDirectSoundNotify := syscall.GUID{0xb0210783, 0x89cd, 0x11d0, [...]byte{0xaf, 0x8, 0x0, 0xa0, 0xc9, 0x25, 0xcd, 0x16}}
+	var notify *Notify
+	retVal, _, _ := syscall.Syscall(b.vtbl.QueryInterface, 3, uintptr(unsafe.Pointer(b)), uintptr(unsafe.Pointer(&guidIDirectSoundNotify)), uintptr(unsafe.Pointer(&notify)))
+	if retVal != 0 {
+		return nil, errors.Errorf("DirectSoundBuffer.QueryInterface returned %0.8x", retVal)
+	}
+
+	return notify, nil
+}
+
 func (b *Buffer) setFormat(wfx win32.WAVEFORMATEX) error {
 	retVal, _, _ := syscall.Syscall(b.vtbl.SetFormat, 2, uintptr(unsafe.Pointer(b)), uintptr(unsafe.Pointer(&wfx)), 0)
 	if retVal != 0 {

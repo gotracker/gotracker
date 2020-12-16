@@ -2,11 +2,21 @@
 
 package win32
 
-import "syscall"
+import (
+	"errors"
+	"os"
+	"sync/atomic"
+	"syscall"
+	"time"
+)
 
 var (
 	user32Dll            = syscall.NewLazyDLL("user32.dll")
 	getDesktopWindowProc = user32Dll.NewProc("GetDesktopWindow")
+
+	kernel32Dll     = syscall.NewLazyDLL("kernel32.dll")
+	createEventProc = kernel32Dll.NewProc("CreateEventA")
+	closeHandleProc = kernel32Dll.NewProc("CloseHandle")
 )
 
 const (
@@ -104,4 +114,54 @@ type WAVEFORMATEX struct {
 func GetDesktopWindow() HWND {
 	result, _, _ := getDesktopWindowProc.Call()
 	return HWND(result)
+}
+
+// WaitForSingleObjectInfinite will wait infinitely for a single handle value to become available
+func WaitForSingleObjectInfinite(handle HANDLE) error {
+	h := atomic.LoadUintptr((*uintptr)(&handle))
+	s, e := syscall.WaitForSingleObject(syscall.Handle(h), syscall.INFINITE)
+	switch s {
+	case syscall.WAIT_OBJECT_0:
+		break
+	case syscall.WAIT_FAILED:
+		return os.NewSyscallError("WaitForSingleObject", e)
+	default:
+		return errors.New("os: unexpected result from WaitForSingleObject")
+	}
+	return nil
+}
+
+// WaitForSingleObject will wait for a single handle value to become available up to a total of `duration` milliseconds
+func WaitForSingleObject(handle HANDLE, duration time.Duration) error {
+	h := atomic.LoadUintptr((*uintptr)(&handle))
+	s, e := syscall.WaitForSingleObject(syscall.Handle(h), uint32(duration.Milliseconds()))
+	switch s {
+	case syscall.WAIT_OBJECT_0:
+		break
+	case syscall.WAIT_FAILED:
+		return os.NewSyscallError("WaitForSingleObject", e)
+	default:
+		return errors.New("os: unexpected result from WaitForSingleObject")
+	}
+	return nil
+}
+
+// CreateEvent creates a handle for event operations
+func CreateEvent() (HANDLE, error) {
+	retVal, _, _ := createEventProc.Call(0, 0, 0)
+	if retVal == 0 {
+		return HANDLE(0), errors.New("failed to create a new event")
+	}
+
+	return HANDLE(retVal), nil
+}
+
+// CloseHandle closes a handle
+func CloseHandle(handle HANDLE) error {
+	retVal, _, _ := closeHandleProc.Call(uintptr(handle))
+	if retVal == 0 {
+		return errors.New("failed to close handle")
+	}
+
+	return nil
 }

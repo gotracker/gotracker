@@ -33,15 +33,6 @@ func (s *Song) GetOrderList() []uint8 {
 	return s.Head.OrderList
 }
 
-// GetPatternsInterface returns an interface to all the patterns
-func (s *Song) GetPatternsInterface() []intf.Pattern {
-	p := make([]intf.Pattern, len(s.Patterns))
-	for i, sp := range s.Patterns {
-		p[i] = sp
-	}
-	return p
-}
-
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
 func (s *Song) GetPattern(patNum uint8) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {

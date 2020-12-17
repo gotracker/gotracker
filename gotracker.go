@@ -83,8 +83,6 @@ func main() {
 		ss.Pattern.CurrentOrder = uint8(startingOrder)
 	}
 
-	fmt.Println(ss.SongData.GetName())
-
 	var (
 		progress  *progressBar.ProgressBar
 		lastOrder int
@@ -123,6 +121,8 @@ func main() {
 
 	ss.DisableFeatures(disableFeatures)
 
+	fmt.Printf("Output device: %s\n", waveOut.Name())
+	fmt.Printf("Song: %s\n", ss.SongData.GetName())
 	buffers := Play(ss)
 	waveOut.Play(buffers)
 }

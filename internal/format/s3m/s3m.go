@@ -25,7 +25,7 @@ type Song struct {
 	intf.SongData
 	Head        Header
 	Instruments []Instrument
-	Patterns    []Pattern
+	Patterns    []intf.Pattern
 }
 
 // GetOrderList returns the list of all pattern orders for the song
@@ -47,7 +47,7 @@ func (s *Song) GetPattern(patNum uint8) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
-	return &s.Patterns[patNum]
+	return s.Patterns[patNum]
 }
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled

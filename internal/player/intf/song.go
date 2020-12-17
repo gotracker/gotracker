@@ -1,6 +1,15 @@
 package intf
 
-import "gotracker/internal/player/volume"
+import (
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/volume"
+)
+
+// EffectFactoryFunc is a function type that gets an effect for specified channel data
+type EffectFactoryFunc func(mi Memory, data ChannelData) Effect
+
+// CalcSemitonePeriodFunc is a function type that returns the period for a specified note & c2spd
+type CalcSemitonePeriodFunc func(semi note.Semitone, c2spd note.C2SPD) note.Period
 
 // Song is an interface to the song state
 type Song interface {
@@ -9,6 +18,7 @@ type Song interface {
 	SetTempo(int)
 	DecreaseTempo(int)
 	IncreaseTempo(int)
+	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
 	SetTicks(int)
 	AddRowTicks(int)
@@ -16,6 +26,16 @@ type Song interface {
 	SetPatternLoopStart()
 	SetPatternLoopEnd(uint8)
 	CanPatternLoop() bool
+	SetEffectFactory(EffectFactoryFunc)
+	SetCalcSemitonePeriod(CalcSemitonePeriodFunc)
+	SetPatterns(Patterns)
+	SetOrderList([]uint8)
+	SetSongData(SongData)
+	SetNumChannels(int)
+	GetNumChannels() int
+	GetChannel(int) Channel
+	GetCurrentOrder() uint8
+	GetCurrentRow() uint8
 }
 
 // SongData is an interface to the song data

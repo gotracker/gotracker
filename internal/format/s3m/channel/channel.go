@@ -2,7 +2,6 @@ package channel
 
 import (
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/volume"
 )
@@ -41,7 +40,6 @@ func (w What) Channel() uint8 {
 
 // Data is the data for the channel
 type Data struct {
-	intf.ChannelData
 	What       What
 	Note       note.Note
 	Instrument uint8

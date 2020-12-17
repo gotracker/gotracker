@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"math"
 )
@@ -307,13 +308,13 @@ func readMOD(filename string) (*Song, error) {
 	}
 	song.Head = *h
 
-	song.Patterns = make([]Pattern, song.Head.Info.PatternCount)
+	song.Patterns = make([]intf.Pattern, song.Head.Info.PatternCount)
 	for i := 0; i < int(song.Head.Info.PatternCount); i++ {
 		var pattern = readMODPattern(buffer, numCh)
 		if pattern == nil {
 			continue
 		}
-		song.Patterns[i] = *pattern
+		song.Patterns[i] = pattern
 	}
 
 	song.Instruments = make([]Instrument, len(mh.Samples))

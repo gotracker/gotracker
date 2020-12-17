@@ -6,9 +6,6 @@ import (
 	"gotracker/internal/format/s3m/effect"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/sample"
-	"gotracker/internal/player/state"
 	"os"
 )
 
@@ -37,63 +34,45 @@ func load(s intf.Song, filename string, reader readerFunc) error {
 		return err
 	}
 
-	ss := s.(*state.Song)
+	s.SetEffectFactory(effect.Factory)
+	s.SetCalcSemitonePeriod(util.CalcSemitonePeriod)
+	s.SetPatterns(s3mSong.Patterns)
+	s.SetOrderList(s3mSong.Head.OrderList)
+	s.SetTicks(int(s3mSong.Head.Info.InitialSpeed))
+	s.SetTempo(int(s3mSong.Head.Info.InitialTempo))
 
-	ss.EffectFactory = effect.Factory
-	ss.CalcSemitonePeriod = util.CalcSemitonePeriod
-	ss.Pattern.Patterns = s3mSong.GetPatternsInterface()
-	ss.Pattern.Orders = s3mSong.Head.OrderList
-	ss.Pattern.Row.Ticks = int(s3mSong.Head.Info.InitialSpeed)
-	ss.Pattern.Row.Tempo = int(s3mSong.Head.Info.InitialTempo)
+	s.SetGlobalVolume(util.VolumeFromS3M(s3mSong.Head.Info.GlobalVolume))
+	s.SetSongData(s3mSong)
 
-	ss.GlobalVolume = util.VolumeFromS3M(s3mSong.Head.Info.GlobalVolume)
-	ss.SongData = s3mSong
-
+	numCh := 0
 	for i, cs := range s3mSong.Head.ChannelSettings {
 		if cs.IsEnabled() {
-			ss.NumChannels = i + 1
+			numCh = i + 1
 		}
 	}
+	s.SetNumChannels(numCh)
 
-	for i := 0; i < ss.NumChannels; i++ {
-		cs := &ss.Channels[i]
-		cs.Instrument = nil
-		cs.Pos = sample.Pos{}
-		cs.Period = 0
-		cs.SetStoredVolume(64, ss)
-		cs.Memory = &channel.Memory{}
+	for i := 0; i < numCh; i++ {
+		cs := s.GetChannel(i)
+		cs.SetStoredVolume(util.VolumeFromS3M(64), s)
+		cs.SetMemory(&channel.Memory{})
 		ch := s3mSong.Head.ChannelSettings[i]
 		if ch.IsEnabled() {
 			pf := s3mSong.Head.Panning[i]
 			if pf.IsValid() {
-				cs.Pan = util.PanningFromS3M(pf.Value())
+				cs.SetPan(util.PanningFromS3M(pf.Value()))
 			} else {
 				l := ch.GetChannel()
 				switch l {
 				case ChannelIDL1, ChannelIDL2, ChannelIDL3, ChannelIDL4, ChannelIDL5, ChannelIDL6, ChannelIDL7, ChannelIDL8:
-					cs.Pan = util.PanningFromS3M(0x03)
+					cs.SetPan(util.PanningFromS3M(0x03))
 				case ChannelIDR1, ChannelIDR2, ChannelIDR3, ChannelIDR4, ChannelIDR5, ChannelIDR6, ChannelIDR7, ChannelIDR8:
-					cs.Pan = util.PanningFromS3M(0x0C)
+					cs.SetPan(util.PanningFromS3M(0x0C))
 				}
 			}
 		} else {
-			cs.Pan = util.PanningFromS3M(0x08) // center?
+			cs.SetPan(util.PanningFromS3M(0x08)) // center?
 		}
-		cs.Command = nil
-
-		cs.DisplayNote = note.EmptyNote
-		cs.DisplayInst = 0
-
-		cs.TargetPeriod = cs.Period
-		cs.TargetPos = cs.Pos
-		cs.TargetInst = cs.Instrument
-		cs.PortaTargetPeriod = cs.TargetPeriod
-		cs.NotePlayTick = 0
-		cs.RetriggerCount = 0
-		cs.TremorOn = true
-		cs.TremorTime = 0
-		cs.VibratoDelta = 0
-		cs.Cmd = nil
 	}
 
 	return nil

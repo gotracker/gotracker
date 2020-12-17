@@ -12,21 +12,14 @@ import (
 	"gotracker/internal/player/volume"
 )
 
-// EffectFactory is a function that generates a channel effect based on the input channel pattern data
-type EffectFactory func(mi intf.Memory, data intf.ChannelData) intf.Effect
-
-// SemitoneCalculator is the function used to calculate a note semitone
-type SemitoneCalculator func(noteSemi note.Semitone, c2spd note.C2SPD) note.Period
-
 // Song is the song state for the current playing song
 type Song struct {
 	intf.Song
 	SongData           intf.SongData
-	EffectFactory      EffectFactory
-	CalcSemitonePeriod SemitoneCalculator
+	EffectFactory      intf.EffectFactoryFunc
+	CalcSemitonePeriod intf.CalcSemitonePeriodFunc
 
-	Channels     [32]ChannelState
-	NumChannels  int
+	Channels     []ChannelState
 	Pattern      PatternState
 	GlobalVolume volume.Volume
 
@@ -39,11 +32,41 @@ func NewSong() *Song {
 	var ss = Song{}
 	ss.Pattern.CurrentOrder = 0
 	ss.Pattern.CurrentRow = 0
-	ss.NumChannels = 1
 	ss.PatternLoopEnabled = true
 	ss.playedOrders = make([]uint8, 0)
 
 	return &ss
+}
+
+// GetNumChannels returns the number of channels
+func (ss *Song) GetNumChannels() int {
+	return len(ss.Channels)
+}
+
+// SetNumChannels updates the song to have the specified number of channels and resets their states
+func (ss *Song) SetNumChannels(num int) {
+	ss.Channels = make([]ChannelState, num)
+
+	for _, cs := range ss.Channels {
+		cs.Pos = sample.Pos{}
+		cs.Instrument = nil
+		cs.Period = 0
+		cs.Command = nil
+
+		cs.DisplayNote = note.EmptyNote
+		cs.DisplayInst = 0
+
+		cs.TargetPeriod = cs.Period
+		cs.TargetPos = cs.Pos
+		cs.TargetInst = cs.Instrument
+		cs.PortaTargetPeriod = cs.TargetPeriod
+		cs.NotePlayTick = 0
+		cs.RetriggerCount = 0
+		cs.TremorOn = true
+		cs.TremorTime = 0
+		cs.VibratoDelta = 0
+		cs.Cmd = nil
+	}
 }
 
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
@@ -93,7 +116,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 		orderRestart = true
 		ss.Pattern.CurrentOrder++
 	} else {
-		myCurrentOrder := ss.Pattern.CurrentOrder
+		//myCurrentOrder := ss.Pattern.CurrentOrder
 		myCurrentRow := ss.Pattern.CurrentRow
 
 		row := rows[myCurrentRow]
@@ -104,96 +127,13 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) *render.RowRender {
 
 			cs := &ss.Channels[channelNum]
 
-			cs.Command = nil
-
-			cs.TargetPeriod = cs.Period
-			cs.TargetPos = cs.Pos
-			cs.TargetInst = cs.Instrument
-			cs.DoRetriggerNote = true
-			cs.NotePlayTick = 0
-			cs.RetriggerCount = 0
-			cs.TremorOn = true
-			cs.TremorTime = 0
-			cs.VibratoDelta = 0
-			cs.Cmd = channel
-
-			wantNoteCalc := false
-
-			if channel.HasNote() {
-				cs.VibratoOscillator.Pos = 0
-				cs.TremoloOscillator.Pos = 0
-				cs.TargetInst = nil
-				inst := channel.GetInstrument()
-				if inst == 0 {
-					// use current
-					cs.TargetInst = cs.Instrument
-					cs.TargetPos = sample.Pos{}
-				} else if int(inst) > ss.SongData.NumInstruments() {
-					cs.TargetInst = nil
-				} else {
-					cs.TargetInst = ss.SongData.GetInstrument(int(inst) - 1)
-					cs.TargetPos = sample.Pos{}
-					if cs.TargetInst != nil {
-						vol := cs.TargetInst.GetVolume()
-						cs.SetStoredVolume(vol, ss)
-					}
-				}
-
-				n := channel.GetNote()
-				if n.IsInvalid() {
-					cs.TargetPeriod = 0
-					cs.DisplayNote = note.EmptyNote
-					cs.DisplayInst = 0
-				} else if cs.TargetInst != nil {
-					cs.NoteSemitone = n.Semitone()
-					cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
-					wantNoteCalc = true
-					cs.DisplayNote = n
-					cs.DisplayInst = uint8(cs.TargetInst.GetID())
-				}
-			} else {
-				cs.DisplayNote = note.EmptyNote
-				cs.DisplayInst = 0
-			}
-
-			if channel.HasVolume() {
-				v := channel.GetVolume()
-				if v == volume.VolumeUseInstVol {
-					sample := cs.TargetInst
-					if sample != nil {
-						vol := sample.GetVolume()
-						cs.SetStoredVolume(vol, ss)
-					}
-				} else {
-					cs.SetStoredVolume(v, ss)
-				}
-			}
-
-			cs.ActiveEffect = ss.EffectFactory(cs.GetMemory(), cs.Cmd)
-
-			if wantNoteCalc {
-				cs.TargetPeriod = ss.CalcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
-				cs.PortaTargetPeriod = cs.TargetPeriod
-			}
-
-			if cs.ActiveEffect != nil {
-				cs.ActiveEffect.PreStart(cs, ss)
-			}
-			if ss.Pattern.CurrentOrder != myCurrentOrder {
-				orderRestart = true
-			}
-			if ss.Pattern.CurrentRow != myCurrentRow {
-				rowRestart = true
-			}
-
-			cs.Command = ss.processCommand
+			orderRestart, rowRestart = cs.processRow(row, channel, ss, ss.SongData, ss.EffectFactory, ss.CalcSemitonePeriod, ss.processCommand)
 		}
 
 		ss.soundRenderRow(finalData, sampler)
-		var rowText = render.NewRowText(ss.NumChannels)
-		for ch := 0; ch < ss.NumChannels; ch++ {
+		var rowText = render.NewRowText(len(ss.Channels))
+		for ch := range ss.Channels {
 			cs := &ss.Channels[ch]
-
 			var c render.ChannelDisplay
 			c.Note = "..."
 			c.Instrument = ".."
@@ -299,52 +239,17 @@ func (ss *Song) soundRenderRow(rowRender *render.RowRender, sampler *render.Samp
 
 	centerPanning := panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	for len(rowRender.RenderData) < ss.NumChannels {
+	for len(rowRender.RenderData) < len(ss.Channels) {
 		rowRender.RenderData = append(rowRender.RenderData, nil)
 	}
 	rowRender.SamplesLen = samplesThisRow
 
-	for ch := 0; ch < ss.NumChannels; ch++ {
+	for ch := range ss.Channels {
 		cs := &ss.Channels[ch]
+		rr := make([]mixer.Data, ticksThisRow)
+		cs.renderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, tickSamples, centerPanning)
 
-		rowRender.RenderData[ch] = make([]mixer.Data, ticksThisRow)
-
-		tickPos := 0
-		for tick := 0; tick < ticksThisRow; tick++ {
-			var lastTick = (tick+1 == ticksThisRow)
-			if cs.Command != nil {
-				cs.Command(ch, cs, tick, lastTick)
-			}
-
-			sample := cs.Instrument
-			if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
-				// make a stand-alone data buffer for this channel for this tick
-				data := mix.NewMixBuffer(tickSamples)
-				mixChan, mixDone := data.C()
-
-				period := cs.Period + cs.VibratoDelta
-				samplerAdd := samplerSpeed / float32(period)
-				mixData := mixer.SampleMixIn{
-					Sample:       sample,
-					SamplePos:    cs.Pos,
-					SamplePeriod: samplerAdd,
-					StaticVol:    volume.Volume(1.0),
-					VolMatrix:    centerPanning,
-					MixPos:       0,
-					MixLen:       tickSamples,
-				}
-				mixChan <- mixData
-				cs.Pos.Add(samplerAdd * float32(tickSamples))
-				rowRender.RenderData[ch][tick] = mixer.Data{
-					Data:       data,
-					Pan:        cs.Pan,
-					Volume:     cs.ActiveVolume * cs.LastGlobalVolume,
-					SamplesLen: tickSamples,
-					Flush:      mixDone,
-				}
-			}
-			tickPos += tickSamples
-		}
+		rowRender.RenderData[ch] = rr
 	}
 }
 
@@ -378,6 +283,11 @@ func (ss *Song) DecreaseTempo(delta int) {
 // IncreaseTempo increases the tempo by the `delta` value
 func (ss *Song) IncreaseTempo(delta int) {
 	ss.Pattern.Row.Tempo += delta
+}
+
+// GetGlobalVolume returns the global volume value
+func (ss *Song) GetGlobalVolume() volume.Volume {
+	return ss.GlobalVolume
 }
 
 // SetGlobalVolume sets the global volume to the specified `vol` value
@@ -432,4 +342,44 @@ func (ss *Song) DisableFeatures(features []feature.Feature) {
 // CanPatternLoop returns true if the song is allowed to pattern loop
 func (ss *Song) CanPatternLoop() bool {
 	return ss.PatternLoopEnabled
+}
+
+// SetEffectFactory sets the active effect factory function
+func (ss *Song) SetEffectFactory(ef intf.EffectFactoryFunc) {
+	ss.EffectFactory = ef
+}
+
+// SetCalcSemitonePeriod sets the semitone period calculator function
+func (ss *Song) SetCalcSemitonePeriod(csp intf.CalcSemitonePeriodFunc) {
+	ss.CalcSemitonePeriod = csp
+}
+
+// SetPatterns sets the pattern list interface
+func (ss *Song) SetPatterns(patterns intf.Patterns) {
+	ss.Pattern.Patterns = patterns
+}
+
+// SetOrderList sets the order list
+func (ss *Song) SetOrderList(orders []uint8) {
+	ss.Pattern.Orders = orders
+}
+
+// SetSongData sets the song data object
+func (ss *Song) SetSongData(songdata intf.SongData) {
+	ss.SongData = songdata
+}
+
+// GetChannel returns the channel interface for the specified channel number
+func (ss *Song) GetChannel(ch int) intf.Channel {
+	return &ss.Channels[ch]
+}
+
+// GetCurrentOrder returns the current order
+func (ss *Song) GetCurrentOrder() uint8 {
+	return ss.Pattern.CurrentOrder
+}
+
+// GetCurrentRow returns the current row
+func (ss *Song) GetCurrentRow() uint8 {
+	return ss.Pattern.CurrentRow
 }

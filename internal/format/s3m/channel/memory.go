@@ -1,10 +1,7 @@
 package channel
 
-import "gotracker/internal/player/intf"
-
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	intf.Memory
 	portaToNote   uint8
 	vibrato       uint8
 	sampleOffset  uint8

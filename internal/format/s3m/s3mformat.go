@@ -6,6 +6,7 @@ import (
 	"errors"
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"log"
 )
@@ -222,13 +223,13 @@ func readS3M(filename string) (*Song, error) {
 		song.Instruments[instNum] = *sample
 	}
 
-	song.Patterns = make([]Pattern, len(song.Head.PatternPointers))
+	song.Patterns = make([]intf.Pattern, len(song.Head.PatternPointers))
 	for patNum, ptr := range song.Head.PatternPointers {
 		var pattern = readS3MPattern(data, ptr)
 		if pattern == nil {
 			continue
 		}
-		song.Patterns[patNum] = *pattern
+		song.Patterns[patNum] = pattern
 	}
 
 	return &song, nil

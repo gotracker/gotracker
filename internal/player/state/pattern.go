@@ -37,7 +37,7 @@ type PatternState struct {
 	PatternDelay       int
 	FinePatternDelay   int
 
-	Patterns []intf.Pattern
+	Patterns intf.Patterns
 	Orders   []uint8
 
 	LoopStart   uint8

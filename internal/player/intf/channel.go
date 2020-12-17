@@ -27,9 +27,11 @@ type ChannelData interface {
 // Channel is an interface for channel state
 type Channel interface {
 	ResetRetriggerCount()
+	SetMemory(Memory)
 	GetMemory() Memory
 	GetActiveVolume() volume.Volume
 	SetActiveVolume(volume.Volume)
+	SetStoredVolume(volume.Volume, Song)
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() ChannelData
@@ -46,6 +48,7 @@ type Channel interface {
 	SetTremorOn(bool)
 	GetTremorTime() int
 	SetTremorTime(int)
+	SetInstrument(Instrument)
 	GetInstrument() Instrument
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)

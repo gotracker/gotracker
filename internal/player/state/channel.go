@@ -5,6 +5,7 @@ import (
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"
 	"gotracker/internal/player/panning"
+	"gotracker/internal/player/render/mixer"
 	"gotracker/internal/player/sample"
 	"gotracker/internal/player/volume"
 	"math"
@@ -49,13 +50,147 @@ type ChannelState struct {
 	TargetC2Spd       note.C2SPD
 }
 
+func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss intf.Song, sd intf.SongData, effectFactory intf.EffectFactoryFunc, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) (bool, bool) {
+	myCurrentOrder := ss.GetCurrentOrder()
+	myCurrentRow := ss.GetCurrentRow()
+
+	cs.Command = processCommand
+
+	cs.TargetPeriod = cs.Period
+	cs.TargetPos = cs.Pos
+	cs.TargetInst = cs.Instrument
+	cs.DoRetriggerNote = true
+	cs.NotePlayTick = 0
+	cs.RetriggerCount = 0
+	cs.TremorOn = true
+	cs.TremorTime = 0
+	cs.VibratoDelta = 0
+	cs.Cmd = channel
+
+	wantNoteCalc := false
+
+	if channel.HasNote() {
+		cs.VibratoOscillator.Pos = 0
+		cs.TremoloOscillator.Pos = 0
+		cs.TargetInst = nil
+		inst := channel.GetInstrument()
+		if inst == 0 {
+			// use current
+			cs.TargetInst = cs.Instrument
+			cs.TargetPos = sample.Pos{}
+		} else if int(inst) > sd.NumInstruments() {
+			cs.TargetInst = nil
+		} else {
+			cs.TargetInst = sd.GetInstrument(int(inst) - 1)
+			cs.TargetPos = sample.Pos{}
+			if cs.TargetInst != nil {
+				vol := cs.TargetInst.GetVolume()
+				cs.SetStoredVolume(vol, ss)
+			}
+		}
+
+		n := channel.GetNote()
+		if n.IsInvalid() {
+			cs.TargetPeriod = 0
+			cs.DisplayNote = note.EmptyNote
+			cs.DisplayInst = 0
+		} else if cs.TargetInst != nil {
+			cs.NoteSemitone = n.Semitone()
+			cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
+			wantNoteCalc = true
+			cs.DisplayNote = n
+			cs.DisplayInst = uint8(cs.TargetInst.GetID())
+		}
+	} else {
+		cs.DisplayNote = note.EmptyNote
+		cs.DisplayInst = 0
+	}
+
+	if channel.HasVolume() {
+		v := channel.GetVolume()
+		if v == volume.VolumeUseInstVol {
+			sample := cs.TargetInst
+			if sample != nil {
+				vol := sample.GetVolume()
+				cs.SetStoredVolume(vol, ss)
+			}
+		} else {
+			cs.SetStoredVolume(v, ss)
+		}
+	}
+
+	if effectFactory != nil {
+		cs.ActiveEffect = effectFactory(cs.GetMemory(), cs.Cmd)
+	}
+
+	if wantNoteCalc {
+		cs.TargetPeriod = calcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
+		cs.PortaTargetPeriod = cs.TargetPeriod
+	}
+
+	if cs.ActiveEffect != nil {
+		cs.ActiveEffect.PreStart(cs, ss)
+	}
+	orderRestart := false
+	rowRestart := false
+	order := ss.GetCurrentOrder()
+	if order != myCurrentOrder {
+		orderRestart = true
+	}
+	r := ss.GetCurrentRow()
+	if r != myCurrentRow {
+		rowRestart = true
+	}
+
+	return orderRestart, rowRestart
+}
+
+func (cs *ChannelState) renderRow(mixerData []mixer.Data, ch int, ticksThisRow int, mix *mixer.Mixer, panmixer mixer.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.VolumeMatrix) {
+	tickPos := 0
+	for tick := 0; tick < ticksThisRow; tick++ {
+		var lastTick = (tick+1 == ticksThisRow)
+		if cs.Command != nil {
+			cs.Command(ch, cs, tick, lastTick)
+		}
+
+		sample := cs.Instrument
+		if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
+			// make a stand-alone data buffer for this channel for this tick
+			data := mix.NewMixBuffer(tickSamples)
+			mixChan, mixDone := data.C()
+
+			period := cs.Period + cs.VibratoDelta
+			samplerAdd := samplerSpeed / float32(period)
+			mixData := mixer.SampleMixIn{
+				Sample:       sample,
+				SamplePos:    cs.Pos,
+				SamplePeriod: samplerAdd,
+				StaticVol:    volume.Volume(1.0),
+				VolMatrix:    centerPanning,
+				MixPos:       0,
+				MixLen:       tickSamples,
+			}
+			mixChan <- mixData
+			cs.Pos.Add(samplerAdd * float32(tickSamples))
+			mixerData[tick] = mixer.Data{
+				Data:       data,
+				Pan:        cs.Pan,
+				Volume:     cs.ActiveVolume * cs.LastGlobalVolume,
+				SamplesLen: tickSamples,
+				Flush:      mixDone,
+			}
+		}
+		tickPos += tickSamples
+	}
+}
+
 // SetStoredVolume sets the stored volume value for the channel
 // this also modifies the active volume
 // and stores the active global volume value (which doesn't always get set on channels immediately)
-func (cs *ChannelState) SetStoredVolume(vol volume.Volume, ss *Song) {
+func (cs *ChannelState) SetStoredVolume(vol volume.Volume, ss intf.Song) {
 	cs.StoredVolume = vol
 	cs.ActiveVolume = vol
-	cs.LastGlobalVolume = ss.GlobalVolume
+	cs.LastGlobalVolume = ss.GetGlobalVolume()
 }
 
 // FreezePlayback suspends mixer progression on the channel
@@ -96,6 +231,11 @@ func (cs *ChannelState) ResetRetriggerCount() {
 // GetMemory returns the interface to the custom effect memory module
 func (cs *ChannelState) GetMemory() intf.Memory {
 	return cs.Memory
+}
+
+// SetMemory sets the custom effect memory interface
+func (cs *ChannelState) SetMemory(mem intf.Memory) {
+	cs.Memory = mem
 }
 
 // GetActiveVolume returns the current active volume on the channel
@@ -171,6 +311,11 @@ func (cs *ChannelState) SetTremorTime(time int) {
 // GetInstrument returns the interface to the active instrument
 func (cs *ChannelState) GetInstrument() intf.Instrument {
 	return cs.Instrument
+}
+
+// SetInstrument sets the interface to the active instrument
+func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
+	cs.Instrument = inst
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)

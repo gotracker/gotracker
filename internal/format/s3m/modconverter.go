@@ -5,11 +5,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
+
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/module/player/intf"
 	"gotracker/internal/module/player/note"
-	"math"
 )
 
 type modHeader struct {

@@ -2,8 +2,10 @@ package output
 
 import (
 	"errors"
+
+	device "github.com/heucuva/gosound"
+
 	"gotracker/internal/module/player/feature"
-	"gotracker/internal/output/device"
 )
 
 type devicePriority int

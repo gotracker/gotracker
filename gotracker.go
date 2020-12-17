@@ -6,6 +6,7 @@ import (
 	"log"
 
 	progressBar "github.com/cheggaaa/pb"
+	device "github.com/heucuva/gosound"
 	"github.com/pkg/errors"
 
 	"gotracker/internal/format"
@@ -13,7 +14,6 @@ import (
 	"gotracker/internal/module/player/render"
 	"gotracker/internal/module/player/state"
 	"gotracker/internal/output"
-	"gotracker/internal/output/device"
 )
 
 // flags

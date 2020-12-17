@@ -2,8 +2,10 @@ package s3m
 
 import (
 	"encoding/binary"
-	"gotracker/internal/audio/sampling"
-	"gotracker/internal/audio/volume"
+
+	"github.com/heucuva/gomixing/sampling"
+	"github.com/heucuva/gomixing/volume"
+
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/module/player/intf"
 	"gotracker/internal/module/player/note"
@@ -69,7 +71,7 @@ func (inst *Instrument) GetLength() sampling.Pos {
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *Instrument) GetSample(pos sampling.Pos) volume.VolumeMatrix {
+func (inst *Instrument) GetSample(pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
 	if pos.Frac == 0 {
 		return v0
@@ -81,14 +83,14 @@ func (inst *Instrument) GetSample(pos sampling.Pos) volume.VolumeMatrix {
 	return v0
 }
 
-func (inst *Instrument) getConvertedSample(pos int) volume.VolumeMatrix {
+func (inst *Instrument) getConvertedSample(pos int) volume.Matrix {
 	if inst.Looped {
 		pos = inst.calcLoopedSamplePos(pos)
 	}
 	if pos < 0 || pos >= inst.Length {
-		return volume.VolumeMatrix{}
+		return volume.Matrix{}
 	}
-	o := make(volume.VolumeMatrix, inst.NumChannels)
+	o := make(volume.Matrix, inst.NumChannels)
 	for c := 0; c < inst.NumChannels; c++ {
 		switch inst.BitsPerSample {
 		case 8:

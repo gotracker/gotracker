@@ -1,7 +1,8 @@
 package channel
 
 import (
-	"gotracker/internal/audio/volume"
+	"github.com/heucuva/gomixing/volume"
+
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/module/player/note"
 )

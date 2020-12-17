@@ -2,6 +2,7 @@ package format
 
 import (
 	"errors"
+
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
 	"gotracker/internal/module/player/intf"

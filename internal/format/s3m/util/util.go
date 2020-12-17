@@ -3,8 +3,9 @@ package util
 import (
 	"math"
 
-	"gotracker/internal/audio/panning"
-	"gotracker/internal/audio/volume"
+	"github.com/heucuva/gomixing/panning"
+	"github.com/heucuva/gomixing/volume"
+
 	"gotracker/internal/module/player/note"
 )
 

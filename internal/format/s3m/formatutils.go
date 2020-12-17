@@ -2,11 +2,12 @@ package s3m
 
 import (
 	"bytes"
+	"os"
+
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/effect"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/module/player/intf"
-	"os"
 )
 
 func readFile(filename string) (*bytes.Buffer, error) {

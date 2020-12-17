@@ -1,8 +1,9 @@
 package intf
 
 import (
-	"gotracker/internal/audio/sampling"
-	"gotracker/internal/audio/volume"
+	"github.com/heucuva/gomixing/sampling"
+	"github.com/heucuva/gomixing/volume"
+
 	"gotracker/internal/module/player/note"
 )
 

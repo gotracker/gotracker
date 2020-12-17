@@ -1,9 +1,10 @@
 package effect
 
 import (
+	"log"
+
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/module/player/intf"
-	"log"
 )
 
 // Factory produces an effect for the provided channel pattern data

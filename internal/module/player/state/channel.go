@@ -3,10 +3,11 @@ package state
 import (
 	"math"
 
-	"gotracker/internal/audio/mixing"
-	"gotracker/internal/audio/panning"
-	"gotracker/internal/audio/sampling"
-	"gotracker/internal/audio/volume"
+	"github.com/heucuva/gomixing/mixing"
+	"github.com/heucuva/gomixing/panning"
+	"github.com/heucuva/gomixing/sampling"
+	"github.com/heucuva/gomixing/volume"
+
 	"gotracker/internal/module/player/intf"
 	"gotracker/internal/module/player/note"
 	"gotracker/internal/module/player/oscillator"
@@ -146,7 +147,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 	return orderRestart, rowRestart
 }
 
-func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.VolumeMatrix) {
+func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix) {
 	tickPos := 0
 	for tick := 0; tick < ticksThisRow; tick++ {
 		var lastTick = (tick+1 == ticksThisRow)

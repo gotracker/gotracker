@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"log"
+
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/module/player/intf"
 	"gotracker/internal/module/player/note"
-	"log"
 )
 
 // ModuleHeader is the initial header definition of an S3M file

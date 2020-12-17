@@ -3,7 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/audio/sampling"
+	"github.com/heucuva/gomixing/sampling"
+
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/module/player/intf"
 )

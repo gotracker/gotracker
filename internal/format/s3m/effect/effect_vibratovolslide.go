@@ -2,6 +2,7 @@ package effect
 
 import (
 	"fmt"
+
 	"gotracker/internal/module/player/intf"
 )
 

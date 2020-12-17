@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 
-	"gotracker/internal/audio/mixing"
-	"gotracker/internal/audio/panning"
-	"gotracker/internal/audio/sampling"
-	"gotracker/internal/audio/volume"
+	"github.com/heucuva/gomixing/mixing"
+	"github.com/heucuva/gomixing/panning"
+	"github.com/heucuva/gomixing/sampling"
+	"github.com/heucuva/gomixing/volume"
+	device "github.com/heucuva/gosound"
+
 	"gotracker/internal/module/player/feature"
 	"gotracker/internal/module/player/intf"
 	"gotracker/internal/module/player/note"
 	"gotracker/internal/module/player/render"
-	"gotracker/internal/output/device"
 )
 
 var (

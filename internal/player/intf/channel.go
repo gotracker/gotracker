@@ -5,8 +5,8 @@ import (
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/module/player/note"
-	"gotracker/internal/module/player/oscillator"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/oscillator"
 )
 
 // ChannelData is an interface for channel data

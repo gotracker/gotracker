@@ -7,7 +7,7 @@ import (
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/effect"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 func readFile(filename string) (*bytes.Buffer, error) {

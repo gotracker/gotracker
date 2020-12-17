@@ -8,9 +8,9 @@ import (
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
-	"gotracker/internal/module/player/oscillator"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/oscillator"
 )
 
 type commandFunc func(int, *ChannelState, int, bool)

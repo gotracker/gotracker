@@ -5,7 +5,7 @@ import (
 
 	"github.com/heucuva/gomixing/sampling"
 
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect

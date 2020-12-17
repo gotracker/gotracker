@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // StereoControl defines a set stereo control effect

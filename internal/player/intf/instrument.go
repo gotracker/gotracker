@@ -4,7 +4,7 @@ import (
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/note"
 )
 
 // Instrument is an interface for instrument/sample data

@@ -6,7 +6,7 @@ import (
 	"github.com/heucuva/gomixing/sampling"
 
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // SampleOffset defines a sample offset effect

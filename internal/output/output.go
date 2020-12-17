@@ -5,7 +5,7 @@ import (
 
 	device "github.com/heucuva/gosound"
 
-	"gotracker/internal/module/player/feature"
+	"gotracker/internal/player/feature"
 )
 
 type devicePriority int

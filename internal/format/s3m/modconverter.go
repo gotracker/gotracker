@@ -9,8 +9,8 @@ import (
 
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 type modHeader struct {

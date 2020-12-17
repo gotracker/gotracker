@@ -5,9 +5,9 @@ import (
 	"math/rand"
 
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
-	"gotracker/internal/module/player/oscillator"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/oscillator"
 )
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {

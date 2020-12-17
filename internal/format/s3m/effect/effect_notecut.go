@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // NoteCut defines a note cut effect

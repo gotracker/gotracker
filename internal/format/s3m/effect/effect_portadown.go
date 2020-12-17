@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // PortaDown defines a portamento down effect

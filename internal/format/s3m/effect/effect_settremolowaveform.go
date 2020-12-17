@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/oscillator"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/oscillator"
 )
 
 // SetTremoloWaveform defines a set tremolo waveform effect

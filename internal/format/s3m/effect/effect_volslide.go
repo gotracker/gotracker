@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // VolumeSlide defines a volume slide effect

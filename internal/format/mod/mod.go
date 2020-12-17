@@ -2,7 +2,7 @@ package mod
 
 import (
 	"gotracker/internal/format/s3m"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 type format struct {

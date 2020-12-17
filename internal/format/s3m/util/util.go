@@ -6,7 +6,7 @@ import (
 	"github.com/heucuva/gomixing/panning"
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/note"
 )
 
 const (

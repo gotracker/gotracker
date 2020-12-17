@@ -8,8 +8,8 @@ import (
 
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // ModuleHeader is the initial header definition of an S3M file

@@ -7,8 +7,8 @@ import (
 	"github.com/heucuva/gomixing/volume"
 
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // Instrument is the mildly-decoded S3M instrument/sample header

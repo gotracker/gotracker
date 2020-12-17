@@ -2,7 +2,7 @@ package s3m
 
 import (
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // Pattern is the data for each pattern

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // PortaUp defines a portamento up effect

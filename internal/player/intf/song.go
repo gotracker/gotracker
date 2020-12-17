@@ -3,7 +3,7 @@ package intf
 import (
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/module/player/note"
+	"gotracker/internal/player/note"
 )
 
 // EffectFactoryFunc is a function type that gets an effect for specified channel data

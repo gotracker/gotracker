@@ -10,10 +10,10 @@ import (
 	"github.com/heucuva/gomixing/volume"
 	device "github.com/heucuva/gosound"
 
-	"gotracker/internal/module/player/feature"
-	"gotracker/internal/module/player/intf"
-	"gotracker/internal/module/player/note"
-	"gotracker/internal/module/player/render"
+	"gotracker/internal/player/feature"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/render"
 )
 
 var (

@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 
 	"gotracker/internal/format"
-	"gotracker/internal/module/player"
-	"gotracker/internal/module/player/render"
-	"gotracker/internal/module/player/state"
 	"gotracker/internal/output"
+	"gotracker/internal/player"
+	"gotracker/internal/player/render"
+	"gotracker/internal/player/state"
 )
 
 // flags

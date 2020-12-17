@@ -1,7 +1,7 @@
 package state
 
 import (
-	"gotracker/internal/module/player/intf"
+	"gotracker/internal/player/intf"
 )
 
 // PatternNum is an order pattern number

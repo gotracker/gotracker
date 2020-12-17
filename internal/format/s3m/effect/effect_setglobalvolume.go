@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // SetGlobalVolume defines a set global volume effect

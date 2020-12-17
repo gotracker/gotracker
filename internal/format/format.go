@@ -4,8 +4,8 @@ import (
 	"errors"
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state"
+	"gotracker/internal/module/player/intf"
+	"gotracker/internal/module/player/state"
 )
 
 var (

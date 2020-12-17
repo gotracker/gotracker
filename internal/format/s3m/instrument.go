@@ -2,11 +2,11 @@ package s3m
 
 import (
 	"encoding/binary"
+	"gotracker/internal/audio/sampling"
+	"gotracker/internal/audio/volume"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/sample"
-	"gotracker/internal/player/volume"
+	"gotracker/internal/module/player/intf"
+	"gotracker/internal/module/player/note"
 )
 
 // Instrument is the mildly-decoded S3M instrument/sample header
@@ -54,22 +54,22 @@ func (inst *Instrument) IsLooped() bool {
 }
 
 // GetLoopBegin returns the loop start position
-func (inst *Instrument) GetLoopBegin() sample.Pos {
-	return sample.Pos{Pos: inst.LoopBegin}
+func (inst *Instrument) GetLoopBegin() sampling.Pos {
+	return sampling.Pos{Pos: inst.LoopBegin}
 }
 
 // GetLoopEnd returns the loop end position
-func (inst *Instrument) GetLoopEnd() sample.Pos {
-	return sample.Pos{Pos: inst.LoopEnd}
+func (inst *Instrument) GetLoopEnd() sampling.Pos {
+	return sampling.Pos{Pos: inst.LoopEnd}
 }
 
 // GetLength returns the length of the instrument
-func (inst *Instrument) GetLength() sample.Pos {
-	return sample.Pos{Pos: inst.Length}
+func (inst *Instrument) GetLength() sampling.Pos {
+	return sampling.Pos{Pos: inst.Length}
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *Instrument) GetSample(pos sample.Pos) volume.VolumeMatrix {
+func (inst *Instrument) GetSample(pos sampling.Pos) volume.VolumeMatrix {
 	v0 := inst.getConvertedSample(pos.Pos)
 	if pos.Frac == 0 {
 		return v0

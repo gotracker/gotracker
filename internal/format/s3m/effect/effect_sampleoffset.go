@@ -2,9 +2,10 @@ package effect
 
 import (
 	"fmt"
+
+	"gotracker/internal/audio/sampling"
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/sample"
+	"gotracker/internal/module/player/intf"
 )
 
 // SampleOffset defines a sample offset effect
@@ -19,7 +20,7 @@ func (e SampleOffset) Start(cs intf.Channel, ss intf.Song) {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.SampleOffset(uint8(e))
-	cs.SetTargetPos(sample.Pos{Pos: int(xx) * 0x100})
+	cs.SetTargetPos(sampling.Pos{Pos: int(xx) * 0x100})
 }
 
 // Tick is called on every tick

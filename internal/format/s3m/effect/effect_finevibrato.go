@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // FineVibrato defines an fine vibrato effect

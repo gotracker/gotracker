@@ -1,9 +1,9 @@
 package channel
 
 import (
+	"gotracker/internal/audio/volume"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/volume"
+	"gotracker/internal/module/player/note"
 )
 
 // What is a flagset (and channel id) for data in the channel

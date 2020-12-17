@@ -2,7 +2,7 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect

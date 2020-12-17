@@ -2,7 +2,7 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // PatternDelay defines a pattern delay effect

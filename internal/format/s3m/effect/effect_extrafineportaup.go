@@ -2,8 +2,9 @@ package effect
 
 import (
 	"fmt"
+
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // ExtraFinePortaUp defines an extra-fine portamento up effect

@@ -2,7 +2,7 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // SetSpeed defines a set speed effect

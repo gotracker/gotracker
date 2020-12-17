@@ -2,7 +2,8 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/player/intf"
+
+	"gotracker/internal/module/player/intf"
 )
 
 // FinePatternDelay defines an fine pattern delay effect

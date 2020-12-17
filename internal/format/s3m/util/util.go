@@ -1,10 +1,11 @@
 package util
 
 import (
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/panning"
-	"gotracker/internal/player/volume"
 	"math"
+
+	"gotracker/internal/audio/panning"
+	"gotracker/internal/audio/volume"
+	"gotracker/internal/module/player/note"
 )
 
 const (

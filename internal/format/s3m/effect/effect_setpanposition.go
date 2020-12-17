@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // SetPanPosition defines a set pan position effect

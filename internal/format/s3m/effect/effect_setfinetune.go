@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/module/player/intf"
+	"gotracker/internal/module/player/note"
 )
 
 // SetFinetune defines a mod-style set finetune effect

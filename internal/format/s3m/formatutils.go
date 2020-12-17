@@ -5,7 +5,7 @@ import (
 	"gotracker/internal/format/s3m/channel"
 	"gotracker/internal/format/s3m/effect"
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 	"os"
 )
 

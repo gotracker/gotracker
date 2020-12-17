@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"log"
 
-	"gotracker/internal/format"
-	"gotracker/internal/output"
-	"gotracker/internal/player"
-	"gotracker/internal/player/render"
-	"gotracker/internal/player/state"
-
 	progressBar "github.com/cheggaaa/pb"
+	"github.com/pkg/errors"
+
+	"gotracker/internal/format"
+	"gotracker/internal/module/player"
+	"gotracker/internal/module/player/render"
+	"gotracker/internal/module/player/state"
+	"gotracker/internal/output"
+	"gotracker/internal/output/device"
 )
 
 // flags
 var (
-	outputSettings output.Settings
+	outputSettings device.Settings
 	startingOrder  int
 )
 
@@ -26,20 +28,22 @@ var (
 )
 
 // Play starts a song playing
-func Play(ss *state.Song) <-chan render.RowRender {
-	out := make(chan render.RowRender, 64)
+func Play(ss *state.Song) <-chan *device.PremixData {
+	out := make(chan *device.PremixData, 64)
 	go func() {
+		defer close(out)
 		for {
-			renderData := player.RenderOneRow(ss, sampler)
-			if renderData != nil {
-				if renderData.Stop {
+			premix, err := player.RenderOneRow(ss, sampler)
+			if err != nil {
+				if errors.Is(err, state.ErrStopSong) {
 					break
-				} else if renderData.RenderData != nil && len(renderData.RenderData) != 0 {
-					out <- *renderData
 				}
+				log.Fatal(err)
+			}
+			if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
+				out <- premix
 			}
 		}
-		close(out)
 	}()
 	return out
 }
@@ -93,11 +97,12 @@ func main() {
 		}
 	}()
 
-	outputSettings.OnRowOutput = func(deviceKind output.DeviceKind, row render.RowRender) {
+	outputSettings.OnRowOutput = func(deviceKind device.Kind, premix *device.PremixData) {
+		row := premix.Userdata.(*render.RowRender)
 		switch deviceKind {
-		case output.DeviceKindSoundCard:
+		case device.KindSoundCard:
 			fmt.Printf("[%0.2d:%0.2d] %s\n", row.Order, row.Row, row.RowText.String())
-		case output.DeviceKindFile:
+		case device.KindFile:
 			if progress == nil {
 				progress = progressBar.StartNew(len(ss.SongData.GetOrderList()))
 				lastOrder = row.Order
@@ -116,10 +121,8 @@ func main() {
 	}
 	defer waveOut.Close()
 
-	var buffers <-chan render.RowRender
-
 	ss.DisableFeatures(disableFeatures)
 
-	buffers = Play(ss)
+	buffers := Play(ss)
 	waveOut.Play(buffers)
 }

@@ -3,7 +3,7 @@ package s3m
 
 import (
 	"gotracker/internal/format/s3m/util"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/module/player/intf"
 )
 
 // ParaPointer is a pointer offset within the S3M file format

@@ -1,4 +1,4 @@
-// +build pulseaudio
+// +build linux pulseaudio
 
 package pulseaudio
 

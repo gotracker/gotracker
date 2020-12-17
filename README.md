@@ -15,17 +15,19 @@ At the moment, just S3M (Screamtracker 3) files and very terribly simulated MOD 
 ## What systems does it work on?
 
 * Windows (Windows 2000 or newer)
-  * WinMM (`WAVE_MAPPER` device)
+  * Sound Card
+    * WinMM (`WAVE_MAPPER` device)
+    * DirectSound (via optional build flag: `directsound`)
+    * PulseAudio (via optional build flag: `pulseaudio`) - NOTE: Not recommended except for WSL (Linux) builds!
   * File
     * Wave/RIFF file (built-in)
     * Flac (via optional build flag: `flac`)
-  * DirectSound (via optional build flag: `directsound`)
-  * PulseAudio (via optional build flag: `pulseaudio`) - NOTE: Not recommended except for WSL (Linux) builds!
 * Linux
+  * Sound Card
+    * PulseAudio
   * File
     * Wave/RIFF file (built-in)
     * Flac (via optional build flag: `flac`)
-  * PulseAudio (via optional build flag: `pulseaudio`)
 
 ## How do I build this thing?
 
@@ -51,18 +53,11 @@ For a non-Windows (e.g.: Linux) build, I recommend the following:
    ```
    When the command completes, you should now have the gotracker.exe file. Drag an .S3M file on top of it!
 
-### How to build (on Linux, without PulseAudio support)
+### How to build (on Linux)
 
 1. Build the player with the following command
    ```bash
    go build
-   ```
-
-### How to build (on Linux or Windows, with PulseAudio support)
-
-1. Build the player with the following command
-   ```bash
-   go build -tags=pulseaudio
    ```
 
 NOTE: In order to use PulseAudio, you must have your `PULSE_SERVER` connection string environment variable configured:

@@ -36,7 +36,7 @@ func newPulseAudioDevice(settings Settings) (Device, error) {
 
 // Play starts the wave output device playing
 func (d *pulseaudioDevice) Play(in <-chan render.RowRender) {
-	panmixer := mixer.GetPanMixer(d.channels)
+	panmixer := mixer.GetPanMixer(d.mix.Channels)
 	for row := range in {
 		mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.RenderData)
 		d.pa.Output(mixedData)

@@ -20,6 +20,7 @@ type Header struct {
 	MixingVolume volume.Volume
 }
 
+// ChannelSetting is settings specific to a single channel
 type ChannelSetting struct {
 	Enabled          bool
 	OutputChannelNum int

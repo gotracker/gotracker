@@ -28,8 +28,9 @@ type ChannelState struct {
 	Command      commandFunc
 	ActiveEffect intf.Effect
 
-	DisplayNote note.Note
-	DisplayInst uint8
+	DisplayNote   note.Note
+	DisplayInst   uint8
+	DisplayVolume volume.Volume
 
 	TargetPeriod      note.Period
 	TargetPos         sampling.Pos
@@ -68,6 +69,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 	cs.TremorTime = 0
 	cs.VibratoDelta = 0
 	cs.Cmd = channel
+	cs.DisplayVolume = volume.VolumeUseInstVol
 
 	wantNoteCalc := false
 
@@ -194,8 +196,11 @@ func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow 
 // this also modifies the active volume
 // and stores the active global volume value (which doesn't always get set on channels immediately)
 func (cs *ChannelState) SetStoredVolume(vol volume.Volume, ss intf.Song) {
-	cs.StoredVolume = vol
-	cs.ActiveVolume = vol
+	if vol != volume.VolumeUseInstVol {
+		cs.StoredVolume = vol
+	}
+	cs.DisplayVolume = vol
+	cs.SetActiveVolume(vol)
 	cs.LastGlobalVolume = ss.GetGlobalVolume()
 }
 
@@ -251,7 +256,9 @@ func (cs *ChannelState) GetActiveVolume() volume.Volume {
 
 // SetActiveVolume sets the active volume on the channel
 func (cs *ChannelState) SetActiveVolume(vol volume.Volume) {
-	cs.ActiveVolume = vol
+	if vol != volume.VolumeUseInstVol {
+		cs.ActiveVolume = vol
+	}
 }
 
 // GetData returns the interface to the current channel song pattern data

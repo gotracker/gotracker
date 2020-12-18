@@ -8,6 +8,11 @@ github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGE
 github.com/go-audio/audio v1.0.0/go.mod h1:6uAu0+H2lHkwdGsAY+j2wHPNPpPoeg5AaEFh9FlA+Zs=
 github.com/go-audio/riff v1.0.0/go.mod h1:l3cQwc85y79NQFCRB7TiPoNiaijp6q8Z0Uv38rVG498=
 github.com/go-audio/wav v1.0.0/go.mod h1:3yoReyQOsiARkvPl3ERCi8JFjihzG6WhjYpZCf5zAWE=
+github.com/heucuva/goaudiofile v0.0.0-20201218174429-828ae5a3e355 h1:K+1ceogFOIv+ByHc9yttJoKBqih+UYPYDir0cFCQZ1A=
+github.com/heucuva/goaudiofile v1.0.0 h1:/Il+mpGtRoJcCFKyzrUApkiEjgvFUMaRLE2kV1D6lIA=
+github.com/heucuva/goaudiofile v1.0.0/go.mod h1:eJJ/n+2v/ZDeAe2An5l790ADAxO+86ldWp8oCNXsSN4=
+github.com/heucuva/goaudiofile v1.0.1 h1:7EaFCv1FVBKjp9lwKN5rqGJjgWyyjIybDOBGnC0pniQ=
+github.com/heucuva/goaudiofile v1.0.1/go.mod h1:eJJ/n+2v/ZDeAe2An5l790ADAxO+86ldWp8oCNXsSN4=
 github.com/heucuva/gomixing v1.0.0 h1:JSGdw3WMHyUncnU9VD4me9ArP2vTeTQLyU8yknmUq8A=
 github.com/heucuva/gomixing v1.0.0/go.mod h1:YF79YtZDBsV4whXYB4Zs6u47gnuk3KkDpp2fQi/LKsw=
 github.com/heucuva/gosound v1.0.1 h1:/cSM5WllEUmDBche4MkBFiLkLXKM+rSgkJIuBc3fpKI=
@@ -51,4 +56,6 @@ golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e h1:AyodaIpKjppX+cBfTASF2E1US3H2JFBj920Ot3rtDjs=
 golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201218084310-7d0127a74742 h1:+CBz4km/0KPU3RGTwARGh/noP3bEwtHcq+0YcBQM2JQ=
+golang.org/x/sys v0.0.0-20201218084310-7d0127a74742/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

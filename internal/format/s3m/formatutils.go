@@ -40,7 +40,7 @@ func load(s intf.Song, filename string, reader readerFunc) error {
 		cs := s.GetChannel(i)
 		cs.SetStoredVolume(ch.InitialVolume, s)
 		cs.SetPan(ch.InitialPanning)
-		cs.SetMemory(&ch.Memory)
+		cs.SetMemory(&s3mSong.ChannelSettings[i].Memory)
 	}
 
 	return nil

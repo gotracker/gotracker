@@ -20,6 +20,7 @@ import (
 var (
 	outputSettings device.Settings
 	startingOrder  int
+	startingRow    int
 )
 
 // local vars
@@ -55,6 +56,7 @@ func main() {
 	flag.IntVar(&outputSettings.Channels, "c", 2, "channels")
 	flag.IntVar(&outputSettings.BitsPerSample, "b", 16, "bits per sample")
 	flag.IntVar(&startingOrder, "o", -1, "starting order")
+	flag.IntVar(&startingRow, "r", -1, "starting row")
 	flag.StringVar(&outputSettings.Name, "O", output.DefaultOutputDeviceName, "output device")
 	flag.StringVar(&outputSettings.Filepath, "f", "output.wav", "output filepath")
 
@@ -81,6 +83,9 @@ func main() {
 	}
 	if startingOrder != -1 {
 		ss.Pattern.CurrentOrder = uint8(startingOrder)
+	}
+	if startingRow != -1 {
+		ss.Pattern.CurrentRow = uint8(startingRow)
 	}
 
 	var (

@@ -168,11 +168,11 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 				c.Instrument = fmt.Sprintf("%0.2d", cs.DisplayInst)
 			}
 
-			if cs.Cmd != nil {
-				if cs.Cmd.HasVolume() {
-					c.Volume = fmt.Sprintf("%0.2d", uint8(cs.Cmd.GetVolume()*64.0))
-				}
+			if cs.DisplayVolume != volume.VolumeUseInstVol {
+				c.Volume = fmt.Sprintf("%0.2d", uint8(cs.DisplayVolume*64.0))
+			}
 
+			if cs.Cmd != nil {
 				if cs.ActiveEffect != nil {
 					c.Effect = cs.ActiveEffect.String()
 				}

@@ -3,7 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/util"
+	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -52,7 +53,7 @@ func (e SetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
 	default:
 		multiplier = 1.0
 	}
-	cs.GetTargetInst().SetC2Spd(note.C2SPD(float32(util.DefaultC2Spd) * multiplier))
+	cs.GetTargetInst().SetC2Spd(note.C2SPD(float32(s3mfile.DefaultC2Spd) * multiplier))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

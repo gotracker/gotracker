@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/format/s3m/s3mfile"
+	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -17,7 +17,7 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*Header, error) {
 		return nil, errors.New("file header is nil")
 	}
 	head := Header{
-		Name:         util.GetString(fh.Name[:]),
+		Name:         fh.GetName(),
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
 		GlobalVolume: util.VolumeFromS3M(fh.GlobalVolume),
@@ -28,8 +28,8 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*Header, error) {
 
 func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*Instrument, error) {
 	sample := Instrument{
-		Filename: util.GetString(scrs.Head.Filename[:]),
-		Name:     util.GetString(si.SampleName[:]),
+		Filename: scrs.Head.GetFilename(),
+		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
 		Volume:   util.VolumeFromS3M(si.Volume),
 	}
@@ -38,8 +38,8 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 
 func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader) (*Instrument, error) {
 	sample := Instrument{
-		Filename:      util.GetString(scrs.Head.Filename[:]),
-		Name:          util.GetString(si.SampleName[:]),
+		Filename:      scrs.Head.GetFilename(),
+		Name:          si.GetSampleName(),
 		Length:        int(si.Length.Lo),
 		C2Spd:         note.C2SPD(si.C2Spd.Lo),
 		Volume:        util.VolumeFromS3M(si.Volume),
@@ -50,7 +50,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		BitsPerSample: 8,
 	}
 	if sample.C2Spd == 0 {
-		sample.C2Spd = util.DefaultC2Spd
+		sample.C2Spd = note.C2SPD(s3mfile.DefaultC2Spd)
 	}
 	if si.Flags.IsStereo() {
 		sample.NumChannels = 2
@@ -65,8 +65,8 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 
 func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*Instrument, error) {
 	sample := Instrument{
-		Filename: util.GetString(scrs.Head.Filename[:]),
-		Name:     util.GetString(si.SampleName[:]),
+		Filename: scrs.Head.GetFilename(),
+		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
 		Volume:   util.VolumeFromS3M(si.Volume),
 	}
@@ -108,7 +108,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern) (*Pattern, int) {
 	for rowNum < len(pattern.Rows) {
 		row := &pattern.Rows[rowNum]
 		for {
-			var what channel.What
+			var what s3mfile.PatternFlags
 			if err := binary.Read(buffer, binary.LittleEndian, &what); err != nil {
 				panic(err)
 			}
@@ -127,7 +127,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern) (*Pattern, int) {
 			temp.What = what
 			temp.Note = 0
 			temp.Instrument = 0
-			temp.Volume = 255
+			temp.Volume = s3mfile.EmptyVolume
 			temp.Command = 0
 			temp.Info = 0
 

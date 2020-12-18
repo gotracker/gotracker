@@ -3,7 +3,7 @@ package s3m
 
 import (
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/format/s3m/modfile"
+	"gotracker/internal/format/s3m/modconv"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 
@@ -86,7 +86,7 @@ func readMOD(filename string) (*Song, error) {
 		return nil, err
 	}
 
-	f, err := modfile.Read(buffer)
+	f, err := modconv.Read(buffer)
 	if err != nil {
 		return nil, err
 	}

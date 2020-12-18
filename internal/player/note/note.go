@@ -2,8 +2,38 @@ package note
 
 import "fmt"
 
+// Period defines a sampler period
+type Period float32
+
+// AddInteger truncates the current period to an integer and adds the delta integer in
+// then returns the resulting period
+func (p *Period) AddInteger(delta int) Period {
+	*p = Period(int(*p) + delta)
+	return *p
+}
+
+// Add adds the current period to a delta value then returns the resulting period
+func (p *Period) Add(delta float32) Period {
+	*p += Period(delta)
+	return *p
+}
+
 // C2SPD defines the C-2 (or in some players cases C-4) note sampling rate
 type C2SPD uint16
+
+// Volume defines a volume value
+type Volume uint8
+
+const (
+	// DefaultC2Spd is the default C2SPD for S3M files
+	DefaultC2Spd = C2SPD(8363)
+
+	// DefaultVolume is the default volume for many things in S3M files
+	DefaultVolume = Volume(64)
+
+	// EmptyVolume is a volume value that uses the volume value on the instrument
+	EmptyVolume = Volume(255)
+)
 
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
@@ -119,16 +149,23 @@ func (n Note) IsStop() bool {
 	return n == StopNote
 }
 
-// IsInvalid returns true if the note is invalid in any way (or is a stop)
+// IsEmpty returns true if the note is empty
+func (n Note) IsEmpty() bool {
+	return n == EmptyNote
+}
+
+// IsInvalid returns true if the note is invalid in any way
 func (n Note) IsInvalid() bool {
-	return n == EmptyNote || n.IsStop() || n.Key().IsInvalid()
+	return n.Key().IsInvalid()
 }
 
 func (n Note) String() string {
 	if n.IsStop() {
 		return "---"
-	} else if n.IsInvalid() {
+	} else if n.IsEmpty() {
 		return "..."
+	} else if n.IsInvalid() {
+		return "???"
 	}
 	return n.Key().String() + n.Octave().String()
 }
@@ -138,20 +175,4 @@ func (n Note) Semitone() Semitone {
 	key := Semitone(n.Key())
 	octave := Semitone(n.Octave())
 	return Semitone(octave*12 + key)
-}
-
-// Period defines a sampler period
-type Period float32
-
-// AddInteger truncates the current period to an integer and adds the delta integer in
-// then returns the resulting period
-func (p *Period) AddInteger(delta int) Period {
-	*p = Period(int(*p) + delta)
-	return *p
-}
-
-// Add adds the current period to a delta value then returns the resulting period
-func (p *Period) Add(delta float32) Period {
-	*p += Period(delta)
-	return *p
 }

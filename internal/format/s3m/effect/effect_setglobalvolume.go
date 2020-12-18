@@ -3,6 +3,8 @@ package effect
 import (
 	"fmt"
 
+	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
 )
@@ -12,7 +14,7 @@ type SetGlobalVolume uint8 // 'V'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel, ss intf.Song) {
-	ss.SetGlobalVolume(util.VolumeFromS3M(uint8(e)))
+	ss.SetGlobalVolume(util.VolumeFromS3M(s3mfile.Volume(uint8(e))))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

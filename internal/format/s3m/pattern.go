@@ -1,8 +1,9 @@
 package s3m
 
 import (
+	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+
 	"gotracker/internal/format/s3m/channel"
-	"gotracker/internal/format/s3m/s3mfile"
 	"gotracker/internal/player/intf"
 )
 

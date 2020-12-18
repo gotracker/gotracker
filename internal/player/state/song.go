@@ -128,7 +128,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 
 		row := rows[myCurrentRow]
 		for channelNum, channel := range row.GetChannels() {
-			if !ss.SongData.IsChannelEnabled(channelNum) {
+			if channelNum >= ss.GetNumChannels() {
 				continue
 			}
 
@@ -140,8 +140,18 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 		}
 
 		ss.soundRenderRow(premix, sampler)
-		var rowText = render.NewRowText(len(ss.Channels))
+		nCh := 0
 		for ch := range ss.Channels {
+			if !ss.SongData.IsChannelEnabled(ch) {
+				continue
+			}
+			nCh++
+		}
+		var rowText = render.NewRowText(nCh)
+		for ch := range ss.Channels {
+			if !ss.SongData.IsChannelEnabled(ch) {
+				continue
+			}
 			cs := &ss.Channels[ch]
 			c := render.ChannelDisplay{
 				Note:       "...",
@@ -256,10 +266,12 @@ func (ss *Song) soundRenderRow(premix *device.PremixData, sampler *render.Sample
 
 	for ch := range ss.Channels {
 		cs := &ss.Channels[ch]
-		rr := make([]mixing.Data, ticksThisRow)
-		cs.renderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, tickSamples, centerPanning)
+		if ss.SongData.IsChannelEnabled(ch) {
+			rr := make([]mixing.Data, ticksThisRow)
+			cs.renderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, tickSamples, centerPanning)
 
-		premix.Data[ch] = rr
+			premix.Data[ch] = rr
+		}
 	}
 }
 

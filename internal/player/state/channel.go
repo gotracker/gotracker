@@ -80,7 +80,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 			// use current
 			cs.TargetInst = cs.Instrument
 			cs.TargetPos = sampling.Pos{}
-		} else if int(inst) > sd.NumInstruments() {
+		} else if int(inst)-1 > sd.NumInstruments() {
 			cs.TargetInst = nil
 		} else {
 			cs.TargetInst = sd.GetInstrument(int(inst) - 1)
@@ -92,7 +92,12 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 		}
 
 		n := channel.GetNote()
-		if n.IsInvalid() {
+		if n == note.EmptyNote {
+			cs.DisplayNote = note.EmptyNote
+			cs.DisplayInst = 0
+			wantNoteCalc = false
+			cs.DoRetriggerNote = false
+		} else if n.IsInvalid() {
 			cs.TargetPeriod = 0
 			cs.DisplayNote = note.EmptyNote
 			cs.DisplayInst = 0

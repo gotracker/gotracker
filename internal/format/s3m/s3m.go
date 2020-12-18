@@ -2,35 +2,45 @@
 package s3m
 
 import (
+	"gotracker/internal/format/s3m/channel"
+	"gotracker/internal/format/s3m/modfile"
 	"gotracker/internal/format/s3m/util"
 	"gotracker/internal/player/intf"
-)
 
-// ParaPointer is a pointer offset within the S3M file format
-type ParaPointer uint16
+	"github.com/heucuva/gomixing/panning"
+	"github.com/heucuva/gomixing/volume"
+)
 
 // Header is a mildly-decoded S3M header definition
 type Header struct {
-	Name               string
-	Info               ModuleHeader
-	ChannelSettings    [32]ChannelSetting
-	OrderList          []uint8
-	InstrumentPointers []ParaPointer
-	PatternPointers    []ParaPointer
-	Panning            [32]PanningFlags
+	Name         string
+	InitialSpeed int
+	InitialTempo int
+	GlobalVolume volume.Volume
+	MixingVolume volume.Volume
+}
+
+type ChannelSetting struct {
+	Enabled          bool
+	OutputChannelNum int
+	InitialVolume    volume.Volume
+	InitialPanning   panning.Position
+	Memory           channel.Memory
 }
 
 // Song is the full definition of the song data of an Song file
 type Song struct {
 	intf.SongData
-	Head        Header
-	Instruments []Instrument
-	Patterns    []intf.Pattern
+	Head            Header
+	Instruments     []Instrument
+	Patterns        []intf.Pattern
+	ChannelSettings []ChannelSetting
+	OrderList       []uint8
 }
 
 // GetOrderList returns the list of all pattern orders for the song
 func (s *Song) GetOrderList() []uint8 {
-	return s.Head.OrderList
+	return s.OrderList
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
@@ -43,7 +53,7 @@ func (s *Song) GetPattern(patNum uint8) intf.Pattern {
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled
 func (s *Song) IsChannelEnabled(channelNum int) bool {
-	return s.Head.ChannelSettings[channelNum].IsEnabled()
+	return s.ChannelSettings[channelNum].Enabled
 }
 
 // NumInstruments returns the number of instruments in the song
@@ -69,6 +79,20 @@ var (
 	// S3M is the exported interface to the S3M file loader
 	S3M = format{}
 )
+
+func readMOD(filename string) (*Song, error) {
+	buffer, err := readFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := modfile.Read(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertS3MFileToSong(f)
+}
 
 // LoadMOD loads a MOD file and upgrades it into an S3M file internally
 func LoadMOD(s intf.Song, filename string) error {

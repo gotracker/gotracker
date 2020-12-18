@@ -2,13 +2,14 @@ package s3m
 
 import (
 	"gotracker/internal/format/s3m/channel"
+	"gotracker/internal/format/s3m/s3mfile"
 	"gotracker/internal/player/intf"
 )
 
 // Pattern is the data for each pattern
 type Pattern struct {
 	intf.Pattern
-	Packed PackedPattern
+	Packed s3mfile.PackedPattern
 	Rows   [64]RowData
 }
 

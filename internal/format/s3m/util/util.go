@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"math"
 
 	"github.com/heucuva/gomixing/panning"
@@ -18,6 +19,18 @@ const (
 
 	// S3MBaseClock is the base clock speed of S3M files
 	S3MBaseClock = floatDefaultC2Spd * c2Period
+)
+
+var (
+	// DefaultVolume is the default volume value for most everything in S3M format
+	DefaultVolume = VolumeFromS3M(64)
+
+	// DefaultPanningLeft is the default panning value for left channels
+	DefaultPanningLeft = PanningFromS3M(0x03)
+	// DefaultPanning is the default panning value for unconfigured channels
+	DefaultPanning = PanningFromS3M(0x08)
+	// DefaultPanningRight is the default panning value for right channels
+	DefaultPanningRight = PanningFromS3M(0x0C)
 )
 
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
@@ -88,4 +101,14 @@ func PanningFromS3M(pos uint8) panning.Position {
 		Angle:    float32(prad),
 		Distance: 1.0,
 	}
+}
+
+// GetString converts a fixed length byte array with embedded nulls into a string
+func GetString(bytearray []byte) string {
+	n := bytes.Index(bytearray, []byte{0})
+	if n == -1 {
+		n = len(bytearray)
+	}
+	s := string(bytearray[:n])
+	return s
 }

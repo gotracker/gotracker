@@ -14,7 +14,6 @@ import (
 // Instrument is the mildly-decoded S3M instrument/sample header
 type Instrument struct {
 	intf.Instrument
-	//Info      SCRSHeader
 	Filename      string
 	Name          string
 	Sample        []uint8
@@ -73,6 +72,10 @@ func (inst *Instrument) GetLength() sampling.Pos {
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *Instrument) GetSample(pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
+	if len(v0) == 0 && inst.Looped {
+		v01 := inst.getConvertedSample(pos.Pos)
+		panic(v01)
+	}
 	if pos.Frac == 0 {
 		return v0
 	}
@@ -112,7 +115,7 @@ func (inst *Instrument) calcLoopedSamplePos(pos int) int {
 	if pos < inst.Length {
 		return pos
 	}
-	loopedPos := pos
+	loopedPos := pos + inst.LoopEnd - inst.Length
 	for {
 		lastLoopedPos := loopedPos
 		loopedPos += inst.LoopBegin - inst.LoopEnd

@@ -1,4 +1,4 @@
-package s3m
+package s3mfile
 
 // ChannelID is the S3M value for a channel specification (found within the ChanenlSetting header block)
 type ChannelID uint8
@@ -70,6 +70,38 @@ const (
 	ChannelIDOPL2Drums8
 )
 
+// ChannelCategory is the type of channel
+type ChannelCategory int
+
+const (
+	// ChannelCategoryUnknown is an unknown channel category
+	ChannelCategoryUnknown = ChannelCategory(iota)
+	// ChannelCategoryPCMLeft is a PCM audio left channel
+	ChannelCategoryPCMLeft
+	// ChannelCategoryPCMRight is a PCM audio right channel
+	ChannelCategoryPCMRight
+	// ChannelCategoryOPL2Melody is an OPL2 audio melody channel
+	ChannelCategoryOPL2Melody
+	// ChannelCategoryOPL2Drums is an OPL2 audio drums channel
+	ChannelCategoryOPL2Drums
+)
+
+// GetChannelCategory returns the channel category for a particular channel ID
+func (c ChannelID) GetChannelCategory() ChannelCategory {
+	switch {
+	case c >= ChannelIDL1 && c <= ChannelIDL8:
+		return ChannelCategoryPCMLeft
+	case c >= ChannelIDR1 && c <= ChannelIDR8:
+		return ChannelCategoryPCMRight
+	case c >= ChannelIDOPL2Melody1 && c <= ChannelIDOPL2Melody8:
+		return ChannelCategoryOPL2Melody
+	case c >= ChannelIDOPL2Drums1 && c <= ChannelIDOPL2Drums8:
+		return ChannelCategoryOPL2Drums
+	default:
+		return ChannelCategoryUnknown
+	}
+}
+
 // ChannelSetting is a full channel setting (with flags) definition from the S3M header
 type ChannelSetting uint8
 
@@ -92,11 +124,36 @@ func (cs ChannelSetting) GetChannel() ChannelID {
 // IsPCM returns true if the channel is one of the left or right channels (non-Adlib/OPL2)
 func (cs ChannelSetting) IsPCM() bool {
 	ch := cs.GetChannel()
-	return (ch < ChannelIDOPL2Melody1)
+	cc := ch.GetChannelCategory()
+	return (cc == ChannelCategoryPCMLeft || cc == ChannelCategoryPCMRight)
 }
 
 // IsOPL2 returns true if the channel is an Adlib/OPL2 channel (non-PCM)
 func (cs ChannelSetting) IsOPL2() bool {
 	ch := cs.GetChannel()
-	return (ch >= ChannelIDOPL2Melody1)
+	cc := ch.GetChannelCategory()
+	return (cc == ChannelCategoryOPL2Melody || cc == ChannelCategoryOPL2Drums)
+}
+
+// MakeChannelSetting returns a channel setting value based on component inputs
+func MakeChannelSetting(enabled bool, cat ChannelCategory, idx int) ChannelSetting {
+	cs := ChannelSetting(0)
+	if !enabled {
+		cs = cs | ChannelSettingDisabled
+	}
+	switch cat {
+	case ChannelCategoryPCMLeft:
+		cs = cs | ChannelSetting(ChannelIDL1)
+		cs |= ChannelSetting(idx & 0x07)
+	case ChannelCategoryPCMRight:
+		cs = cs | ChannelSetting(ChannelIDR1)
+		cs |= ChannelSetting(idx & 0x07)
+	case ChannelCategoryOPL2Melody:
+		cs = cs | ChannelSetting(ChannelIDOPL2Melody1)
+		cs |= ChannelSetting(idx & 0x07)
+	case ChannelCategoryOPL2Drums:
+		cs = cs | ChannelSetting(ChannelIDOPL2Drums1)
+		cs |= ChannelSetting(idx & 0x07)
+	}
+	return cs
 }

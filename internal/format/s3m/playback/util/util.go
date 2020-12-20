@@ -1,7 +1,6 @@
 package util
 
 import (
-	"math"
 	"syscall"
 
 	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
@@ -93,12 +92,7 @@ func BE16ToLE16(be uint16) uint16 {
 
 // PanningFromS3M returns a radian panning position from an S3M panning value
 func PanningFromS3M(pos uint8) panning.Position {
-	prad := float64(pos) * math.Pi / 32.0
-
-	return panning.Position{
-		Angle:    float32(prad),
-		Distance: 1.0,
-	}
+	return panning.MakeStereoPosition(float32(pos), 0, 0x0F)
 }
 
 // NoteFromS3MNote converts an S3M file note into a player note

@@ -12,6 +12,10 @@ github.com/heucuva/goaudiofile v1.0.2 h1:P1XeE8LC04SK3W3oUF/7Hwtq9GfUKi/8hkS662l
 github.com/heucuva/goaudiofile v1.0.2/go.mod h1:eJJ/n+2v/ZDeAe2An5l790ADAxO+86ldWp8oCNXsSN4=
 github.com/heucuva/gomixing v1.0.0 h1:JSGdw3WMHyUncnU9VD4me9ArP2vTeTQLyU8yknmUq8A=
 github.com/heucuva/gomixing v1.0.0/go.mod h1:YF79YtZDBsV4whXYB4Zs6u47gnuk3KkDpp2fQi/LKsw=
+github.com/heucuva/gomixing v1.0.3 h1:cScvmA4p5nw3xs3J7x6o03NRPwm/FNWgy5e4NfJ96aA=
+github.com/heucuva/gomixing v1.0.3/go.mod h1:YF79YtZDBsV4whXYB4Zs6u47gnuk3KkDpp2fQi/LKsw=
+github.com/heucuva/gomixing v1.0.4 h1:JEsQwgDkF4QG8Rpxfaywqzsty30woWBVOfyUsKQS9kw=
+github.com/heucuva/gomixing v1.0.4/go.mod h1:YF79YtZDBsV4whXYB4Zs6u47gnuk3KkDpp2fQi/LKsw=
 github.com/heucuva/gosound v1.0.2 h1:/AlY/5lkBIb+WMQAGqA9qSUVj7mYpmBHSGERcpbMI8Y=
 github.com/heucuva/gosound v1.0.2/go.mod h1:8JReuTQ24S1cEzFVW37ZPINXEj1xYYcK2epFzZtnHZA=
 github.com/icza/bitio v1.0.0 h1:squ/m1SHyFeCA6+6Gyol1AxV9nmPPlJFT8c2vKdj3U8=

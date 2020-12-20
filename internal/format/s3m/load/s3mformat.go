@@ -40,42 +40,79 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 
 func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader) (*layout.Instrument, error) {
 	sample := layout.Instrument{
-		Filename:      scrs.Head.GetFilename(),
-		Name:          si.GetSampleName(),
+		Filename: scrs.Head.GetFilename(),
+		Name:     si.GetSampleName(),
+		C2Spd:    note.C2SPD(si.C2Spd.Lo),
+		Volume:   util.VolumeFromS3M(si.Volume),
+	}
+	if sample.C2Spd == 0 {
+		sample.C2Spd = note.C2SPD(s3mfile.DefaultC2Spd)
+	}
+
+	idata := layout.InstrumentPCM{
 		Length:        int(si.Length.Lo),
-		C2Spd:         note.C2SPD(si.C2Spd.Lo),
-		Volume:        util.VolumeFromS3M(si.Volume),
 		Looped:        si.Flags.IsLooped(),
 		LoopBegin:     int(si.LoopBegin.Lo),
 		LoopEnd:       int(si.LoopEnd.Lo),
 		NumChannels:   1,
 		BitsPerSample: 8,
 	}
-	if sample.C2Spd == 0 {
-		sample.C2Spd = note.C2SPD(s3mfile.DefaultC2Spd)
-	}
 	if si.Flags.IsStereo() {
-		sample.NumChannels = 2
+		idata.NumChannels = 2
 	}
 	if si.Flags.Is16BitSample() {
-		sample.BitsPerSample = 16
+		idata.BitsPerSample = 16
 	}
 
-	sample.Sample = scrs.Sample
+	idata.Sample = scrs.Sample
+
+	sample.Inst = &idata
 	return &sample, nil
 }
 
 func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*layout.Instrument, error) {
-	sample := layout.Instrument{
+	inst := layout.Instrument{
 		Filename: scrs.Head.GetFilename(),
 		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
 		Volume:   util.VolumeFromS3M(si.Volume),
 	}
-	// TODO: support for OPL2/Adlib
-	//return &sample, nil
-	_ = sample // ignore our `sample` value for now
-	return nil, errors.New("unsupported type")
+
+	idata := layout.InstrumentOPL2{
+		Modulator: layout.OPL2OperatorData{
+			KeyScaleRateSelect:  si.OPL2.ModulatorKeyScaleRateSelect(),
+			Sustain:             si.OPL2.ModulatorSustain(),
+			Vibrato:             si.OPL2.ModulatorVibrato(),
+			Tremolo:             si.OPL2.ModulatorTremolo(),
+			FrequencyMultiplier: si.OPL2.ModulatorFrequencyMultiplier(),
+			KeyScaleLevel:       si.OPL2.ModulatorKeyScaleLevel(),
+			Volume:              si.OPL2.ModulatorVolume(),
+			AttackRate:          si.OPL2.ModulatorAttackRate(),
+			DecayRate:           si.OPL2.ModulatorDecayRate(),
+			SustainLevel:        si.OPL2.ModulatorSustainLevel(),
+			ReleaseRate:         si.OPL2.ModulatorReleaseRate(),
+			WaveformSelection:   si.OPL2.ModulatorWaveformSelection(),
+		},
+		Carrier: layout.OPL2OperatorData{
+			KeyScaleRateSelect:  si.OPL2.CarrierKeyScaleRateSelect(),
+			Sustain:             si.OPL2.CarrierSustain(),
+			Vibrato:             si.OPL2.CarrierVibrato(),
+			Tremolo:             si.OPL2.CarrierTremolo(),
+			FrequencyMultiplier: si.OPL2.CarrierFrequencyMultiplier(),
+			KeyScaleLevel:       si.OPL2.CarrierKeyScaleLevel(),
+			Volume:              si.OPL2.CarrierVolume(),
+			AttackRate:          si.OPL2.CarrierAttackRate(),
+			DecayRate:           si.OPL2.CarrierDecayRate(),
+			SustainLevel:        si.OPL2.CarrierSustainLevel(),
+			ReleaseRate:         si.OPL2.CarrierReleaseRate(),
+			WaveformSelection:   si.OPL2.CarrierWaveformSelection(),
+		},
+		ModulationFeedback: si.OPL2.ModulationFeedback(),
+		AdditiveSynthesis:  si.OPL2.AdditiveSynthesis(),
+	}
+
+	inst.Inst = &idata
+	return &inst, nil
 }
 
 func convertSCRSFullToInstrument(s *s3mfile.SCRSFull) (*layout.Instrument, error) {

@@ -1,12 +1,9 @@
 package layout
 
 import (
-	"encoding/binary"
-
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
 
-	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -14,18 +11,13 @@ import (
 // Instrument is the mildly-decoded S3M instrument/sample header
 type Instrument struct {
 	intf.Instrument
-	Filename      string
-	Name          string
-	Sample        []uint8
-	Length        int
-	ID            uint8
-	C2Spd         note.C2SPD
-	Volume        volume.Volume
-	Looped        bool
-	LoopBegin     int
-	LoopEnd       int
-	NumChannels   int
-	BitsPerSample int
+
+	Filename string
+	Name     string
+	Inst     intf.Instrument
+	ID       uint8
+	C2Spd    note.C2SPD
+	Volume   volume.Volume
 }
 
 // IsInvalid always returns false (valid)
@@ -51,89 +43,50 @@ func (inst *Instrument) GetVolume() volume.Volume {
 
 // IsLooped returns true if the instrument has the loop flag set
 func (inst *Instrument) IsLooped() bool {
-	return inst.Looped
+	switch si := inst.Inst.(type) {
+	case *InstrumentPCM:
+		return si.Looped
+	default:
+	}
+	return false
 }
 
 // GetLoopBegin returns the loop start position
 func (inst *Instrument) GetLoopBegin() sampling.Pos {
-	return sampling.Pos{Pos: inst.LoopBegin}
+	switch si := inst.Inst.(type) {
+	case *InstrumentPCM:
+		return sampling.Pos{Pos: si.LoopBegin}
+	default:
+	}
+	return sampling.Pos{}
 }
 
 // GetLoopEnd returns the loop end position
 func (inst *Instrument) GetLoopEnd() sampling.Pos {
-	return sampling.Pos{Pos: inst.LoopEnd}
+	switch si := inst.Inst.(type) {
+	case *InstrumentPCM:
+		return sampling.Pos{Pos: si.LoopEnd}
+	default:
+	}
+	return sampling.Pos{}
 }
 
 // GetLength returns the length of the instrument
 func (inst *Instrument) GetLength() sampling.Pos {
-	return sampling.Pos{Pos: inst.Length}
+	switch si := inst.Inst.(type) {
+	case *InstrumentPCM:
+		return sampling.Pos{Pos: si.Length}
+	default:
+	}
+	return sampling.Pos{}
 }
 
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *Instrument) GetSample(pos sampling.Pos) volume.Matrix {
-	v0 := inst.getConvertedSample(pos.Pos)
-	if len(v0) == 0 && inst.Looped {
-		v01 := inst.getConvertedSample(pos.Pos)
-		panic(v01)
+	if inst.Inst != nil {
+		return inst.Inst.GetSample(pos)
 	}
-	if pos.Frac == 0 {
-		return v0
-	}
-	v1 := inst.getConvertedSample(pos.Pos + 1)
-	for c, s := range v1 {
-		v0[c] += volume.Volume(pos.Frac) * (s - v0[c])
-	}
-	return v0
-}
-
-func (inst *Instrument) getConvertedSample(pos int) volume.Matrix {
-	if inst.Looped {
-		pos = inst.calcLoopedSamplePosMode1(pos)
-	}
-	if pos < 0 || pos >= inst.Length {
-		return volume.Matrix{}
-	}
-	o := make(volume.Matrix, inst.NumChannels)
-	for c := 0; c < inst.NumChannels; c++ {
-		switch inst.BitsPerSample {
-		case 8:
-			o[c] = util.VolumeFromS3M8BitSample(inst.Sample[pos+c])
-		case 16:
-			s := binary.LittleEndian.Uint16(inst.Sample[pos+c:])
-			o[c] = util.VolumeFromS3M16BitSample(s)
-		}
-	}
-	return o
-}
-
-func (inst *Instrument) calcLoopedSamplePosMode1(pos int) int {
-	// |start--------------------------------------------------end|   <= on playthrough 1, whole sample plays
-	// |----------------|loopBegin---------loopEnd|---------------|   <= only if looped and on playthrough 2+, only the part that loops plays
-	if pos < 0 {
-		return 0
-	}
-	if pos < inst.Length {
-		return pos
-	}
-
-	loopLen := inst.LoopEnd - inst.LoopBegin
-	loopedPos := (pos - inst.Length) % loopLen
-	return loopedPos + inst.LoopBegin
-}
-
-func (inst *Instrument) calcLoopedSamplePosMode2(pos int) int {
-	// |start-------------------------------------|------------end|   <= on playthrough 1, play from start to loopEnd if looped, otherwise continue to end
-	// |----------------|loopBegin---------loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays
-	if pos < 0 {
-		return 0
-	}
-	if pos < inst.LoopEnd {
-		return pos
-	}
-
-	loopLen := inst.LoopEnd - inst.LoopBegin
-	loopedPos := (pos - inst.LoopEnd) % loopLen
-	return loopedPos + inst.LoopBegin
+	return nil
 }
 
 // GetID returns the instrument number (1-based)

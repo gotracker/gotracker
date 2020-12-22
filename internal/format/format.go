@@ -2,6 +2,7 @@ package format
 
 import (
 	"errors"
+	"os"
 
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
@@ -18,6 +19,8 @@ func Load(ss *state.Song, filename string) (intf.Format, error) {
 	for _, fmt := range supportedFormats {
 		if err := fmt.Load(ss, filename); err == nil {
 			return fmt, nil
+		} else if os.IsNotExist(err) {
+			return nil, err
 		}
 	}
 	return nil, errors.New("unsupported format")

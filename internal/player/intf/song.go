@@ -44,6 +44,7 @@ type SongData interface {
 	GetOrderList() []uint8
 	GetPattern(uint8) Pattern
 	IsChannelEnabled(int) bool
+	GetOutputChannel(int) int
 	NumInstruments() int
 	GetInstrument(int) Instrument
 	GetName() string

@@ -54,6 +54,11 @@ func (s *Song) IsChannelEnabled(channelNum int) bool {
 	return s.ChannelSettings[channelNum].Enabled
 }
 
+// GetOutputChannel returns the output channel for the channel at index `channelNum`
+func (s *Song) GetOutputChannel(channelNum int) int {
+	return s.ChannelSettings[channelNum].OutputChannelNum
+}
+
 // NumInstruments returns the number of instruments in the song
 func (s *Song) NumInstruments() int {
 	return len(s.Instruments)

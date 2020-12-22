@@ -99,3 +99,9 @@ func PanningFromS3M(pos uint8) panning.Position {
 func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 	return note.Note(uint8(sn))
 }
+
+// FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
+func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD) float32 {
+	period := CalcSemitonePeriod(semitone, c2spd)
+	return S3MBaseClock / float32(period)
+}

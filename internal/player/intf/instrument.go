@@ -9,10 +9,19 @@ import (
 
 // Instrument is an interface for instrument/sample data
 type Instrument interface {
-	sampling.SampleStream
 	IsInvalid() bool
 	GetC2Spd() note.C2SPD
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
 	GetID() int
+	InstantiateOnChannel(int) InstrumentOnChannel
+}
+
+// InstrumentOnChannel is an interface for an instrument on a particular output channel
+type InstrumentOnChannel interface {
+	sampling.SampleStream
+
+	GetInstrument() Instrument
+	SetKeyOn(note.Semitone, bool)
+	GetKeyOn() bool
 }

@@ -8,13 +8,31 @@ import (
 	"gotracker/internal/player/note"
 )
 
+// InstrumentDataIntf is the interface to implementation-specific functions on an instrument
+type InstrumentDataIntf interface {
+	GetSample(*InstrumentOnChannel, sampling.Pos) volume.Matrix
+
+	Initialize(*InstrumentOnChannel) error
+	SetKeyOn(*InstrumentOnChannel, note.Semitone, bool)
+	GetKeyOn(*InstrumentOnChannel) bool
+}
+
+// InstrumentOnChannel is an instance of the instrument on a particular output channel
+type InstrumentOnChannel struct {
+	intf.InstrumentOnChannel
+
+	Instrument       *Instrument
+	OutputChannelNum int
+	Data             interface{}
+}
+
 // Instrument is the mildly-decoded S3M instrument/sample header
 type Instrument struct {
 	intf.Instrument
 
 	Filename string
 	Name     string
-	Inst     intf.Instrument
+	Inst     InstrumentDataIntf
 	ID       uint8
 	C2Spd    note.C2SPD
 	Volume   volume.Volume
@@ -81,15 +99,50 @@ func (inst *Instrument) GetLength() sampling.Pos {
 	return sampling.Pos{}
 }
 
-// GetSample returns the sample at position `pos` in the instrument
-func (inst *Instrument) GetSample(pos sampling.Pos) volume.Matrix {
-	if inst.Inst != nil {
-		return inst.Inst.GetSample(pos)
+// InstantiateOnChannel takes an instrument and loads it onto an output channel
+func (inst *Instrument) InstantiateOnChannel(channelIdx int) intf.InstrumentOnChannel {
+	ioc := InstrumentOnChannel{
+		OutputChannelNum: channelIdx,
+		Instrument:       inst,
 	}
-	return nil
+
+	if inst.Inst != nil {
+		inst.Inst.Initialize(&ioc)
+	}
+
+	return &ioc
 }
 
 // GetID returns the instrument number (1-based)
 func (inst *Instrument) GetID() int {
 	return int(inst.ID)
+}
+
+// GetSample returns the sample at position `pos` in the instrument
+func (inst *InstrumentOnChannel) GetSample(pos sampling.Pos) volume.Matrix {
+	if inst.Instrument != nil && inst.Instrument.Inst != nil {
+		return inst.Instrument.Inst.GetSample(inst, pos)
+	}
+	return nil
+}
+
+// GetInstrument returns the instrument that's on this instance
+func (inst *InstrumentOnChannel) GetInstrument() intf.Instrument {
+	return inst.Instrument
+}
+
+// SetKeyOn sets the key on flag for the instrument
+func (inst *InstrumentOnChannel) SetKeyOn(semitone note.Semitone, on bool) {
+
+	if inst.Instrument != nil && inst.Instrument.Inst != nil {
+		inst.Instrument.Inst.SetKeyOn(inst, semitone, on)
+	}
+}
+
+// GetKeyOn gets the key on flag for the instrument
+func (inst *InstrumentOnChannel) GetKeyOn() bool {
+	if inst.Instrument != nil && inst.Instrument.Inst != nil {
+		return inst.Instrument.Inst.GetKeyOn(inst)
+	}
+	return false
 }

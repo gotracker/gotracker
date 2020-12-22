@@ -56,7 +56,7 @@ func (ss *Song) GetNumChannels() int {
 func (ss *Song) SetNumChannels(num int) {
 	ss.Channels = make([]ChannelState, num)
 
-	for _, cs := range ss.Channels {
+	for ch, cs := range ss.Channels {
 		cs.Pos = sampling.Pos{}
 		cs.Instrument = nil
 		cs.Period = 0
@@ -67,7 +67,7 @@ func (ss *Song) SetNumChannels(num int) {
 
 		cs.TargetPeriod = cs.Period
 		cs.TargetPos = cs.Pos
-		cs.TargetInst = cs.Instrument
+		cs.TargetInst = nil
 		cs.PortaTargetPeriod = cs.TargetPeriod
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
@@ -75,6 +75,7 @@ func (ss *Song) SetNumChannels(num int) {
 		cs.TremorTime = 0
 		cs.VibratoDelta = 0
 		cs.Cmd = nil
+		cs.OutputChannelNum = ss.SongData.GetOutputChannel(ch)
 	}
 }
 
@@ -154,14 +155,10 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 			}
 			cs := &ss.Channels[ch]
 			c := render.ChannelDisplay{
-				Note:       "...",
+				Note:       cs.DisplayNote.String(),
 				Instrument: "..",
 				Volume:     "..",
 				Effect:     "...",
-			}
-
-			if cs.TargetInst != nil && cs.Period != 0 {
-				c.Note = cs.DisplayNote.String()
 			}
 
 			if cs.DisplayInst != 0 {
@@ -232,10 +229,18 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 		}
 	}
 
-	if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
-		cs.Instrument = cs.TargetInst
+	if cs.TargetPeriod == 0 && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
+		cs.Instrument.SetKeyOn(cs.PrevNoteSemitone, false)
+	} else if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
+		cs.Instrument = nil
+		if cs.TargetInst != nil {
+			cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum)
+		}
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
+		if cs.Period != 0 && cs.Instrument != nil {
+			cs.Instrument.SetKeyOn(cs.NoteSemitone, true)
+		}
 	}
 }
 

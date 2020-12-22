@@ -8,6 +8,7 @@ import (
 
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // InstrumentPCM is a PCM-data instrument
@@ -24,7 +25,7 @@ type InstrumentPCM struct {
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *InstrumentPCM) GetSample(pos sampling.Pos) volume.Matrix {
+func (inst *InstrumentPCM) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
 	if len(v0) == 0 && inst.Looped {
 		v01 := inst.getConvertedSample(pos.Pos)
@@ -61,8 +62,8 @@ func (inst *InstrumentPCM) getConvertedSample(pos int) volume.Matrix {
 }
 
 func (inst *InstrumentPCM) calcLoopedSamplePosMode1(pos int) int {
-	// |start--------------------------------------------------end|   <= on playthrough 1, whole sample plays
-	// |----------------|loopBegin---------loopEnd|---------------|   <= only if looped and on playthrough 2+, only the part that loops plays
+	// |start>-------------------------------------------------end|   <= on playthrough 1, whole sample plays
+	// |----------------|loopBegin>--------loopEnd|---------------|   <= only if looped and on playthrough 2+, only the part that loops plays
 	if pos < 0 {
 		return 0
 	}
@@ -71,13 +72,17 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode1(pos int) int {
 	}
 
 	loopLen := inst.LoopEnd - inst.LoopBegin
+	if loopLen <= 0 {
+		return inst.Length
+	}
+
 	loopedPos := (pos - inst.Length) % loopLen
-	return loopedPos + inst.LoopBegin
+	return inst.LoopBegin + loopedPos
 }
 
 func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
-	// |start-------------------------------------|------------end|   <= on playthrough 1, play from start to loopEnd if looped, otherwise continue to end
-	// |----------------|loopBegin---------loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays
+	// |start>-----------------------------loopEnd|>-----------end|   <= on playthrough 1, play from start to loopEnd if looped, otherwise continue to end
+	// |----------------|loopBegin>--------loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays
 	if pos < 0 {
 		return 0
 	}
@@ -86,6 +91,24 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 	}
 
 	loopLen := inst.LoopEnd - inst.LoopBegin
+	if loopLen <= 0 {
+		return inst.Length
+	}
+
 	loopedPos := (pos - inst.LoopEnd) % loopLen
-	return loopedPos + inst.LoopBegin
+	return inst.LoopBegin + loopedPos
+}
+
+// Initialize completes the setup of this instrument
+func (inst *InstrumentPCM) Initialize(ioc *InstrumentOnChannel) error {
+	return nil
+}
+
+// SetKeyOn sets the key on flag for the instrument
+func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semitone, on bool) {
+}
+
+// GetKeyOn gets the key on flag for the instrument
+func (inst *InstrumentPCM) GetKeyOn(ioc *InstrumentOnChannel) bool {
+	return false
 }

@@ -161,7 +161,7 @@ func (n Note) IsInvalid() bool {
 
 func (n Note) String() string {
 	if n.IsStop() {
-		return "---"
+		return "^^."
 	} else if n.IsEmpty() {
 		return "..."
 	} else if n.IsInvalid() {

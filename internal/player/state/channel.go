@@ -18,7 +18,7 @@ type commandFunc func(int, *ChannelState, int, bool)
 // ChannelState is the state of a single channel
 type ChannelState struct {
 	intf.Channel
-	Instrument   intf.Instrument
+	Instrument   intf.InstrumentOnChannel
 	Pos          sampling.Pos
 	Period       note.Period
 	StoredVolume volume.Volume
@@ -38,6 +38,7 @@ type ChannelState struct {
 	PortaTargetPeriod note.Period
 	NotePlayTick      int
 	NoteSemitone      note.Semitone
+	PrevNoteSemitone  note.Semitone
 	DoRetriggerNote   bool
 	RetriggerCount    uint8
 	TremorOn          bool
@@ -51,6 +52,8 @@ type ChannelState struct {
 	VibratoOscillator oscillator.Oscillator
 	TremoloOscillator oscillator.Oscillator
 	TargetC2Spd       note.C2SPD
+
+	OutputChannelNum int
 }
 
 func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss intf.Song, sd intf.SongData, effectFactory intf.EffectFactoryFunc, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) (bool, bool) {
@@ -61,7 +64,10 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 
 	cs.TargetPeriod = cs.Period
 	cs.TargetPos = cs.Pos
-	cs.TargetInst = cs.Instrument
+	cs.TargetInst = nil
+	if cs.Instrument != nil {
+		cs.TargetInst = cs.Instrument.GetInstrument()
+	}
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0
@@ -76,11 +82,9 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 	if channel.HasNote() {
 		cs.VibratoOscillator.Pos = 0
 		cs.TremoloOscillator.Pos = 0
-		cs.TargetInst = nil
 		inst := channel.GetInstrument()
 		if inst == 0 {
 			// use current
-			cs.TargetInst = cs.Instrument
 			cs.TargetPos = sampling.Pos{}
 		} else if int(inst)-1 > sd.NumInstruments() {
 			cs.TargetInst = nil
@@ -101,9 +105,11 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 			cs.DoRetriggerNote = false
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = 0
-			cs.DisplayNote = note.EmptyNote
+			wantNoteCalc = false
+			cs.DisplayNote = note.StopNote
 			cs.DisplayInst = 0
 		} else if cs.TargetInst != nil {
+			cs.PrevNoteSemitone = cs.NoteSemitone
 			cs.NoteSemitone = n.Semitone()
 			cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
 			wantNoteCalc = true
@@ -113,6 +119,8 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 	} else {
 		cs.DisplayNote = note.EmptyNote
 		cs.DisplayInst = 0
+		wantNoteCalc = false
+		cs.DoRetriggerNote = false
 	}
 
 	if channel.HasVolume() {
@@ -323,12 +331,18 @@ func (cs *ChannelState) SetTremorTime(time int) {
 
 // GetInstrument returns the interface to the active instrument
 func (cs *ChannelState) GetInstrument() intf.Instrument {
-	return cs.Instrument
+	if cs.Instrument == nil {
+		return nil
+	}
+	return cs.Instrument.GetInstrument()
 }
 
 // SetInstrument sets the interface to the active instrument
 func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
-	cs.Instrument = inst
+	if inst == nil {
+		cs.Instrument = nil
+	}
+	cs.Instrument = inst.InstantiateOnChannel(int(cs.OutputChannelNum))
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)

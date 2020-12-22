@@ -83,7 +83,10 @@ func (ss *Song) SetNumChannels(num int) {
 func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error) {
 	ol := ss.SongData.GetOrderList()
 	if ss.Pattern.CurrentOrder < 0 || int(ss.Pattern.CurrentOrder) >= len(ol) {
-		return nil, ErrStopSong
+		if !ss.CanPatternLoop() {
+			return nil, ErrStopSong
+		}
+		ss.Pattern.CurrentOrder = 0
 	}
 	patNum := PatternNum(ol[ss.Pattern.CurrentOrder])
 	if patNum == NextPattern {

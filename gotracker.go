@@ -12,6 +12,7 @@ import (
 	"gotracker/internal/format"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
+	"gotracker/internal/player/feature"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
 )
@@ -21,6 +22,7 @@ var (
 	outputSettings device.Settings
 	startingOrder  int
 	startingRow    int
+	canLoop        bool
 )
 
 // local vars
@@ -57,6 +59,7 @@ func main() {
 	flag.IntVar(&outputSettings.BitsPerSample, "b", 16, "bits per sample")
 	flag.IntVar(&startingOrder, "o", -1, "starting order")
 	flag.IntVar(&startingRow, "r", -1, "starting row")
+	flag.BoolVar(&canLoop, "l", false, "enable pattern loop")
 	flag.StringVar(&outputSettings.Name, "O", output.DefaultOutputDeviceName, "output device")
 	flag.StringVar(&outputSettings.Filepath, "f", "output.wav", "output filepath")
 
@@ -124,6 +127,9 @@ func main() {
 	}
 	defer waveOut.Close()
 
+	if !canLoop {
+		disableFeatures = append(disableFeatures, feature.PatternLoop)
+	}
 	ss.DisableFeatures(disableFeatures)
 
 	fmt.Printf("Output device: %s\n", waveOut.Name())

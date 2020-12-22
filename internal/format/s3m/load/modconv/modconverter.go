@@ -294,7 +294,7 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 
 	copy(f.Head.Name[:], mf.Head.Name[:])
 
-	f.OrderList = mf.Head.Order[:]
+	f.OrderList = mf.Head.Order[:int(mf.Head.SongLen)]
 
 	for i := 0; i < 32; i++ {
 		if i >= numCh {

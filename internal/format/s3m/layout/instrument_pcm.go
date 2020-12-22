@@ -2,6 +2,7 @@ package layout
 
 import (
 	"encoding/binary"
+	"time"
 
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
@@ -111,4 +112,8 @@ func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semi
 // GetKeyOn gets the key on flag for the instrument
 func (inst *InstrumentPCM) GetKeyOn(ioc *InstrumentOnChannel) bool {
 	return false
+}
+
+// Update advances time by the amount specified by `tickDuration`
+func (inst *InstrumentPCM) Update(ioc *InstrumentOnChannel, tickDuration time.Duration) {
 }

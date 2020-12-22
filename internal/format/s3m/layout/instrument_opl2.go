@@ -2,6 +2,7 @@ package layout
 
 import (
 	"math"
+	"time"
 
 	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
 	"github.com/heucuva/gomixing/sampling"
@@ -86,21 +87,13 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	chip *opl2.Chip
+	ch   *opl2.SingleChannel
 	data []int32
 }
 
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentOPL2) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
 	ym := ioc.Data.(*ym3812)
-	p := math.Ceil(float64(pos.Pos) + float64(pos.Frac))
-	l := float64(len(ym.data))
-	if p >= l {
-		ll := opl2.Bitu(p) + 1 - opl2.Bitu(l)
-		gen := make([]int32, ll)
-		ym.chip.GenerateBlock2(ll, gen)
-		ym.data = append(ym.data, gen...)
-	}
 
 	v0 := inst.getConvertedSample(ym.data, pos.Pos)
 	if pos.Frac == 0 {
@@ -123,20 +116,21 @@ func (inst *InstrumentOPL2) getConvertedSample(data []int32, pos int) volume.Mat
 	return o
 }
 
-var ym3812Chip *opl2.Chip
+var ym3812Channels [32]*opl2.SingleChannel
 
 // Initialize completes the setup of this instrument
 func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
-	chip := ym3812Chip
-	if chip == nil {
+	chNum := ioc.OutputChannelNum
+	ch := ym3812Channels[chNum]
+	if ch == nil {
 		rate := opl2.OPLRATE
-		chip = opl2.NewChip(uint32(rate), false)
+		ch = opl2.NewSingleChannel(uint32(rate))
 		// support all waveforms
-		chip.WriteReg(0x01, 0x20)
-		ym3812Chip = chip
+		ch.SupportAllWaveforms(true)
+		ym3812Channels[chNum] = ch
 	}
 	ym := ym3812{
-		chip: chip,
+		ch: ch,
 	}
 	ioc.Data = &ym
 
@@ -146,20 +140,15 @@ func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
 // SetKeyOn sets the key on flag for the instrument
 func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semitone, on bool) {
 	ym := ioc.Data.(*ym3812)
-	chip := ym.chip
-	index := inst.getChannelIndex(ioc.OutputChannelNum)
+	ch := ym.ch
 
 	// write the instrument to the channel!
 	freq, block := inst.freqToFreqBlock(opl2.OPLRATE / 16)
-	regA0, regB0 := inst.freqBlockToRegA0B0(freq, block)
 	if !on {
-		chip.WriteReg(0xA0+index, regA0)
-		chip.WriteReg(0xB0+index, regB0) // key off
+		ch.WriteFNum(freq, block)
+		ch.SetKeyOn(false)
 		ym.data = nil
 	} else {
-		mod := index
-		car := index + 3
-
 		modReg20 := inst.getReg20(&inst.Modulator)
 		modReg40 := inst.getReg40(&inst.Modulator)
 		modReg60 := inst.getReg60(&inst.Modulator)
@@ -174,25 +163,23 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Sem
 
 		regC0 := inst.getRegC0()
 
-		regB0 |= 0x20 // key on
+		ch.WriteReg(0x20, 0, modReg20)
+		ch.WriteReg(0x40, 0, modReg40)
+		ch.WriteReg(0x60, 0, modReg60)
+		ch.WriteReg(0x80, 0, modReg80)
+		ch.WriteReg(0xE0, 0, modRegE0)
 
-		chip.WriteReg(0x20+mod, modReg20)
-		chip.WriteReg(0x40+mod, modReg40)
-		chip.WriteReg(0x60+mod, modReg60)
-		chip.WriteReg(0x80+mod, modReg80)
-		chip.WriteReg(0xE0+mod, modRegE0)
+		ch.WriteFNum(freq, block)
 
-		chip.WriteReg(0xA0+index, regA0)
+		ch.WriteReg(0x20, 1, carReg20)
+		ch.WriteReg(0x40, 1, carReg40)
+		ch.WriteReg(0x60, 1, carReg60)
+		ch.WriteReg(0x80, 1, carReg80)
+		ch.WriteReg(0xE0, 1, carRegE0)
 
-		chip.WriteReg(0x20+car, carReg20)
-		chip.WriteReg(0x40+car, carReg40)
-		chip.WriteReg(0x60+car, carReg60)
-		chip.WriteReg(0x80+car, carReg80)
-		chip.WriteReg(0xE0+car, carRegE0)
+		ch.WriteC0(regC0)
 
-		chip.WriteReg(0xC0+index, regC0)
-
-		chip.WriteReg(0xB0+index, regB0)
+		ch.SetKeyOn(true)
 	}
 }
 
@@ -262,8 +249,6 @@ func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
 	return twoOperatorMelodic[channelIdx%18]
 }
 
-var fmus = [12]float64{277.1826, 293.6648, 311.1270, 329.6276, 349.2282, 369.9944, 391.9954, 415.3047, 440.0, 466.1638, 493.8833, 523.2511}
-
 func (inst *InstrumentOPL2) semitoneToFreqBlock(semitone note.Semitone, c2spd note.C2SPD) (uint16, uint8) {
 	targetFreq := float64(util.FrequencyFromSemitone(semitone, c2spd))
 
@@ -298,8 +283,15 @@ func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8,
 // GetKeyOn gets the key on flag for the instrument
 func (inst *InstrumentOPL2) GetKeyOn(ioc *InstrumentOnChannel) bool {
 	ym := ioc.Data.(*ym3812)
-	chip := ym.chip
-	index := inst.getChannelIndex(ioc.OutputChannelNum)
-	ch := chip.GetChannelByIndex(index)
+	ch := ym.ch
 	return ch.GetKeyOn()
+}
+
+// Update advances time by the amount specified by `tickDuration`
+func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.Duration) {
+	ym := ioc.Data.(*ym3812)
+	ll := uint(math.Ceil(tickDuration.Seconds() * opl2.OPLRATE))
+	gen := make([]int32, ll)
+	ym.ch.GenerateBlock2(ll, gen)
+	ym.data = append(ym.data, gen...)
 }

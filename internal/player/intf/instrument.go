@@ -2,6 +2,7 @@ package intf
 
 import (
 	"gotracker/internal/player/note"
+	"time"
 
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
@@ -24,4 +25,5 @@ type InstrumentOnChannel interface {
 	GetInstrument() Instrument
 	SetKeyOn(note.Semitone, bool)
 	GetKeyOn() bool
+	Update(time.Duration)
 }

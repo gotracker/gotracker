@@ -1,6 +1,8 @@
 package layout
 
 import (
+	"time"
+
 	"github.com/heucuva/gomixing/sampling"
 	"github.com/heucuva/gomixing/volume"
 
@@ -15,6 +17,7 @@ type InstrumentDataIntf interface {
 	Initialize(*InstrumentOnChannel) error
 	SetKeyOn(*InstrumentOnChannel, note.Semitone, bool)
 	GetKeyOn(*InstrumentOnChannel) bool
+	Update(*InstrumentOnChannel, time.Duration)
 }
 
 // InstrumentOnChannel is an instance of the instrument on a particular output channel
@@ -133,7 +136,6 @@ func (inst *InstrumentOnChannel) GetInstrument() intf.Instrument {
 
 // SetKeyOn sets the key on flag for the instrument
 func (inst *InstrumentOnChannel) SetKeyOn(semitone note.Semitone, on bool) {
-
 	if inst.Instrument != nil && inst.Instrument.Inst != nil {
 		inst.Instrument.Inst.SetKeyOn(inst, semitone, on)
 	}
@@ -145,4 +147,11 @@ func (inst *InstrumentOnChannel) GetKeyOn() bool {
 		return inst.Instrument.Inst.GetKeyOn(inst)
 	}
 	return false
+}
+
+// Update advances time by the amount specified by `tickDuration`
+func (inst *InstrumentOnChannel) Update(tickDuration time.Duration) {
+	if inst.Instrument != nil && inst.Instrument.Inst != nil {
+		inst.Instrument.Inst.Update(inst, tickDuration)
+	}
 }

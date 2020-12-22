@@ -3,6 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/heucuva/gomixing/mixing"
 	"github.com/heucuva/gomixing/panning"
@@ -58,6 +59,7 @@ func (ss *Song) SetNumChannels(num int) {
 
 	for ch, cs := range ss.Channels {
 		cs.Pos = sampling.Pos{}
+		cs.PrevInstrument = cs.Instrument
 		cs.Instrument = nil
 		cs.Period = 0
 		cs.Command = nil
@@ -237,7 +239,12 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 	} else if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
-			cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum)
+			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
+				cs.Instrument = cs.PrevInstrument
+				cs.Instrument.SetKeyOn(cs.PrevNoteSemitone, false)
+			} else {
+				cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum)
+			}
 		}
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
@@ -251,7 +258,8 @@ func (ss *Song) soundRenderRow(premix *device.PremixData, sampler *render.Sample
 	mix := sampler.Mixer()
 
 	samplerSpeed := sampler.GetSamplerSpeed()
-	tickSamples := int(2.5 * float32(sampler.SampleRate) / float32(ss.Pattern.Row.Tempo))
+	tickDuration := time.Duration(2500) * time.Millisecond / time.Duration(ss.Pattern.Row.Tempo)
+	tickSamples := int(tickDuration.Seconds() * float64(sampler.SampleRate))
 
 	rowLoops := 1
 	if ss.Pattern.RowHasPatternDelay {
@@ -276,7 +284,7 @@ func (ss *Song) soundRenderRow(premix *device.PremixData, sampler *render.Sample
 		cs := &ss.Channels[ch]
 		if ss.SongData.IsChannelEnabled(ch) {
 			rr := make([]mixing.Data, ticksThisRow)
-			cs.renderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, tickSamples, centerPanning)
+			cs.renderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, tickSamples, centerPanning, tickDuration)
 
 			premix.Data[ch] = rr
 		}

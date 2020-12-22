@@ -2,6 +2,7 @@ package state
 
 import (
 	"math"
+	"time"
 
 	"github.com/heucuva/gomixing/mixing"
 	"github.com/heucuva/gomixing/panning"
@@ -18,12 +19,13 @@ type commandFunc func(int, *ChannelState, int, bool)
 // ChannelState is the state of a single channel
 type ChannelState struct {
 	intf.Channel
-	Instrument   intf.InstrumentOnChannel
-	Pos          sampling.Pos
-	Period       note.Period
-	StoredVolume volume.Volume
-	ActiveVolume volume.Volume
-	Pan          panning.Position
+	Instrument     intf.InstrumentOnChannel
+	PrevInstrument intf.InstrumentOnChannel
+	Pos            sampling.Pos
+	Period         note.Period
+	StoredVolume   volume.Volume
+	ActiveVolume   volume.Volume
+	Pan            panning.Position
 
 	Command      commandFunc
 	ActiveEffect intf.Effect
@@ -162,7 +164,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 	return orderRestart, rowRestart
 }
 
-func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix) {
+func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
 	tickPos := 0
 	for tick := 0; tick < ticksThisRow; tick++ {
 		var lastTick = (tick+1 == ticksThisRow)
@@ -174,10 +176,10 @@ func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow 
 		if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
 			// make a stand-alone data buffer for this channel for this tick
 			data := mix.NewMixBuffer(tickSamples)
-			//mixChan, mixDone := data.C()
 
 			period := cs.Period + cs.VibratoDelta
 			samplerAdd := samplerSpeed / float32(period)
+			sample.Update(tickDuration)
 			mixData := mixing.SampleMixIn{
 				Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
 				StaticVol: volume.Volume(1.0),
@@ -185,7 +187,6 @@ func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow 
 				MixPos:    0,
 				MixLen:    tickSamples,
 			}
-			//mixChan <- mixData
 			data.MixInSample(mixData)
 			cs.Pos.Add(samplerAdd * float32(tickSamples))
 			mixerData[tick] = mixing.Data{
@@ -193,7 +194,6 @@ func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow 
 				Pan:        cs.Pan,
 				Volume:     cs.ActiveVolume * cs.LastGlobalVolume,
 				SamplesLen: tickSamples,
-				//Flush:      mixDone,
 			}
 		}
 		tickPos += tickSamples

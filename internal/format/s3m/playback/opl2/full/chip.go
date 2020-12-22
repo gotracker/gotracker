@@ -359,6 +359,56 @@ func (c *Chip) WriteAddr(port uint32, val uint8) uint32 {
 	return 0
 }
 
+type ChipState struct {
+	VibratoSign  int8
+	VibratoShift uint8
+	TremoloValue uint8
+	LfoCounter   uint32
+	VibratoIndex uint8
+}
+
+func (c *Chip) GenerateBlock2ForChannel(index uint32, cs *ChipState, total Bitu, output []int32) {
+	oldVibratoSign := c.vibratoSign
+	oldVibratoShift := c.vibratoShift
+	oldTremeloValue := c.tremoloValue
+	oldLfoCounter := c.lfoCounter
+	oldVibratoIndex := c.vibratoIndex
+
+	c.vibratoSign = cs.VibratoSign
+	c.vibratoShift = cs.VibratoShift
+	c.tremoloValue = cs.TremoloValue
+	c.lfoCounter = cs.LfoCounter
+	c.vibratoIndex = cs.VibratoIndex
+
+	ch := &c.ch[index]
+	outputIdx := Bitu(0)
+	for total > 0 {
+		samples := c.ForwardLFO(uint32(total))
+		ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
+		total -= Bitu(samples)
+		outputIdx += Bitu(samples)
+	}
+
+	cs.VibratoSign = c.vibratoSign
+	cs.VibratoShift = c.vibratoShift
+	cs.TremoloValue = c.tremoloValue
+	cs.LfoCounter = c.lfoCounter
+	cs.VibratoIndex = c.vibratoIndex
+
+	c.vibratoSign = oldVibratoSign
+	c.vibratoShift = oldVibratoShift
+	c.tremoloValue = oldTremeloValue
+	c.lfoCounter = oldLfoCounter
+	c.vibratoIndex = oldVibratoIndex
+}
+
+func (c *Chip) AdvanceBlock2(total Bitu) {
+	for total > 0 {
+		samples := c.ForwardLFO(uint32(total))
+		total -= Bitu(samples)
+	}
+}
+
 func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
 	outputIdx := Bitu(0)
 	for total > 0 {

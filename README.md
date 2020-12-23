@@ -1,5 +1,7 @@
 # Gotracker
 
+![Go](https://github.com/gotracker/gotracker/workflows/Go/badge.svg)
+ 
 ## What is it?
 
 It's a tracked music player written in Go.

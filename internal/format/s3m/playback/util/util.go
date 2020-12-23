@@ -1,8 +1,6 @@
 package util
 
 import (
-	"syscall"
-
 	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
 	"github.com/heucuva/gomixing/panning"
 	"github.com/heucuva/gomixing/volume"
@@ -83,11 +81,6 @@ func VolumeFromS3M8BitSample(vol uint8) volume.Volume {
 // VolumeFromS3M16BitSample converts an S3M 16-bit sample volume to a player volume
 func VolumeFromS3M16BitSample(vol uint16) volume.Volume {
 	return (volume.Volume(vol) - 32768.0) / 32768.0
-}
-
-// BE16ToLE16 converts a big-endian uint16 to a little-endian uint16
-func BE16ToLE16(be uint16) uint16 {
-	return syscall.Ntohs(be)
 }
 
 // PanningFromS3M returns a radian panning position from an S3M panning value

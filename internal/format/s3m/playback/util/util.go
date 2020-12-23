@@ -83,6 +83,11 @@ func VolumeFromS3M16BitSample(vol uint16) volume.Volume {
 	return (volume.Volume(vol) - 32768.0) / 32768.0
 }
 
+// BE16ToLE16 converts a big-endian uint16 to a little-endian uint16
+func BE16ToLE16(be uint16) uint16 {
+	return uint16(be>>8) | uint16(be<<8)
+}
+
 // PanningFromS3M returns a radian panning position from an S3M panning value
 func PanningFromS3M(pos uint8) panning.Position {
 	return panning.MakeStereoPosition(float32(pos), 0, 0x0F)

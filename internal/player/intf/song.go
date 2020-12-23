@@ -32,6 +32,7 @@ type Song interface {
 	SetPatterns(Patterns)
 	SetOrderList([]uint8)
 	SetSongData(SongData)
+	GetSongData() SongData
 	SetNumChannels(int)
 	GetNumChannels() int
 	GetChannel(int) Channel

@@ -135,16 +135,17 @@ func convertSCRSFullToInstrument(s *s3mfile.SCRSFull) (*layout.Instrument, error
 	return nil, errors.New("unhandled scrs ancillary type")
 }
 
-func convertS3MPackedPattern(pkt s3mfile.PackedPattern) (*layout.Pattern, int) {
+func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*layout.Pattern, int) {
 	pattern := &layout.Pattern{
 		Packed: pkt,
 	}
 
 	buffer := bytes.NewBuffer(pkt.Data)
 
-	rowNum := 0
+	rowNum := uint8(0)
 	maxCh := uint8(0)
-	for rowNum < len(pattern.Rows) {
+	for rowNum < numRows {
+		pattern.Rows = append(pattern.Rows, layout.RowData{})
 		row := &pattern.Rows[rowNum]
 		for {
 			var what s3mfile.PatternFlags
@@ -199,7 +200,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern) (*layout.Pattern, int) {
 	return pattern, int(maxCh)
 }
 
-func convertS3MFileToSong(f *s3mfile.File) (*layout.Song, error) {
+func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -228,7 +229,7 @@ func convertS3MFileToSong(f *s3mfile.File) (*layout.Song, error) {
 	lastEnabledChannel := 0
 	song.Patterns = make([]intf.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
-		pattern, maxCh := convertS3MPackedPattern(pkt)
+		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {
 			continue
 		}
@@ -284,5 +285,7 @@ func readS3M(filename string) (*layout.Song, error) {
 		return nil, err
 	}
 
-	return convertS3MFileToSong(s)
+	return convertS3MFileToSong(s, func(patNum int) uint8 {
+		return 64
+	})
 }

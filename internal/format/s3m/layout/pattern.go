@@ -11,7 +11,7 @@ import (
 type Pattern struct {
 	intf.Pattern
 	Packed s3mfile.PackedPattern
-	Rows   [64]RowData
+	Rows   []RowData
 }
 
 // GetRow returns the interface to the row at index `row`

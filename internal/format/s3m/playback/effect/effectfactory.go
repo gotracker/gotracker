@@ -84,10 +84,7 @@ func specialEffect(mem *channel.Memory, cd *channel.Data) intf.Effect {
 	var cmd = mem.LastNonZero(cd.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
-		{
-			// TODO
-			log.Panicf("%c%0.2x", cd.Command+'@', cd.Info)
-		}
+		return EnableFilter(cd.Info)
 	case 0x1: // Set Glissando on/off
 		{
 			// TODO

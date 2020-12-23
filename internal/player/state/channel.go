@@ -19,6 +19,7 @@ type commandFunc func(int, *ChannelState, int, bool)
 // ChannelState is the state of a single channel
 type ChannelState struct {
 	intf.Channel
+
 	Instrument     intf.InstrumentOnChannel
 	PrevInstrument intf.InstrumentOnChannel
 	Pos            sampling.Pos

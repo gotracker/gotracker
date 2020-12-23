@@ -55,6 +55,12 @@ func (state *PatternState) GetPatNum() PatternNum {
 	return PatternNum(state.Orders[state.CurrentOrder])
 }
 
+// GetNumRows returns the number of rows in the current pattern
+func (state *PatternState) GetNumRows() uint8 {
+	rows := state.GetRows()
+	return uint8(len(rows))
+}
+
 // WantsStop returns true when the current pattern wants to end the song
 func (state *PatternState) WantsStop() bool {
 	if state.GetPatNum() == InvalidPattern {
@@ -83,7 +89,7 @@ func (state *PatternState) NextRow() {
 	}
 
 	state.CurrentRow++
-	if state.CurrentRow >= 64 {
+	if state.CurrentRow >= state.GetNumRows() {
 		state.NextOrder()
 		return
 	}

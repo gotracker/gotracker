@@ -211,7 +211,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 		ss.Pattern.CurrentOrder++
 	}
 
-	if ss.Pattern.CurrentRow >= 64 {
+	if ss.Pattern.CurrentRow >= ss.Pattern.GetNumRows() {
 		ss.Pattern.CurrentRow = 0
 		ss.Pattern.CurrentOrder++
 	}
@@ -405,6 +405,11 @@ func (ss *Song) SetOrderList(orders []uint8) {
 // SetSongData sets the song data object
 func (ss *Song) SetSongData(songdata intf.SongData) {
 	ss.SongData = songdata
+}
+
+// GetSongData gets the song data object
+func (ss *Song) GetSongData() intf.SongData {
+	return ss.SongData
 }
 
 // GetChannel returns the channel interface for the specified channel number

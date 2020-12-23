@@ -36,16 +36,6 @@ func (s *Sampler) Mixer() *mixing.Mixer {
 	return &s.mixer
 }
 
-// ToRenderData converts a mixbuffer into a byte stream intended to be
-// output to the output sound device
-func (s *Sampler) ToRenderData(data mixing.MixBuffer, mixedChannels int) []byte {
-	if len(data) == 0 {
-		return nil
-	}
-	samples := len(data[0])
-	return data.ToRenderData(samples, s.mixer.BitsPerSample, mixedChannels)
-}
-
 // GetPanMixer returns the panning mixer that can generate a matrix
 // based on input pan value
 func (s *Sampler) GetPanMixer() mixing.PanMixer {

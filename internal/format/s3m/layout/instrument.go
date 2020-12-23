@@ -130,14 +130,7 @@ func (inst *InstrumentOnChannel) GetSample(pos sampling.Pos) volume.Matrix {
 		if inst.Filter == nil {
 			return dry
 		}
-		wet := make(volume.Matrix, len(dry))
-		for i, s := range dry {
-			if inst.Filter != nil {
-				wet[i] = inst.Filter.Filter(s)
-			} else {
-				wet[i] = s
-			}
-		}
+		wet := inst.Filter.Filter(dry)
 		return wet
 	}
 	return nil

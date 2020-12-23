@@ -59,7 +59,7 @@ func (ss *Song) SetNumChannels(num int) {
 
 	for ch, cs := range ss.Channels {
 		cs.Pos = sampling.Pos{}
-		cs.PrevInstrument = cs.Instrument
+		cs.PrevInstrument = nil
 		cs.Instrument = nil
 		cs.Period = 0
 		cs.Command = nil

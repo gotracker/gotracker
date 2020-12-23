@@ -137,15 +137,19 @@ func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
 	return nil
 }
 
+var (
+	oplC4FNum, oplC4Block = freqToFreqBlock(opl2.OPLRATE / 16) // C-4
+)
+
 // SetKeyOn sets the key on flag for the instrument
 func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semitone, on bool) {
 	ym := ioc.Data.(*ym3812)
 	ch := ym.ch
 
 	// write the instrument to the channel!
-	freq, block := inst.freqToFreqBlock(opl2.OPLRATE / 16)
+	freq, block := oplC4FNum, oplC4Block
 	if !on {
-		ch.WriteFNum(freq, block)
+		ch.SetFNum(freq, block)
 		ch.SetKeyOn(false)
 		ym.data = nil
 	} else {
@@ -161,15 +165,13 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Sem
 		carReg80 := inst.getReg80(&inst.Carrier)
 		carRegE0 := inst.getRegE0(&inst.Carrier)
 
-		regC0 := inst.getRegC0()
-
 		ch.WriteReg(0x20, 0, modReg20)
 		ch.WriteReg(0x40, 0, modReg40)
 		ch.WriteReg(0x60, 0, modReg60)
 		ch.WriteReg(0x80, 0, modReg80)
 		ch.WriteReg(0xE0, 0, modRegE0)
 
-		ch.WriteFNum(freq, block)
+		ch.SetFNum(freq, block)
 
 		ch.WriteReg(0x20, 1, carReg20)
 		ch.WriteReg(0x40, 1, carReg40)
@@ -177,7 +179,8 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Sem
 		ch.WriteReg(0x80, 1, carReg80)
 		ch.WriteReg(0xE0, 1, carRegE0)
 
-		ch.WriteC0(regC0)
+		ch.SetAdditiveSynthesis(inst.AdditiveSynthesis)
+		ch.SetModulationFeedback(uint8(inst.ModulationFeedback))
 
 		ch.SetKeyOn(true)
 	}
@@ -226,16 +229,6 @@ func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 	return reg80
 }
 
-func (inst *InstrumentOPL2) getRegC0() uint8 {
-	regC0 := uint8(0x00)
-	//regC0 |= 0x40 | 0x20 // channel enable: right | left
-	regC0 |= (uint8(inst.ModulationFeedback) & 0x07) << 1
-	if inst.AdditiveSynthesis {
-		regC0 |= 0x01
-	}
-	return regC0
-}
-
 func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
 	regE0 := uint8(0x00)
 	regE0 |= uint8(o.WaveformSelection) & 0x03
@@ -252,13 +245,14 @@ func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
 func (inst *InstrumentOPL2) semitoneToFreqBlock(semitone note.Semitone, c2spd note.C2SPD) (uint16, uint8) {
 	targetFreq := float64(util.FrequencyFromSemitone(semitone, c2spd))
 
-	return inst.freqToFreqBlock(targetFreq / 256)
+	return freqToFreqBlock(targetFreq / 256)
 }
 
-func (inst *InstrumentOPL2) freqToFreqBlock(targetFreq float64) (uint16, uint8) {
+func freqToFreqBlock(targetFreq float64) (uint16, uint8) {
 	bestBlk := uint8(8)
 	bestMatchFreqNum := uint16(0)
 	bestMatchFNDelta := float64(1024)
+	found := false
 	for blk := uint8(0); blk < 8; blk++ {
 		fNum := targetFreq * float64(uint32(1<<(20-blk))) / opl2.OPLRATE
 		iNum := int(fNum)
@@ -267,7 +261,12 @@ func (inst *InstrumentOPL2) freqToFreqBlock(targetFreq float64) (uint16, uint8) 
 			bestBlk = blk
 			bestMatchFreqNum = uint16(iNum)
 			bestMatchFNDelta = fp
+			found = true
 		}
+	}
+
+	if !found {
+		panic("couldn't find fnum/block match")
 	}
 
 	return bestMatchFreqNum, bestBlk

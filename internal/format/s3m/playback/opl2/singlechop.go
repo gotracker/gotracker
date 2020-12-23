@@ -111,10 +111,10 @@ func NewSingleOperator() *SingleChannelOp {
 func (o *SingleChannelOp) SetupOperator() {
 	o.SetState(envStateOff)
 	o.rateZero = (1 << envStateOff)
-	o.sustainLevel = ENV_MAX
-	o.currentLevel = ENV_MAX
-	o.totalLevel = ENV_MAX
-	o.volume = ENV_MAX
+	o.sustainLevel = envelopeMax
+	o.currentLevel = envelopeMax
+	o.totalLevel = envelopeMax
+	o.volume = envelopeMax
 }
 
 //We zero out when rate == 0
@@ -123,7 +123,7 @@ func (o *SingleChannelOp) UpdateAttack(ch *SingleChannel) {
 	if rate != 0 {
 		val := uint8((rate << 2) + o.ksr)
 		o.attackAdd = ch.attackRates[val]
-		o.rateZero &= ^uint8(1 << envStateAttack)
+		o.rateZero &^= uint8(1 << envStateAttack)
 	} else {
 		o.attackAdd = 0
 		o.rateZero |= (1 << envStateAttack)
@@ -134,7 +134,7 @@ func (o *SingleChannelOp) UpdateDecay(ch *SingleChannel) {
 	if rate != 0 {
 		val := uint8((rate << 2) + o.ksr)
 		o.decayAdd = ch.linearRates[val]
-		o.rateZero &= ^uint8(1 << envStateDecay)
+		o.rateZero &^= uint8(1 << envStateDecay)
 	} else {
 		o.decayAdd = 0
 		o.rateZero |= (1 << envStateDecay)
@@ -145,9 +145,9 @@ func (o *SingleChannelOp) UpdateRelease(ch *SingleChannel) {
 	if rate != 0 {
 		val := uint8((rate << 2) + o.ksr)
 		o.releaseAdd = ch.linearRates[val]
-		o.rateZero &= ^uint8(1 << envStateRelease)
+		o.rateZero &^= uint8(1 << envStateRelease)
 		if (o.reg20 & maskSustain) == 0 {
-			o.rateZero &= ^uint8(1 << envStateSustain)
+			o.rateZero &^= uint8(1 << envStateSustain)
 		}
 	} else {
 		o.rateZero |= (1 << envStateRelease)
@@ -168,8 +168,8 @@ func (o *SingleChannelOp) UpdateAttenuation() {
 	tl := uint32(o.reg40 & 0x3f)
 	kslShift := uint8(kslShiftTable[o.reg40>>6])
 	//Make sure the attenuation goes to the right bits
-	o.totalLevel = int32(tl << (ENV_BITS - 7)) //Total level goes 2 bits below max
-	o.totalLevel += int32((kslBase << ENV_EXTRA) >> kslShift)
+	o.totalLevel = int32(tl << (bitsEnvelope - 7)) //Total level goes 2 bits below max
+	o.totalLevel += int32((kslBase << bitsEnvelopeExtra) >> kslShift)
 }
 
 func (o *SingleChannelOp) UpdateFrequency() {
@@ -212,9 +212,9 @@ func (o *SingleChannelOp) UpdateRates(ch *SingleChannel) {
 }
 
 func (o *SingleChannelOp) RateForward(add uint32) int32 {
-	o.rateIndex += add
-	ret := int32(o.rateIndex >> RATE_SH)
-	o.rateIndex = o.rateIndex & RATE_MASK
+	rateIndex := o.rateIndex + add
+	ret := int32(rateIndex) >> bitsRateShift
+	o.rateIndex = rateIndex & bitsRateMask
 	return ret
 }
 
@@ -223,27 +223,27 @@ func (o *SingleChannelOp) TemplateVolume(yes envelopeState) int {
 	var change int32
 	switch yes {
 	case envStateOff:
-		return ENV_MAX
+		return envelopeMax
 	case envStateAttack:
 		change = o.RateForward(o.attackAdd)
 		if change == 0 {
 			return int(vol)
 		}
 		vol += ((^vol) * change) >> 3
-		if vol < ENV_MIN {
-			o.volume = ENV_MIN
+		if vol < envelopeMin {
+			o.volume = envelopeMin
 			o.rateIndex = 0
 			o.SetState(envStateDecay)
-			return ENV_MIN
+			return envelopeMin
 		}
 	case envStateDecay:
 		vol += o.RateForward(o.decayAdd)
 		if vol >= o.sustainLevel {
 			//Check if we didn't overshoot max attenuation, then just go off
-			if vol >= ENV_MAX {
-				o.volume = ENV_MAX
+			if vol >= envelopeMax {
+				o.volume = envelopeMax
 				o.SetState(envStateOff)
-				return ENV_MAX
+				return envelopeMax
 			}
 			//Continue as sustain
 			o.rateIndex = 0
@@ -257,10 +257,10 @@ func (o *SingleChannelOp) TemplateVolume(yes envelopeState) int {
 		fallthrough
 	case envStateRelease:
 		vol += o.RateForward(o.releaseAdd)
-		if vol >= ENV_MAX {
-			o.volume = ENV_MAX
+		if vol >= envelopeMax {
+			o.volume = envelopeMax
 			o.SetState(envStateOff)
-			return ENV_MAX
+			return envelopeMax
 		}
 	}
 	o.volume = vol
@@ -273,7 +273,7 @@ func (o *SingleChannelOp) ForwardVolume() uint {
 
 func (o *SingleChannelOp) ForwardWave() uint {
 	o.waveIndex += o.waveCurrent
-	return uint(o.waveIndex) >> WAVE_SH
+	return uint(o.waveIndex) >> bitsWaveShift
 }
 
 func (o *SingleChannelOp) Write20(ch *SingleChannel, val uint8) {
@@ -284,7 +284,7 @@ func (o *SingleChannelOp) Write20(ch *SingleChannel, val uint8) {
 	o.reg20 = val
 	//Shift the tremolo bit over the entire register, saved a branch, YES!
 	o.tremoloMask = val >> 7
-	o.tremoloMask &= ^uint8((1 << ENV_EXTRA) - 1)
+	o.tremoloMask &^= uint8((1 << bitsEnvelopeExtra) - 1)
 	//Update specific features based on changes
 	if (change & maskKSR) != 0 {
 		o.UpdateRates(ch)
@@ -293,7 +293,7 @@ func (o *SingleChannelOp) Write20(ch *SingleChannel, val uint8) {
 	if (o.reg20&maskSustain) != 0 || o.releaseAdd == 0 {
 		o.rateZero |= (1 << envStateSustain)
 	} else {
-		o.rateZero &= ^uint8(1 << envStateSustain)
+		o.rateZero &^= uint8(1 << envStateSustain)
 	}
 	//Frequency multiplier or vibrato changed
 	if (change & (0xf | maskVibrato)) != 0 {
@@ -330,7 +330,7 @@ func (o *SingleChannelOp) Write80(ch *SingleChannel, val uint8) {
 	sustain := uint8(val >> 4)
 	//Turn 0xf into 0x1f
 	sustain |= (sustain + 1) & 0x10
-	o.sustainLevel = int32(sustain) << (ENV_BITS - 5)
+	o.sustainLevel = int32(sustain) << (bitsEnvelope - 5)
 	if (change & 0x0f) != 0 {
 		o.UpdateRelease(ch)
 	}
@@ -338,15 +338,16 @@ func (o *SingleChannelOp) Write80(ch *SingleChannel, val uint8) {
 
 func (o *SingleChannelOp) WriteWaveForm(ch *SingleChannel, waveForm uint8) {
 	waveForm &= ch.waveFormMask
-	if (o.waveForm ^ waveForm) != 0 {
+	if (o.waveForm ^ waveForm) == 0 {
 		return
 	}
 	o.waveForm = waveForm
 	if DBOPL_WAVE == WAVE_HANDLER {
 		o.waveHandler = waveHandlerTable[waveForm]
 	} else {
-		o.waveBase = waveTable[waveBaseTable[waveForm]:]
-		o.waveStart = uint32(waveStartTable[waveForm]) << WAVE_SH
+		basePos := waveBaseTable[waveForm]
+		o.waveBase = waveTable[basePos:]
+		o.waveStart = uint32(waveStartTable[waveForm]) << bitsWaveShift
 		o.waveMask = uint32(waveMaskTable[waveForm])
 	}
 }
@@ -359,7 +360,7 @@ func (o *SingleChannelOp) SetState(s envelopeState) {
 }
 
 func (o *SingleChannelOp) Silent() bool {
-	if !ENV_SILENT(int(o.totalLevel + o.volume)) {
+	if !isEnvelopeSilent(int(o.totalLevel + o.volume)) {
 		return false
 	}
 	if (o.rateZero & (1 << o.state)) == 0 {
@@ -396,7 +397,7 @@ func (o *SingleChannelOp) KeyOn(mask uint8) {
 }
 
 func (o *SingleChannelOp) KeyOff(mask uint8) {
-	o.keyOn &= ^mask
+	o.keyOn &^= mask
 	if o.keyOn == 0 {
 		if o.state != envStateOff {
 			o.SetState(envStateRelease)
@@ -406,12 +407,12 @@ func (o *SingleChannelOp) KeyOff(mask uint8) {
 
 func (o *SingleChannelOp) GetWave(index uint, vol uint) int {
 	if DBOPL_WAVE == WAVE_HANDLER {
-		return o.waveHandler(index, vol<<(3-ENV_EXTRA))
+		return o.waveHandler(index, vol<<(3-bitsEnvelopeExtra))
 	} else if DBOPL_WAVE == WAVE_TABLEMUL {
-		return int((uint32(o.waveBase[index&uint(o.waveMask)]) * uint32(mulTable[vol>>ENV_EXTRA])) >> MUL_SH)
+		return int((uint32(o.waveBase[index&uint(o.waveMask)]) * uint32(mulTable[vol>>bitsEnvelopeExtra])) >> bitsMulShift)
 	} else if DBOPL_WAVE == WAVE_TABLELOG {
 		wave := int32(o.waveBase[index&uint(o.waveMask)])
-		total := uint32(uint(wave&0x7fff) + vol<<(3-ENV_EXTRA))
+		total := uint32(uint(wave&0x7fff) + vol<<(3-bitsEnvelopeExtra))
 		sig := int32(expTable[total&0xff])
 		exp := uint32(total >> 8)
 		neg := int32(wave >> 16)
@@ -423,7 +424,7 @@ func (o *SingleChannelOp) GetWave(index uint, vol uint) int {
 
 func (o *SingleChannelOp) GetSample(modulation int) int {
 	vol := o.ForwardVolume()
-	if ENV_SILENT(int(vol)) {
+	if isEnvelopeSilent(int(vol)) {
 		//Simply forward the wave
 		o.waveIndex += o.waveCurrent
 		return 0

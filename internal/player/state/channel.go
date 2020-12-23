@@ -66,6 +66,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 
 	cs.Command = processCommand
 
+	cs.PrevInstrument = cs.Instrument
 	cs.TargetPeriod = cs.Period
 	cs.TargetPos = cs.Pos
 	cs.TargetInst = nil

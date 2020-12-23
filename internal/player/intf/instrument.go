@@ -15,7 +15,7 @@ type Instrument interface {
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
 	GetID() int
-	InstantiateOnChannel(int) InstrumentOnChannel
+	InstantiateOnChannel(int, Filter) InstrumentOnChannel
 }
 
 // InstrumentOnChannel is an interface for an instrument on a particular output channel
@@ -26,4 +26,5 @@ type InstrumentOnChannel interface {
 	SetKeyOn(note.Semitone, bool)
 	GetKeyOn() bool
 	Update(time.Duration)
+	SetFilter(Filter)
 }

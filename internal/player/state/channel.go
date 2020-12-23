@@ -57,6 +57,7 @@ type ChannelState struct {
 	TargetC2Spd       note.C2SPD
 
 	OutputChannelNum int
+	Filter           intf.Filter
 }
 
 func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss intf.Song, sd intf.SongData, effectFactory intf.EffectFactoryFunc, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) (bool, bool) {
@@ -343,7 +344,7 @@ func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 	if inst == nil {
 		cs.Instrument = nil
 	}
-	cs.Instrument = inst.InstantiateOnChannel(int(cs.OutputChannelNum))
+	cs.Instrument = inst.InstantiateOnChannel(int(cs.OutputChannelNum), cs.Filter)
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
@@ -415,4 +416,17 @@ func (cs *ChannelState) SetPan(pan panning.Position) {
 // this gets reset on every row
 func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
 	cs.DoRetriggerNote = enabled
+}
+
+// GetFilter returns the active filter on the channel
+func (cs *ChannelState) GetFilter() intf.Filter {
+	return cs.Filter
+}
+
+// SetFilter sets the active filter on the channel
+func (cs *ChannelState) SetFilter(filter intf.Filter) {
+	cs.Filter = filter
+	if cs.Instrument != nil {
+		cs.Instrument.SetFilter(filter)
+	}
 }

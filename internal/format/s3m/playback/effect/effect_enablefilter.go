@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/player/intf"
 )
 
@@ -20,8 +21,8 @@ func (e EnableFilter) Start(cs intf.Channel, ss intf.Song) {
 	x := uint8(e) & 0xf
 	on := x != 0
 
-	// TODO: build lowpass filter, then enable/disable it!
-	_ = on
+	sd := ss.GetSongData().(*layout.Song)
+	sd.SetFilterEnable(on, ss)
 }
 
 // Tick is called on every tick

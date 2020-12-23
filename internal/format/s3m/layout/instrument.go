@@ -27,6 +27,7 @@ type InstrumentOnChannel struct {
 	Instrument       *Instrument
 	OutputChannelNum int
 	Data             interface{}
+	Filter           intf.Filter
 }
 
 // Instrument is the mildly-decoded S3M instrument/sample header
@@ -103,10 +104,11 @@ func (inst *Instrument) GetLength() sampling.Pos {
 }
 
 // InstantiateOnChannel takes an instrument and loads it onto an output channel
-func (inst *Instrument) InstantiateOnChannel(channelIdx int) intf.InstrumentOnChannel {
+func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter) intf.InstrumentOnChannel {
 	ioc := InstrumentOnChannel{
 		OutputChannelNum: channelIdx,
 		Instrument:       inst,
+		Filter:           filter,
 	}
 
 	if inst.Inst != nil {
@@ -124,7 +126,19 @@ func (inst *Instrument) GetID() int {
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentOnChannel) GetSample(pos sampling.Pos) volume.Matrix {
 	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		return inst.Instrument.Inst.GetSample(inst, pos)
+		dry := inst.Instrument.Inst.GetSample(inst, pos)
+		if inst.Filter == nil {
+			return dry
+		}
+		wet := make(volume.Matrix, len(dry))
+		for i, s := range dry {
+			if inst.Filter != nil {
+				wet[i] = inst.Filter.Filter(s)
+			} else {
+				wet[i] = s
+			}
+		}
+		return wet
 	}
 	return nil
 }
@@ -154,4 +168,9 @@ func (inst *InstrumentOnChannel) Update(tickDuration time.Duration) {
 	if inst.Instrument != nil && inst.Instrument.Inst != nil {
 		inst.Instrument.Inst.Update(inst, tickDuration)
 	}
+}
+
+// SetFilter sets the active filter on the instrument (which should be the same as what's on the channel)
+func (inst *InstrumentOnChannel) SetFilter(filter intf.Filter) {
+	inst.Filter = filter
 }

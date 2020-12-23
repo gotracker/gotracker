@@ -63,4 +63,6 @@ type Channel interface {
 	SetRetriggerCount(uint8)
 	SetPan(panning.Position)
 	SetDoRetriggerNote(bool)
+	GetFilter() Filter
+	SetFilter(Filter)
 }

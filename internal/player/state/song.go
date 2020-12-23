@@ -243,7 +243,7 @@ func (ss *Song) processCommand(ch int, cs *ChannelState, currentTick int, lastTi
 				cs.Instrument = cs.PrevInstrument
 				cs.Instrument.SetKeyOn(cs.PrevNoteSemitone, false)
 			} else {
-				cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum)
+				cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
 			}
 		}
 		cs.Period = cs.TargetPeriod

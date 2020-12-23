@@ -1,6 +1,6 @@
 # Gotracker
 
-![Go](https://github.com/gotracker/gotracker/workflows/Go/badge.svg)
+![build](https://github.com/gotracker/gotracker/workflows/Go/badge.svg)
  
 ## What is it?
 

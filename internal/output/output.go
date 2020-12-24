@@ -3,7 +3,7 @@ package output
 import (
 	"errors"
 
-	device "github.com/heucuva/gosound"
+	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/feature"
 )

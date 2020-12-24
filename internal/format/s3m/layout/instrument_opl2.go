@@ -4,9 +4,9 @@ import (
 	"math"
 	"time"
 
-	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/format/s3m/playback/util"

@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"

@@ -3,7 +3,7 @@ package filter
 import (
 	"math"
 
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/volume"
 )
 
 type channelData struct {

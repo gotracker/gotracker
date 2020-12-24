@@ -4,10 +4,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/heucuva/gomixing/mixing"
-	"github.com/heucuva/gomixing/panning"
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"

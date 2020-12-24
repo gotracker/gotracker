@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/heucuva/gomixing/mixing"
-	"github.com/heucuva/gomixing/panning"
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
-	device "github.com/heucuva/gosound"
+	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
+	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"

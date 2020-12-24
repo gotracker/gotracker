@@ -5,8 +5,8 @@ import (
 	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/player/intf"
 
-	"github.com/heucuva/gomixing/panning"
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/volume"
 )
 
 // Header is a mildly-decoded S3M header definition

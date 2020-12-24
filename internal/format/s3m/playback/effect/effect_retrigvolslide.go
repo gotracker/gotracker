@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 
-	"github.com/heucuva/gomixing/sampling"
+	"github.com/gotracker/gomixing/sampling"
 
 	"gotracker/internal/player/intf"
 )

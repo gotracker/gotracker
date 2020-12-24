@@ -6,7 +6,7 @@ import (
 	"log"
 
 	progressBar "github.com/cheggaaa/pb"
-	device "github.com/heucuva/gosound"
+	device "github.com/gotracker/gosound"
 	"github.com/pkg/errors"
 
 	"gotracker/internal/format"

@@ -11,7 +11,7 @@ type OrderJump uint8 // 'B'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e OrderJump) PreStart(cs intf.Channel, ss intf.Song) {
-	ss.SetCurrentOrder(uint8(e))
+	ss.SetCurrentOrder(intf.OrderIdx(e))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

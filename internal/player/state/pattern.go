@@ -4,16 +4,6 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// PatternNum is an order pattern number
-type PatternNum uint8
-
-const (
-	// NextPattern allows the order system the ability to kick to the next pattern
-	NextPattern = PatternNum(254)
-	// InvalidPattern specifies an invalid pattern
-	InvalidPattern = PatternNum(255)
-)
-
 // RowSettings is the settings for the current pattern state
 type RowSettings struct {
 	Ticks int
@@ -28,8 +18,8 @@ type Row struct {
 
 // PatternState is the current pattern state
 type PatternState struct {
-	CurrentOrder uint8
-	CurrentRow   uint8
+	CurrentOrder intf.OrderIdx
+	CurrentRow   intf.RowIdx
 
 	Row RowSettings
 
@@ -38,21 +28,21 @@ type PatternState struct {
 	FinePatternDelay   int
 
 	Patterns intf.Patterns
-	Orders   []uint8
+	Orders   []intf.PatternIdx
 
-	LoopStart   uint8
-	LoopEnd     uint8
+	LoopStart   intf.RowIdx
+	LoopEnd     intf.RowIdx
 	LoopTotal   uint8
 	LoopEnabled bool
 	LoopCount   uint8
 }
 
 // GetPatNum returns the current pattern number
-func (state *PatternState) GetPatNum() PatternNum {
+func (state *PatternState) GetPatNum() intf.PatternIdx {
 	if int(state.CurrentOrder) > len(state.Orders) {
-		return InvalidPattern
+		return intf.InvalidPattern
 	}
-	return PatternNum(state.Orders[state.CurrentOrder])
+	return state.Orders[state.CurrentOrder]
 }
 
 // GetNumRows returns the number of rows in the current pattern
@@ -63,7 +53,7 @@ func (state *PatternState) GetNumRows() uint8 {
 
 // WantsStop returns true when the current pattern wants to end the song
 func (state *PatternState) WantsStop() bool {
-	if state.GetPatNum() == InvalidPattern {
+	if state.GetPatNum() == intf.InvalidPattern {
 		return true
 	}
 	return false
@@ -79,17 +69,17 @@ func (state *PatternState) NextOrder() {
 // or the next order in the order list if the last row has been exhausted
 func (state *PatternState) NextRow() {
 	var patNum = state.GetPatNum()
-	if patNum == InvalidPattern {
+	if patNum == intf.InvalidPattern {
 		return
 	}
 
-	if patNum == NextPattern {
+	if patNum == intf.NextPattern {
 		state.NextOrder()
 		return
 	}
 
 	state.CurrentRow++
-	if state.CurrentRow >= state.GetNumRows() {
+	if state.CurrentRow >= intf.RowIdx(state.GetNumRows()) {
 		state.NextOrder()
 		return
 	}
@@ -99,9 +89,9 @@ func (state *PatternState) NextRow() {
 func (state *PatternState) GetRow() *Row {
 	var patNum = state.GetPatNum()
 	switch patNum {
-	case InvalidPattern:
+	case intf.InvalidPattern:
 		return nil
-	case NextPattern:
+	case intf.NextPattern:
 		{
 			state.NextRow()
 			return state.GetRow()
@@ -121,9 +111,9 @@ func (state *PatternState) GetRow() *Row {
 func (state *PatternState) GetRows() []*Row {
 	var patNum = state.GetPatNum()
 	switch patNum {
-	case InvalidPattern:
+	case intf.InvalidPattern:
 		return nil
-	case NextPattern:
+	case intf.NextPattern:
 		{
 			state.NextRow()
 			return state.GetRows()

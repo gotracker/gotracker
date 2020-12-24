@@ -13,6 +13,7 @@ import (
 	"gotracker/internal/output"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
 )
@@ -85,10 +86,10 @@ func main() {
 		sampler.BaseClockRate = fmt.GetBaseClockRate()
 	}
 	if startingOrder != -1 {
-		ss.Pattern.CurrentOrder = uint8(startingOrder)
+		ss.Pattern.CurrentOrder = intf.OrderIdx(startingOrder)
 	}
 	if startingRow != -1 {
-		ss.Pattern.CurrentRow = uint8(startingRow)
+		ss.Pattern.CurrentRow = intf.RowIdx(startingRow)
 	}
 
 	var (

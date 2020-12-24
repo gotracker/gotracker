@@ -34,7 +34,7 @@ type Song struct {
 	GlobalVolume volume.Volume
 
 	PatternLoopEnabled bool
-	playedOrders       []uint8 // when PatternLoopEnabled is false, this is used to detect loops
+	playedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
 }
 
 // NewSong creates a new song structure and sets its default values
@@ -43,7 +43,7 @@ func NewSong() *Song {
 	ss.Pattern.CurrentOrder = 0
 	ss.Pattern.CurrentRow = 0
 	ss.PatternLoopEnabled = true
-	ss.playedOrders = make([]uint8, 0)
+	ss.playedOrders = make([]intf.OrderIdx, 0)
 
 	return &ss
 }
@@ -90,18 +90,18 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 		}
 		ss.Pattern.CurrentOrder = 0
 	}
-	patNum := PatternNum(ol[ss.Pattern.CurrentOrder])
-	if patNum == NextPattern {
+	patNum := ol[ss.Pattern.CurrentOrder]
+	if patNum == intf.NextPattern {
 		ss.Pattern.CurrentOrder++
 		return nil, nil
 	}
 
-	if patNum == InvalidPattern {
+	if patNum == intf.InvalidPattern {
 		ss.Pattern.CurrentOrder++
 		return nil, nil // this is supposed to be a song break
 	}
 
-	pattern := ss.SongData.GetPattern(uint8(patNum))
+	pattern := ss.SongData.GetPattern(patNum)
 	if pattern == nil {
 		return nil, ErrStopSong
 	}
@@ -211,7 +211,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 		ss.Pattern.CurrentOrder++
 	}
 
-	if ss.Pattern.CurrentRow >= ss.Pattern.GetNumRows() {
+	if ss.Pattern.CurrentRow >= intf.RowIdx(ss.Pattern.GetNumRows()) {
 		ss.Pattern.CurrentRow = 0
 		ss.Pattern.CurrentOrder++
 	}
@@ -292,7 +292,7 @@ func (ss *Song) soundRenderRow(premix *device.PremixData, sampler *render.Sample
 }
 
 // SetCurrentOrder sets the current order index
-func (ss *Song) SetCurrentOrder(order uint8) {
+func (ss *Song) SetCurrentOrder(order intf.OrderIdx) {
 	if !ss.PatternLoopEnabled {
 		for _, o := range ss.playedOrders {
 			if o == order {
@@ -304,7 +304,7 @@ func (ss *Song) SetCurrentOrder(order uint8) {
 }
 
 // SetCurrentRow sets the current row index
-func (ss *Song) SetCurrentRow(row uint8) {
+func (ss *Song) SetCurrentRow(row intf.RowIdx) {
 	ss.Pattern.CurrentRow = row
 }
 
@@ -398,7 +398,7 @@ func (ss *Song) SetPatterns(patterns intf.Patterns) {
 }
 
 // SetOrderList sets the order list
-func (ss *Song) SetOrderList(orders []uint8) {
+func (ss *Song) SetOrderList(orders []intf.PatternIdx) {
 	ss.Pattern.Orders = orders
 }
 
@@ -418,11 +418,11 @@ func (ss *Song) GetChannel(ch int) intf.Channel {
 }
 
 // GetCurrentOrder returns the current order
-func (ss *Song) GetCurrentOrder() uint8 {
+func (ss *Song) GetCurrentOrder() intf.OrderIdx {
 	return ss.Pattern.CurrentOrder
 }
 
 // GetCurrentRow returns the current row
-func (ss *Song) GetCurrentRow() uint8 {
+func (ss *Song) GetCurrentRow() intf.RowIdx {
 	return ss.Pattern.CurrentRow
 }

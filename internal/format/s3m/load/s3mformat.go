@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout"

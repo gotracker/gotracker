@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/heucuva/gomixing/mixing"
+	"github.com/gotracker/gomixing/mixing"
 )
 
 // Sampler is a container of sampler/mixer settings

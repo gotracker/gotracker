@@ -6,8 +6,8 @@ import (
 	"io"
 	"math"
 
-	modfile "github.com/heucuva/goaudiofile/music/tracked/mod"
-	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+	modfile "github.com/gotracker/goaudiofile/music/tracked/mod"
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"gotracker/internal/format/s3m/layout/channel"
 )

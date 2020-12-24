@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 
-	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"

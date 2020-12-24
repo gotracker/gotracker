@@ -3,8 +3,8 @@ package layout
 import (
 	"time"
 
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"

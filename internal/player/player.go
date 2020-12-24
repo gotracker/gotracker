@@ -1,7 +1,7 @@
 package player
 
 import (
-	device "github.com/heucuva/gosound"
+	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"

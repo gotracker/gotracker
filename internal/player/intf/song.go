@@ -1,7 +1,7 @@
 package intf
 
 import (
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/note"
 )

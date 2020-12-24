@@ -1,9 +1,9 @@
 package intf
 
 import (
-	"github.com/heucuva/gomixing/panning"
-	"github.com/heucuva/gomixing/sampling"
-	"github.com/heucuva/gomixing/volume"
+	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/oscillator"

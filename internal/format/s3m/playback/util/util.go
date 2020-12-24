@@ -1,9 +1,9 @@
 package util
 
 import (
-	s3mfile "github.com/heucuva/goaudiofile/music/tracked/s3m"
-	"github.com/heucuva/gomixing/panning"
-	"github.com/heucuva/gomixing/volume"
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/note"
 )

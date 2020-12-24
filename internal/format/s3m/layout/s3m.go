@@ -34,16 +34,16 @@ type Song struct {
 	Instruments     []Instrument
 	Patterns        []intf.Pattern
 	ChannelSettings []ChannelSetting
-	OrderList       []uint8
+	OrderList       []intf.PatternIdx
 }
 
 // GetOrderList returns the list of all pattern orders for the song
-func (s *Song) GetOrderList() []uint8 {
+func (s *Song) GetOrderList() []intf.PatternIdx {
 	return s.OrderList
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s *Song) GetPattern(patNum uint8) intf.Pattern {
+func (s *Song) GetPattern(patNum intf.PatternIdx) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}

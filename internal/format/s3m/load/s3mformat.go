@@ -210,7 +210,11 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		Head:        *h,
 		Instruments: make([]layout.Instrument, len(f.InstrumentPointers)),
 		Patterns:    make([]intf.Pattern, len(f.PatternPointers)),
-		OrderList:   f.OrderList,
+		OrderList:   make([]intf.PatternIdx, len(f.OrderList)),
+	}
+
+	for i, o := range f.OrderList {
+		song.OrderList[i] = intf.PatternIdx(o)
 	}
 
 	song.Instruments = make([]layout.Instrument, len(f.Instruments))

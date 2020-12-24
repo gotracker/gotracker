@@ -14,8 +14,8 @@ type CalcSemitonePeriodFunc func(semi note.Semitone, c2spd note.C2SPD) note.Peri
 
 // Song is an interface to the song state
 type Song interface {
-	SetCurrentOrder(uint8)
-	SetCurrentRow(uint8)
+	SetCurrentOrder(OrderIdx)
+	SetCurrentRow(RowIdx)
 	SetTempo(int)
 	DecreaseTempo(int)
 	IncreaseTempo(int)
@@ -30,20 +30,20 @@ type Song interface {
 	SetEffectFactory(EffectFactoryFunc)
 	SetCalcSemitonePeriod(CalcSemitonePeriodFunc)
 	SetPatterns(Patterns)
-	SetOrderList([]uint8)
+	SetOrderList([]PatternIdx)
 	SetSongData(SongData)
 	GetSongData() SongData
 	SetNumChannels(int)
 	GetNumChannels() int
 	GetChannel(int) Channel
-	GetCurrentOrder() uint8
-	GetCurrentRow() uint8
+	GetCurrentOrder() OrderIdx
+	GetCurrentRow() RowIdx
 }
 
 // SongData is an interface to the song data
 type SongData interface {
-	GetOrderList() []uint8
-	GetPattern(uint8) Pattern
+	GetOrderList() []PatternIdx
+	GetPattern(PatternIdx) Pattern
 	IsChannelEnabled(int) bool
 	GetOutputChannel(int) int
 	NumInstruments() int

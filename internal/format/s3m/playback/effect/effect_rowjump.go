@@ -11,7 +11,10 @@ type RowJump uint8 // 'C'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e RowJump) PreStart(cs intf.Channel, ss intf.Song) {
-	ss.SetCurrentRow(uint8((e>>4)*10 + (e & 0x0f)))
+	r := uint8(e)
+	rowIdx := intf.RowIdx((r >> 4) * 10)
+	rowIdx |= intf.RowIdx(r & 0xf)
+	ss.SetCurrentRow(rowIdx)
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

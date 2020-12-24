@@ -15,7 +15,7 @@ type Pattern struct {
 }
 
 // GetRow returns the interface to the row at index `row`
-func (p Pattern) GetRow(row uint8) intf.Row {
+func (p Pattern) GetRow(row intf.RowIdx) intf.Row {
 	return &p.Rows[row]
 }
 

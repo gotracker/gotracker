@@ -1,8 +1,14 @@
-package state
+package pattern
 
 import (
 	"errors"
+
 	"gotracker/internal/player/intf"
+)
+
+var (
+	// ErrStopSong is a magic error asking to stop the current song
+	ErrStopSong = errors.New("stop song")
 )
 
 // RowSettings is the settings for the current pattern state
@@ -22,13 +28,13 @@ type PatternState struct {
 	PatternLoopEnabled bool
 	currentOrder       intf.OrderIdx
 	currentRow         intf.RowIdx
-	PlayedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
+	playedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
 
-	Row RowSettings
+	row RowSettings
 
-	RowHasPatternDelay bool
-	PatternDelay       int
-	FinePatternDelay   int
+	rowHasPatternDelay bool
+	patternDelay       int
+	finePatternDelay   int
 
 	Patterns intf.Patterns
 	Orders   []intf.PatternIdx
@@ -38,6 +44,28 @@ type PatternState struct {
 	loopTotal   uint8
 	loopEnabled bool
 	loopCount   uint8
+}
+
+// GetTempo returns the tempo of the current state
+func (state *PatternState) GetTempo() int {
+	return state.row.Tempo
+}
+
+// GetSpeed returns the row speed of the current state
+func (state *PatternState) GetSpeed() int {
+	return state.row.Ticks
+}
+
+// GetTicksThisRow returns the number of ticks in the current row
+func (state *PatternState) GetTicksThisRow() int {
+	rowLoops := 1
+	if state.rowHasPatternDelay {
+		rowLoops = state.patternDelay
+	}
+	extraTicks := state.finePatternDelay
+
+	ticksThisRow := int(state.row.Ticks)*rowLoops + extraTicks
+	return ticksThisRow
 }
 
 // GetPatNum returns the current pattern number
@@ -67,7 +95,7 @@ func (state *PatternState) setCurrentOrder(order intf.OrderIdx) {
 	prevOrder := state.currentOrder
 	state.currentOrder = order
 	if !state.PatternLoopEnabled && prevOrder != state.currentOrder {
-		state.PlayedOrders = append(state.PlayedOrders, prevOrder)
+		state.playedOrders = append(state.playedOrders, prevOrder)
 	}
 }
 
@@ -119,7 +147,7 @@ func (state *PatternState) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 		}
 
 		if !state.PatternLoopEnabled {
-			for _, o := range state.PlayedOrders {
+			for _, o := range state.playedOrders {
 				if o == intf.OrderIdx(ordIdx) {
 					return 0, ErrStopSong
 				}
@@ -148,6 +176,9 @@ func (state *PatternState) setCurrentRow(row intf.RowIdx) {
 func (state *PatternState) nextOrder(resetRow ...bool) {
 	state.setCurrentOrder(state.currentOrder + 1)
 	state.loopEnabled = false
+	state.rowHasPatternDelay = false
+	state.patternDelay = 0
+	state.finePatternDelay = 0
 	state.GetCurrentPatternIdx() // called only to clean up order position info
 	if len(resetRow) > 0 && resetRow[0] {
 		state.currentRow = 0
@@ -158,7 +189,7 @@ func (state *PatternState) nextOrder(resetRow ...bool) {
 func (state *PatternState) Reset() {
 	*state = PatternState{
 		PatternLoopEnabled: true,
-		PlayedOrders:       make([]intf.OrderIdx, 0),
+		playedOrders:       make([]intf.OrderIdx, 0),
 	}
 }
 
@@ -176,6 +207,10 @@ func (state *PatternState) nextRow() {
 			}
 		}
 	}
+
+	state.rowHasPatternDelay = false
+	state.patternDelay = 0
+	state.finePatternDelay = 0
 
 	var patNum = state.GetPatNum()
 	if patNum == intf.InvalidPattern {
@@ -243,41 +278,36 @@ func (state *PatternState) GetRows() []*Row {
 	}
 }
 
-// RowUpdateTransaction is a transactional operation for row/order updates
-type RowUpdateTransaction struct {
-	intf.SongPositionState
-	orderIdx                  intf.OrderIdx
-	orderIdxSet               bool
-	rowIdx                    intf.RowIdx
-	rowIdxSet                 bool
-	advanceRow                bool
-	breakOrder                bool
-	committed                 bool
-	patternLoopStartRowIdx    intf.RowIdx
-	patternLoopStartRowIdxSet bool
-	patternLoopEndRowIdx      intf.RowIdx
-	patternLoopEndRowIdxSet   bool
-	patternLoopCount          int
-	patternLoopCountSet       bool
-	state                     *PatternState
-}
-
-// Cancel will mark a transaction as void/spent, i.e.: cancelled
-func (txn *RowUpdateTransaction) Cancel() {
-	txn.committed = true
-}
-
-// Commit will update the order and row indexes at once, idempotently.
-func (txn *RowUpdateTransaction) Commit() {
-	txn.state.CommitTransaction(txn)
-}
-
 // CommitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
 func (state *PatternState) CommitTransaction(txn *RowUpdateTransaction) {
 	if txn.committed {
 		return
 	}
 	txn.committed = true
+
+	if txn.tempoSet || txn.tempoDeltaSet {
+		newTempo := state.row.Tempo
+		if txn.tempoSet {
+			newTempo = txn.tempo
+		}
+		if txn.tempoDeltaSet {
+			newTempo += txn.tempoDelta
+		}
+		state.row.Tempo = newTempo
+	}
+
+	if txn.ticksSet {
+		state.row.Ticks = txn.ticks
+	}
+
+	if txn.finePatternDelaySet {
+		state.finePatternDelay = txn.finePatternDelay
+	}
+
+	if !state.rowHasPatternDelay && txn.patternDelaySet {
+		state.patternDelay = txn.patternDelay
+		state.rowHasPatternDelay = true
+	}
 
 	if !state.loopEnabled {
 		if txn.patternLoopCountSet {
@@ -310,46 +340,6 @@ func (state *PatternState) CommitTransaction(txn *RowUpdateTransaction) {
 	} else if txn.advanceRow {
 		state.nextRow()
 	}
-}
-
-// AdvanceRow will advance the row index, which might also advance the order index
-func (txn *RowUpdateTransaction) AdvanceRow() {
-	txn.advanceRow = true
-}
-
-// BreakOrder will advance to the next order index and reset the row index to 0
-func (txn *RowUpdateTransaction) BreakOrder() {
-	txn.breakOrder = true
-}
-
-// SetNextOrder will set the next order index
-func (txn *RowUpdateTransaction) SetNextOrder(ordIdx intf.OrderIdx) {
-	txn.orderIdx = ordIdx
-	txn.orderIdxSet = true
-}
-
-// SetNextRow will set the next row index
-func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx) {
-	txn.rowIdx = rowIdx
-	txn.rowIdxSet = true
-}
-
-// SetPatternLoopStart will set the pattern loop starting row index
-func (txn *RowUpdateTransaction) SetPatternLoopStart() {
-	txn.patternLoopStartRowIdx = txn.state.currentRow
-	txn.patternLoopStartRowIdxSet = true
-}
-
-// SetPatternLoopEnd will set the pattern loop ending row index
-func (txn *RowUpdateTransaction) SetPatternLoopEnd() {
-	txn.patternLoopEndRowIdx = txn.state.currentRow
-	txn.patternLoopEndRowIdxSet = true
-}
-
-// SetPatternLoopCount will set the pattern loop ending row index
-func (txn *RowUpdateTransaction) SetPatternLoopCount(count int) {
-	txn.patternLoopCount = count
-	txn.patternLoopCountSet = true
 }
 
 // StartTransaction starts a row update transaction

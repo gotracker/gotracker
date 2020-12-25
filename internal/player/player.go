@@ -10,6 +10,7 @@ import (
 
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
+	"gotracker/internal/player/state/pattern"
 )
 
 type playerState int
@@ -75,7 +76,7 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, sampler *r
 	go func() {
 		defer p.cancel()
 		if err := p.runStateMachine(); err != nil {
-			if err != state.ErrStopSong {
+			if err != pattern.ErrStopSong {
 				log.Fatalln(err)
 			}
 		}
@@ -132,10 +133,10 @@ func (p *Player) runStateMachine() error {
 		case playerStatePaused:
 			stateFunc = p.runStatePaused
 		default:
-			return state.ErrStopSong
+			return pattern.ErrStopSong
 		}
 		if stateFunc == nil {
-			return state.ErrStopSong
+			return pattern.ErrStopSong
 		}
 		if err := stateFunc(); err != nil {
 			return err
@@ -160,7 +161,7 @@ func (p *Player) runStateIdle() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return state.ErrStopSong
+		return pattern.ErrStopSong
 	}
 	return nil
 }
@@ -180,7 +181,7 @@ func (p *Player) runStatePaused() error {
 		p.state = playerStatePlaying
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return state.ErrStopSong
+		return pattern.ErrStopSong
 	}
 	return nil
 }
@@ -201,7 +202,7 @@ func (p *Player) runStatePlaying() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return state.ErrStopSong
+		return pattern.ErrStopSong
 	default:
 	}
 

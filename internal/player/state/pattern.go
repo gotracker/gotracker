@@ -18,8 +18,10 @@ type Row struct {
 
 // PatternState is the current pattern state
 type PatternState struct {
-	CurrentOrder intf.OrderIdx
-	CurrentRow   intf.RowIdx
+	PatternLoopEnabled bool
+	currentOrder       intf.OrderIdx
+	CurrentRow         intf.RowIdx
+	PlayedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
 
 	Row RowSettings
 
@@ -39,10 +41,10 @@ type PatternState struct {
 
 // GetPatNum returns the current pattern number
 func (state *PatternState) GetPatNum() intf.PatternIdx {
-	if int(state.CurrentOrder) > len(state.Orders) {
+	if int(state.currentOrder) > len(state.Orders) {
 		return intf.InvalidPattern
 	}
-	return state.Orders[state.CurrentOrder]
+	return state.Orders[state.currentOrder]
 }
 
 // GetNumRows returns the number of rows in the current pattern
@@ -59,10 +61,26 @@ func (state *PatternState) WantsStop() bool {
 	return false
 }
 
+// SetCurrentOrder sets the current order index
+func (state *PatternState) SetCurrentOrder(order intf.OrderIdx) {
+	prevOrder := state.currentOrder
+	state.currentOrder = order
+	if !state.PatternLoopEnabled && prevOrder != state.currentOrder {
+		state.PlayedOrders = append(state.PlayedOrders, prevOrder)
+	}
+}
+
+// GetCurrentOrder returns the current order
+func (state *PatternState) GetCurrentOrder() intf.OrderIdx {
+	return state.currentOrder
+}
+
 // NextOrder travels to the next pattern in the order list
-func (state *PatternState) NextOrder() {
-	state.CurrentOrder++
-	state.CurrentRow = 0
+func (state *PatternState) NextOrder(resetRow ...bool) {
+	state.SetCurrentOrder(state.currentOrder + 1)
+	if len(resetRow) > 0 && resetRow[0] {
+		state.CurrentRow = 0
+	}
 }
 
 // NextRow travels to the next row in the pattern
@@ -74,13 +92,13 @@ func (state *PatternState) NextRow() {
 	}
 
 	if patNum == intf.NextPattern {
-		state.NextOrder()
+		state.NextOrder(true)
 		return
 	}
 
 	state.CurrentRow++
 	if state.CurrentRow >= intf.RowIdx(state.GetNumRows()) {
-		state.NextOrder()
+		state.NextOrder(true)
 		return
 	}
 }

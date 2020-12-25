@@ -127,10 +127,10 @@ func main() {
 		return
 	}
 
-	go waveOut.Play(outBufs)
+	//if err := p.WaitUntilDone(); err != nil {
+	//	log.Fatalln(err)
+	//	return
+	//}
 
-	if err := p.WaitUntilDone(); err != nil {
-		log.Fatalln(err)
-		return
-	}
+	waveOut.Play(outBufs)
 }

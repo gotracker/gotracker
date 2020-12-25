@@ -64,7 +64,7 @@ func main() {
 		sampler.BaseClockRate = fmt.GetBaseClockRate()
 	}
 	if startingOrder != -1 {
-		ss.Pattern.CurrentOrder = intf.OrderIdx(startingOrder)
+		ss.Pattern.SetCurrentOrder(intf.OrderIdx(startingOrder))
 	}
 	if startingRow != -1 {
 		ss.Pattern.CurrentRow = intf.RowIdx(startingRow)
@@ -114,7 +114,6 @@ func main() {
 	fmt.Printf("Output device: %s\n", waveOut.Name())
 	fmt.Printf("Song: %s\n", ss.SongData.GetName())
 	outBufs := make(chan *device.PremixData, 64)
-	defer close(outBufs)
 
 	p, err := player.NewPlayer(nil, outBufs, sampler)
 	if err != nil {
@@ -127,10 +126,11 @@ func main() {
 		return
 	}
 
-	//if err := p.WaitUntilDone(); err != nil {
-	//	log.Fatalln(err)
-	//	return
-	//}
+	go func() {
+		defer close(outBufs)
+		p.WaitUntilDone()
+	}()
 
 	waveOut.Play(outBufs)
+	fmt.Println("done!")
 }

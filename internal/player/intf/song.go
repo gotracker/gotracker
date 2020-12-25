@@ -14,8 +14,8 @@ type CalcSemitonePeriodFunc func(semi note.Semitone, c2spd note.C2SPD) note.Peri
 
 // Song is an interface to the song state
 type Song interface {
-	SetCurrentOrder(OrderIdx)
-	SetCurrentRow(RowIdx)
+	SetNextOrder(OrderIdx)
+	SetNextRow(RowIdx)
 	SetTempo(int)
 	DecreaseTempo(int)
 	IncreaseTempo(int)
@@ -25,7 +25,8 @@ type Song interface {
 	AddRowTicks(int)
 	SetPatternDelay(int)
 	SetPatternLoopStart()
-	SetPatternLoopEnd(uint8)
+	SetPatternLoopEnd()
+	SetPatternLoopCount(int)
 	CanPatternLoop() bool
 	SetEffectFactory(EffectFactoryFunc)
 	SetCalcSemitonePeriod(CalcSemitonePeriodFunc)
@@ -49,4 +50,14 @@ type SongData interface {
 	NumInstruments() int
 	GetInstrument(int) Instrument
 	GetName() string
+}
+
+type SongPositionState interface {
+	AdvanceRow()
+	BreakOrder()
+	SetNextOrder(OrderIdx)
+	SetNextRow(RowIdx)
+	SetPatternLoopStart()
+	SetPatternLoopEnd()
+	SetPatternLoopCount(int)
 }

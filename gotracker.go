@@ -64,10 +64,10 @@ func main() {
 		sampler.BaseClockRate = fmt.GetBaseClockRate()
 	}
 	if startingOrder != -1 {
-		ss.Pattern.SetCurrentOrder(intf.OrderIdx(startingOrder))
+		ss.SetNextOrder(intf.OrderIdx(startingOrder))
 	}
 	if startingRow != -1 {
-		ss.Pattern.CurrentRow = intf.RowIdx(startingRow)
+		ss.SetNextRow(intf.RowIdx(startingRow))
 	}
 
 	var (

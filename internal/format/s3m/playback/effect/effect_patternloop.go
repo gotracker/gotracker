@@ -23,7 +23,8 @@ func (e PatternLoop) Start(cs intf.Channel, ss intf.Song) {
 		// set loop
 		ss.SetPatternLoopStart()
 	} else {
-		ss.SetPatternLoopEnd(x)
+		ss.SetPatternLoopEnd()
+		ss.SetPatternLoopCount(int(x))
 	}
 }
 

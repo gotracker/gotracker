@@ -28,9 +28,13 @@ type Player struct {
 	cancel         context.CancelFunc
 	state          playerState
 	playCh         chan struct{}
+	playRespCh     chan error
 	pauseCh        chan struct{}
+	pauseRespCh    chan error
 	resumeCh       chan struct{}
+	resumeRespCh   chan error
 	stopCh         chan struct{}
+	stopRespCh     chan error
 	lastUpdateTime time.Time
 	ss             *state.Song
 	sampler        *render.Sampler
@@ -53,15 +57,19 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, sampler *r
 	myCtx, cancel := context.WithCancel(ctx)
 
 	p := Player{
-		output:   output,
-		ctx:      myCtx,
-		cancel:   cancel,
-		state:    playerStateIdle,
-		playCh:   make(chan struct{}, 1),
-		pauseCh:  make(chan struct{}, 1),
-		resumeCh: make(chan struct{}, 1),
-		stopCh:   make(chan struct{}, 1),
-		sampler:  sampler,
+		output:       output,
+		ctx:          myCtx,
+		cancel:       cancel,
+		state:        playerStateIdle,
+		playCh:       make(chan struct{}, 1),
+		playRespCh:   make(chan error, 1),
+		pauseCh:      make(chan struct{}, 1),
+		pauseRespCh:  make(chan error, 1),
+		resumeCh:     make(chan struct{}, 1),
+		resumeRespCh: make(chan error, 1),
+		stopCh:       make(chan struct{}, 1),
+		stopRespCh:   make(chan error, 1),
+		sampler:      sampler,
 	}
 
 	go func() {
@@ -86,7 +94,7 @@ func (p *Player) Play(ss *state.Song) error {
 	p.ss = ss
 
 	p.playCh <- struct{}{}
-	return nil
+	return <-p.playRespCh
 }
 
 // WaitUntilDone waits until the player is done
@@ -98,6 +106,22 @@ func (p *Player) WaitUntilDone() error {
 }
 
 func (p *Player) runStateMachine() error {
+	defer func() {
+		err := errors.New("end")
+		p.playRespCh <- err
+		p.pauseRespCh <- err
+		p.resumeRespCh <- err
+		p.stopRespCh <- err
+
+		close(p.playCh)
+		close(p.playRespCh)
+		close(p.pauseCh)
+		close(p.pauseRespCh)
+		close(p.resumeCh)
+		close(p.resumeRespCh)
+		close(p.stopCh)
+		close(p.stopRespCh)
+	}()
 	for {
 		var stateFunc func() error
 		switch p.state {
@@ -116,10 +140,7 @@ func (p *Player) runStateMachine() error {
 		if err := stateFunc(); err != nil {
 			return err
 		}
-		//if errors.Is(err, state.ErrStopSong) {
-		//	return err
-		//}
-		time.Sleep(time.Duration(8) * time.Millisecond)
+		time.Sleep(time.Duration(1) * time.Millisecond)
 	}
 }
 
@@ -130,11 +151,15 @@ func (p *Player) runStateIdle() error {
 	case <-p.playCh:
 		p.lastUpdateTime = time.Now()
 		p.state = playerStatePlaying
+		p.playRespCh <- nil
 	case <-p.pauseCh:
 		// eat it if we're idle.
+		p.pauseRespCh <- nil
 	case <-p.resumeCh:
 		// eat it if we're idle.
+		p.resumeRespCh <- nil
 	case <-p.stopCh:
+		p.stopRespCh <- nil
 		return state.ErrStopSong
 	}
 	return nil
@@ -145,13 +170,16 @@ func (p *Player) runStatePaused() error {
 	case <-p.ctx.Done():
 		return p.ctx.Err()
 	case <-p.playCh:
-		return errors.New("already playing")
+		p.playRespCh <- errors.New("already playing")
 	case <-p.pauseCh:
 		// eat it if we're already paused.
+		p.pauseRespCh <- nil
 	case <-p.resumeCh:
+		p.resumeRespCh <- nil
 		p.lastUpdateTime = time.Now()
 		p.state = playerStatePlaying
 	case <-p.stopCh:
+		p.stopRespCh <- nil
 		return state.ErrStopSong
 	}
 	return nil
@@ -162,10 +190,17 @@ func (p *Player) runStatePlaying() error {
 	case <-p.ctx.Done():
 		return p.ctx.Err()
 	case <-p.playCh:
-		return errors.New("already playing")
+		p.playRespCh <- errors.New("already playing")
+		return nil
+	case <-p.pauseCh:
+		p.pauseRespCh <- nil
+		p.state = playerStatePaused
+		return nil
 	case <-p.resumeCh:
 		// eat it if we're already playing.
+		p.resumeRespCh <- nil
 	case <-p.stopCh:
+		p.stopRespCh <- nil
 		return state.ErrStopSong
 	default:
 	}

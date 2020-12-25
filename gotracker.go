@@ -7,7 +7,6 @@ import (
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
-	"github.com/pkg/errors"
 
 	"gotracker/internal/format"
 	"gotracker/internal/output"
@@ -30,27 +29,6 @@ var (
 var (
 	sampler *render.Sampler
 )
-
-// Play starts a song playing
-func Play(ss *state.Song) <-chan *device.PremixData {
-	out := make(chan *device.PremixData, 64)
-	go func() {
-		defer close(out)
-		for {
-			premix, err := player.RenderOneRow(ss, sampler)
-			if err != nil {
-				if errors.Is(err, state.ErrStopSong) {
-					break
-				}
-				log.Fatal(err)
-			}
-			if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
-				out <- premix
-			}
-		}
-	}()
-	return out
-}
 
 func main() {
 	output.Setup()
@@ -135,6 +113,24 @@ func main() {
 
 	fmt.Printf("Output device: %s\n", waveOut.Name())
 	fmt.Printf("Song: %s\n", ss.SongData.GetName())
-	buffers := Play(ss)
-	waveOut.Play(buffers)
+	outBufs := make(chan *device.PremixData, 64)
+	defer close(outBufs)
+
+	p, err := player.NewPlayer(nil, outBufs, sampler)
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	if err := p.Play(ss); err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	go waveOut.Play(outBufs)
+
+	if err := p.WaitUntilDone(); err != nil {
+		log.Fatalln(err)
+		return
+	}
 }

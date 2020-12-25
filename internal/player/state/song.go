@@ -81,27 +81,46 @@ func (ss *Song) SetNumChannels(num int) {
 	}
 }
 
+func (ss *Song) getCurrentPatternIdx() (intf.PatternIdx, error) {
+	ol := ss.SongData.GetOrderList()
+	ordLen := len(ol)
+
+	if ordLen == 0 {
+		// nothing to play, don't even try
+		return 0, ErrStopSong
+	}
+
+	ordIdx := int(ss.Pattern.CurrentOrder)
+	for loopCount := 0; loopCount < ordLen; loopCount++ {
+		if ordIdx >= ordLen {
+			if !ss.CanPatternLoop() {
+				return 0, ErrStopSong
+			}
+			ss.Pattern.CurrentOrder = 0
+		}
+		patIdx := ol[ordIdx]
+		if patIdx == intf.NextPattern {
+			ss.Pattern.CurrentOrder++
+			continue
+		}
+
+		if patIdx == intf.InvalidPattern {
+			ss.Pattern.CurrentOrder++
+			continue // this is supposed to be a song break
+		}
+		return patIdx, nil
+	}
+	return 0, errors.New("infinite loop detected in order list")
+}
+
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
 func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error) {
-	ol := ss.SongData.GetOrderList()
-	if ss.Pattern.CurrentOrder < 0 || int(ss.Pattern.CurrentOrder) >= len(ol) {
-		if !ss.CanPatternLoop() {
-			return nil, ErrStopSong
-		}
-		ss.Pattern.CurrentOrder = 0
-	}
-	patNum := ol[ss.Pattern.CurrentOrder]
-	if patNum == intf.NextPattern {
-		ss.Pattern.CurrentOrder++
-		return nil, nil
+	patIdx, err := ss.getCurrentPatternIdx()
+	if err != nil {
+		return nil, err
 	}
 
-	if patNum == intf.InvalidPattern {
-		ss.Pattern.CurrentOrder++
-		return nil, nil // this is supposed to be a song break
-	}
-
-	pattern := ss.SongData.GetPattern(patNum)
+	pattern := ss.SongData.GetPattern(patIdx)
 	if pattern == nil {
 		return nil, ErrStopSong
 	}

@@ -52,6 +52,7 @@ type SongData interface {
 	GetName() string
 }
 
+// SongPositionState is an interface to the song position system
 type SongPositionState interface {
 	AdvanceRow()
 	BreakOrder()
@@ -60,4 +61,9 @@ type SongPositionState interface {
 	SetPatternLoopStart()
 	SetPatternLoopEnd()
 	SetPatternLoopCount(int)
+	SetPatternDelay(int)
+	SetTempo(int)
+	SetTicks(int)
+	AccTempoDelta(int)
+	SetFinePatternDelay(int)
 }

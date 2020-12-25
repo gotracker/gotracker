@@ -25,7 +25,7 @@ type Song struct {
 	CalcSemitonePeriod intf.CalcSemitonePeriodFunc
 
 	Channels     []ChannelState
-	Pattern      pattern.PatternState
+	Pattern      pattern.State
 	GlobalVolume volume.Volume
 
 	rowTxn intf.SongPositionState

@@ -23,8 +23,8 @@ type Row struct {
 	Channels [32]intf.ChannelData
 }
 
-// PatternState is the current pattern state
-type PatternState struct {
+// State is the current pattern state
+type State struct {
 	PatternLoopEnabled bool
 	currentOrder       intf.OrderIdx
 	currentRow         intf.RowIdx
@@ -47,17 +47,17 @@ type PatternState struct {
 }
 
 // GetTempo returns the tempo of the current state
-func (state *PatternState) GetTempo() int {
+func (state *State) GetTempo() int {
 	return state.row.Tempo
 }
 
 // GetSpeed returns the row speed of the current state
-func (state *PatternState) GetSpeed() int {
+func (state *State) GetSpeed() int {
 	return state.row.Ticks
 }
 
 // GetTicksThisRow returns the number of ticks in the current row
-func (state *PatternState) GetTicksThisRow() int {
+func (state *State) GetTicksThisRow() int {
 	rowLoops := 1
 	if state.rowHasPatternDelay {
 		rowLoops = state.patternDelay
@@ -69,7 +69,7 @@ func (state *PatternState) GetTicksThisRow() int {
 }
 
 // GetPatNum returns the current pattern number
-func (state *PatternState) GetPatNum() intf.PatternIdx {
+func (state *State) GetPatNum() intf.PatternIdx {
 	if int(state.currentOrder) >= len(state.Orders) {
 		return intf.InvalidPattern
 	}
@@ -77,13 +77,13 @@ func (state *PatternState) GetPatNum() intf.PatternIdx {
 }
 
 // GetNumRows returns the number of rows in the current pattern
-func (state *PatternState) GetNumRows() uint8 {
+func (state *State) GetNumRows() uint8 {
 	rows := state.GetRows()
 	return uint8(len(rows))
 }
 
 // WantsStop returns true when the current pattern wants to end the song
-func (state *PatternState) WantsStop() bool {
+func (state *State) WantsStop() bool {
 	if state.GetPatNum() == intf.InvalidPattern {
 		return true
 	}
@@ -91,7 +91,7 @@ func (state *PatternState) WantsStop() bool {
 }
 
 // setCurrentOrder sets the current order index
-func (state *PatternState) setCurrentOrder(order intf.OrderIdx) {
+func (state *State) setCurrentOrder(order intf.OrderIdx) {
 	prevOrder := state.currentOrder
 	state.currentOrder = order
 	if !state.PatternLoopEnabled && prevOrder != state.currentOrder {
@@ -100,11 +100,11 @@ func (state *PatternState) setCurrentOrder(order intf.OrderIdx) {
 }
 
 // GetCurrentOrder returns the current order
-func (state *PatternState) GetCurrentOrder() intf.OrderIdx {
+func (state *State) GetCurrentOrder() intf.OrderIdx {
 	return state.currentOrder
 }
 
-func (state *PatternState) getCurrentPattern() (intf.Pattern, error) {
+func (state *State) getCurrentPattern() (intf.Pattern, error) {
 	patIdx, err := state.GetCurrentPatternIdx()
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (state *PatternState) getCurrentPattern() (intf.Pattern, error) {
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list
-func (state *PatternState) GetCurrentPatternIdx() (intf.PatternIdx, error) {
+func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 	ordLen := len(state.Orders)
 
 	if ordLen == 0 {
@@ -160,12 +160,12 @@ func (state *PatternState) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 }
 
 // GetCurrentRow returns the current row
-func (state *PatternState) GetCurrentRow() intf.RowIdx {
+func (state *State) GetCurrentRow() intf.RowIdx {
 	return state.currentRow
 }
 
 // setCurrentRow sets the current row
-func (state *PatternState) setCurrentRow(row intf.RowIdx) {
+func (state *State) setCurrentRow(row intf.RowIdx) {
 	state.currentRow = row
 	if state.GetCurrentRow() >= intf.RowIdx(state.GetNumRows()) {
 		state.nextOrder(true)
@@ -173,7 +173,7 @@ func (state *PatternState) setCurrentRow(row intf.RowIdx) {
 }
 
 // nextOrder travels to the next pattern in the order list
-func (state *PatternState) nextOrder(resetRow ...bool) {
+func (state *State) nextOrder(resetRow ...bool) {
 	state.setCurrentOrder(state.currentOrder + 1)
 	state.loopEnabled = false
 	state.rowHasPatternDelay = false
@@ -186,8 +186,8 @@ func (state *PatternState) nextOrder(resetRow ...bool) {
 }
 
 // Reset resets a pattern state back to zeroes
-func (state *PatternState) Reset() {
-	*state = PatternState{
+func (state *State) Reset() {
+	*state = State{
 		PatternLoopEnabled: true,
 		playedOrders:       make([]intf.OrderIdx, 0),
 	}
@@ -195,7 +195,7 @@ func (state *PatternState) Reset() {
 
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
-func (state *PatternState) nextRow() {
+func (state *State) nextRow() {
 	if state.loopEnabled {
 		if state.GetCurrentRow() == state.loopEnd {
 			if state.loopCount >= state.loopTotal {
@@ -230,7 +230,7 @@ func (state *PatternState) nextRow() {
 }
 
 // GetRow returns the current row
-func (state *PatternState) GetRow() *Row {
+func (state *State) GetRow() *Row {
 	var patNum = state.GetPatNum()
 	switch patNum {
 	case intf.InvalidPattern:
@@ -252,7 +252,7 @@ func (state *PatternState) GetRow() *Row {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *PatternState) GetRows() []*Row {
+func (state *State) GetRows() []*Row {
 	var patNum = state.GetPatNum()
 	switch patNum {
 	case intf.InvalidPattern:
@@ -279,7 +279,7 @@ func (state *PatternState) GetRows() []*Row {
 }
 
 // CommitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
-func (state *PatternState) CommitTransaction(txn *RowUpdateTransaction) {
+func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 	if txn.committed {
 		return
 	}
@@ -343,7 +343,7 @@ func (state *PatternState) CommitTransaction(txn *RowUpdateTransaction) {
 }
 
 // StartTransaction starts a row update transaction
-func (state *PatternState) StartTransaction() *RowUpdateTransaction {
+func (state *State) StartTransaction() *RowUpdateTransaction {
 	txn := RowUpdateTransaction{
 		state: state,
 	}

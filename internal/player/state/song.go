@@ -94,16 +94,17 @@ func (ss *Song) getCurrentPatternIdx() (intf.PatternIdx, error) {
 				return 0, ErrStopSong
 			}
 			ss.Pattern.SetCurrentOrder(0)
+			continue
 		}
 
 		patIdx := ol[ordIdx]
 		if patIdx == intf.NextPattern {
-			ss.Pattern.NextOrder()
+			ss.Pattern.NextOrder(true)
 			continue
 		}
 
 		if patIdx == intf.InvalidPattern {
-			ss.Pattern.NextOrder()
+			ss.Pattern.NextOrder(true)
 			continue // this is supposed to be a song break
 		}
 
@@ -232,7 +233,7 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 			}
 		}
 	} else if !orderRestart {
-		ss.Pattern.NextOrder()
+		ss.Pattern.NextOrder(true)
 	}
 
 	if ss.Pattern.CurrentRow >= intf.RowIdx(ss.Pattern.GetNumRows()) {

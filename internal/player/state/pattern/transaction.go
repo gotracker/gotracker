@@ -29,7 +29,7 @@ type RowUpdateTransaction struct {
 	ticksSet                  bool
 	tempoDelta                int
 	tempoDeltaSet             bool
-	state                     *PatternState
+	state                     *State
 }
 
 // Cancel will mark a transaction as void/spent, i.e.: cancelled

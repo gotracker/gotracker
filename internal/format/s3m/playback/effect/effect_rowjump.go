@@ -14,7 +14,7 @@ func (e RowJump) PreStart(cs intf.Channel, ss intf.Song) {
 	r := uint8(e)
 	rowIdx := intf.RowIdx((r >> 4) * 10)
 	rowIdx |= intf.RowIdx(r & 0xf)
-	ss.SetCurrentRow(rowIdx)
+	ss.SetNextRow(rowIdx)
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

@@ -32,15 +32,14 @@ type Song struct {
 	Channels     []ChannelState
 	Pattern      PatternState
 	GlobalVolume volume.Volume
+
+	rowTxn intf.SongPositionState
 }
 
 // NewSong creates a new song structure and sets its default values
 func NewSong() *Song {
 	var ss = Song{}
-	ss.Pattern.SetCurrentOrder(0)
-	ss.Pattern.CurrentRow = 0
-	ss.Pattern.PatternLoopEnabled = true
-	ss.Pattern.PlayedOrders = make([]intf.OrderIdx, 0)
+	ss.Pattern.Reset()
 
 	return &ss
 }
@@ -78,52 +77,9 @@ func (ss *Song) SetNumChannels(num int) {
 	}
 }
 
-func (ss *Song) getCurrentPatternIdx() (intf.PatternIdx, error) {
-	ol := ss.SongData.GetOrderList()
-	ordLen := len(ol)
-
-	if ordLen == 0 {
-		// nothing to play, don't even try
-		return 0, ErrStopSong
-	}
-
-	for loopCount := 0; loopCount < ordLen; loopCount++ {
-		ordIdx := int(ss.Pattern.GetCurrentOrder())
-		if ordIdx >= ordLen {
-			if !ss.CanPatternLoop() {
-				return 0, ErrStopSong
-			}
-			ss.Pattern.SetCurrentOrder(0)
-			continue
-		}
-
-		patIdx := ol[ordIdx]
-		if patIdx == intf.NextPattern {
-			ss.Pattern.NextOrder(true)
-			continue
-		}
-
-		if patIdx == intf.InvalidPattern {
-			ss.Pattern.NextOrder(true)
-			continue // this is supposed to be a song break
-		}
-
-		if !ss.CanPatternLoop() {
-			for _, o := range ss.Pattern.PlayedOrders {
-				if o == intf.OrderIdx(ordIdx) {
-					return 0, ErrStopSong
-				}
-			}
-		}
-
-		return patIdx, nil
-	}
-	return 0, errors.New("infinite loop detected in order list")
-}
-
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
 func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error) {
-	patIdx, err := ss.getCurrentPatternIdx()
+	patIdx, err := ss.Pattern.GetCurrentPatternIdx()
 	if err != nil {
 		return nil, err
 	}
@@ -134,11 +90,12 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 	}
 
 	rows := pattern.GetRows()
-	if ss.Pattern.CurrentRow < 0 || int(ss.Pattern.CurrentRow) >= len(rows) {
-		ss.Pattern.CurrentRow = 0
-		ss.Pattern.NextOrder()
-		return nil, nil
-	}
+	rowTxn := ss.Pattern.StartTransaction()
+	defer func() {
+		rowTxn.Cancel()
+		ss.rowTxn = nil
+	}()
+	ss.rowTxn = rowTxn
 
 	orderRestart := false
 	rowRestart := false
@@ -152,93 +109,64 @@ func (ss *Song) RenderOneRow(sampler *render.Sampler) (*device.PremixData, error
 		Userdata: finalData,
 	}
 
-	if int(ss.Pattern.CurrentRow) >= len(rows) {
-		orderRestart = true
-		ss.Pattern.NextOrder()
-	} else {
-		myCurrentRow := ss.Pattern.CurrentRow
+	myCurrentRow := ss.Pattern.GetCurrentRow()
 
-		row := rows[myCurrentRow]
-		for channelNum, channel := range row.GetChannels() {
-			if channelNum >= ss.GetNumChannels() {
-				continue
-			}
-
-			cs := &ss.Channels[channelNum]
-
-			isOr, isRr := cs.processRow(row, channel, ss, ss.SongData, ss.EffectFactory, ss.CalcSemitonePeriod, ss.processCommand)
-			orderRestart = orderRestart || isOr
-			rowRestart = rowRestart || isRr
+	row := rows[myCurrentRow]
+	for channelNum, channel := range row.GetChannels() {
+		if channelNum >= ss.GetNumChannels() {
+			continue
 		}
 
-		ss.soundRenderRow(premix, sampler)
-		nCh := 0
-		for ch := range ss.Channels {
-			if !ss.SongData.IsChannelEnabled(ch) {
-				continue
-			}
-			nCh++
-		}
-		var rowText = render.NewRowText(nCh)
-		for ch := range ss.Channels {
-			if !ss.SongData.IsChannelEnabled(ch) {
-				continue
-			}
-			cs := &ss.Channels[ch]
-			c := render.ChannelDisplay{
-				Note:       cs.DisplayNote.String(),
-				Instrument: "..",
-				Volume:     "..",
-				Effect:     "...",
-			}
+		cs := &ss.Channels[channelNum]
 
-			if cs.DisplayInst != 0 {
-				c.Instrument = fmt.Sprintf("%0.2d", cs.DisplayInst)
-			}
-
-			if cs.DisplayVolume != volume.VolumeUseInstVol {
-				c.Volume = fmt.Sprintf("%0.2d", uint8(cs.DisplayVolume*64.0))
-			}
-
-			if cs.Cmd != nil {
-				if cs.ActiveEffect != nil {
-					c.Effect = cs.ActiveEffect.String()
-				}
-			}
-			rowText[ch] = c
-		}
-		finalData.Order = int(ss.Pattern.GetCurrentOrder())
-		finalData.Row = int(ss.Pattern.CurrentRow)
-		finalData.RowText = rowText
+		isOr, isRr := cs.processRow(row, channel, ss, ss.SongData, ss.EffectFactory, ss.CalcSemitonePeriod, ss.processCommand)
+		orderRestart = orderRestart || isOr
+		rowRestart = rowRestart || isRr
 	}
 
-	if !rowRestart {
-		if orderRestart {
-			ss.Pattern.CurrentRow = 0
-		} else {
-			if ss.Pattern.LoopEnabled {
-				if ss.Pattern.CurrentRow == ss.Pattern.LoopEnd {
-					ss.Pattern.LoopCount++
-					if ss.Pattern.LoopCount >= ss.Pattern.LoopTotal {
-						ss.Pattern.NextRow()
-						ss.Pattern.LoopEnabled = false
-					} else {
-						ss.Pattern.CurrentRow = ss.Pattern.LoopStart
-					}
-				} else {
-					ss.Pattern.NextRow()
-				}
-			} else {
-				ss.Pattern.NextRow()
+	ss.soundRenderRow(premix, sampler)
+	nCh := 0
+	for ch := range ss.Channels {
+		if !ss.SongData.IsChannelEnabled(ch) {
+			continue
+		}
+		nCh++
+	}
+	var rowText = render.NewRowText(nCh)
+	for ch := range ss.Channels {
+		if !ss.SongData.IsChannelEnabled(ch) {
+			continue
+		}
+		cs := &ss.Channels[ch]
+		c := render.ChannelDisplay{
+			Note:       cs.DisplayNote.String(),
+			Instrument: "..",
+			Volume:     "..",
+			Effect:     "...",
+		}
+
+		if cs.DisplayInst != 0 {
+			c.Instrument = fmt.Sprintf("%0.2d", cs.DisplayInst)
+		}
+
+		if cs.DisplayVolume != volume.VolumeUseInstVol {
+			c.Volume = fmt.Sprintf("%0.2d", uint8(cs.DisplayVolume*64.0))
+		}
+
+		if cs.Cmd != nil {
+			if cs.ActiveEffect != nil {
+				c.Effect = cs.ActiveEffect.String()
 			}
 		}
-	} else if !orderRestart {
-		ss.Pattern.NextOrder(true)
+		rowText[ch] = c
 	}
+	finalData.Order = int(ss.Pattern.GetCurrentOrder())
+	finalData.Row = int(ss.Pattern.GetCurrentRow())
+	finalData.RowText = rowText
 
-	if ss.Pattern.CurrentRow >= intf.RowIdx(ss.Pattern.GetNumRows()) {
-		ss.Pattern.NextOrder(true)
-	}
+	rowTxn.AdvanceRow()
+
+	rowTxn.Commit()
 
 	return premix, nil
 }
@@ -311,14 +239,30 @@ func (ss *Song) soundRenderRow(premix *device.PremixData, sampler *render.Sample
 	}
 }
 
-// SetCurrentOrder sets the current order index
-func (ss *Song) SetCurrentOrder(order intf.OrderIdx) {
-	ss.Pattern.SetCurrentOrder(order)
+// SetNextOrder sets the next order index
+func (ss *Song) SetNextOrder(order intf.OrderIdx) {
+	if ss.rowTxn != nil {
+		ss.rowTxn.SetNextOrder(order)
+	} else {
+		rowTxn := ss.Pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetNextOrder(order)
+		rowTxn.Commit()
+	}
 }
 
-// SetCurrentRow sets the current row index
-func (ss *Song) SetCurrentRow(row intf.RowIdx) {
-	ss.Pattern.CurrentRow = row
+// SetNextRow sets the next row index
+func (ss *Song) SetNextRow(row intf.RowIdx) {
+	if ss.rowTxn != nil {
+		ss.rowTxn.SetNextRow(row)
+	} else {
+		rowTxn := ss.Pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetNextRow(row)
+		rowTxn.Commit()
+	}
 }
 
 // SetTempo sets the desired tempo for the song
@@ -367,16 +311,40 @@ func (ss *Song) SetPatternDelay(rept int) {
 
 // SetPatternLoopStart sets the pattern loop start position
 func (ss *Song) SetPatternLoopStart() {
-	ss.Pattern.LoopStart = ss.Pattern.CurrentRow
+	if ss.rowTxn != nil {
+		ss.rowTxn.SetPatternLoopStart()
+	} else {
+		rowTxn := ss.Pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetPatternLoopStart()
+		rowTxn.Commit()
+	}
 }
 
-// SetPatternLoopEnd sets the loop end position (and total loops desired)
-func (ss *Song) SetPatternLoopEnd(loops uint8) {
-	ss.Pattern.LoopEnd = ss.Pattern.CurrentRow
-	ss.Pattern.LoopTotal = loops
-	if !ss.Pattern.LoopEnabled {
-		ss.Pattern.LoopEnabled = true
-		ss.Pattern.LoopCount = 0
+// SetPatternLoopEnd sets the pattern loop end position
+func (ss *Song) SetPatternLoopEnd() {
+	if ss.rowTxn != nil {
+		ss.rowTxn.SetPatternLoopEnd()
+	} else {
+		rowTxn := ss.Pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetPatternLoopEnd()
+		rowTxn.Commit()
+	}
+}
+
+// SetPatternLoopCount sets the total loops desired for the pattern loop mechanism
+func (ss *Song) SetPatternLoopCount(loops int) {
+	if ss.rowTxn != nil {
+		ss.rowTxn.SetPatternLoopCount(loops)
+	} else {
+		rowTxn := ss.Pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetPatternLoopCount(loops)
+		rowTxn.Commit()
 	}
 }
 
@@ -437,5 +405,5 @@ func (ss *Song) GetCurrentOrder() intf.OrderIdx {
 
 // GetCurrentRow returns the current row
 func (ss *Song) GetCurrentRow() intf.RowIdx {
-	return ss.Pattern.CurrentRow
+	return ss.Pattern.GetCurrentRow()
 }

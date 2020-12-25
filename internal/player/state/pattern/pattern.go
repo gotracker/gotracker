@@ -328,6 +328,9 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 	if txn.orderIdxSet || txn.rowIdxSet {
 		if txn.orderIdxSet {
 			state.setCurrentOrder(txn.orderIdx)
+			if !txn.rowIdxSet {
+				state.setCurrentRow(0)
+			}
 		}
 		if txn.rowIdxSet {
 			if !txn.orderIdxSet && state.currentRow > txn.rowIdx {

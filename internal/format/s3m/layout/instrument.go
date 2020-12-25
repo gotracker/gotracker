@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"math"
 	"time"
 
 	"github.com/gotracker/gomixing/sampling"
@@ -96,6 +97,8 @@ func (inst *Instrument) GetLoopEnd() sampling.Pos {
 // GetLength returns the length of the instrument
 func (inst *Instrument) GetLength() sampling.Pos {
 	switch si := inst.Inst.(type) {
+	case *InstrumentOPL2:
+		return sampling.Pos{math.MaxInt64, 0}
 	case *InstrumentPCM:
 		return sampling.Pos{Pos: si.Length}
 	default:

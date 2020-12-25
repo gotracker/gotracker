@@ -41,7 +41,7 @@ type PatternState struct {
 
 // GetPatNum returns the current pattern number
 func (state *PatternState) GetPatNum() intf.PatternIdx {
-	if int(state.currentOrder) > len(state.Orders) {
+	if int(state.currentOrder) >= len(state.Orders) {
 		return intf.InvalidPattern
 	}
 	return state.Orders[state.currentOrder]

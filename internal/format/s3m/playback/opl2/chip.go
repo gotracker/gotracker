@@ -36,6 +36,7 @@ package opl2
 	//DUNNO Keyon in 4op, switch to 2op without keyoff.
 */
 
+// Chip is the current state and emulator of the YM3812/YM262 OPL2/3 chip
 type Chip struct {
 	//This is used as the base counter for vibrato and tremolo
 	lfoCounter uint32
@@ -71,28 +72,27 @@ type Chip struct {
 	//0 or -1 when enabled
 	opl3Active int8
 
-	is_opl3 int
+	isOPL3 int
 }
 
-var ym3812 *Chip
-var ymf262 *Chip
-
-func NewChip(rate uint32, is_opl3 bool) *Chip {
+// NewChip creates a new Chip object
+func NewChip(rate uint32, isOPL3 bool) *Chip {
 	c := &Chip{}
 	for i := range c.ch {
 		c.ch[i].SetupChannel()
 	}
 
-	var chip_is_opl3 int
-	if is_opl3 {
-		chip_is_opl3 = -1
+	var chipIsOPL3 int
+	if isOPL3 {
+		chipIsOPL3 = -1
 	} else {
-		chip_is_opl3 = 0
+		chipIsOPL3 = 0
 	}
-	c.Setup(rate, chip_is_opl3)
+	c.Setup(rate, chipIsOPL3)
 	return c
 }
 
+// GetChannelByOffset returns the channel `ofs` units away from the `ch` channel
 func (c *Chip) GetChannelByOffset(ch *Channel, ofs int) *Channel {
 	ci := c.GetChannelIndex(ch)
 	if ci < 0 {
@@ -101,6 +101,7 @@ func (c *Chip) GetChannelByOffset(ch *Channel, ofs int) *Channel {
 	return c.GetChannelByIndex(uint32(ci + ofs))
 }
 
+// GetChannelIndex gets the channel index (with skips in-built) for `ch`
 func (c *Chip) GetChannelIndex(ch *Channel) int {
 	for i := uint32(0); i < 32; i++ {
 		cc := c.GetChannelByIndex(i)
@@ -111,6 +112,7 @@ func (c *Chip) GetChannelIndex(ch *Channel) int {
 	return -1
 }
 
+// GetChannelByIndex gets the channel at (skip-laiden) index `i`
 func (c *Chip) GetChannelByIndex(i uint32) *Channel {
 	index := i & 0xf
 	if index >= 9 {
@@ -127,6 +129,7 @@ func (c *Chip) GetChannelByIndex(i uint32) *Channel {
 	return &c.ch[index]
 }
 
+// GetOperatorByIndex gets the operator indexed by `i` that satisfies the channel offset gap (skips)
 func (c *Chip) GetOperatorByIndex(i uint32) *Operator {
 	if i%8 >= 6 || (i/8)%4 == 3 {
 		return nil
@@ -143,10 +146,11 @@ func (c *Chip) GetOperatorByIndex(i uint32) *Operator {
 	return nil
 }
 
+// ForwardNoise updates the noise values and returns the new value
 func (c *Chip) ForwardNoise() uint32 {
 	c.noiseCounter += c.noiseAdd
-	count := Bitu(c.noiseCounter) >> LFO_SH
-	c.noiseCounter &= WAVE_MASK
+	count := uint(c.noiseCounter) >> cLFOSh
+	c.noiseCounter &= cWaveMask
 	for ; count > 0; count-- {
 		//Noise calculation from mame
 		c.noiseValue ^= (0x800302) & (0 - (c.noiseValue & 1))
@@ -155,29 +159,30 @@ func (c *Chip) ForwardNoise() uint32 {
 	return c.noiseValue
 }
 
+// ForwardLFO updates the internal LFOs and returns the amount of samples they updated by
 func (c *Chip) ForwardLFO(samples uint32) uint32 {
 	//Current vibrato value, runs 4x slower than tremolo
-	vibVal := VibratoTable[c.vibratoIndex>>2]
+	vibVal := cVibratoTable[c.vibratoIndex>>2]
 	c.vibratoSign = 0
 	if vibVal < 0 {
 		c.vibratoSign = -1
 	}
 	c.vibratoShift = uint8(vibVal)&7 + c.vibratoStrength
-	c.tremoloValue = TremoloTable[c.tremoloIndex] >> c.tremoloStrength
+	c.tremoloValue = cTremoloTable[c.tremoloIndex] >> c.tremoloStrength
 
 	//Check hom many samples there can be done before the value changes
-	todo := uint32(LFO_MAX) - c.lfoCounter
+	todo := uint32(cLFOMax) - c.lfoCounter
 	count := (todo + c.lfoAdd - 1) / c.lfoAdd
 	if count > samples {
 		count = samples
 		c.lfoCounter += count * c.lfoAdd
 	} else {
 		c.lfoCounter += count * c.lfoAdd
-		c.lfoCounter &= uint32(LFO_MAX) - 1
+		c.lfoCounter &= uint32(cLFOMax) - 1
 		//Maximum of 7 vibrato value * 4
 		c.vibratoIndex = (c.vibratoIndex + 1) & 31
 		//Clip tremolo to the the table size
-		if c.tremoloIndex+1 < TREMOLO_TABLE {
+		if c.tremoloIndex+1 < cTremoloTableSize {
 			c.tremoloIndex++
 		} else {
 			c.tremoloIndex = 0
@@ -186,6 +191,7 @@ func (c *Chip) ForwardLFO(samples uint32) uint32 {
 	return count
 }
 
+// WriteBD writes directly to register 0xBD
 func (c *Chip) WriteBD(val uint8) {
 	change := c.regBD ^ val
 	if change == 0 {
@@ -257,6 +263,7 @@ func (c *Chip) WriteBD(val uint8) {
 	}
 }
 
+// WriteReg writes to register `reg` with value `val`
 func (c *Chip) WriteReg(reg uint32, val uint8) {
 	switch (reg & 0xf0) >> 4 {
 	case 0x00 >> 4:
@@ -347,6 +354,7 @@ func (c *Chip) WriteReg(reg uint32, val uint8) {
 	}
 }
 
+// WriteAddr calculates the actual value to be written at a specific port
 func (c *Chip) WriteAddr(port uint32, val uint8) uint32 {
 	switch port & 3 {
 	case 0:
@@ -360,8 +368,9 @@ func (c *Chip) WriteAddr(port uint32, val uint8) uint32 {
 	return 0
 }
 
-func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
-	outputIdx := Bitu(0)
+// GenerateBlock2 returns sample data for OPL2 output
+func (c *Chip) GenerateBlock2(total uint, output []int32) {
+	outputIdx := uint(0)
 	for total > 0 {
 		samples := c.ForwardLFO(uint32(total))
 		count := 0
@@ -374,13 +383,14 @@ func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
 			}
 			i += ofs
 		}
-		total -= Bitu(samples)
-		outputIdx += Bitu(samples)
+		total -= uint(samples)
+		outputIdx += uint(samples)
 	}
 }
 
-func (c *Chip) GenerateBlock3(total Bitu, output []int32) {
-	outputIdx := Bitu(0)
+// GenerateBlock3 returns sample data for OPL3 output (stereo!)
+func (c *Chip) GenerateBlock3(total uint, output []int32) {
+	outputIdx := uint(0)
 	for total > 0 {
 		samples := c.ForwardLFO(uint32(total))
 		count := 0
@@ -393,64 +403,65 @@ func (c *Chip) GenerateBlock3(total Bitu, output []int32) {
 			}
 			i += ofs
 		}
-		total -= Bitu(samples)
-		outputIdx += Bitu(samples) * 2
+		total -= uint(samples)
+		outputIdx += uint(samples) * 2
 	}
 }
 
-func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
+// Setup sets up a chip for correct operation
+func (c *Chip) Setup(rate uint32, chipIsOPL3 int) {
 	original := float64(OPLRATE)
 	scale := original / float64(rate)
 
-	c.is_opl3 = chip_is_opl3
+	c.isOPL3 = chipIsOPL3
 
 	//Noise counter is run at the same precision as general waves
-	c.noiseAdd = (uint32)(0.5 + scale*float64(uint32(1)<<LFO_SH))
+	c.noiseAdd = uint32(0.5 + scale*float64(uint32(1)<<cLFOSh))
 	c.noiseCounter = 0
 	c.noiseValue = 1 //Make sure it triggers the noise xor the first time
 	//The low frequency oscillation counter
 	//Every time his overflows vibrato and tremoloindex are increased
-	c.lfoAdd = uint32(0.5 + scale*float64(uint32(1)<<LFO_SH))
+	c.lfoAdd = uint32(0.5 + scale*float64(uint32(1)<<cLFOSh))
 	c.lfoCounter = 0
 	c.vibratoIndex = 0
 	c.tremoloIndex = 0
 
 	//With higher octave this gets shifted up
 	//-1 since the freqCreateTable = *2
-	if WAVE_PRECISION != 0 {
-		freqScale := float64(float64(1<<7) * scale * float64(Bitu(1)<<(WAVE_SH-1-10)))
+	if cWavePrecision != 0 {
+		freqScale := float64(float64(1<<7) * scale * float64(uint(1)<<(cWaveSh-1-10)))
 		for i := 0; i < 16; i++ {
-			c.freqMul[i] = uint32(0.5 + freqScale*float64(FreqCreateTable[i]))
+			c.freqMul[i] = uint32(0.5 + freqScale*float64(cFreqCreateTable[i]))
 		}
 	} else {
-		freqScale := uint32(0.5 + scale*float64(Bitu(1)<<(WAVE_SH-1-10)))
+		freqScale := uint32(0.5 + scale*float64(uint(1)<<(cWaveSh-1-10)))
 		for i := 0; i < 16; i++ {
-			c.freqMul[i] = freqScale * FreqCreateTable[i]
+			c.freqMul[i] = freqScale * cFreqCreateTable[i]
 		}
 	}
 
 	//-3 since the real envelope takes 8 steps to reach the single value we supply
 	for i := uint8(0); i < 76; i++ {
-		index, shift := EnvelopeSelect(i)
-		c.linearRates[i] = uint32(scale * float64(Bitu(EnvelopeIncreaseTable[index])<<(RATE_SH+ENV_EXTRA-shift-3)))
+		index, shift := envelopeSelect(i)
+		c.linearRates[i] = uint32(scale * float64(uint(cEnvelopeIncreaseTable[index])<<(cRateSh+cEnvExtra-shift-3)))
 	}
 	//Generate the best matching attack rate
 	for i := uint8(0); i < 62; i++ {
-		index, shift := EnvelopeSelect(i)
+		index, shift := envelopeSelect(i)
 		//Original amount of samples the attack would take
-		original := int32(float64(Bitu(AttackSamplesTable[index])<<shift) / scale)
+		original := int32(float64(uint(cAttackSamplesTable[index])<<shift) / scale)
 
-		guessAdd := int32(scale * float64(Bitu(EnvelopeIncreaseTable[index])<<(RATE_SH-shift-3)))
+		guessAdd := int32(scale * float64(uint(cEnvelopeIncreaseTable[index])<<(cRateSh-shift-3)))
 		bestAdd := guessAdd
 		bestDiff := uint32(1) << 30
 		for passes := uint32(0); passes < 16; passes++ {
-			volume := int32(ENV_MAX)
+			volume := int32(cEnvMax)
 			samples := int32(0)
 			count := uint32(0)
 			for volume > 0 && samples < original*2 {
 				count += uint32(guessAdd)
-				change := int32(count) >> RATE_SH
-				count &= RATE_MASK
+				change := int32(count) >> cRateSh
+				count &= cRateMask
 				if change != 0 { // less than 1 %
 					volume += (^volume * change) >> 3
 				}
@@ -486,7 +497,7 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 	}
 	for i := uint8(62); i < 76; i++ {
 		//This should provide instant volume maximizing
-		c.attackRates[i] = uint32(8) << RATE_SH
+		c.attackRates[i] = uint32(8) << cRateSh
 	}
 	//Setup the channels with the correct four op flags
 	//Channels are accessed through a table so they appear linear here

@@ -1,13 +1,13 @@
 package layout
 
 import (
-	"math"
 	"time"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
@@ -87,102 +87,46 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	ch   *opl2.SingleChannel
-	data []int32
+	chip  *opl2.Chip
+	regB0 uint8
 }
 
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentOPL2) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
-	ym := ioc.Data.(*ym3812)
-
-	v0 := inst.getConvertedSample(ym.data, pos.Pos)
-	if pos.Frac == 0 {
-		return v0
-	}
-	v1 := inst.getConvertedSample(ym.data, pos.Pos+1)
-	for c, s := range v1 {
-		v0[c] += volume.Volume(pos.Frac) * (s - v0[c])
-	}
-	return v0
+	return nil
 }
-
-func (inst *InstrumentOPL2) getConvertedSample(data []int32, pos int) volume.Matrix {
-	if pos < 0 || pos >= len(data) {
-		return volume.Matrix{}
-	}
-	o := make(volume.Matrix, 1)
-	w := data[pos]
-	o[0] = (volume.Volume(w)) / 65536.0
-	return o
-}
-
-var ym3812Channels [32]*opl2.SingleChannel
 
 // Initialize completes the setup of this instrument
 func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
-	chNum := ioc.OutputChannelNum
-	ch := ym3812Channels[chNum]
-	if ch == nil {
-		rate := opl2.OPLRATE
-		ch = opl2.NewSingleChannel(uint32(rate))
-		// support all waveforms
-		ch.SupportAllWaveforms(true)
-		ym3812Channels[chNum] = ch
-	}
-	ym := ym3812{
-		ch: ch,
-	}
+	ym := ym3812{}
 	ioc.Data = &ym
 
 	return nil
 }
 
-var (
-	oplC4FNum, oplC4Block = freqToFreqBlock(opl2.OPLRATE / 16) // C-4
-)
-
 // SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semitone, on bool) {
+func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
 	ym := ioc.Data.(*ym3812)
-	ch := ym.ch
+	ch := ym.chip
+	if ch == nil {
+		p := ioc.Playback.(channel.OPL2Intf)
+		ch = p.GetOPL2Chip()
+		ym.chip = ch
+	}
+
+	if ch == nil {
+		panic("no ym3812 available")
+	}
+
+	index := uint32(ioc.OutputChannelNum)
 
 	// write the instrument to the channel!
-	freq, block := oplC4FNum, oplC4Block
 	if !on {
-		ch.SetFNum(freq, block)
-		ch.SetKeyOn(false)
-		ym.data = nil
+		ym.regB0 &^= 0x20 // key off
+		ch.WriteReg(0xB0|index, ym.regB0)
 	} else {
-		modReg20 := inst.getReg20(&inst.Modulator)
-		modReg40 := inst.getReg40(&inst.Modulator)
-		modReg60 := inst.getReg60(&inst.Modulator)
-		modReg80 := inst.getReg80(&inst.Modulator)
-		modRegE0 := inst.getRegE0(&inst.Modulator)
-
-		carReg20 := inst.getReg20(&inst.Carrier)
-		carReg40 := inst.getReg40(&inst.Carrier)
-		carReg60 := inst.getReg60(&inst.Carrier)
-		carReg80 := inst.getReg80(&inst.Carrier)
-		carRegE0 := inst.getRegE0(&inst.Carrier)
-
-		ch.WriteReg(0x20, 0, modReg20)
-		ch.WriteReg(0x40, 0, modReg40)
-		ch.WriteReg(0x60, 0, modReg60)
-		ch.WriteReg(0x80, 0, modReg80)
-		ch.WriteReg(0xE0, 0, modRegE0)
-
-		ch.SetFNum(freq, block)
-
-		ch.WriteReg(0x20, 1, carReg20)
-		ch.WriteReg(0x40, 1, carReg40)
-		ch.WriteReg(0x60, 1, carReg60)
-		ch.WriteReg(0x80, 1, carReg80)
-		ch.WriteReg(0xE0, 1, carRegE0)
-
-		ch.SetAdditiveSynthesis(inst.AdditiveSynthesis)
-		ch.SetModulationFeedback(uint8(inst.ModulationFeedback))
-
-		ch.SetKeyOn(true)
+		ym.regB0 |= 0x20 // key on
+		ch.WriteReg(0xB0|index, ym.regB0)
 	}
 }
 
@@ -205,13 +149,17 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 	return reg20
 }
 
-func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData) uint8 {
-	levelScale := o.KeyScaleLevel >> 1
+func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
+	levelScale := (o.KeyScaleLevel >> 1) & 1
 	levelScale |= (o.KeyScaleLevel << 1) & 2
 	//levelScale := o.KeyScaleLevel
+
+	totalVol := (float64(o.Volume) * float64(vol))
+	adlVol := s3mfile.Volume(63) - s3mfile.Volume(uint8(totalVol))
+
 	reg40 := uint8(0x00)
 	reg40 |= uint8(levelScale) << 6
-	reg40 |= uint8(63-o.Volume) & 0x3f
+	reg40 |= uint8(adlVol) & 0x3f
 	return reg40
 }
 
@@ -229,6 +177,15 @@ func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 	return reg80
 }
 
+func (inst *InstrumentOPL2) getRegC0() uint8 {
+	regC0 := uint8(0x00)
+	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
+	if !inst.AdditiveSynthesis {
+		regC0 |= 0x01
+	}
+	return regC0
+}
+
 func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
 	regE0 := uint8(0x00)
 	regE0 |= uint8(o.WaveformSelection) & 0x03
@@ -236,40 +193,49 @@ func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
 }
 
 // twoOperatorMelodic
-var twoOperatorMelodic = [18]uint32{0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25, 26, 30, 31, 32}
+var twoOperatorMelodic = [...]uint32{0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12}
 
 func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
-	return twoOperatorMelodic[channelIdx%18]
+	return twoOperatorMelodic[channelIdx%9]
 }
 
-func (inst *InstrumentOPL2) semitoneToFreqBlock(semitone note.Semitone, c2spd note.C2SPD) (uint16, uint8) {
-	targetFreq := float64(util.FrequencyFromSemitone(semitone, c2spd))
+func freqToFnumBlock(freq float64) (uint16, uint8) {
+	f := int(freq)
+	octave := 5
 
-	return freqToFreqBlock(targetFreq / 256)
+	if f == 0 {
+		return 0, 0
+	}
+
+	for f < 261 && octave > 0 {
+		octave--
+		f >>= 1
+	}
+	if f == 0 {
+		f = int(freq)
+		octave = 5
+	}
+	for f > 493 && octave < 8 {
+		octave++
+		f <<= 1
+	}
+
+	if octave > 7 {
+		octave = 7
+	} else if octave < 0 {
+		octave = 0
+	}
+
+	fnumVal := freq * float64(int(1)<<(20-octave)) / opl2.OPLRATE
+	fnum := uint16(fnumVal)
+	block := uint8(octave)
+	return fnum, block
 }
 
-func freqToFreqBlock(targetFreq float64) (uint16, uint8) {
-	bestBlk := uint8(8)
-	bestMatchFreqNum := uint16(0)
-	bestMatchFNDelta := float64(1024)
-	found := false
-	for blk := uint8(0); blk < 8; blk++ {
-		fNum := targetFreq * float64(uint32(1<<(20-blk))) / opl2.OPLRATE
-		iNum := int(fNum)
-		fp := fNum - float64(iNum)
-		if iNum < 1024 && iNum >= 0 && fp < bestMatchFNDelta {
-			bestBlk = blk
-			bestMatchFreqNum = uint16(iNum)
-			bestMatchFNDelta = fp
-			found = true
-		}
-	}
+func (inst *InstrumentOPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
+	freq := float64(util.FrequencyFromPeriod(period*4)) * float64(c2spd) / float64(s3mfile.DefaultC2Spd)
 
-	if !found {
-		panic("couldn't find fnum/block match")
-	}
-
-	return bestMatchFreqNum, bestBlk
+	return freqToFnumBlock(freq)
 }
 
 func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
@@ -282,15 +248,67 @@ func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8,
 // GetKeyOn gets the key on flag for the instrument
 func (inst *InstrumentOPL2) GetKeyOn(ioc *InstrumentOnChannel) bool {
 	ym := ioc.Data.(*ym3812)
-	ch := ym.ch
-	return ch.GetKeyOn()
+	return (ym.regB0 & 0x20) != 0
 }
 
 // Update advances time by the amount specified by `tickDuration`
 func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.Duration) {
 	ym := ioc.Data.(*ym3812)
-	ll := uint(math.Ceil(tickDuration.Seconds() * opl2.OPLRATE))
-	gen := make([]int32, ll)
-	ym.ch.GenerateBlock2(ll, gen)
-	ym.data = append(ym.data, gen...)
+	ch := ym.chip
+	if ch == nil {
+		p := ioc.Playback.(channel.OPL2Intf)
+		ch = p.GetOPL2Chip()
+		ym.chip = ch
+	}
+
+	if ch == nil {
+		panic("no ym3812 available")
+	}
+
+	index := uint32(ioc.OutputChannelNum)
+
+	mod := inst.getChannelIndex(int(index))
+	car := mod + 0x03
+
+	freq, block := inst.periodToFreqBlock(ioc.Period, ioc.Instrument.C2Spd)
+	regA0, regB0 := inst.freqBlockToRegA0B0(freq, block)
+
+	regC0 := inst.getRegC0()
+
+	modVol := ioc.Volume
+	if !inst.AdditiveSynthesis {
+		modVol = 1.0
+	}
+
+	modReg20 := inst.getReg20(&inst.Modulator)
+	modReg40 := inst.getReg40(&inst.Modulator, modVol)
+	modReg60 := inst.getReg60(&inst.Modulator)
+	modReg80 := inst.getReg80(&inst.Modulator)
+	modRegE0 := inst.getRegE0(&inst.Modulator)
+
+	carReg20 := inst.getReg20(&inst.Carrier)
+	carReg40 := inst.getReg40(&inst.Carrier, ioc.Volume)
+	carReg60 := inst.getReg60(&inst.Carrier)
+	carReg80 := inst.getReg80(&inst.Carrier)
+	carRegE0 := inst.getRegE0(&inst.Carrier)
+
+	ch.WriteReg(0x20|mod, modReg20)
+	ch.WriteReg(0x40|mod, modReg40)
+	ch.WriteReg(0x60|mod, modReg60)
+	ch.WriteReg(0x80|mod, modReg80)
+	ch.WriteReg(0xE0|mod, modRegE0)
+
+	ch.WriteReg(0xA0|index, regA0)
+
+	ch.WriteReg(0x20|car, carReg20)
+	ch.WriteReg(0x40|car, carReg40)
+	ch.WriteReg(0x60|car, carReg60)
+	ch.WriteReg(0x80|car, carReg80)
+	ch.WriteReg(0xE0|car, carRegE0)
+
+	ch.WriteReg(0xC0|index, regC0)
+
+	regB0 |= ym.regB0 & 0x20
+	ym.regB0 = regB0
+	ch.WriteReg(0xB0|index, regB0)
 }

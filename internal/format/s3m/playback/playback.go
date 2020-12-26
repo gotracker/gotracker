@@ -8,7 +8,9 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/s3m/layout"
+	"gotracker/internal/format/s3m/layout/channel"
 	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
+	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -21,6 +23,7 @@ import (
 type Manager struct {
 	intf.Playback
 	effectIntf.S3M
+	channel.OPL2Intf
 	song *layout.Song
 
 	channels     []state.ChannelState
@@ -29,6 +32,8 @@ type Manager struct {
 
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
+
+	opl2 *opl2.Chip
 }
 
 // NewManager creates a new manager for an S3M song
@@ -212,4 +217,9 @@ func (m *Manager) GetCurrentRow() intf.RowIdx {
 // GetName returns the current song's name
 func (m *Manager) GetName() string {
 	return m.song.GetName()
+}
+
+// GetOPL2Chip returns the current song's OPL2 chip, if it's needed
+func (m *Manager) GetOPL2Chip() *opl2.Chip {
+	return m.opl2
 }

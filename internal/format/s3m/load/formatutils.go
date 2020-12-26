@@ -25,6 +25,7 @@ func load(filename string, reader readerFunc) (*playback.Manager, error) {
 	m.SetNumChannels(len(s3mSong.ChannelSettings))
 	for i, ch := range s3mSong.ChannelSettings {
 		cs := m.GetChannel(i)
+		cs.SetOutputChannelNum(ch.OutputChannelNum)
 		cs.SetStoredVolume(ch.InitialVolume, s3mSong.Head.GlobalVolume)
 		cs.SetPan(ch.InitialPanning)
 		cs.SetMemory(&s3mSong.ChannelSettings[i].Memory)

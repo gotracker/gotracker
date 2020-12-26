@@ -220,9 +220,15 @@ func MakeVolume(wave Bitu, volume Bitu) Bits {
 }
 
 func WaveForm0(i Bitu, volume Bitu) Bits {
-	neg := Bits(0 - ((i >> 9) & 1)) //Create ~0 or 0
+	neg := Bits(0)
+	if ((i >> 9) & 1) != 0 {
+		neg = -1
+	}
 	wave := Bitu(SinTable[i&511])
-	return (MakeVolume(wave, volume) ^ neg) - neg
+	oVol := MakeVolume(wave, volume)
+	vol := oVol ^ neg
+	vol -= neg
+	return vol
 }
 
 func WaveForm1(i Bitu, volume Bitu) Bits {
@@ -286,10 +292,12 @@ func init() {
 		//Exponential volume table, same as the real adlib
 		for i := 0; i < 256; i++ {
 			//Save them in reverse
-			ExpTable[i] = uint16(0.5 + (math.Pow(2.0, float64(255-i)*(1.0/256))-1)*1024)
-			ExpTable[i] += 1024 //or remove the -1 oh well :)
+			exp := (255.0 - float64(i)) / 256.0
+			p := math.Pow(2.0, exp)
+			expVal := (0.5 + (p-1)*1024) + 1024 //or remove the -1 oh well :)
 			//Preshift to the left once so the final volume can shift to the right
-			ExpTable[i] *= 2
+			ExpTable[i] = uint16(expVal) * 2
+			//ExpTable[i] *= 2
 		}
 	}
 

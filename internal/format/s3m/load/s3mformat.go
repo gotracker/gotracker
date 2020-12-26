@@ -245,19 +245,20 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 
 	channels := []layout.ChannelSetting{}
 	for chNum, ch := range f.ChannelSettings {
+		chn := ch.GetChannel()
 		cs := layout.ChannelSetting{
-			Enabled:        ch.IsEnabled(),
-			InitialVolume:  util.DefaultVolume,
-			InitialPanning: util.DefaultPanning,
+			Enabled:          ch.IsEnabled(),
+			Category:         chn.GetChannelCategory(),
+			OutputChannelNum: int(ch.GetChannel() & 0x07),
+			InitialVolume:    util.DefaultVolume,
+			InitialPanning:   util.DefaultPanning,
 		}
 
 		pf := f.Panning[chNum]
 		if pf.IsValid() {
 			cs.InitialPanning = util.PanningFromS3M(pf.Value())
 		} else {
-			chn := ch.GetChannel()
-			cc := chn.GetChannelCategory()
-			switch cc {
+			switch cs.Category {
 			case s3mfile.ChannelCategoryPCMLeft:
 				cs.InitialPanning = util.DefaultPanningLeft
 				cs.OutputChannelNum = int(chn - s3mfile.ChannelIDL1)

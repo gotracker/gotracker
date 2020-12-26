@@ -23,8 +23,10 @@ type InstrumentOnChannel interface {
 	sampling.SampleStream
 
 	GetInstrument() Instrument
-	SetKeyOn(note.Semitone, bool)
+	SetKeyOn(note.Period, bool)
 	GetKeyOn() bool
 	Update(time.Duration)
 	SetFilter(Filter)
+	SetVolume(volume.Volume)
+	SetPeriod(note.Period)
 }

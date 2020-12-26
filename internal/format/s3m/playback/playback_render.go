@@ -156,7 +156,7 @@ func (m *Manager) renderOPL2RowTick(tick int, mixerData []mixing.Data, ticksThis
 
 	opl2data := make([]int32, tickSamples)
 
-	m.opl2.GenerateBlock2(opl2.Bitu(tickSamples), opl2data)
+	m.opl2.GenerateBlock2(uint(tickSamples), opl2data)
 
 	for i, s := range opl2data {
 		sv := volume.Volume(s) / 32768.0

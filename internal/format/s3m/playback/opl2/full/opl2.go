@@ -52,42 +52,26 @@ const (
 	//Try to use most precision for frequencies
 	//Else try to keep different waves in synch
 	//WAVE_PRECISION = true
-	WAVE_PRECISION = false
+	WAVE_PRECISION = 0
 
 	DBOPL_WAVE = WAVE_TABLEMUL
-)
 
-func WAVE_BITS() int {
-	if WAVE_PRECISION {
-		//Need some extra bits at the top to have room for octaves and frequency multiplier
-		//We support to 8 times lower rate
-		//128 * 15 * 8 = 15350, 2^13.9, so need 14 bits
-		return 14
-	}
-	//Wave bits available in the top of the 32bit range
-	//Original adlib uses 10.10, we use 10.22
-	return 10
-}
+	//WAVE_PRECISION = 1:
+	//  Need some extra bits at the top to have room for octaves and frequency multiplier
+	//  We support to 8 times lower rate
+	//  128 * 15 * 8 = 15350, 2^13.9, so need 14 bits
+	//WAVE_PRECISION = 0:
+	//  Wave bits available in the top of the 32bit range
+	//  Original adlib uses 10.10, we use 10.22
+	WAVE_BITS = 10 + int(WAVE_PRECISION)*4
+	WAVE_SH   = 32 - WAVE_BITS
+	WAVE_MASK = (1 << WAVE_SH) - 1
 
-func WAVE_SH() int {
-	return 32 - WAVE_BITS()
-}
+	//Use the same accuracy as the waves
+	LFO_SH = WAVE_SH - 10
+	//LFO is controlled by our tremolo 256 sample limit
+	LFO_MAX = 256 << LFO_SH
 
-func WAVE_MASK() uint32 {
-	return (1 << WAVE_SH()) - 1
-}
-
-//Use the same accuracy as the waves
-func LFO_SH() int {
-	return WAVE_SH() - 10
-}
-
-//LFO is controlled by our tremolo 256 sample limit
-func LFO_MAX() int {
-	return 256 << LFO_SH()
-}
-
-const (
 	//Maximum amount of attenuation bits
 	//Envelope goes to 511, 9 bits
 	ENV_BITS = 9

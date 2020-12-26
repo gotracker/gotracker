@@ -147,8 +147,8 @@ func (c *Chip) GetOperatorByIndex(i uint32) *Operator {
 
 func (c *Chip) ForwardNoise() uint32 {
 	c.noiseCounter += c.noiseAdd
-	count := Bitu(c.noiseCounter >> LFO_SH())
-	c.noiseCounter &= WAVE_MASK()
+	count := Bitu(c.noiseCounter >> LFO_SH)
+	c.noiseCounter &= WAVE_MASK
 	for ; count > 0; count-- {
 		//Noise calculation from mame
 		c.noiseValue ^= (0x800302) & (0 - (c.noiseValue & 1))
@@ -164,14 +164,14 @@ func (c *Chip) ForwardLFO(samples uint32) uint32 {
 	c.tremoloValue = TremoloTable[c.tremoloIndex] >> c.tremoloStrength
 
 	//Check hom many samples there can be done before the value changes
-	todo := uint32(LFO_MAX()) - c.lfoCounter
+	todo := uint32(LFO_MAX) - c.lfoCounter
 	count := uint32((todo + c.lfoAdd - 1) / c.lfoAdd)
 	if count > samples {
 		count = samples
 		c.lfoCounter += count * c.lfoAdd
 	} else {
 		c.lfoCounter += count * c.lfoAdd
-		c.lfoCounter &= uint32(LFO_MAX() - 1)
+		c.lfoCounter &= uint32(LFO_MAX - 1)
 		//Maximum of 7 vibrato value * 4
 		c.vibratoIndex = (c.vibratoIndex + 1) & 31
 		//Clip tremolo to the the table size
@@ -449,25 +449,25 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 	c.is_opl3 = chip_is_opl3
 
 	//Noise counter is run at the same precision as general waves
-	c.noiseAdd = (uint32)(0.5 + scale*float64(uint32(1)<<LFO_SH()))
+	c.noiseAdd = (uint32)(0.5 + scale*float64(uint32(1)<<LFO_SH))
 	c.noiseCounter = 0
 	c.noiseValue = 1 //Make sure it triggers the noise xor the first time
 	//The low frequency oscillation counter
 	//Every time his overflows vibrato and tremoloindex are increased
-	c.lfoAdd = uint32(0.5 + scale*float64(uint32(1)<<LFO_SH()))
+	c.lfoAdd = uint32(0.5 + scale*float64(uint32(1)<<LFO_SH))
 	c.lfoCounter = 0
 	c.vibratoIndex = 0
 	c.tremoloIndex = 0
 
 	//With higher octave this gets shifted up
 	//-1 since the freqCreateTable = *2
-	if WAVE_PRECISION {
-		freqScale := float64(float64(1<<7) * scale * float64(Bitu(1<<(WAVE_SH()-1-10))))
+	if WAVE_PRECISION != 0 {
+		freqScale := float64(float64(1<<7) * scale * float64(Bitu(1)<<(WAVE_SH-1-10)))
 		for i := 0; i < 16; i++ {
 			c.freqMul[i] = uint32(0.5 + freqScale*float64(FreqCreateTable[i]))
 		}
 	} else {
-		freqScale := uint32(0.5 + scale*float64(Bitu(1<<(WAVE_SH()-1-10))))
+		freqScale := uint32(0.5 + scale*float64(Bitu(1)<<(WAVE_SH-1-10)))
 		for i := 0; i < 16; i++ {
 			c.freqMul[i] = freqScale * FreqCreateTable[i]
 		}
@@ -476,7 +476,7 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 	//-3 since the real envelope takes 8 steps to reach the single value we supply
 	for i := uint8(0); i < 76; i++ {
 		index, shift := EnvelopeSelect(i)
-		c.linearRates[i] = uint32(scale * float64(EnvelopeIncreaseTable[index]<<(RATE_SH+ENV_EXTRA-shift-3)))
+		c.linearRates[i] = uint32(scale * float64(Bitu(EnvelopeIncreaseTable[index])<<(RATE_SH+ENV_EXTRA-shift-3)))
 	}
 	//Generate the best matching attack rate
 	for i := uint8(0); i < 62; i++ {
@@ -484,7 +484,7 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 		//Original amount of samples the attack would take
 		original := int32(float64(AttackSamplesTable[index]<<shift) / scale)
 
-		guessAdd := int32(scale * float64(EnvelopeIncreaseTable[index]<<(RATE_SH-shift-3)))
+		guessAdd := int32(scale * float64(Bitu(EnvelopeIncreaseTable[index])<<(RATE_SH-shift-3)))
 		bestAdd := guessAdd
 		bestDiff := uint32(1 << 30)
 		for passes := uint32(0); passes < 16; passes++ {

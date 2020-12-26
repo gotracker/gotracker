@@ -14,7 +14,6 @@ import (
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
-	"gotracker/internal/player/state"
 )
 
 // flags
@@ -56,18 +55,18 @@ func main() {
 
 	sampler = render.NewSampler(outputSettings.SamplesPerSecond, outputSettings.Channels, outputSettings.BitsPerSample)
 
-	ss := state.NewSong()
-	if fmt, err := format.Load(ss, fn); err != nil {
+	playback, songFmt, err := format.Load(fn)
+	if err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
-	} else if fmt != nil {
-		sampler.BaseClockRate = fmt.GetBaseClockRate()
+	} else if songFmt != nil {
+		sampler.BaseClockRate = songFmt.GetBaseClockRate()
 	}
 	if startingOrder != -1 {
-		ss.SetNextOrder(intf.OrderIdx(startingOrder))
+		playback.SetNextOrder(intf.OrderIdx(startingOrder))
 	}
 	if startingRow != -1 {
-		ss.SetNextRow(intf.RowIdx(startingRow))
+		playback.SetNextRow(intf.RowIdx(startingRow))
 	}
 
 	var (
@@ -89,7 +88,7 @@ func main() {
 			fmt.Printf("[%0.2d:%0.2d] %s\n", row.Order, row.Row, row.RowText.String())
 		case device.KindFile:
 			if progress == nil {
-				progress = progressBar.StartNew(len(ss.SongData.GetOrderList()))
+				progress = progressBar.StartNew(playback.GetNumOrders())
 				lastOrder = row.Order
 			}
 			if lastOrder != row.Order {
@@ -109,10 +108,10 @@ func main() {
 	if !canLoop {
 		disableFeatures = append(disableFeatures, feature.PatternLoop)
 	}
-	ss.DisableFeatures(disableFeatures)
+	playback.DisableFeatures(disableFeatures)
 
 	fmt.Printf("Output device: %s\n", waveOut.Name())
-	fmt.Printf("Song: %s\n", ss.SongData.GetName())
+	fmt.Printf("Song: %s\n", playback.GetName())
 	outBufs := make(chan *device.PremixData, 64)
 
 	p, err := player.NewPlayer(nil, outBufs, sampler)
@@ -121,7 +120,7 @@ func main() {
 		return
 	}
 
-	if err := p.Play(ss); err != nil {
+	if err := p.Play(playback); err != nil {
 		log.Fatalln(err)
 		return
 	}

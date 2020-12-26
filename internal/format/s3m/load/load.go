@@ -24,11 +24,11 @@ func readMOD(filename string) (*layout.Song, error) {
 }
 
 // MOD loads a MOD file and upgrades it into an S3M file internally
-func MOD(s intf.Song, filename string) error {
-	return load(s, filename, readMOD)
+func MOD(filename string) (intf.Playback, error) {
+	return load(filename, readMOD)
 }
 
-// S3M loads an S3M file into the song state `s`
-func S3M(s intf.Song, filename string) error {
-	return load(s, filename, readS3M)
+// S3M loads an S3M file into a new Playback object
+func S3M(filename string) (intf.Playback, error) {
+	return load(filename, readS3M)
 }

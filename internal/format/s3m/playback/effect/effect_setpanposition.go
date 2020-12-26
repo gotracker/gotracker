@@ -11,11 +11,11 @@ import (
 type SetPanPosition uint8 // 'S8x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetPanPosition) PreStart(cs intf.Channel, ss intf.Song) {
+func (e SetPanPosition) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs intf.Channel, ss intf.Song) {
+func (e SetPanPosition) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -24,11 +24,11 @@ func (e SetPanPosition) Start(cs intf.Channel, ss intf.Song) {
 }
 
 // Tick is called on every tick
-func (e SetPanPosition) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e SetPanPosition) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e SetPanPosition) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e SetPanPosition) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e SetPanPosition) String() string {

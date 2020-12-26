@@ -20,7 +20,7 @@ func (f format) GetBaseClockRate() float32 {
 }
 
 // Load loads an MOD file into the song state `s`
-func (f format) Load(s intf.Song, filename string) error {
+func (f format) Load(filename string) (intf.Playback, error) {
 	// we really just load the mod into an S3M layout, since S3M is essentially a superset
-	return s3m.LoadMOD(s, filename)
+	return s3m.LoadMOD(filename)
 }

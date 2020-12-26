@@ -10,16 +10,16 @@ import (
 type NoteCut uint8 // 'SCx'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e NoteCut) PreStart(cs intf.Channel, ss intf.Song) {
+func (e NoteCut) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NoteCut) Start(cs intf.Channel, ss intf.Song) {
+func (e NoteCut) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e NoteCut) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e NoteCut) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	x := uint8(e) & 0xf
 
 	if x != 0 && currentTick == int(x) {
@@ -28,7 +28,7 @@ func (e NoteCut) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e NoteCut) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e NoteCut) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e NoteCut) String() string {

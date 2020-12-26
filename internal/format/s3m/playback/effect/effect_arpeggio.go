@@ -11,18 +11,18 @@ import (
 type Arpeggio uint8 // 'J'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e Arpeggio) PreStart(cs intf.Channel, ss intf.Song) {
+func (e Arpeggio) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio) Start(cs intf.Channel, ss intf.Song) {
+func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	cs.SetPos(cs.GetTargetPos())
 }
 
 // Tick is called on every tick
-func (e Arpeggio) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.LastNonZero(uint8(e))
 	x := int8(xy>>4) - 8
@@ -31,7 +31,7 @@ func (e Arpeggio) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e Arpeggio) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e Arpeggio) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e Arpeggio) String() string {

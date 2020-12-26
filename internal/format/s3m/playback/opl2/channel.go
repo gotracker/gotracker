@@ -285,25 +285,25 @@ func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) 
 	}
 
 	//Hi-Hat
-	hhVol := uint32(c.Op(chip, 2).ForwardVolume())
+	hhVol := c.Op(chip, 2).ForwardVolume()
 	if !ENV_SILENT(int(hhVol)) {
 		hhIndex := uint32((phaseBit << 8) | (0x34 << (phaseBit ^ (noiseBit << 1))))
-		sample += int32(c.Op(chip, 2).GetWave(Bitu(hhIndex), Bitu(hhVol)))
+		sample += int32(c.Op(chip, 2).GetWave(Bitu(hhIndex), hhVol))
 	}
 	//Snare Drum
-	sdVol := uint32(c.Op(chip, 3).ForwardVolume())
+	sdVol := c.Op(chip, 3).ForwardVolume()
 	if !ENV_SILENT(int(sdVol)) {
 		sdIndex := uint32((0x100 + (c2 & 0x100)) ^ (noiseBit << 8))
-		sample += int32(c.Op(chip, 3).GetWave(Bitu(sdIndex), Bitu(sdVol)))
+		sample += int32(c.Op(chip, 3).GetWave(Bitu(sdIndex), sdVol))
 	}
 	//Tom-tom
 	sample += int32(c.Op(chip, 4).GetSample(0))
 
 	//Top-Cymbal
-	tcVol := uint32(c.Op(chip, 5).ForwardVolume())
+	tcVol := c.Op(chip, 5).ForwardVolume()
 	if !ENV_SILENT(int(tcVol)) {
 		tcIndex := uint32((1 + phaseBit) << 8)
-		sample += int32(c.Op(chip, 5).GetWave(Bitu(tcIndex), Bitu(tcVol)))
+		sample += int32(c.Op(chip, 5).GetWave(Bitu(tcIndex), tcVol))
 	}
 	sample <<= 1
 	if opl3Mode {
@@ -314,43 +314,43 @@ func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) 
 	}
 }
 
-func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode SynthMode) *Channel {
+func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode SynthMode) (int, bool) {
 	switch mode {
 	case sm2AM, sm3AM:
 		if c.Op(chip, 0).Silent() && c.Op(chip, 1).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 1)
+			return 1, true
 		}
 	case sm2FM, sm3FM:
 		if c.Op(chip, 1).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 1)
+			return 1, true
 		}
 	case sm3FMFM:
 		if c.Op(chip, 3).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 2)
+			return 2, true
 		}
 	case sm3AMFM:
 		if c.Op(chip, 0).Silent() && c.Op(chip, 3).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 2)
+			return 2, true
 		}
 	case sm3FMAM:
 		if c.Op(chip, 1).Silent() && c.Op(chip, 3).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 2)
+			return 2, true
 		}
 	case sm3AMAM:
 		if c.Op(chip, 0).Silent() && c.Op(chip, 2).Silent() && c.Op(chip, 3).Silent() {
 			c.old[0] = 0
 			c.old[1] = 0
-			return chip.GetChannelByOffset(c, 2)
+			return 2, true
 		}
 	}
 	//Init the operators with the the current vibrato and tremolo values
@@ -375,7 +375,7 @@ func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode
 		}
 
 		//Do unsigned shift so we can shift out all bits but still stay in 10 bit range otherwise
-		mod := Bits((c.old[0] + c.old[1]) >> c.feedback)
+		mod := Bits(uint32(c.old[0]+c.old[1]) >> c.feedback)
 		c.old[0] = c.old[1]
 		c.old[1] = int32(c.Op(chip, 0).GetSample(mod))
 		var sample int32
@@ -413,11 +413,11 @@ func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode
 	}
 	switch mode {
 	case sm2AM, sm2FM, sm3AM, sm3FM:
-		return chip.GetChannelByOffset(c, 1)
+		return 1, true
 	case sm3FMFM, sm3AMFM, sm3FMAM, sm3AMAM:
-		return chip.GetChannelByOffset(c, 2)
+		return 2, true
 	case sm2Percussion, sm3Percussion:
-		return chip.GetChannelByOffset(c, 3)
+		return 3, true
 	}
-	return nil
+	return 0, false
 }

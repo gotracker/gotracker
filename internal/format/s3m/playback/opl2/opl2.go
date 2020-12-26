@@ -211,73 +211,73 @@ type Bits int
 /*
 	Generate the different waveforms out of the sine/exponetial table using handlers
 */
-func MakeVolume(wave Bitu, volume Bitu) Bits {
+func MakeVolume(wave Bits, volume Bits) Bits {
 	total := wave + volume
 	index := total & 0xff
 	sig := Bitu(ExpTable[index])
 	exp := total >> 8
-	return Bits(sig >> exp)
+	return Bits(sig) >> exp
 }
 
-func WaveForm0(i Bitu, volume Bitu) Bits {
+func WaveForm0(i Bitu, volume Bits) Bits {
 	neg := Bits(0)
 	if ((i >> 9) & 1) != 0 {
 		neg = -1
 	}
-	wave := Bitu(SinTable[i&511])
+	wave := Bits(SinTable[i&511])
 	oVol := MakeVolume(wave, volume)
 	vol := oVol ^ neg
 	vol -= neg
 	return vol
 }
 
-func WaveForm1(i Bitu, volume Bitu) Bits {
-	wave := Bitu(SinTable[i&511])
-	wave |= (((i ^ 512) & 512) - 1) >> (32 - 12)
+func WaveForm1(i Bitu, volume Bits) Bits {
+	wave := Bits(SinTable[i&511])
+	wave |= (((Bits(i) ^ 512) & 512) - 1) >> (32 - 12)
 	return MakeVolume(wave, volume)
 }
 
-func WaveForm2(i Bitu, volume Bitu) Bits {
-	wave := Bitu(SinTable[i&511])
+func WaveForm2(i Bitu, volume Bits) Bits {
+	wave := Bits(SinTable[i&511])
 	return MakeVolume(wave, volume)
 }
 
-func WaveForm3(i Bitu, volume Bitu) Bits {
-	wave := Bitu(SinTable[i&255])
-	wave |= (((i ^ 256) & 256) - 1) >> (32 - 12)
+func WaveForm3(i Bitu, volume Bits) Bits {
+	wave := Bits(SinTable[i&255])
+	wave |= (((Bits(i) ^ 256) & 256) - 1) >> (32 - 12)
 	return MakeVolume(wave, volume)
 }
 
-func WaveForm4(i Bitu, volume Bitu) Bits {
+func WaveForm4(i Bitu, volume Bits) Bits {
 	//Twice as fast
 	i <<= 1
 	neg := Bits(0 - ((i >> 9) & 1)) //Create ~0 or 0
-	wave := Bitu(SinTable[i&511])
-	wave |= (((i ^ 512) & 512) - 1) >> (32 - 12)
+	wave := Bits(SinTable[i&511])
+	wave |= (((Bits(i) ^ 512) & 512) - 1) >> (32 - 12)
 	return (MakeVolume(wave, volume) ^ neg) - neg
 }
 
-func WaveForm5(i Bitu, volume Bitu) Bits {
+func WaveForm5(i Bitu, volume Bits) Bits {
 	//Twice as fast
 	i <<= 1
-	wave := Bitu(SinTable[i&511])
-	wave |= (((i ^ 512) & 512) - 1) >> (32 - 12)
+	wave := Bits(SinTable[i&511])
+	wave |= (((Bits(i) ^ 512) & 512) - 1) >> (32 - 12)
 	return MakeVolume(wave, volume)
 }
-func WaveForm6(i Bitu, volume Bitu) Bits {
+func WaveForm6(i Bitu, volume Bits) Bits {
 	neg := Bits(0 - ((i >> 9) & 1)) //Create ~0 or 0
 	return (MakeVolume(0, volume) ^ neg) - neg
 }
-func WaveForm7(i Bitu, volume Bitu) Bits {
+func WaveForm7(i Bitu, volume Bits) Bits {
 	//Negative is reversed here
 	neg := Bits(((i >> 9) & 1) - 1)
-	wave := (i << 3)
+	wave := Bits(i) << 3
 	//When negative the volume also runs backwards
-	wave = Bitu(((Bits(wave) ^ neg) - neg) & 4095)
+	wave = ((Bits(wave) ^ neg) - neg) & 4095
 	return (MakeVolume(wave, volume) ^ neg) - neg
 }
 
-type WaveHandler func(Bitu, Bitu) Bits
+type WaveHandler func(Bitu, Bits) Bits
 
 var WaveHandlerTable = [8]WaveHandler{
 	WaveForm0, WaveForm1, WaveForm2, WaveForm3,
@@ -292,11 +292,12 @@ func init() {
 		//Exponential volume table, same as the real adlib
 		for i := 0; i < 256; i++ {
 			//Save them in reverse
-			exp := (255.0 - float64(i)) / 256.0
-			p := math.Pow(2.0, exp)
-			expVal := (0.5 + (p-1)*1024) + 1024 //or remove the -1 oh well :)
+			exp := float64(255-i) / 256.0
+			p := math.Pow(2.0, exp) - 1
+			expVal := uint16(math.Round(p * 1024))
+			expVal += 1024 //or remove the -1 oh well :)
 			//Preshift to the left once so the final volume can shift to the right
-			ExpTable[i] = uint16(expVal) * 2
+			ExpTable[i] = expVal * 2
 			//ExpTable[i] *= 2
 		}
 	}
@@ -304,8 +305,10 @@ func init() {
 	if DBOPL_WAVE == WAVE_HANDLER {
 		//Add 0.5 for the trunc rounding of the integer cast
 		//Do a PI sinetable instead of the original 0.5 PI
+		piPiece := math.Pi / 512.0
 		for i := 0; i < 512; i++ {
-			SinTable[i] = uint16(int16((0.5 - math.Log10(math.Sin((float64(i)+0.5)*(math.Pi/512.0)))/math.Log10(2.0)*256)))
+			a := 0.5 - math.Log2(math.Sin((float64(i)+0.5)*piPiece))*256
+			SinTable[i] = uint16(a)
 		}
 	}
 

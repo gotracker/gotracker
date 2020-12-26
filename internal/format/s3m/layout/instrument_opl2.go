@@ -150,11 +150,16 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 }
 
 func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
-	levelScale := (o.KeyScaleLevel >> 1) & 1
-	levelScale |= (o.KeyScaleLevel << 1) & 2
-	//levelScale := o.KeyScaleLevel
+	//levelScale := (o.KeyScaleLevel >> 1) & 1
+	//levelScale |= (o.KeyScaleLevel << 1) & 2
+	levelScale := o.KeyScaleLevel
 
 	totalVol := (float64(o.Volume) * float64(vol))
+	if totalVol > 63 {
+		totalVol = 63
+	} else if totalVol < 0 {
+		totalVol = 0
+	}
 	adlVol := s3mfile.Volume(63) - s3mfile.Volume(uint8(totalVol))
 
 	reg40 := uint8(0x00)
@@ -180,7 +185,7 @@ func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 func (inst *InstrumentOPL2) getRegC0() uint8 {
 	regC0 := uint8(0x00)
 	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
-	if !inst.AdditiveSynthesis {
+	if inst.AdditiveSynthesis {
 		regC0 |= 0x01
 	}
 	return regC0
@@ -205,19 +210,16 @@ func freqToFnumBlock(freq float64) (uint16, uint8) {
 
 	if f == 0 {
 		return 0, 0
-	}
-
-	for f < 261 && octave > 0 {
-		octave--
-		f >>= 1
-	}
-	if f == 0 {
-		f = int(freq)
-		octave = 5
-	}
-	for f > 493 && octave < 8 {
-		octave++
-		f <<= 1
+	} else if f < 261 {
+		for f < 261 && octave > 0 {
+			octave--
+			f >>= 1
+		}
+	} else if f > 493 {
+		for f > 493 && octave < 8 {
+			octave++
+			f <<= 1
+		}
 	}
 
 	if octave > 7 {
@@ -227,13 +229,15 @@ func freqToFnumBlock(freq float64) (uint16, uint8) {
 	}
 
 	fnumVal := freq * float64(int(1)<<(20-octave)) / opl2.OPLRATE
+
 	fnum := uint16(fnumVal)
 	block := uint8(octave)
 	return fnum, block
 }
 
 func (inst *InstrumentOPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
-	freq := float64(util.FrequencyFromPeriod(period*4)) * float64(c2spd) / float64(s3mfile.DefaultC2Spd)
+	c2scale := float64(c2spd) / float64(s3mfile.DefaultC2Spd)
+	freq := float64(util.FrequencyFromPeriod(period*8)) * c2scale
 
 	return freqToFnumBlock(freq)
 }

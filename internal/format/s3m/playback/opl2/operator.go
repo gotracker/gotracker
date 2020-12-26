@@ -74,7 +74,7 @@ type Operator struct {
 	vibrato      uint32 //Scaled up vibrato strength
 	sustainLevel int32  //When stopping at sustain level stop here
 	totalLevel   int32  //totalLevel is added to every generated volume
-	currentLevel uint32 //totalLevel + tremolo
+	currentLevel Bits   //totalLevel + tremolo
 	volume       int32  //The currently active volume
 
 	attackAdd  uint32 //Timers for the different states of the envelope
@@ -160,7 +160,8 @@ func (o *Operator) UpdateAttenuation() {
 	kslShift := KslShiftTable[o.reg40>>6]
 	//Make sure the attenuation goes to the right bits
 	o.totalLevel = tl << (ENV_BITS - 7) //Total level goes 2 bits below max
-	o.totalLevel += int32(kslBase<<ENV_EXTRA) >> kslShift
+	baseShift := int32(kslBase) << ENV_EXTRA
+	o.totalLevel += baseShift >> kslShift
 }
 
 func (o *Operator) UpdateFrequency() {
@@ -209,8 +210,8 @@ func (o *Operator) RateForward(add uint32) int32 {
 	return ret
 }
 
-func (o *Operator) ForwardVolume() Bitu {
-	return Bitu(Bits(o.currentLevel) + o.volHandler())
+func (o *Operator) ForwardVolume() Bits {
+	return o.currentLevel + o.volHandler()
 }
 
 func (o *Operator) ForwardWave() Bitu {
@@ -315,7 +316,7 @@ func (o *Operator) volHandlerOFF() Bits {
 }
 
 func (o *Operator) volHandlerRELEASE() Bits {
-	vol := int32(o.volume)
+	vol := o.volume
 	vol += o.RateForward(o.releaseAdd)
 	if vol >= ENV_MAX {
 		o.volume = ENV_MAX
@@ -327,7 +328,7 @@ func (o *Operator) volHandlerRELEASE() Bits {
 }
 
 func (o *Operator) volHandlerSUSTAIN() Bits {
-	vol := int32(o.volume)
+	vol := o.volume
 	if (o.reg20 & MASK_SUSTAIN) != 0 {
 		return Bits(vol)
 	}
@@ -337,7 +338,7 @@ func (o *Operator) volHandlerSUSTAIN() Bits {
 }
 
 func (o *Operator) volHandlerDECAY() Bits {
-	vol := int32(o.volume)
+	vol := o.volume
 	vol += o.RateForward(o.decayAdd)
 	if vol >= o.sustainLevel {
 		//Check if we didn't overshoot max attenuation, then just go off
@@ -350,16 +351,20 @@ func (o *Operator) volHandlerDECAY() Bits {
 		o.rateIndex = 0
 		o.SetState(SUSTAIN)
 	}
-	return o.volHandlerSUSTAIN()
+	o.volume = vol
+	return Bits(vol)
 }
 
 func (o *Operator) volHandlerATTACK() Bits {
-	vol := int32(o.volume)
+	vol := o.volume
 	change := o.RateForward(o.attackAdd)
 	if change == 0 {
 		return Bits(vol)
 	}
-	vol += ((^vol) * change) >> 3
+	evol := ^vol
+	evol *= change
+	evol >>= 3
+	vol += evol
 	if vol < ENV_MIN {
 		o.volume = ENV_MIN
 		o.rateIndex = 0
@@ -381,7 +386,7 @@ func (o *Operator) Silent() bool {
 }
 
 func (o *Operator) Prepare(chip *Chip) {
-	o.currentLevel = uint32(o.totalLevel) + uint32(chip.tremoloValue&o.tremoloMask)
+	o.currentLevel = Bits(o.totalLevel) + Bits(chip.tremoloValue&o.tremoloMask)
 	o.waveCurrent = o.waveAdd
 	if (o.vibStrength >> chip.vibratoShift) != 0 {
 		add := int(o.vibrato) >> chip.vibratoShift
@@ -417,17 +422,18 @@ func (o *Operator) KeyOff(mask uint8) {
 	}
 }
 
-func (o *Operator) GetWave(index Bitu, vol Bitu) Bits {
+func (o *Operator) GetWave(index Bitu, vol Bits) Bits {
 	if DBOPL_WAVE == WAVE_HANDLER {
 		return o.waveHandler(index, vol<<(3-ENV_EXTRA))
 	} else if DBOPL_WAVE == WAVE_TABLEMUL {
-		base := uint32(o.waveBase[index&Bitu(o.waveMask)])
-		mul := uint32(MulTable[vol>>ENV_EXTRA])
-		val := Bitu(base*mul) >> MUL_SH
-		return Bits(val)
+		wb := o.waveBase[index&Bitu(o.waveMask)]
+		base := Bits(wb)
+		mul := Bits(MulTable[vol>>ENV_EXTRA])
+		val := (base * mul) >> MUL_SH
+		return val
 	} else if DBOPL_WAVE == WAVE_TABLELOG {
 		wave := int32(o.waveBase[index&Bitu(o.waveMask)])
-		total := uint32(Bitu(wave&0x7fff) + vol<<(3-ENV_EXTRA))
+		total := uint32(Bits(wave&0x7fff) + vol<<(3-ENV_EXTRA))
 		sig := int32(ExpTable[total&0xff])
 		exp := total >> 8
 		neg := int32(0)

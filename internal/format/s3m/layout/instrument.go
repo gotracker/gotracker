@@ -98,7 +98,7 @@ func (inst *Instrument) GetLoopEnd() sampling.Pos {
 func (inst *Instrument) GetLength() sampling.Pos {
 	switch si := inst.Inst.(type) {
 	case *InstrumentOPL2:
-		return sampling.Pos{math.MaxInt64, 0}
+		return sampling.Pos{Pos: math.MaxInt64, Frac: 0}
 	case *InstrumentPCM:
 		return sampling.Pos{Pos: si.Length}
 	default:

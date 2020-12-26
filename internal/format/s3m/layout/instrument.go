@@ -16,7 +16,7 @@ type InstrumentDataIntf interface {
 	GetSample(*InstrumentOnChannel, sampling.Pos) volume.Matrix
 
 	Initialize(*InstrumentOnChannel) error
-	SetKeyOn(*InstrumentOnChannel, note.Semitone, bool)
+	SetKeyOn(*InstrumentOnChannel, note.Period, bool)
 	GetKeyOn(*InstrumentOnChannel) bool
 	Update(*InstrumentOnChannel, time.Duration)
 }
@@ -27,8 +27,11 @@ type InstrumentOnChannel struct {
 
 	Instrument       *Instrument
 	OutputChannelNum int
+	Volume           volume.Volume
 	Data             interface{}
 	Filter           intf.Filter
+	Playback         intf.Playback
+	Period           note.Period
 }
 
 // Instrument is the mildly-decoded S3M instrument/sample header
@@ -145,9 +148,9 @@ func (inst *InstrumentOnChannel) GetInstrument() intf.Instrument {
 }
 
 // SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentOnChannel) SetKeyOn(semitone note.Semitone, on bool) {
+func (inst *InstrumentOnChannel) SetKeyOn(period note.Period, on bool) {
 	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		inst.Instrument.Inst.SetKeyOn(inst, semitone, on)
+		inst.Instrument.Inst.SetKeyOn(inst, period, on)
 	}
 }
 
@@ -169,4 +172,14 @@ func (inst *InstrumentOnChannel) Update(tickDuration time.Duration) {
 // SetFilter sets the active filter on the instrument (which should be the same as what's on the channel)
 func (inst *InstrumentOnChannel) SetFilter(filter intf.Filter) {
 	inst.Filter = filter
+}
+
+// SetVolume sets the active instrument on channel's volume
+func (inst *InstrumentOnChannel) SetVolume(vol volume.Volume) {
+	inst.Volume = vol
+}
+
+// SetPeriod sets the active instrument on channel's period
+func (inst *InstrumentOnChannel) SetPeriod(period note.Period) {
+	inst.Period = period
 }

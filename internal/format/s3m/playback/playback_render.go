@@ -3,11 +3,14 @@ package playback
 import (
 	"time"
 
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/s3m/playback/effect"
+	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state/pattern"
@@ -98,18 +101,81 @@ func (m *Manager) soundRenderRow(premix *device.PremixData, sampler *render.Samp
 
 	centerPanning := panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	for len(premix.Data) < len(m.channels) {
-		premix.Data = append(premix.Data, nil)
-	}
 	premix.SamplesLen = samplesThisRow
 
+	chRrs := make([][]mixing.Data, len(m.channels))
 	for ch := range m.channels {
-		cs := &m.channels[ch]
-		if m.song.IsChannelEnabled(ch) {
-			rr := make([]mixing.Data, ticksThisRow)
-			cs.RenderRow(rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
+		chRrs[ch] = make([]mixing.Data, ticksThisRow)
+	}
 
+	firstOplCh := -1
+	for tick := 0; tick < ticksThisRow; tick++ {
+		var lastTick = (tick+1 == ticksThisRow)
+
+		for ch := range m.channels {
+			cs := &m.channels[ch]
+			if m.song.IsChannelEnabled(ch) {
+				chCat := m.song.ChannelSettings[ch].Category
+				switch chCat {
+				case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
+					if m.opl2 == nil {
+						m.setOPL2Chip(uint32(sampler.SampleRate))
+					}
+					if firstOplCh < 0 {
+						firstOplCh = ch
+					}
+				}
+
+				rr := chRrs[ch]
+				cs.RenderRowTick(tick, lastTick, rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
+
+				switch chCat {
+				case s3mfile.ChannelCategoryPCMLeft, s3mfile.ChannelCategoryPCMRight:
+					for len(premix.Data) <= ch {
+						premix.Data = append(premix.Data, nil)
+					}
+					premix.Data[ch] = rr
+				}
+			}
+		}
+		if m.opl2 != nil {
+			ch := firstOplCh
+			for len(premix.Data) <= ch {
+				premix.Data = append(premix.Data, nil)
+			}
+			rr := chRrs[ch]
+			m.renderOPL2RowTick(tick, rr, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
 			premix.Data[ch] = rr
 		}
 	}
+}
+
+func (m *Manager) renderOPL2RowTick(tick int, mixerData []mixing.Data, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+	// make a stand-alone data buffer for this channel for this tick
+	data := mix.NewMixBuffer(tickSamples)
+
+	opl2data := make([]int32, tickSamples)
+
+	m.opl2.GenerateBlock2(opl2.Bitu(tickSamples), opl2data)
+
+	for i, s := range opl2data {
+		sv := volume.Volume(s) / (65536.0 * 9)
+		for c := range data {
+			data[c][i] = sv
+		}
+	}
+
+	mixerData[tick] = mixing.Data{
+		Data:       data,
+		Pan:        panning.CenterAhead,
+		Volume:     util.DefaultVolume * m.globalVolume,
+		SamplesLen: tickSamples,
+	}
+}
+
+func (m *Manager) setOPL2Chip(rate uint32) {
+	m.opl2 = opl2.NewChip(rate, false)
+	m.opl2.WriteReg(0x01, 0x20) // enable all waveforms
+	m.opl2.WriteReg(0x08, 0x00) // clear CSW and NOTE-SEL
+	m.opl2.WriteReg(0xBD, 0x00) // set default notes
 }

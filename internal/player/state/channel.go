@@ -145,40 +145,37 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 	}
 }
 
-// RenderRow renders a channel's row data
-func (cs *ChannelState) RenderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
-	tickPos := 0
-	for tick := 0; tick < ticksThisRow; tick++ {
-		var lastTick = (tick+1 == ticksThisRow)
-		if cs.Command != nil {
-			cs.Command(ch, cs, tick, lastTick)
-		}
+// RenderRowTick renders a channel's row data for a single tick
+func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+	if cs.Command != nil {
+		cs.Command(ch, cs, tick, lastTick)
+	}
 
-		sample := cs.Instrument
-		if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
-			// make a stand-alone data buffer for this channel for this tick
-			data := mix.NewMixBuffer(tickSamples)
+	sample := cs.Instrument
+	if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
+		sample.SetVolume(cs.ActiveVolume * cs.LastGlobalVolume)
+		// make a stand-alone data buffer for this channel for this tick
+		data := mix.NewMixBuffer(tickSamples)
 
-			period := cs.Period + cs.VibratoDelta
-			samplerAdd := samplerSpeed / float32(period)
-			sample.Update(tickDuration)
-			mixData := mixing.SampleMixIn{
-				Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
-				StaticVol: volume.Volume(1.0),
-				VolMatrix: centerPanning,
-				MixPos:    0,
-				MixLen:    tickSamples,
-			}
-			data.MixInSample(mixData)
-			cs.Pos.Add(samplerAdd * float32(tickSamples))
-			mixerData[tick] = mixing.Data{
-				Data:       data,
-				Pan:        cs.Pan,
-				Volume:     cs.ActiveVolume * cs.LastGlobalVolume,
-				SamplesLen: tickSamples,
-			}
+		period := cs.Period + cs.VibratoDelta
+		sample.SetPeriod(period)
+		samplerAdd := samplerSpeed / float32(period)
+		sample.Update(tickDuration)
+		mixData := mixing.SampleMixIn{
+			Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
+			StaticVol: volume.Volume(1.0),
+			VolMatrix: centerPanning,
+			MixPos:    0,
+			MixLen:    tickSamples,
 		}
-		tickPos += tickSamples
+		data.MixInSample(mixData)
+		cs.Pos.Add(samplerAdd * float32(tickSamples))
+		mixerData[tick] = mixing.Data{
+			Data:       data,
+			Pan:        cs.Pan,
+			Volume:     volume.Volume(1.0),
+			SamplesLen: tickSamples,
+		}
 	}
 }
 
@@ -409,4 +406,9 @@ func (cs *ChannelState) SetFilter(filter intf.Filter) {
 	if cs.Instrument != nil {
 		cs.Instrument.SetFilter(filter)
 	}
+}
+
+// SetOutputChannelNum sets the output channel number for the channel
+func (cs *ChannelState) SetOutputChannelNum(outputChNum int) {
+	cs.OutputChannelNum = outputChNum
 }

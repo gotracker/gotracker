@@ -4,6 +4,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 )
@@ -21,6 +22,7 @@ type Header struct {
 type ChannelSetting struct {
 	Enabled          bool
 	OutputChannelNum int
+	Category         s3mfile.ChannelCategory
 	InitialVolume    volume.Volume
 	InitialPanning   panning.Position
 	Memory           channel.Memory

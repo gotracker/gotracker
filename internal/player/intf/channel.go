@@ -65,4 +65,5 @@ type Channel interface {
 	SetDoRetriggerNote(bool)
 	GetFilter() Filter
 	SetFilter(Filter)
+	SetOutputChannelNum(int)
 }

@@ -96,5 +96,10 @@ func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
 func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD) float32 {
 	period := CalcSemitonePeriod(semitone, c2spd)
+	return FrequencyFromPeriod(period)
+}
+
+// FrequencyFromPeriod returns the frequency from the period
+func FrequencyFromPeriod(period note.Period) float32 {
 	return S3MBaseClock / float32(period)
 }

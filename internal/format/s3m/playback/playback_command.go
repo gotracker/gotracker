@@ -1,7 +1,9 @@
 package playback
 
 import (
+	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/playback/filter"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
 
@@ -17,21 +19,28 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	}
 
 	if cs.TargetPeriod == 0 && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
-		cs.Instrument.SetKeyOn(cs.PrevNoteSemitone, false)
+		if cs.Cmd.GetNote() == note.StopNote {
+			cs.Instrument.SetVolume(0)
+		}
+		cs.Instrument.SetKeyOn(cs.Period, false)
 	} else if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
 			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
 				cs.Instrument = cs.PrevInstrument
-				cs.Instrument.SetKeyOn(cs.PrevNoteSemitone, false)
+				cs.Instrument.SetKeyOn(cs.Period, false)
 			} else {
-				cs.Instrument = cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
+				inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
+				if opl, ok := inst.(*layout.InstrumentOnChannel); ok {
+					opl.Playback = m
+				}
+				cs.Instrument = inst
 			}
 		}
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
 		if cs.Period != 0 && cs.Instrument != nil {
-			cs.Instrument.SetKeyOn(cs.NoteSemitone, true)
+			cs.Instrument.SetKeyOn(cs.Period, true)
 		}
 	}
 }

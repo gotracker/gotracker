@@ -27,6 +27,11 @@ type InstrumentPCM struct {
 
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentPCM) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
+	dry := inst.getSampleDry(ioc, pos)
+	return ioc.Volume.Apply(dry...)
+}
+
+func (inst *InstrumentPCM) getSampleDry(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
 	if len(v0) == 0 && inst.Looped {
 		v01 := inst.getConvertedSample(pos.Pos)
@@ -106,7 +111,7 @@ func (inst *InstrumentPCM) Initialize(ioc *InstrumentOnChannel) error {
 }
 
 // SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, semitone note.Semitone, on bool) {
+func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
 }
 
 // GetKeyOn gets the key on flag for the instrument

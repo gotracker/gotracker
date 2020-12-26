@@ -1,7 +1,5 @@
 package opl2
 
-import "math"
-
 // This file is a Pure Go conversion of dbopl.h/.cpp
 
 /*
@@ -147,7 +145,7 @@ func (c *Chip) GetOperatorByIndex(i uint32) *Operator {
 
 func (c *Chip) ForwardNoise() uint32 {
 	c.noiseCounter += c.noiseAdd
-	count := Bitu(c.noiseCounter >> LFO_SH)
+	count := Bitu(c.noiseCounter) >> LFO_SH
 	c.noiseCounter &= WAVE_MASK
 	for ; count > 0; count-- {
 		//Noise calculation from mame
@@ -159,19 +157,23 @@ func (c *Chip) ForwardNoise() uint32 {
 
 func (c *Chip) ForwardLFO(samples uint32) uint32 {
 	//Current vibrato value, runs 4x slower than tremolo
-	c.vibratoSign = (VibratoTable[c.vibratoIndex>>2]) >> 7
-	c.vibratoShift = uint8(VibratoTable[c.vibratoIndex>>2]&7) + c.vibratoStrength
+	vibVal := VibratoTable[c.vibratoIndex>>2]
+	c.vibratoSign = 0
+	if vibVal < 0 {
+		c.vibratoSign = -1
+	}
+	c.vibratoShift = uint8(vibVal)&7 + c.vibratoStrength
 	c.tremoloValue = TremoloTable[c.tremoloIndex] >> c.tremoloStrength
 
 	//Check hom many samples there can be done before the value changes
 	todo := uint32(LFO_MAX) - c.lfoCounter
-	count := uint32((todo + c.lfoAdd - 1) / c.lfoAdd)
+	count := (todo + c.lfoAdd - 1) / c.lfoAdd
 	if count > samples {
 		count = samples
 		c.lfoCounter += count * c.lfoAdd
 	} else {
 		c.lfoCounter += count * c.lfoAdd
-		c.lfoCounter &= uint32(LFO_MAX - 1)
+		c.lfoCounter &= uint32(LFO_MAX) - 1
 		//Maximum of 7 vibrato value * 4
 		c.vibratoIndex = (c.vibratoIndex + 1) & 31
 		//Clip tremolo to the the table size
@@ -185,7 +187,7 @@ func (c *Chip) ForwardLFO(samples uint32) uint32 {
 }
 
 func (c *Chip) WriteBD(val uint8) {
-	change := uint8(c.regBD ^ val)
+	change := c.regBD ^ val
 	if change == 0 {
 		return
 	}
@@ -352,61 +354,10 @@ func (c *Chip) WriteAddr(port uint32, val uint8) uint32 {
 	case 2:
 		if c.opl3Active != 0 || val == 0x05 {
 			return 0x100 | uint32(val)
-		} else {
-			return uint32(val)
 		}
+		return uint32(val)
 	}
 	return 0
-}
-
-type ChipState struct {
-	VibratoSign  int8
-	VibratoShift uint8
-	TremoloValue uint8
-	LfoCounter   uint32
-	VibratoIndex uint8
-}
-
-func (c *Chip) GenerateBlock2ForChannel(index uint32, cs *ChipState, total Bitu, output []int32) {
-	oldVibratoSign := c.vibratoSign
-	oldVibratoShift := c.vibratoShift
-	oldTremeloValue := c.tremoloValue
-	oldLfoCounter := c.lfoCounter
-	oldVibratoIndex := c.vibratoIndex
-
-	c.vibratoSign = cs.VibratoSign
-	c.vibratoShift = cs.VibratoShift
-	c.tremoloValue = cs.TremoloValue
-	c.lfoCounter = cs.LfoCounter
-	c.vibratoIndex = cs.VibratoIndex
-
-	ch := &c.ch[index]
-	outputIdx := Bitu(0)
-	for total > 0 {
-		samples := c.ForwardLFO(uint32(total))
-		ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
-		total -= Bitu(samples)
-		outputIdx += Bitu(samples)
-	}
-
-	cs.VibratoSign = c.vibratoSign
-	cs.VibratoShift = c.vibratoShift
-	cs.TremoloValue = c.tremoloValue
-	cs.LfoCounter = c.lfoCounter
-	cs.VibratoIndex = c.vibratoIndex
-
-	c.vibratoSign = oldVibratoSign
-	c.vibratoShift = oldVibratoShift
-	c.tremoloValue = oldTremeloValue
-	c.lfoCounter = oldLfoCounter
-	c.vibratoIndex = oldVibratoIndex
-}
-
-func (c *Chip) AdvanceBlock2(total Bitu) {
-	for total > 0 {
-		samples := c.ForwardLFO(uint32(total))
-		total -= Bitu(samples)
-	}
 }
 
 func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
@@ -438,7 +389,7 @@ func (c *Chip) GenerateBlock3(total Bitu, output []int32) {
 			i = c.GetChannelIndex(ch)
 		}
 		total -= Bitu(samples)
-		outputIdx += Bitu(samples * 2)
+		outputIdx += Bitu(samples) * 2
 	}
 }
 
@@ -482,18 +433,18 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 	for i := uint8(0); i < 62; i++ {
 		index, shift := EnvelopeSelect(i)
 		//Original amount of samples the attack would take
-		original := int32(float64(AttackSamplesTable[index]<<shift) / scale)
+		original := int32(float64(Bitu(AttackSamplesTable[index])<<shift) / scale)
 
 		guessAdd := int32(scale * float64(Bitu(EnvelopeIncreaseTable[index])<<(RATE_SH-shift-3)))
 		bestAdd := guessAdd
-		bestDiff := uint32(1 << 30)
+		bestDiff := uint32(1) << 30
 		for passes := uint32(0); passes < 16; passes++ {
 			volume := int32(ENV_MAX)
 			samples := int32(0)
 			count := uint32(0)
 			for volume > 0 && samples < original*2 {
 				count += uint32(guessAdd)
-				change := int32(count >> RATE_SH)
+				change := int32(count) >> RATE_SH
 				count &= RATE_MASK
 				if change != 0 { // less than 1 %
 					volume += (^volume * change) >> 3
@@ -501,8 +452,11 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 				samples++
 
 			}
-			diff := int32(original - samples)
-			lDiff := uint32(math.Abs(float64(diff)))
+			diff := original - samples
+			lDiff := uint32(diff)
+			if diff < 0 {
+				lDiff = uint32(-diff)
+			}
 			//Init last on first pass
 			if lDiff < bestDiff {
 				bestDiff := lDiff
@@ -514,11 +468,11 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 			//Below our target
 			if diff < 0 {
 				//Better than the last time
-				mul := int32(((original - diff) << 12) / original)
-				guessAdd = ((guessAdd * mul) >> 12)
+				mul := ((original - diff) << 12) / original
+				guessAdd = (guessAdd * mul) >> 12
 				guessAdd++
 			} else if diff > 0 {
-				mul := int32(((original - diff) << 12) / original)
+				mul := ((original - diff) << 12) / original
 				guessAdd = (guessAdd * mul) >> 12
 				guessAdd--
 			}
@@ -527,7 +481,7 @@ func (c *Chip) Setup(rate uint32, chip_is_opl3 int) {
 	}
 	for i := uint8(62); i < 76; i++ {
 		//This should provide instant volume maximizing
-		c.attackRates[i] = 8 << RATE_SH
+		c.attackRates[i] = uint32(8) << RATE_SH
 	}
 	//Setup the channels with the correct four op flags
 	//Channels are accessed through a table so they appear linear here

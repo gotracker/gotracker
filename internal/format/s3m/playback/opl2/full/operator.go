@@ -165,7 +165,7 @@ func (o *Operator) UpdateAttenuation() {
 func (o *Operator) UpdateFrequency() {
 	freq := uint32(o.chanData & ((1 << 10) - 1))
 	block := uint32((o.chanData >> 10) & 0xff)
-	if WAVE_PRECISION {
+	if WAVE_PRECISION != 0 {
 		block = 7 - block
 		o.waveAdd = (freq * o.freqMul) >> block
 	} else {
@@ -174,7 +174,7 @@ func (o *Operator) UpdateFrequency() {
 	if (o.reg20 & MASK_VIBRATO) != 0 {
 		o.vibStrength = (uint8)(freq >> 7)
 
-		if WAVE_PRECISION {
+		if WAVE_PRECISION != 0 {
 			o.vibrato = (uint32(o.vibStrength) * o.freqMul) >> block
 		} else {
 			o.vibrato = (uint32(o.vibStrength) << block) * o.freqMul
@@ -263,7 +263,7 @@ func (o *Operator) ForwardVolume() Bitu {
 
 func (o *Operator) ForwardWave() Bitu {
 	o.waveIndex += o.waveCurrent
-	return Bitu(o.waveIndex) >> WAVE_SH()
+	return Bitu(o.waveIndex) >> WAVE_SH
 }
 
 func (o *Operator) Write20(chip *Chip, val uint8) {
@@ -337,7 +337,7 @@ func (o *Operator) WriteE0(chip *Chip, val uint8) {
 		o.waveHandler = WaveHandlerTable[waveForm]
 	} else {
 		o.waveBase = WaveTable[WaveBaseTable[waveForm]:]
-		o.waveStart = uint32(WaveStartTable[waveForm]) << WAVE_SH()
+		o.waveStart = uint32(WaveStartTable[waveForm]) << WAVE_SH
 		o.waveMask = uint32(WaveMaskTable[waveForm])
 	}
 }

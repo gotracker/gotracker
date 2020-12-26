@@ -365,11 +365,14 @@ func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
 	for total > 0 {
 		samples := c.ForwardLFO(uint32(total))
 		count := 0
-		ch := &c.ch[0]
 		for i := 0; i < 9; {
+			ch := &c.ch[i]
 			count++
-			ch = ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
-			i = c.GetChannelIndex(ch)
+			ofs, valid := ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
+			if !valid {
+				panic("invalid offset returned from BlockTemplate")
+			}
+			i += ofs
 		}
 		total -= Bitu(samples)
 		outputIdx += Bitu(samples)
@@ -377,16 +380,18 @@ func (c *Chip) GenerateBlock2(total Bitu, output []int32) {
 }
 
 func (c *Chip) GenerateBlock3(total Bitu, output []int32) {
+	outputIdx := Bitu(0)
 	for total > 0 {
 		samples := c.ForwardLFO(uint32(total))
-		output := make([]int32, samples*2)
-		outputIdx := Bitu(0)
 		count := 0
-		ch := &c.ch[0]
 		for i := 0; i < 18; {
+			ch := &c.ch[i]
 			count++
-			ch = ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
-			i = c.GetChannelIndex(ch)
+			ofs, valid := ch.BlockTemplate(c, samples, output[outputIdx:], ch.synthHandler)
+			if !valid {
+				panic("invalid offset returned from BlockTemplate")
+			}
+			i += ofs
 		}
 		total -= Bitu(samples)
 		outputIdx += Bitu(samples) * 2

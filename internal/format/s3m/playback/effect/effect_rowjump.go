@@ -10,24 +10,24 @@ import (
 type RowJump uint8 // 'C'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e RowJump) PreStart(cs intf.Channel, ss intf.Song) {
+func (e RowJump) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RowJump) Start(cs intf.Channel, ss intf.Song) {
+func (e RowJump) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e RowJump) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e RowJump) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RowJump) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	r := uint8(e)
 	rowIdx := intf.RowIdx((r >> 4) * 10)
 	rowIdx |= intf.RowIdx(r & 0xf)
-	ss.SetNextRow(rowIdx)
+	p.SetNextRow(rowIdx)
 }
 
 func (e RowJump) String() string {

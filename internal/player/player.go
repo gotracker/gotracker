@@ -8,8 +8,8 @@ import (
 
 	device "github.com/gotracker/gosound"
 
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
-	"gotracker/internal/player/state"
 	"gotracker/internal/player/state/pattern"
 )
 
@@ -37,7 +37,7 @@ type Player struct {
 	stopCh         chan struct{}
 	stopRespCh     chan error
 	lastUpdateTime time.Time
-	ss             *state.Song
+	playback       intf.Playback
 	sampler        *render.Sampler
 }
 
@@ -87,12 +87,12 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, sampler *r
 }
 
 // Play starts a player playing
-func (p *Player) Play(ss *state.Song) error {
+func (p *Player) Play(playback intf.Playback) error {
 	if err := p.ctx.Err(); err != nil {
 		return err
 	}
 
-	p.ss = ss
+	p.playback = playback
 
 	p.playCh <- struct{}{}
 	return <-p.playRespCh
@@ -217,12 +217,5 @@ func (p *Player) runStatePlaying() error {
 }
 
 func (p *Player) update(delta time.Duration) error {
-	premix, err := p.ss.RenderOneRow(p.sampler)
-	if err != nil {
-		return err
-	}
-	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
-		p.output <- premix
-	}
-	return nil
+	return p.playback.Update(delta, p.output, p.sampler)
 }

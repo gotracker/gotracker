@@ -17,8 +17,8 @@ var (
 )
 
 // LoadMOD loads a MOD file and upgrades it into an S3M file internally
-func LoadMOD(s intf.Song, filename string) error {
-	return load.MOD(s, filename)
+func LoadMOD(filename string) (intf.Playback, error) {
+	return load.MOD(filename)
 }
 
 // GetBaseClockRate returns the base clock rate for the S3M player
@@ -27,6 +27,6 @@ func (f format) GetBaseClockRate() float32 {
 }
 
 // Load loads an S3M file into the song state `s`
-func (f format) Load(s intf.Song, filename string) error {
-	return load.S3M(s, filename)
+func (f format) Load(filename string) (intf.Playback, error) {
+	return load.S3M(filename)
 }

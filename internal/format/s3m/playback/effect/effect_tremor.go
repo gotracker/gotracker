@@ -11,16 +11,16 @@ import (
 type Tremor uint8 // 'I'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e Tremor) PreStart(cs intf.Channel, ss intf.Song) {
+func (e Tremor) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Tremor) Start(cs intf.Channel, ss intf.Song) {
+func (e Tremor) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e Tremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e Tremor) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.LastNonZero(uint8(e))
 	x := int((xy >> 4) + 1)
@@ -29,7 +29,7 @@ func (e Tremor) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e Tremor) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e Tremor) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e Tremor) String() string {

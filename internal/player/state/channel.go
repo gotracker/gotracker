@@ -60,10 +60,8 @@ type ChannelState struct {
 	Filter           intf.Filter
 }
 
-func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss intf.Song, sd intf.SongData, effectFactory intf.EffectFactoryFunc, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) (bool, bool) {
-	myCurrentOrder := ss.GetCurrentOrder()
-	myCurrentRow := ss.GetCurrentRow()
-
+// ProcessRow processes a channel's row data
+func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globalVol volume.Volume, sd intf.SongData, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) {
 	cs.Command = processCommand
 
 	cs.PrevInstrument = cs.Instrument
@@ -98,7 +96,7 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 			cs.TargetPos = sampling.Pos{}
 			if cs.TargetInst != nil {
 				vol := cs.TargetInst.GetVolume()
-				cs.SetStoredVolume(vol, ss)
+				cs.SetStoredVolume(vol, globalVol)
 			}
 		}
 
@@ -134,40 +132,21 @@ func (cs *ChannelState) processRow(row intf.Row, channel intf.ChannelData, ss in
 			sample := cs.TargetInst
 			if sample != nil {
 				vol := sample.GetVolume()
-				cs.SetStoredVolume(vol, ss)
+				cs.SetStoredVolume(vol, globalVol)
 			}
 		} else {
-			cs.SetStoredVolume(v, ss)
+			cs.SetStoredVolume(v, globalVol)
 		}
-	}
-
-	if effectFactory != nil {
-		cs.ActiveEffect = effectFactory(cs.GetMemory(), cs.Cmd)
 	}
 
 	if wantNoteCalc {
 		cs.TargetPeriod = calcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
 		cs.PortaTargetPeriod = cs.TargetPeriod
 	}
-
-	if cs.ActiveEffect != nil {
-		cs.ActiveEffect.PreStart(cs, ss)
-	}
-	orderRestart := false
-	rowRestart := false
-	order := ss.GetCurrentOrder()
-	if order != myCurrentOrder {
-		orderRestart = true
-	}
-	r := ss.GetCurrentRow()
-	if r != myCurrentRow {
-		rowRestart = true
-	}
-
-	return orderRestart, rowRestart
 }
 
-func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+// RenderRow renders a channel's row data
+func (cs *ChannelState) RenderRow(mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
 	tickPos := 0
 	for tick := 0; tick < ticksThisRow; tick++ {
 		var lastTick = (tick+1 == ticksThisRow)
@@ -206,13 +185,13 @@ func (cs *ChannelState) renderRow(mixerData []mixing.Data, ch int, ticksThisRow 
 // SetStoredVolume sets the stored volume value for the channel
 // this also modifies the active volume
 // and stores the active global volume value (which doesn't always get set on channels immediately)
-func (cs *ChannelState) SetStoredVolume(vol volume.Volume, ss intf.Song) {
+func (cs *ChannelState) SetStoredVolume(vol volume.Volume, globalVol volume.Volume) {
 	if vol != volume.VolumeUseInstVol {
 		cs.StoredVolume = vol
 	}
 	cs.DisplayVolume = vol
 	cs.SetActiveVolume(vol)
-	cs.LastGlobalVolume = ss.GetGlobalVolume()
+	cs.LastGlobalVolume = globalVol
 }
 
 // FreezePlayback suspends mixer progression on the channel

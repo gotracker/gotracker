@@ -1,45 +1,11 @@
 package intf
 
 import (
-	"github.com/gotracker/gomixing/volume"
-
 	"gotracker/internal/player/note"
 )
 
-// EffectFactoryFunc is a function type that gets an effect for specified channel data
-type EffectFactoryFunc func(mi Memory, data ChannelData) Effect
-
 // CalcSemitonePeriodFunc is a function type that returns the period for a specified note & c2spd
 type CalcSemitonePeriodFunc func(semi note.Semitone, c2spd note.C2SPD) note.Period
-
-// Song is an interface to the song state
-type Song interface {
-	SetNextOrder(OrderIdx)
-	SetNextRow(RowIdx)
-	SetTempo(int)
-	DecreaseTempo(int)
-	IncreaseTempo(int)
-	GetGlobalVolume() volume.Volume
-	SetGlobalVolume(volume.Volume)
-	SetTicks(int)
-	AddRowTicks(int)
-	SetPatternDelay(int)
-	SetPatternLoopStart()
-	SetPatternLoopEnd()
-	SetPatternLoopCount(int)
-	CanPatternLoop() bool
-	SetEffectFactory(EffectFactoryFunc)
-	SetCalcSemitonePeriod(CalcSemitonePeriodFunc)
-	SetPatterns(Patterns)
-	SetOrderList([]PatternIdx)
-	SetSongData(SongData)
-	GetSongData() SongData
-	SetNumChannels(int)
-	GetNumChannels() int
-	GetChannel(int) Channel
-	GetCurrentOrder() OrderIdx
-	GetCurrentRow() RowIdx
-}
 
 // SongData is an interface to the song data
 type SongData interface {
@@ -66,4 +32,7 @@ type SongPositionState interface {
 	SetTicks(int)
 	AccTempoDelta(int)
 	SetFinePatternDelay(int)
+
+	GetCurrentOrder() OrderIdx
+	GetCurrentRow() RowIdx
 }

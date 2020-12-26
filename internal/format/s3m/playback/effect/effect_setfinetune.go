@@ -13,7 +13,7 @@ import (
 type SetFinetune uint8 // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
+func (e SetFinetune) PreStart(cs intf.Channel, p intf.Playback) {
 	x := uint8(e) & 0xf
 
 	var multiplier float32
@@ -57,16 +57,16 @@ func (e SetFinetune) PreStart(cs intf.Channel, ss intf.Song) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetFinetune) Start(cs intf.Channel, ss intf.Song) {
+func (e SetFinetune) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e SetFinetune) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e SetFinetune) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e SetFinetune) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e SetFinetune) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e SetFinetune) String() string {

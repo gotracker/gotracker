@@ -2,7 +2,6 @@ package layout
 
 import (
 	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/player/intf"
 
 	"github.com/gotracker/gomixing/panning"
@@ -73,18 +72,4 @@ func (s *Song) GetInstrument(instNum int) intf.Instrument {
 // GetName returns the name of the song
 func (s *Song) GetName() string {
 	return s.Head.Name
-}
-
-// SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments
-func (s *Song) SetFilterEnable(on bool, ss intf.Song) {
-	for i := range s.ChannelSettings {
-		c := ss.GetChannel(i)
-		if on {
-			if c.GetFilter() == nil {
-				c.SetFilter(filter.NewAmigaLPF())
-			}
-		} else {
-			c.SetFilter(nil)
-		}
-	}
 }

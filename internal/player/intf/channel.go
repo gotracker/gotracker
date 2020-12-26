@@ -32,7 +32,7 @@ type Channel interface {
 	GetMemory() Memory
 	GetActiveVolume() volume.Volume
 	SetActiveVolume(volume.Volume)
-	SetStoredVolume(volume.Volume, Song)
+	SetStoredVolume(volume.Volume, volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() ChannelData

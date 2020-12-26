@@ -12,16 +12,16 @@ import (
 type RetrigVolumeSlide uint8 // 'Q'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e RetrigVolumeSlide) PreStart(cs intf.Channel, ss intf.Song) {
+func (e RetrigVolumeSlide) PreStart(cs intf.Channel, p intf.Playback) {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetrigVolumeSlide) Start(cs intf.Channel, ss intf.Song) {
+func (e RetrigVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e RetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) {
+func (e RetrigVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	x := uint8(e) >> 4
 	y := uint8(e) & 0x0F
 	if y == 0 {
@@ -68,7 +68,7 @@ func (e RetrigVolumeSlide) Tick(cs intf.Channel, ss intf.Song, currentTick int) 
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RetrigVolumeSlide) Stop(cs intf.Channel, ss intf.Song, lastTick int) {
+func (e RetrigVolumeSlide) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e RetrigVolumeSlide) String() string {

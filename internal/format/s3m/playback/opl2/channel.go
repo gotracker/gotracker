@@ -36,10 +36,10 @@ package opl2
 	//DUNNO Keyon in 4op, switch to 2op without keyoff.
 */
 
-type SynthMode uint8
+type synthMode uint8
 
 const (
-	sm2AM = SynthMode(iota)
+	sm2AM = synthMode(iota)
 	sm2FM
 	sm3AM
 	sm3FM
@@ -53,9 +53,10 @@ const (
 	sm3Percussion
 )
 
+// Channel is a channel (a combination of Operators)
 type Channel struct {
 	op           [2]Operator
-	synthHandler SynthMode
+	synthHandler synthMode
 	chanData     uint32   //Frequency/octave and derived values
 	old          [2]int32 //Old data for feedback
 
@@ -68,12 +69,14 @@ type Channel struct {
 	maskRight int8
 }
 
+// NewChannel returns a new Channel
 func NewChannel() *Channel {
 	c := Channel{}
 	c.SetupChannel()
 	return &c
 }
 
+// SetupChannel resets a channel to factory defaults
 func (c *Channel) SetupChannel() {
 	c.feedback = 31
 	c.maskLeft = -1
@@ -84,17 +87,19 @@ func (c *Channel) SetupChannel() {
 	}
 }
 
-func (c *Channel) Op(chip *Chip, index Bitu) *Operator {
+// Op gets the operator at index `index`
+func (c *Channel) Op(chip *Chip, index uint) *Operator {
 	ch := chip.GetChannelByOffset(c, int(index>>1))
 	return &ch.op[index&1]
 }
 
 const (
-	SHIFT_KSLBASE = 16
+	cShiftKSLBase = 16
 
-	SHIFT_KEYCODE = 24
+	cShiftKeyCode = 24
 )
 
+// SetChanData sets the channel data for the channel
 func (c *Channel) SetChanData(chip *Chip, data uint32) {
 	change := c.chanData ^ data
 	c.chanData = data
@@ -103,20 +108,21 @@ func (c *Channel) SetChanData(chip *Chip, data uint32) {
 	//Since a frequency update triggered c, always update frequency
 	c.Op(chip, 0).UpdateFrequency()
 	c.Op(chip, 1).UpdateFrequency()
-	if (change & (0xff << SHIFT_KSLBASE)) != 0 {
+	if (change & (0xff << cShiftKSLBase)) != 0 {
 		c.Op(chip, 0).UpdateAttenuation()
 		c.Op(chip, 1).UpdateAttenuation()
 	}
-	if (change & (0xff << SHIFT_KEYCODE)) != 0 {
+	if (change & (0xff << cShiftKeyCode)) != 0 {
 		c.Op(chip, 0).UpdateRates(chip)
 		c.Op(chip, 1).UpdateRates(chip)
 	}
 }
 
+// UpdateFrequency updates the frequency setting
 func (c *Channel) UpdateFrequency(chip *Chip, fourOp uint8) {
 	//Extrace the frequency bits
 	data := c.chanData & 0xffff
-	kslBase := KslTable[data>>6]
+	kslBase := cKslTable[data>>6]
 	keyCode := (data & 0x1c00) >> 9
 	if (chip.reg08 & 0x40) != 0 {
 		keyCode |= (data & 0x100) >> 8 /* notesel == 1 */
@@ -124,13 +130,14 @@ func (c *Channel) UpdateFrequency(chip *Chip, fourOp uint8) {
 		keyCode |= (data & 0x200) >> 9 /* notesel == 0 */
 	}
 	//Add the keycode and ksl into the highest bits of chanData
-	data |= (keyCode << SHIFT_KEYCODE) | (uint32(kslBase) << SHIFT_KSLBASE)
+	data |= (keyCode << cShiftKeyCode) | (uint32(kslBase) << cShiftKSLBase)
 	c.SetChanData(chip, data)
 	if (fourOp & 0x3f) != 0 {
 		chip.GetChannelByOffset(c, 1).SetChanData(chip, data)
 	}
 }
 
+// WriteA0 writes to register 0xA0 for the channel (the lo-byte of the frequency)
 func (c *Channel) WriteA0(chip *Chip, val uint8) {
 	fourOp := uint8(chip.reg104 & uint8(chip.opl3Active) & c.fourMask)
 	//Don't handle writes to silent fourop channels
@@ -144,13 +151,14 @@ func (c *Channel) WriteA0(chip *Chip, val uint8) {
 	}
 }
 
+// WriteB0 writes to register 0xB0 for the channel (the hi-byte of the frequency)
 func (c *Channel) WriteB0(chip *Chip, val uint8) {
 	fourOp := uint8(chip.reg104 & uint8(chip.opl3Active) & c.fourMask)
 	//Don't handle writes to silent fourop channels
 	if fourOp > 0x80 {
 		return
 	}
-	change := Bitu((c.chanData ^ (uint32(val) << 8)) & 0x1f00)
+	change := uint((c.chanData ^ (uint32(val) << 8)) & 0x1f00)
 	if change != 0 {
 		c.chanData ^= uint32(change)
 		c.UpdateFrequency(chip, fourOp)
@@ -177,10 +185,12 @@ func (c *Channel) WriteB0(chip *Chip, val uint8) {
 	}
 }
 
+// GetKeyOn returns true if the Channel's key-on bit is set
 func (c *Channel) GetKeyOn() bool {
 	return (c.regB0 & 0x20) != 0
 }
 
+// WriteC0 writes to register 0xC0 for the channel (the waveform, modulation feedback values, and mode settings)
 func (c *Channel) WriteC0(chip *Chip, val uint8) {
 	change := val ^ c.regC0
 	if change == 0 {
@@ -253,15 +263,17 @@ func (c *Channel) WriteC0(chip *Chip, val uint8) {
 	}
 }
 
+// ResetC0 zorches the register 0xC0
 func (c *Channel) ResetC0(chip *Chip) {
 	val := uint8(c.regC0)
 	c.regC0 ^= 0xff
 	c.WriteC0(chip, val)
 }
 
+// GeneratePercussion generates percussion data in the channel
 func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) {
 	//BassDrum
-	mod := Bits((c.old[0] + c.old[1]) >> c.feedback)
+	mod := int((c.old[0] + c.old[1]) >> c.feedback)
 	c.old[0] = c.old[1]
 	c.old[1] = int32(c.Op(chip, 0).GetSample(mod))
 
@@ -269,7 +281,7 @@ func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) 
 	if (c.regC0 & 1) != 0 {
 		mod = 0
 	} else {
-		mod = Bits(c.old[0])
+		mod = int(c.old[0])
 	}
 	sample := int32(c.Op(chip, 1).GetSample(mod))
 
@@ -286,24 +298,24 @@ func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) 
 
 	//Hi-Hat
 	hhVol := c.Op(chip, 2).ForwardVolume()
-	if !ENV_SILENT(int(hhVol)) {
+	if !envSilent(int(hhVol)) {
 		hhIndex := uint32((phaseBit << 8) | (0x34 << (phaseBit ^ (noiseBit << 1))))
-		sample += int32(c.Op(chip, 2).GetWave(Bitu(hhIndex), hhVol))
+		sample += int32(c.Op(chip, 2).GetWave(uint(hhIndex), hhVol))
 	}
 	//Snare Drum
 	sdVol := c.Op(chip, 3).ForwardVolume()
-	if !ENV_SILENT(int(sdVol)) {
+	if !envSilent(int(sdVol)) {
 		sdIndex := uint32((0x100 + (c2 & 0x100)) ^ (noiseBit << 8))
-		sample += int32(c.Op(chip, 3).GetWave(Bitu(sdIndex), sdVol))
+		sample += int32(c.Op(chip, 3).GetWave(uint(sdIndex), sdVol))
 	}
 	//Tom-tom
 	sample += int32(c.Op(chip, 4).GetSample(0))
 
 	//Top-Cymbal
 	tcVol := c.Op(chip, 5).ForwardVolume()
-	if !ENV_SILENT(int(tcVol)) {
+	if !envSilent(int(tcVol)) {
 		tcIndex := uint32((1 + phaseBit) << 8)
-		sample += int32(c.Op(chip, 5).GetWave(Bitu(tcIndex), tcVol))
+		sample += int32(c.Op(chip, 5).GetWave(uint(tcIndex), tcVol))
 	}
 	sample <<= 1
 	if opl3Mode {
@@ -314,7 +326,8 @@ func (c *Channel) GeneratePercussion(chip *Chip, output []int32, opl3Mode bool) 
 	}
 }
 
-func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode SynthMode) (int, bool) {
+// BlockTemplate simulates waveform and envelope data from the channel
+func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode synthMode) (int, bool) {
 	switch mode {
 	case sm2AM, sm3AM:
 		if c.Op(chip, 0).Silent() && c.Op(chip, 1).Silent() {
@@ -364,7 +377,7 @@ func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode
 		c.Op(chip, 4).Prepare(chip)
 		c.Op(chip, 5).Prepare(chip)
 	}
-	for i := Bitu(0); i < Bitu(samples); i++ {
+	for i := uint(0); i < uint(samples); i++ {
 		//Early out for percussion handlers
 		if mode == sm2Percussion {
 			c.GeneratePercussion(chip, output[i:], false)
@@ -375,31 +388,31 @@ func (c *Channel) BlockTemplate(chip *Chip, samples uint32, output []int32, mode
 		}
 
 		//Do unsigned shift so we can shift out all bits but still stay in 10 bit range otherwise
-		mod := Bits(uint32(c.old[0]+c.old[1]) >> c.feedback)
+		mod := int(uint32(c.old[0]+c.old[1]) >> c.feedback)
 		c.old[0] = c.old[1]
 		c.old[1] = int32(c.Op(chip, 0).GetSample(mod))
 		var sample int32
-		out0 := Bits(c.old[0])
+		out0 := int(c.old[0])
 		if mode == sm2AM || mode == sm3AM {
 			sample = int32(out0 + c.Op(chip, 1).GetSample(0))
 		} else if mode == sm2FM || mode == sm3FM {
 			sample = int32(c.Op(chip, 1).GetSample(out0))
 		} else if mode == sm3FMFM {
-			next := Bits(c.Op(chip, 1).GetSample(out0))
+			next := int(c.Op(chip, 1).GetSample(out0))
 			next = c.Op(chip, 2).GetSample(next)
 			sample = int32(c.Op(chip, 3).GetSample(next))
 		} else if mode == sm3AMFM {
 			sample = int32(out0)
-			next := Bits(c.Op(chip, 1).GetSample(0))
+			next := int(c.Op(chip, 1).GetSample(0))
 			next = c.Op(chip, 2).GetSample(next)
 			sample += int32(c.Op(chip, 3).GetSample(next))
 		} else if mode == sm3FMAM {
 			sample = int32(c.Op(chip, 1).GetSample(out0))
-			next := Bits(c.Op(chip, 2).GetSample(0))
+			next := int(c.Op(chip, 2).GetSample(0))
 			sample += int32(c.Op(chip, 3).GetSample(next))
 		} else if mode == sm3AMAM {
 			sample = int32(out0)
-			next := Bits(c.Op(chip, 1).GetSample(0))
+			next := int(c.Op(chip, 1).GetSample(0))
 			sample += int32(c.Op(chip, 2).GetSample(next))
 			sample += int32(c.Op(chip, 3).GetSample(0))
 		}

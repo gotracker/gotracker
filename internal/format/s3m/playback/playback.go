@@ -6,11 +6,11 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/opl2"
 
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/layout/channel"
 	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
-	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"

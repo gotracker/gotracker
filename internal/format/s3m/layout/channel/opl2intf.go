@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"gotracker/internal/format/s3m/playback/opl2"
+	"github.com/gotracker/opl2"
 )
 
 // OPL2Intf is an interface to get the active OPL2 chip

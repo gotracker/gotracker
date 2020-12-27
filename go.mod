@@ -7,5 +7,5 @@ require (
 	github.com/gotracker/goaudiofile v1.0.8
 	github.com/gotracker/gomixing v1.0.5
 	github.com/gotracker/gosound v1.0.5
-	github.com/gotracker/opl2 v1.0.0
+	github.com/gotracker/opl2 v1.0.1
 )

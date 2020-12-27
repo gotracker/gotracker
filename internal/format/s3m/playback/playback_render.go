@@ -8,9 +8,9 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/opl2"
 
 	"gotracker/internal/format/s3m/playback/effect"
-	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/state/pattern"

@@ -6,9 +6,9 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/opl2"
 
 	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/opl2"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"

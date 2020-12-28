@@ -11,49 +11,80 @@ var (
 	ErrStopSong = errors.New("stop song")
 )
 
-// RowSettings is the settings for the current pattern state
-type RowSettings struct {
-	Ticks int
-	Tempo int
-}
-
 // Row is a specification of the current row data
 type Row struct {
 	intf.Row
 	Channels [32]intf.ChannelData
 }
 
+type s3mPatternLoop struct {
+	Enabled bool
+	Start   intf.RowIdx
+	End     intf.RowIdx
+	Total   uint8
+
+	Count uint8
+}
+
+func (pl *s3mPatternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
+	if pl.Enabled {
+		if currentRow == pl.End {
+			if pl.Count >= pl.Total {
+				pl.Enabled = false
+			} else {
+				pl.Count++
+				return pl.Start, true
+			}
+		}
+	}
+	return 0, false
+}
+
+func (pl *s3mPatternLoop) CommitTransaction(txn *RowUpdateTransaction) {
+	if !pl.Enabled {
+		if txn.patternLoopCountSet {
+			pl.Enabled = true
+			pl.Total = uint8(txn.patternLoopCount)
+			pl.Count = 0
+		}
+
+		if txn.patternLoopStartRowIdxSet {
+			pl.Start = txn.patternLoopStartRowIdx
+		}
+
+		if txn.patternLoopEndRowIdxSet {
+			pl.End = txn.patternLoopEndRowIdx
+		}
+	}
+}
+
 // State is the current pattern state
 type State struct {
-	PatternLoopEnabled bool
 	currentOrder       intf.OrderIdx
 	currentRow         intf.RowIdx
-	playedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
-
-	row RowSettings
-
+	ticks              int
+	tempo              int
 	rowHasPatternDelay bool
 	patternDelay       int
 	finePatternDelay   int
 
+	s3mPatternLoop s3mPatternLoop
+
+	PatternLoopEnabled bool
+	playedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
+
 	Patterns intf.Patterns
 	Orders   []intf.PatternIdx
-
-	loopStart   intf.RowIdx
-	loopEnd     intf.RowIdx
-	loopTotal   uint8
-	loopEnabled bool
-	loopCount   uint8
 }
 
 // GetTempo returns the tempo of the current state
 func (state *State) GetTempo() int {
-	return state.row.Tempo
+	return state.tempo
 }
 
 // GetSpeed returns the row speed of the current state
 func (state *State) GetSpeed() int {
-	return state.row.Ticks
+	return state.ticks
 }
 
 // GetTicksThisRow returns the number of ticks in the current row
@@ -64,7 +95,7 @@ func (state *State) GetTicksThisRow() int {
 	}
 	extraTicks := state.finePatternDelay
 
-	ticksThisRow := int(state.row.Ticks)*rowLoops + extraTicks
+	ticksThisRow := state.ticks*rowLoops + extraTicks
 	return ticksThisRow
 }
 
@@ -175,7 +206,7 @@ func (state *State) setCurrentRow(row intf.RowIdx) {
 // nextOrder travels to the next pattern in the order list
 func (state *State) nextOrder(resetRow ...bool) {
 	state.setCurrentOrder(state.currentOrder + 1)
-	state.loopEnabled = false
+	state.s3mPatternLoop.Enabled = false
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
@@ -196,16 +227,8 @@ func (state *State) Reset() {
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
-	if state.loopEnabled {
-		if state.GetCurrentRow() == state.loopEnd {
-			if state.loopCount >= state.loopTotal {
-				state.loopEnabled = false
-			} else {
-				state.loopCount++
-				state.setCurrentRow(state.loopStart)
-				return
-			}
-		}
+	if row, ok := state.s3mPatternLoop.ContinueLoop(state.GetCurrentRow()); ok {
+		state.setCurrentRow(row)
 	}
 
 	state.rowHasPatternDelay = false
@@ -286,18 +309,18 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 	txn.committed = true
 
 	if txn.tempoSet || txn.tempoDeltaSet {
-		newTempo := state.row.Tempo
+		newTempo := state.tempo
 		if txn.tempoSet {
 			newTempo = txn.tempo
 		}
 		if txn.tempoDeltaSet {
 			newTempo += txn.tempoDelta
 		}
-		state.row.Tempo = newTempo
+		state.tempo = newTempo
 	}
 
 	if txn.ticksSet {
-		state.row.Ticks = txn.ticks
+		state.ticks = txn.ticks
 	}
 
 	if txn.finePatternDelaySet {
@@ -309,21 +332,7 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 		state.rowHasPatternDelay = true
 	}
 
-	if !state.loopEnabled {
-		if txn.patternLoopCountSet {
-			state.loopEnabled = true
-			state.loopTotal = uint8(txn.patternLoopCount)
-			state.loopCount = 0
-		}
-
-		if txn.patternLoopStartRowIdxSet {
-			state.loopStart = txn.patternLoopStartRowIdx
-		}
-
-		if txn.patternLoopEndRowIdxSet {
-			state.loopEnd = txn.patternLoopEndRowIdx
-		}
-	}
+	state.s3mPatternLoop.CommitTransaction(txn)
 
 	if txn.orderIdxSet || txn.rowIdxSet {
 		if txn.orderIdxSet {

@@ -31,10 +31,6 @@ type ChannelState struct {
 	Command      commandFunc
 	ActiveEffect intf.Effect
 
-	DisplayNote   note.Note
-	DisplayInst   uint8
-	DisplayVolume volume.Volume
-
 	TargetPeriod      note.Period
 	TargetPos         sampling.Pos
 	TargetInst        intf.Instrument
@@ -78,7 +74,6 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 	cs.TremorTime = 0
 	cs.VibratoDelta = 0
 	cs.Cmd = channel
-	cs.DisplayVolume = volume.VolumeUseInstVol
 
 	wantNoteCalc := false
 
@@ -102,26 +97,18 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 
 		n := channel.GetNote()
 		if n == note.EmptyNote {
-			cs.DisplayNote = note.EmptyNote
-			cs.DisplayInst = 0
 			wantNoteCalc = false
 			cs.DoRetriggerNote = false
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = 0
 			wantNoteCalc = false
-			cs.DisplayNote = note.StopNote
-			cs.DisplayInst = 0
 		} else if cs.TargetInst != nil {
 			cs.PrevNoteSemitone = cs.NoteSemitone
 			cs.NoteSemitone = n.Semitone()
 			cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
 			wantNoteCalc = true
-			cs.DisplayNote = n
-			cs.DisplayInst = uint8(cs.TargetInst.GetID())
 		}
 	} else {
-		cs.DisplayNote = note.EmptyNote
-		cs.DisplayInst = 0
 		wantNoteCalc = false
 		cs.DoRetriggerNote = false
 	}
@@ -186,7 +173,6 @@ func (cs *ChannelState) SetStoredVolume(vol volume.Volume, globalVol volume.Volu
 	if vol != volume.VolumeUseInstVol {
 		cs.StoredVolume = vol
 	}
-	cs.DisplayVolume = vol
 	cs.SetActiveVolume(vol)
 	cs.LastGlobalVolume = globalVol
 }

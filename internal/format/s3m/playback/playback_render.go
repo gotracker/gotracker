@@ -17,7 +17,7 @@ import (
 )
 
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
-func (m *Manager) renderOneRow(sampler *render.Sampler) (*device.PremixData, error) {
+func (m *Manager) renderOneRow() (*device.PremixData, error) {
 	preMixRowTxn := m.pattern.StartTransaction()
 	postMixRowTxn := m.pattern.StartTransaction()
 	defer func() {
@@ -40,7 +40,7 @@ func (m *Manager) renderOneRow(sampler *render.Sampler) (*device.PremixData, err
 		Userdata: finalData,
 	}
 
-	m.soundRenderRow(premix, sampler)
+	m.soundRenderRow(premix)
 
 	finalData.Order = int(m.pattern.GetCurrentOrder())
 	finalData.Row = int(m.pattern.GetCurrentRow())
@@ -86,18 +86,18 @@ func (m *Manager) startNextRow() error {
 	return nil
 }
 
-func (m *Manager) soundRenderRow(premix *device.PremixData, sampler *render.Sampler) {
-	mix := sampler.Mixer()
+func (m *Manager) soundRenderRow(premix *device.PremixData) {
+	mix := m.s.Mixer()
 
-	samplerSpeed := sampler.GetSamplerSpeed()
+	samplerSpeed := m.s.GetSamplerSpeed()
 	tickDuration := time.Duration(2500) * time.Millisecond / time.Duration(m.pattern.GetTempo())
-	samplesPerTick := int(tickDuration.Seconds() * float64(sampler.SampleRate))
+	samplesPerTick := int(tickDuration.Seconds() * float64(m.s.SampleRate))
 
 	ticksThisRow := m.pattern.GetTicksThisRow()
 
 	samplesThisRow := int(ticksThisRow) * samplesPerTick
 
-	panmixer := sampler.GetPanMixer()
+	panmixer := m.s.GetPanMixer()
 
 	centerPanning := panmixer.GetMixingMatrix(panning.CenterAhead)
 
@@ -119,7 +119,7 @@ func (m *Manager) soundRenderRow(premix *device.PremixData, sampler *render.Samp
 				switch chCat {
 				case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
 					if m.opl2 == nil {
-						m.setOPL2Chip(uint32(sampler.SampleRate))
+						m.setOPL2Chip(uint32(m.s.SampleRate))
 					}
 					if firstOplCh < 0 {
 						firstOplCh = ch

@@ -4,20 +4,25 @@ import (
 	"fmt"
 )
 
-// ChannelDisplay is a render output of tracker channel information
-type ChannelDisplay struct {
-	Note       string
-	Instrument string
-	Volume     string
-	Effect     string
-}
+// ChannelData is the data used by the ChannelFormatterFunc to render the source data from a tracker channel
+type ChannelData interface{}
+
+// ChannelFormatterFunc takes the data from a channel and converts it to a string
+type ChannelFormatterFunc func(ChannelData) string
 
 // RowDisplay is an array of ChannelDisplays
-type RowDisplay []ChannelDisplay
+type RowDisplay struct {
+	Channels  []ChannelData
+	formatter ChannelFormatterFunc
+}
 
 // NewRowText creates an array of ChannelDisplay information
-func NewRowText(channels int) RowDisplay {
-	return make([]ChannelDisplay, channels)
+func NewRowText(channels int, channelFmtFunc ChannelFormatterFunc) RowDisplay {
+	rd := RowDisplay{
+		Channels:  make([]ChannelData, channels),
+		formatter: channelFmtFunc,
+	}
+	return rd
 }
 
 func (rt RowDisplay) String(options ...interface{}) string {
@@ -26,11 +31,11 @@ func (rt RowDisplay) String(options ...interface{}) string {
 		maxChannels = options[0].(int)
 	}
 	var str string
-	for i, c := range rt {
+	for i, c := range rt.Channels {
 		if maxChannels >= 0 && i >= maxChannels {
 			break
 		}
-		str += fmt.Sprintf("|%s %s %s %s", c.Note, c.Instrument, c.Volume, c.Effect)
+		str += fmt.Sprintf("|%s", rt.formatter(c))
 	}
 	return str + "|"
 }

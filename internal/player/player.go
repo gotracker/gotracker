@@ -9,7 +9,6 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/render"
 	"gotracker/internal/player/state/pattern"
 )
 
@@ -38,21 +37,16 @@ type Player struct {
 	stopRespCh     chan error
 	lastUpdateTime time.Time
 	playback       intf.Playback
-	sampler        *render.Sampler
 }
 
 // NewPlayer returns a new Player instance
-func NewPlayer(ctx context.Context, output chan<- *device.PremixData, sampler *render.Sampler) (*Player, error) {
+func NewPlayer(ctx context.Context, output chan<- *device.PremixData) (*Player, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	if output == nil {
 		return nil, errors.New("a valid output channel must be provided")
-	}
-
-	if sampler == nil {
-		return nil, errors.New("a valid sampler must be provided")
 	}
 
 	myCtx, cancel := context.WithCancel(ctx)
@@ -70,7 +64,6 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, sampler *r
 		resumeRespCh: make(chan error, 1),
 		stopCh:       make(chan struct{}, 1),
 		stopRespCh:   make(chan error, 1),
-		sampler:      sampler,
 	}
 
 	go func() {
@@ -217,5 +210,5 @@ func (p *Player) runStatePlaying() error {
 }
 
 func (p *Player) update(delta time.Duration) error {
-	return p.playback.Update(delta, p.output, p.sampler)
+	return p.playback.Update(delta, p.output)
 }

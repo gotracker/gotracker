@@ -24,11 +24,6 @@ var (
 	canLoop        bool
 )
 
-// local vars
-var (
-	sampler *render.Sampler
-)
-
 func main() {
 	output.Setup()
 
@@ -53,14 +48,15 @@ func main() {
 		return
 	}
 
-	sampler = render.NewSampler(outputSettings.SamplesPerSecond, outputSettings.Channels, outputSettings.BitsPerSample)
-
 	playback, songFmt, err := format.Load(fn)
 	if err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
 	} else if songFmt != nil {
-		sampler.BaseClockRate = songFmt.GetBaseClockRate()
+		if err := playback.SetupSampler(outputSettings.SamplesPerSecond, outputSettings.Channels, outputSettings.BitsPerSample); err != nil {
+			log.Fatalf("Could not setup playback sampler! err[%v]", err)
+			return
+		}
 	}
 	if startingOrder != -1 {
 		playback.SetNextOrder(intf.OrderIdx(startingOrder))
@@ -114,7 +110,7 @@ func main() {
 	fmt.Printf("Song: %s\n", playback.GetName())
 	outBufs := make(chan *device.PremixData, 64)
 
-	p, err := player.NewPlayer(nil, outBufs, sampler)
+	p, err := player.NewPlayer(nil, outBufs)
 	if err != nil {
 		log.Fatalln(err)
 		return

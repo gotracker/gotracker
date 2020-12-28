@@ -2,11 +2,44 @@ package playback
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/goaudiofile/music/tracked/s3m"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/render"
 )
+
+func s3mChannelRender(cdata render.ChannelData) string {
+	n := "..."
+	i := ".."
+	v := ".."
+	e := "..."
+
+	if data, ok := cdata.(*channel.Data); ok && data != nil {
+		if data.HasNote() {
+			n = data.GetNote().String()
+		}
+
+		if data.HasInstrument() {
+			if inst := data.Instrument; inst != 0 {
+				i = fmt.Sprintf("%0.2d", inst)
+			}
+		}
+
+		if data.HasVolume() {
+			if vol := data.Volume; vol != s3m.EmptyVolume {
+				v = fmt.Sprintf("%0.2d", uint8(vol*64.0))
+			}
+		}
+
+		if data.HasCommand() {
+			e = fmt.Sprintf("%c%0.2X", '@'+data.Command, data.Info)
+		}
+	}
+
+	return strings.Join([]string{n, i, v, e}, " ")
+}
 
 func (m *Manager) getRowText() render.RowDisplay {
 	nCh := 0
@@ -16,33 +49,14 @@ func (m *Manager) getRowText() render.RowDisplay {
 		}
 		nCh++
 	}
-	var rowText = render.NewRowText(nCh)
+	var rowText = render.NewRowText(nCh, s3mChannelRender)
 	for ch := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue
 		}
 		cs := &m.channels[ch]
-		c := render.ChannelDisplay{
-			Note:       cs.DisplayNote.String(),
-			Instrument: "..",
-			Volume:     "..",
-			Effect:     "...",
-		}
 
-		if cs.DisplayInst != 0 {
-			c.Instrument = fmt.Sprintf("%0.2d", cs.DisplayInst)
-		}
-
-		if cs.DisplayVolume != volume.VolumeUseInstVol {
-			c.Volume = fmt.Sprintf("%0.2d", uint8(cs.DisplayVolume*64.0))
-		}
-
-		if cs.Cmd != nil {
-			if cs.ActiveEffect != nil {
-				c.Effect = cs.ActiveEffect.String()
-			}
-		}
-		rowText[ch] = c
+		rowText.Channels[ch] = cs.Cmd
 	}
 	return rowText
 }

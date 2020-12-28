@@ -1,4 +1,4 @@
-package render
+package sampler
 
 import (
 	"github.com/gotracker/gomixing/mixing"
@@ -13,9 +13,10 @@ type Sampler struct {
 }
 
 // NewSampler returns a new sampler object based on the input settings
-func NewSampler(samplesPerSec int, channels int, bitsPerSample int) *Sampler {
+func NewSampler(samplesPerSec int, channels int, bitsPerSample int, baseClockRate float32) *Sampler {
 	s := Sampler{
-		SampleRate: samplesPerSec,
+		SampleRate:    samplesPerSec,
+		BaseClockRate: baseClockRate,
 		mixer: mixing.Mixer{
 			Channels:      channels,
 			BitsPerSample: bitsPerSample,

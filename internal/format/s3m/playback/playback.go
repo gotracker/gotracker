@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gotracker/gomixing/sampling"
@@ -11,10 +12,10 @@ import (
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/layout/channel"
 	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
+	"gotracker/internal/format/s3m/playback/sampler"
+	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/render"
 	"gotracker/internal/player/state"
 	"gotracker/internal/player/state/pattern"
 )
@@ -34,6 +35,7 @@ type Manager struct {
 	postMixRowTxn intf.SongPositionState
 
 	opl2 *opl2.Chip
+	s    *sampler.Sampler
 }
 
 // NewManager creates a new manager for an S3M song
@@ -49,8 +51,8 @@ func NewManager(song *layout.Song) *Manager {
 }
 
 // Update updates the manager, producing premixed sound data
-func (m *Manager) Update(deltaTime time.Duration, out chan<- *device.PremixData, sampler *render.Sampler) error {
-	premix, err := m.renderOneRow(sampler)
+func (m *Manager) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
+	premix, err := m.renderOneRow()
 	if err != nil {
 		return err
 	}
@@ -76,9 +78,6 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.Instrument = nil
 		cs.Period = 0
 		cs.Command = nil
-
-		cs.DisplayNote = note.EmptyNote
-		cs.DisplayInst = 0
 
 		cs.TargetPeriod = cs.Period
 		cs.TargetPos = cs.Pos
@@ -222,4 +221,14 @@ func (m *Manager) GetName() string {
 // GetOPL2Chip returns the current song's OPL2 chip, if it's needed
 func (m *Manager) GetOPL2Chip() *opl2.Chip {
 	return m.opl2
+}
+
+// SetupSampler configures the internal sampler
+func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
+	m.s = sampler.NewSampler(samplesPerSecond, channels, bitsPerSample, util.S3MBaseClock)
+	if m.s == nil {
+		return errors.New("NewSampler() returned nil")
+	}
+
+	return nil
 }

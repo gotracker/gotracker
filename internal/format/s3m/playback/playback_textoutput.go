@@ -29,7 +29,7 @@ func s3mChannelRender(cdata render.ChannelData) string {
 
 		if data.HasVolume() {
 			if vol := data.Volume; vol != s3m.EmptyVolume {
-				v = fmt.Sprintf("%0.2d", uint8(vol*64.0))
+				v = fmt.Sprintf("%0.2d", vol)
 			}
 		}
 

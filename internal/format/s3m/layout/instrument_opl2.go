@@ -184,6 +184,7 @@ func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 
 func (inst *InstrumentOPL2) getRegC0() uint8 {
 	regC0 := uint8(0x00)
+	regC0 |= 0x20 | 0x10 // right and left enable [OPL3 only]
 	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
 	if inst.AdditiveSynthesis {
 		regC0 |= 0x01
@@ -210,15 +211,15 @@ func freqToFnumBlock(freq float64) (uint16, uint8) {
 
 	if f == 0 {
 		return 0, 0
-	} else if f < 261 {
-		for f < 261 && octave > 0 {
+	} else if f < 261 { // C-2
+		for f < 261 && octave >= 0 {
 			octave--
-			f >>= 1
-		}
-	} else if f > 493 {
-		for f > 493 && octave < 8 {
-			octave++
 			f <<= 1
+		}
+	} else if f >= 554 {
+		for f >= 554 && octave < 8 { // C#3
+			octave++
+			f >>= 1
 		}
 	}
 

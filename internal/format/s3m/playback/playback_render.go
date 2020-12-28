@@ -175,6 +175,7 @@ func (m *Manager) renderOPL2RowTick(tick int, mixerData []mixing.Data, ticksThis
 func (m *Manager) setOPL2Chip(rate uint32) {
 	m.opl2 = opl2.NewChip(rate, false)
 	m.opl2.WriteReg(0x01, 0x20) // enable all waveforms
-	m.opl2.WriteReg(0x08, 0x00) // clear CSW and NOTE-SEL
+	m.opl2.WriteReg(0x04, 0x00) // clear timer flags
+	m.opl2.WriteReg(0x08, 0x40) // clear CSW and set NOTE-SEL
 	m.opl2.WriteReg(0xBD, 0x00) // set default notes
 }

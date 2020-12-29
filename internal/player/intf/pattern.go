@@ -1,13 +1,26 @@
 package intf
 
+import "errors"
+
+var (
+	// ErrStopSong is a magic error asking to stop the current song
+	ErrStopSong = errors.New("stop song")
+)
+
 // Pattern is an interface for pattern data
 type Pattern interface {
 	GetRow(RowIdx) Row
-	GetRows() []Row
+	GetRows() Rows
 }
 
 // Patterns is an array of pattern interfaces
 type Patterns []Pattern
+
+// Rows is an interface to obtain row data
+type Rows interface {
+	GetRow(RowIdx) Row
+	NumRows() int
+}
 
 // OrderIdx is an index into the pattern order list
 type OrderIdx uint8

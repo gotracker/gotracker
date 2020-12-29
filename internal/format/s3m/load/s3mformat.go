@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/gomixing/volume"
 
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout"
@@ -23,8 +24,14 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
 		GlobalVolume: util.VolumeFromS3M(fh.GlobalVolume),
-		MixingVolume: util.VolumeFromS3M(fh.MixingVolume),
 	}
+
+	z := uint32(fh.MixingVolume & 0x7f)
+	if z < 0x10 {
+		z = 0x10
+	}
+	head.MixingVolume = volume.Volume(z) / volume.Volume(0x80)
+
 	return &head, nil
 }
 
@@ -209,7 +216,6 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 	song := layout.Song{
 		Head:        *h,
 		Instruments: make([]layout.Instrument, len(f.InstrumentPointers)),
-		Patterns:    make([]intf.Pattern, len(f.PatternPointers)),
 		OrderList:   make([]intf.PatternIdx, len(f.OrderList)),
 	}
 
@@ -231,7 +237,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]intf.Pattern, len(f.Patterns))
+	song.Patterns = make([]layout.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {
@@ -240,7 +246,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = pattern
+		song.Patterns[patNum] = *pattern
 	}
 
 	channels := []layout.ChannelSetting{}

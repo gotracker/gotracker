@@ -33,7 +33,7 @@ type Song struct {
 	intf.SongData
 	Head            Header
 	Instruments     []Instrument
-	Patterns        []intf.Pattern
+	Patterns        []Pattern
 	ChannelSettings []ChannelSetting
 	OrderList       []intf.PatternIdx
 }
@@ -48,7 +48,7 @@ func (s *Song) GetPattern(patNum intf.PatternIdx) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
-	return s.Patterns[patNum]
+	return &s.Patterns[patNum]
 }
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled

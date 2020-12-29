@@ -288,7 +288,7 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			GlobalVolume:    s3mfile.DefaultVolume,
 			InitialSpeed:    6,
 			InitialTempo:    125,
-			MixingVolume:    s3mfile.DefaultVolume / s3mfile.Volume(numCh),
+			MixingVolume:    s3mfile.Volume(0x30), // default mixing volume for a converted mod in st3
 		},
 	}
 

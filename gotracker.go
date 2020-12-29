@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"sort"
+	"time"
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
@@ -102,15 +104,24 @@ func main() {
 	defer waveOut.Close()
 
 	if !canLoop {
-		disableFeatures = append(disableFeatures, feature.PatternLoop)
+		disableFeatures = append(disableFeatures, feature.OrderLoop)
 	}
 	playback.DisableFeatures(disableFeatures)
 
 	fmt.Printf("Output device: %s\n", waveOut.Name())
+	fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
 	fmt.Printf("Song: %s\n", playback.GetName())
 	outBufs := make(chan *device.PremixData, 64)
 
-	p, err := player.NewPlayer(nil, outBufs)
+	tickInterval := time.Duration(5) * time.Millisecond
+	disableSleepIdx := sort.Search(len(disableFeatures), func(i int) bool {
+		return disableFeatures[i] == feature.PlayerSleepInterval
+	})
+	if disableSleepIdx < len(disableFeatures) && disableFeatures[disableSleepIdx] == feature.PlayerSleepInterval {
+		tickInterval = time.Duration(0)
+	}
+
+	p, err := player.NewPlayer(nil, outBufs, tickInterval)
 	if err != nil {
 		log.Fatalln(err)
 		return

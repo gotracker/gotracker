@@ -52,9 +52,10 @@ func CreateOutputDevice(settings device.Settings) (device.Device, []feature.Feat
 
 	var featureDisable []feature.Feature
 
-	switch device.GetKind(d) {
+	kind := device.GetKind(d)
+	switch kind {
 	case device.KindFile:
-		featureDisable = []feature.Feature{feature.PatternLoop}
+		featureDisable = []feature.Feature{feature.OrderLoop, feature.PlayerSleepInterval}
 	}
 
 	return d, featureDisable, nil

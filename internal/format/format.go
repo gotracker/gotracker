@@ -6,6 +6,7 @@ import (
 
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
+	"gotracker/internal/format/xm"
 	"gotracker/internal/player/intf"
 )
 
@@ -28,4 +29,5 @@ func Load(filename string) (intf.Playback, intf.Format, error) {
 func init() {
 	supportedFormats["s3m"] = s3m.S3M
 	supportedFormats["mod"] = mod.MOD
+	supportedFormats["xm"] = xm.XM
 }

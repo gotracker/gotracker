@@ -34,16 +34,17 @@ type InstrumentOnChannel struct {
 	Period           note.Period
 }
 
-// Instrument is the mildly-decoded S3M instrument/sample header
+// Instrument is the mildly-decoded XM instrument/sample header
 type Instrument struct {
 	intf.Instrument
 
-	Filename string
-	Name     string
-	Inst     InstrumentDataIntf
-	ID       uint8
-	C2Spd    note.C2SPD
-	Volume   volume.Volume
+	Filename           string
+	Name               string
+	Inst               InstrumentDataIntf
+	ID                 uint8
+	C2Spd              note.C2SPD
+	Volume             volume.Volume
+	RelativeNoteNumber int8
 }
 
 // IsInvalid always returns false (valid)
@@ -52,7 +53,7 @@ func (inst *Instrument) IsInvalid() bool {
 }
 
 // GetC2Spd returns the C2SPD value for the instrument
-// This may get mutated if a finetune command is processed
+// This may get mutated if a finetune effect is processed
 func (inst *Instrument) GetC2Spd() note.C2SPD {
 	return inst.C2Spd
 }
@@ -131,7 +132,7 @@ func (inst *Instrument) GetID() int {
 
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at
 func (inst *Instrument) GetSemitoneShift() int8 {
-	return 0
+	return inst.RelativeNoteNumber
 }
 
 // GetSample returns the sample at position `pos` in the instrument

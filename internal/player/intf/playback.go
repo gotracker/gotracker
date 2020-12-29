@@ -23,6 +23,7 @@ type Playback interface {
 	SetGlobalVolume(volume.Volume)
 	DisableFeatures([]feature.Feature)
 	GetName() string
+	CanOrderLoop() bool
 
 	SetupSampler(int, int, int) error
 }

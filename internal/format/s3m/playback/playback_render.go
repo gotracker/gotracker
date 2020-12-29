@@ -12,8 +12,8 @@ import (
 
 	"gotracker/internal/format/s3m/playback/effect"
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
-	"gotracker/internal/player/state/pattern"
 )
 
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
@@ -60,14 +60,14 @@ func (m *Manager) startNextRow() error {
 
 	pat := m.song.GetPattern(patIdx)
 	if pat == nil {
-		return pattern.ErrStopSong
+		return intf.ErrStopSong
 	}
 
 	rows := pat.GetRows()
 
 	myCurrentRow := m.pattern.GetCurrentRow()
 
-	row := rows[myCurrentRow]
+	row := rows.GetRow(myCurrentRow)
 	for channelNum, channel := range row.GetChannels() {
 		if channelNum >= m.GetNumChannels() {
 			continue
@@ -147,6 +147,19 @@ func (m *Manager) soundRenderRow(premix *device.PremixData) {
 			m.renderOPL2RowTick(tick, rr, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
 			premix.Data[ch] = rr
 		}
+	}
+
+	premix.MixerVolume = m.mixerVolume
+	if m.opl2 != nil {
+		// make room in the mixer for the OPL2 data
+		// effectively, we can do this by calculating the new number (+1) of channels from the mixer volume (channels = reciprocal of mixer volume):
+		//   numChannels = (1/mv) + 1
+		// then by taking the reciprocal of it:
+		//   1 / numChannels
+		// but that ends up being simplified to:
+		//   mv / (mv + 1)
+		// and we get protection from div/0 in the process - provided, of course, that the mixerVolume is not exactly -1...
+		premix.MixerVolume = m.mixerVolume / (m.mixerVolume + 1)
 	}
 }
 

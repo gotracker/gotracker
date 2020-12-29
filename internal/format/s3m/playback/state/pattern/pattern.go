@@ -3,12 +3,8 @@ package pattern
 import (
 	"errors"
 
+	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/player/intf"
-)
-
-var (
-	// ErrStopSong is a magic error asking to stop the current song
-	ErrStopSong = errors.New("stop song")
 )
 
 // Row is a specification of the current row data
@@ -17,7 +13,7 @@ type Row struct {
 	Channels [32]intf.ChannelData
 }
 
-type s3mPatternLoop struct {
+type patternLoop struct {
 	Enabled bool
 	Start   intf.RowIdx
 	End     intf.RowIdx
@@ -26,7 +22,7 @@ type s3mPatternLoop struct {
 	Count uint8
 }
 
-func (pl *s3mPatternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
+func (pl *patternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
 	if pl.Enabled {
 		if currentRow == pl.End {
 			if pl.Count >= pl.Total {
@@ -40,7 +36,7 @@ func (pl *s3mPatternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, boo
 	return 0, false
 }
 
-func (pl *s3mPatternLoop) CommitTransaction(txn *RowUpdateTransaction) {
+func (pl *patternLoop) CommitTransaction(txn *RowUpdateTransaction) {
 	if !pl.Enabled {
 		if txn.patternLoopCountSet {
 			pl.Enabled = true
@@ -68,12 +64,12 @@ type State struct {
 	patternDelay       int
 	finePatternDelay   int
 
-	s3mPatternLoop s3mPatternLoop
+	patternLoop patternLoop
 
-	PatternLoopEnabled bool
-	playedOrders       []intf.OrderIdx // when PatternLoopEnabled is false, this is used to detect loops
+	OrderLoopEnabled bool
+	playedOrders     []intf.OrderIdx // when OrderLoopEnabled is false, this is used to detect loops
 
-	Patterns intf.Patterns
+	Patterns []layout.Pattern
 	Orders   []intf.PatternIdx
 }
 
@@ -109,8 +105,10 @@ func (state *State) GetPatNum() intf.PatternIdx {
 
 // GetNumRows returns the number of rows in the current pattern
 func (state *State) GetNumRows() uint8 {
-	rows := state.GetRows()
-	return uint8(len(rows))
+	if rows := state.GetRows(); rows != nil {
+		return uint8(rows.NumRows())
+	}
+	return 0
 }
 
 // WantsStop returns true when the current pattern wants to end the song
@@ -125,7 +123,7 @@ func (state *State) WantsStop() bool {
 func (state *State) setCurrentOrder(order intf.OrderIdx) {
 	prevOrder := state.currentOrder
 	state.currentOrder = order
-	if !state.PatternLoopEnabled && prevOrder != state.currentOrder {
+	if !state.OrderLoopEnabled && prevOrder != state.currentOrder {
 		state.playedOrders = append(state.playedOrders, prevOrder)
 	}
 }
@@ -135,7 +133,12 @@ func (state *State) GetCurrentOrder() intf.OrderIdx {
 	return state.currentOrder
 }
 
-func (state *State) getCurrentPattern() (intf.Pattern, error) {
+// GetNumOrders returns the number of orders in the song
+func (state *State) GetNumOrders() int {
+	return len(state.Orders)
+}
+
+func (state *State) getCurrentPattern() (*layout.Pattern, error) {
 	patIdx, err := state.GetCurrentPatternIdx()
 	if err != nil {
 		return nil, err
@@ -144,7 +147,7 @@ func (state *State) getCurrentPattern() (intf.Pattern, error) {
 	if int(patIdx) >= len(state.Patterns) {
 		return nil, errors.New("invalid pattern index")
 	}
-	return state.Patterns[patIdx], nil
+	return &state.Patterns[patIdx], nil
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list
@@ -153,14 +156,14 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 
 	if ordLen == 0 {
 		// nothing to play, don't even try
-		return 0, ErrStopSong
+		return 0, intf.ErrStopSong
 	}
 
 	for loopCount := 0; loopCount < ordLen; loopCount++ {
 		ordIdx := int(state.GetCurrentOrder())
 		if ordIdx >= ordLen {
-			if !state.PatternLoopEnabled {
-				return 0, ErrStopSong
+			if !state.OrderLoopEnabled {
+				return 0, intf.ErrStopSong
 			}
 			state.setCurrentOrder(0)
 			continue
@@ -177,10 +180,10 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 			continue // this is supposed to be a song break
 		}
 
-		if !state.PatternLoopEnabled {
+		if !state.OrderLoopEnabled {
 			for _, o := range state.playedOrders {
 				if o == intf.OrderIdx(ordIdx) {
-					return 0, ErrStopSong
+					return 0, intf.ErrStopSong
 				}
 			}
 		}
@@ -206,7 +209,7 @@ func (state *State) setCurrentRow(row intf.RowIdx) {
 // nextOrder travels to the next pattern in the order list
 func (state *State) nextOrder(resetRow ...bool) {
 	state.setCurrentOrder(state.currentOrder + 1)
-	state.s3mPatternLoop.Enabled = false
+	state.patternLoop.Enabled = false
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
@@ -219,15 +222,15 @@ func (state *State) nextOrder(resetRow ...bool) {
 // Reset resets a pattern state back to zeroes
 func (state *State) Reset() {
 	*state = State{
-		PatternLoopEnabled: true,
-		playedOrders:       make([]intf.OrderIdx, 0),
+		OrderLoopEnabled: true,
+		playedOrders:     make([]intf.OrderIdx, 0),
 	}
 }
 
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
-	if row, ok := state.s3mPatternLoop.ContinueLoop(state.GetCurrentRow()); ok {
+	if row, ok := state.patternLoop.ContinueLoop(state.GetCurrentRow()); ok {
 		state.setCurrentRow(row)
 	}
 
@@ -275,7 +278,7 @@ func (state *State) GetRow() *Row {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() []*Row {
+func (state *State) GetRows() intf.Rows {
 	var patNum = state.GetPatNum()
 	switch patNum {
 	case intf.InvalidPattern:
@@ -286,18 +289,11 @@ func (state *State) GetRows() []*Row {
 			return state.GetRows()
 		}
 	default:
-		{
-			var pattern = state.Patterns[patNum]
-			pr := pattern.GetRows()
-
-			rows := make([]*Row, len(pr))
-			for i, prr := range pr {
-				if r, ok := prr.(*Row); ok {
-					rows[i] = r
-				}
-			}
-			return rows
+		if int(patNum) >= len(state.Patterns) {
+			return nil
 		}
+		pattern := state.Patterns[patNum]
+		return pattern.GetRows()
 	}
 }
 
@@ -332,7 +328,7 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 		state.rowHasPatternDelay = true
 	}
 
-	state.s3mPatternLoop.CommitTransaction(txn)
+	state.patternLoop.CommitTransaction(txn)
 
 	if txn.orderIdxSet || txn.rowIdxSet {
 		if txn.orderIdxSet {

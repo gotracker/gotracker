@@ -13,11 +13,11 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
 	"gotracker/internal/format/s3m/playback/sampler"
+	"gotracker/internal/format/s3m/playback/state/pattern"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/state"
-	"gotracker/internal/player/state/pattern"
 )
 
 // Manager is a playback manager for S3M music
@@ -30,6 +30,7 @@ type Manager struct {
 	channels     []state.ChannelState
 	pattern      pattern.State
 	globalVolume volume.Volume
+	mixerVolume  volume.Volume
 
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
@@ -44,8 +45,29 @@ func NewManager(song *layout.Song) *Manager {
 		song: song,
 	}
 
-	m.globalVolume = song.Head.GlobalVolume
 	m.pattern.Reset()
+	m.pattern.Orders = song.OrderList
+	m.pattern.Patterns = song.Patterns
+
+	m.globalVolume = song.Head.GlobalVolume
+	m.mixerVolume = song.Head.MixingVolume
+
+	m.SetNumChannels(len(song.ChannelSettings))
+	for i, ch := range song.ChannelSettings {
+		cs := m.GetChannel(i)
+		cs.SetOutputChannelNum(ch.OutputChannelNum)
+		cs.SetStoredVolume(ch.InitialVolume, song.Head.GlobalVolume)
+		cs.SetPan(ch.InitialPanning)
+		cs.SetMemory(&song.ChannelSettings[i].Memory)
+	}
+
+	txn := m.pattern.StartTransaction()
+	defer txn.Cancel()
+
+	txn.SetTicks(song.Head.InitialSpeed)
+	txn.SetTempo(song.Head.InitialTempo)
+
+	txn.Commit()
 
 	return &m
 }
@@ -172,25 +194,15 @@ func (m *Manager) SetGlobalVolume(vol volume.Volume) {
 func (m *Manager) DisableFeatures(features []feature.Feature) {
 	for _, f := range features {
 		switch f {
-		case feature.PatternLoop:
-			m.pattern.PatternLoopEnabled = false
+		case feature.OrderLoop:
+			m.pattern.OrderLoopEnabled = false
 		}
 	}
 }
 
-// CanPatternLoop returns true if the song is allowed to pattern loop
-func (m *Manager) CanPatternLoop() bool {
-	return m.pattern.PatternLoopEnabled
-}
-
-// SetPatterns sets the pattern list interface
-func (m *Manager) SetPatterns(patterns intf.Patterns) {
-	m.pattern.Patterns = patterns
-}
-
-// SetOrderList sets the order list
-func (m *Manager) SetOrderList(orders []intf.PatternIdx) {
-	m.pattern.Orders = orders
+// CanOrderLoop returns true if the song is allowed to order loop
+func (m *Manager) CanOrderLoop() bool {
+	return m.pattern.OrderLoopEnabled
 }
 
 // GetSongData gets the song data object
@@ -206,6 +218,11 @@ func (m *Manager) GetChannel(ch int) intf.Channel {
 // GetCurrentOrder returns the current order
 func (m *Manager) GetCurrentOrder() intf.OrderIdx {
 	return m.pattern.GetCurrentOrder()
+}
+
+// GetNumOrders returns the number of orders in the song
+func (m *Manager) GetNumOrders() int {
+	return m.pattern.GetNumOrders()
 }
 
 // GetCurrentRow returns the current row

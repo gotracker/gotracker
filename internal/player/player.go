@@ -9,7 +9,6 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state/pattern"
 )
 
 type playerState int
@@ -37,10 +36,13 @@ type Player struct {
 	stopRespCh     chan error
 	lastUpdateTime time.Time
 	playback       intf.Playback
+	ticker         *time.Ticker
+	tickerCh       <-chan time.Time
+	myTickerCh     chan time.Time
 }
 
 // NewPlayer returns a new Player instance
-func NewPlayer(ctx context.Context, output chan<- *device.PremixData) (*Player, error) {
+func NewPlayer(ctx context.Context, output chan<- *device.PremixData, tickInterval time.Duration) (*Player, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -66,10 +68,19 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData) (*Player, 
 		stopRespCh:   make(chan error, 1),
 	}
 
+	if tickInterval != time.Duration(0) {
+		p.ticker = time.NewTicker(tickInterval)
+		p.tickerCh = p.ticker.C
+	} else {
+		p.myTickerCh = make(chan time.Time, 1)
+		p.tickerCh = p.myTickerCh
+		p.myTickerCh <- time.Now()
+	}
+
 	go func() {
 		defer p.cancel()
 		if err := p.runStateMachine(); err != nil {
-			if err != pattern.ErrStopSong {
+			if err != intf.ErrStopSong {
 				log.Fatalln(err)
 			}
 		}
@@ -115,6 +126,12 @@ func (p *Player) runStateMachine() error {
 		close(p.resumeRespCh)
 		close(p.stopCh)
 		close(p.stopRespCh)
+
+		if p.ticker != nil {
+			p.ticker.Stop()
+		} else {
+			close(p.myTickerCh)
+		}
 	}()
 	for {
 		var stateFunc func() error
@@ -126,15 +143,14 @@ func (p *Player) runStateMachine() error {
 		case playerStatePaused:
 			stateFunc = p.runStatePaused
 		default:
-			return pattern.ErrStopSong
+			return intf.ErrStopSong
 		}
 		if stateFunc == nil {
-			return pattern.ErrStopSong
+			return intf.ErrStopSong
 		}
 		if err := stateFunc(); err != nil {
 			return err
 		}
-		time.Sleep(time.Duration(1) * time.Millisecond)
 	}
 }
 
@@ -154,7 +170,7 @@ func (p *Player) runStateIdle() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return pattern.ErrStopSong
+		return intf.ErrStopSong
 	}
 	return nil
 }
@@ -174,7 +190,7 @@ func (p *Player) runStatePaused() error {
 		p.state = playerStatePlaying
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return pattern.ErrStopSong
+		return intf.ErrStopSong
 	}
 	return nil
 }
@@ -195,8 +211,12 @@ func (p *Player) runStatePlaying() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return pattern.ErrStopSong
-	default:
+		return intf.ErrStopSong
+	case <-p.tickerCh:
+		if p.ticker == nil {
+			// give ourselves something to hit the next time through
+			p.myTickerCh <- time.Now()
+		}
 	}
 
 	// run our update

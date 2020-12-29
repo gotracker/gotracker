@@ -12,7 +12,10 @@ It's a tracked music player written in Go.
 
 ## What does it play?
 
-At the moment, just S3M (Screamtracker 3) files and very terribly simulated MOD (Protracker/Fasttracker) files.
+Files from/of the following formats/trackers:
+* S3M - ScreamTracker 3
+* MOD - Protracker/Fasttracker/Startrekker (_internally up-converted to S3M_)
+* XM - Fasttracker II (_very alpha implementation_)
 
 ## What systems does it work on?
 
@@ -80,19 +83,20 @@ Not well, but it's good enough to play some moderately complex stuff.
 
 | Tags | Notes |
 |------|-------|
-| `s3m` | Unknown/unhandled commands (effects) will cause a panic. There aren't many left, but there are still some laying around. |
+| `s3m` `xm` | Unknown/unhandled commands (effects) will cause a panic. There aren't many left, but there are still some laying around. |
 | `player` | The rendering system is fairly bad - it originally was designed only to work with S3M, but we decided to rework some of it to be more flexible. We managed to pull most of the mixing functionality out into somewhat generic structures/algorithms, but it still needs a lot of work. |
-| `s3m` | Attempting to load a corrupted S3M file may cause the deserializer to panic or go running off into the weeds indefinitely. |
+| `s3m` `xm` | Attempting to load a corrupted S3M file may cause the deserializer to panic or go running off into the weeds indefinitely. |
 | `mod` | MOD file support is buggy, at best. |
+| `xm` | XM file support is in a very nascent state. Don't expect your favorite song to play in it well, if at all. |
 | `s3m` `opl2` | Attempting to play an S3M file with Adlib/OPL2 instruments does not produce the expected output. The OPL2 code has something wrong with it - it sounds pretty bad, though steps have been taken to remedy its strange output. |
 | `windows` `winmm` | Setting the number of channels to more than 2 may cause WinMM and/or Gotracker to do unusual things. You might be able to get a hardware 4-channel capable card (such as the Aureal Vortex 2 AU8830) to work, but driver inconsistencies and weirdnesses in WinMM will undoubtedly cause needless strife. |
-| `player` | Channel readouts are associated to the buffer being fed into the output device, so the log line showing the row/channels being played might appear unattached to what's coming from the sound system. |
+| `player` | Channel readouts are lazily attempted to match the layout from the tracker the song file came from. As a result, there are probably strange artifacts presented in it by the attempted simulation. |
 | `s3m` | Setting the default `C2SPD` value for the `s3m` package to something other than 8363 will cause some unusual behavior - Lower values will reduce the fidelity of the audio, but it will generally sound the same. However, the LFOs (vibrato, tremelo) will become significantly more pronounced the lower the `C2SPD` becomes. The inverse of the observed phenomenon occurs when the `C2SPD` value gets raised. At a certain point much higher than 8363, the LFOs become effectively useless. |
 | `player` `mixing` | The mixer still uses some simple saturation mixing techniques, but it's a lot better than it used to be. |
 | `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`" specifically when using a TCP connection string, make sure to append the default port specifier of `:4713` to the end of the `PULSE_SERVER` environment variable. |
 | `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
 | `flac` | Flac encoding is still very beta. |
-
+| `player` | Tracker `speed` values which are very long (`1F` for example) will usually underflow the output buffers when played directly through a sound card device. This is caused by the playback system being row-based and not tick-based. Attempts to resolve this will be coming soon-ish. |
 
 ### Unknown bugs
 

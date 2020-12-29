@@ -15,6 +15,7 @@ type Instrument interface {
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
 	GetID() int
+	GetSemitoneShift() int8
 	InstantiateOnChannel(int, Filter) InstrumentOnChannel
 }
 

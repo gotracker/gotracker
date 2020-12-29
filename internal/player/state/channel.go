@@ -104,7 +104,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 			wantNoteCalc = false
 		} else if cs.TargetInst != nil {
 			cs.PrevNoteSemitone = cs.NoteSemitone
-			cs.NoteSemitone = n.Semitone()
+			cs.NoteSemitone = note.Semitone(int(n.Semitone()) + int(cs.TargetInst.GetSemitoneShift()))
 			cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
 			wantNoteCalc = true
 		}

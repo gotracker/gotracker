@@ -121,7 +121,7 @@ func (k Key) String() string {
 type Octave uint8
 
 func (o Octave) String() string {
-	return fmt.Sprintf("%d", o)
+	return fmt.Sprintf("%X", uint8(o))
 }
 
 // Note is a combination of key and octave

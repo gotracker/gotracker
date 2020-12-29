@@ -20,7 +20,7 @@ func LoadMOD(filename string) (intf.Playback, error) {
 	return load.MOD(filename)
 }
 
-// Load loads an S3M file into the song state `s`
+// Load loads an S3M file into a playback system
 func (f format) Load(filename string) (intf.Playback, error) {
 	return load.S3M(filename)
 }

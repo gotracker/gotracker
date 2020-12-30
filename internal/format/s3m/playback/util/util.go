@@ -1,6 +1,8 @@
 package util
 
 import (
+	"math"
+
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
@@ -45,6 +47,29 @@ func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD) note.Period {
 
 	period := (note.Period(floatDefaultC2Spd*semitonePeriodTable[key]) / note.Period(uint32(c2spd)<<octave))
 	return period.AddInteger(0)
+}
+
+// CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
+func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune int8) note.C2SPD {
+	if finetune == 0 {
+		return c2spd
+	}
+
+	o := 5
+	st := note.Semitone(o * 12) // C-5
+	stShift := int8(finetune / 16)
+	if stShift >= 0 {
+		st += note.Semitone(stShift)
+	} else {
+		st -= note.Semitone(-stShift)
+	}
+	period0 := CalcSemitonePeriod(st, c2spd)
+	period1 := CalcSemitonePeriod(st+1, c2spd)
+	fFt := float64(finetune) / 16
+	iFt := math.Trunc(fFt)
+	f := fFt - iFt
+	period := period0 + note.Period(float64(period1-period0)*f)
+	return note.C2SPD(FrequencyFromPeriod(period))
 }
 
 // VolumeFromS3M converts an S3M volume to a player volume

@@ -25,8 +25,8 @@ func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
 func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.LastNonZero(uint8(e))
-	x := (xy >> 4) - 8
-	y := (xy & 0x0f) - 8
+	x := int8(xy>>4) - 8
+	y := int8(xy&0x0f) - 8
 	doArpeggio(cs, currentTick, x, y)
 }
 

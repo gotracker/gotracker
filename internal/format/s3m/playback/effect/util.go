@@ -78,10 +78,6 @@ func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
 }
 
 func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) {
-	inst := cs.GetTargetInst()
-	if inst == nil || inst.IsInvalid() {
-		return
-	}
 	ns := cs.GetNoteSemitone()
 	var arpSemitoneTarget note.Semitone
 	switch currentTick % 3 {
@@ -92,8 +88,7 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSem
 	case 2:
 		arpSemitoneTarget = note.Semitone(int8(ns) + arpSemitoneBDelta)
 	}
-	newSemi := util.CalcSemitonePeriod(arpSemitoneTarget, inst.GetC2Spd())
-	cs.SetTargetPeriod(newSemi)
+	cs.SetSemitone(arpSemitoneTarget)
 	cs.SetTargetPos(cs.GetPos())
 	cs.SetNotePlayTick(currentTick)
 	cs.SetDoRetriggerNote(true)

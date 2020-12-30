@@ -31,26 +31,31 @@ type ChannelState struct {
 	Command      commandFunc
 	ActiveEffect intf.Effect
 
-	TargetPeriod      note.Period
-	TargetPos         sampling.Pos
-	TargetInst        intf.Instrument
-	PortaTargetPeriod note.Period
-	NotePlayTick      int
-	NoteSemitone      note.Semitone
-	PrevNoteSemitone  note.Semitone
-	DoRetriggerNote   bool
-	RetriggerCount    uint8
-	TremorOn          bool
-	TremorTime        int
-	VibratoDelta      note.Period
-	Memory            intf.Memory
-	effectLastNonZero uint8
-	Cmd               intf.ChannelData
-	freezePlayback    bool
-	LastGlobalVolume  volume.Volume
-	VibratoOscillator oscillator.Oscillator
-	TremoloOscillator oscillator.Oscillator
-	TargetC2Spd       note.C2SPD
+	TargetPeriod   note.Period
+	TargetPos      sampling.Pos
+	TargetInst     intf.Instrument
+	TargetSemitone note.Semitone // from pattern, modified
+
+	StoredSemitone     note.Semitone // from pattern, unmodified, current note
+	PrevStoredSemitone note.Semitone // from pattern, unmodified, previous note
+	DoRetriggerNote    bool
+	PortaTargetPeriod  note.Period
+	NotePlayTick       int
+	RetriggerCount     uint8
+	TremorOn           bool
+	TremorTime         int
+	VibratoDelta       note.Period
+	Memory             intf.Memory
+	effectLastNonZero  uint8
+	Cmd                intf.ChannelData
+	freezePlayback     bool
+	LastGlobalVolume   volume.Volume
+	VibratoOscillator  oscillator.Oscillator
+	TremoloOscillator  oscillator.Oscillator
+	TargetC2Spd        note.C2SPD
+	Semitone           note.Semitone // from TargetSemitone, modified further, used in period calculations
+	WantNoteCalc       bool
+	WantVolCalc        bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
@@ -75,7 +80,8 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 	cs.VibratoDelta = 0
 	cs.Cmd = channel
 
-	wantNoteCalc := false
+	cs.WantNoteCalc = false
+	cs.WantVolCalc = false
 
 	if channel.HasNote() {
 		cs.VibratoOscillator.Pos = 0
@@ -90,45 +96,39 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 			cs.TargetInst = sd.GetInstrument(inst)
 			cs.TargetPos = sampling.Pos{}
 			if cs.TargetInst != nil {
-				vol := cs.TargetInst.GetVolume()
-				cs.SetStoredVolume(vol, globalVol)
+				cs.WantVolCalc = true
 			}
 		}
 
 		n := channel.GetNote()
 		if n == note.EmptyNote {
-			wantNoteCalc = false
+			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = 0
-			wantNoteCalc = false
+			cs.WantNoteCalc = false
 		} else if cs.TargetInst != nil {
-			cs.PrevNoteSemitone = cs.NoteSemitone
-			cs.NoteSemitone = note.Semitone(int(n.Semitone()) + int(cs.TargetInst.GetSemitoneShift()))
-			cs.TargetC2Spd = cs.TargetInst.GetC2Spd()
-			wantNoteCalc = true
+			cs.PrevStoredSemitone = cs.StoredSemitone
+			cs.StoredSemitone = n.Semitone()
+			cs.TargetSemitone = cs.StoredSemitone
+			cs.WantNoteCalc = true
 		}
 	} else {
-		wantNoteCalc = false
+		cs.WantNoteCalc = false
+		cs.WantVolCalc = false
 		cs.DoRetriggerNote = false
 	}
 
 	if channel.HasVolume() {
+		cs.WantVolCalc = false
 		v := channel.GetVolume()
 		if v == volume.VolumeUseInstVol {
-			sample := cs.TargetInst
-			if sample != nil {
-				vol := sample.GetVolume()
-				cs.SetStoredVolume(vol, globalVol)
+			if cs.TargetInst != nil {
+				cs.WantVolCalc = true
 			}
 		} else {
 			cs.SetStoredVolume(v, globalVol)
 		}
-	}
-
-	if wantNoteCalc {
-		cs.TargetPeriod = calcSemitonePeriod(cs.NoteSemitone, cs.TargetC2Spd)
-		cs.PortaTargetPeriod = cs.TargetPeriod
 	}
 }
 
@@ -322,7 +322,7 @@ func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
 
 // GetNoteSemitone returns the note semitone for the channel
 func (cs *ChannelState) GetNoteSemitone() note.Semitone {
-	return cs.NoteSemitone
+	return cs.StoredSemitone
 }
 
 // GetTargetPos returns the soon-to-be-committed sample position of the instrument
@@ -379,6 +379,14 @@ func (cs *ChannelState) SetPan(pan panning.Position) {
 // this gets reset on every row
 func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
 	cs.DoRetriggerNote = enabled
+	if enabled {
+		cs.WantNoteCalc = true
+	}
+}
+
+// SetSemitone sets the target semitone for the channel
+func (cs *ChannelState) SetSemitone(st note.Semitone) {
+	cs.TargetSemitone = st
 }
 
 // GetFilter returns the active filter on the channel

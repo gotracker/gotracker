@@ -45,6 +45,7 @@ type Instrument struct {
 	ID       channel.S3MInstrumentID
 	C2Spd    note.C2SPD
 	Volume   volume.Volume
+	Finetune int8
 }
 
 // IsInvalid always returns false (valid)
@@ -66,6 +67,16 @@ func (inst *Instrument) SetC2Spd(c2spd note.C2SPD) {
 // GetVolume returns the default volume value for the instrument
 func (inst *Instrument) GetVolume() volume.Volume {
 	return inst.Volume
+}
+
+// SetFinetune sets the finetune value on the instrument
+func (inst *Instrument) SetFinetune(ft int8) {
+	inst.Finetune = ft
+}
+
+// GetFinetune returns the finetune value on the instrument
+func (inst *Instrument) GetFinetune() int8 {
+	return inst.Finetune
 }
 
 // IsLooped returns true if the instrument has the loop flag set

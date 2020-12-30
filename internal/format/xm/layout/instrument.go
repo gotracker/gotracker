@@ -46,6 +46,7 @@ type Instrument struct {
 	C2Spd              note.C2SPD
 	Volume             volume.Volume
 	RelativeNoteNumber int8
+	Finetune           int8
 }
 
 // IsInvalid always returns false (valid)
@@ -109,6 +110,16 @@ func (inst *Instrument) GetLength() sampling.Pos {
 	default:
 	}
 	return sampling.Pos{}
+}
+
+// SetFinetune sets the finetune value on the instrument
+func (inst *Instrument) SetFinetune(ft int8) {
+	inst.Finetune = ft
+}
+
+// GetFinetune returns the finetune value on the instrument
+func (inst *Instrument) GetFinetune() int8 {
+	return inst.Finetune
 }
 
 // InstantiateOnChannel takes an instrument and loads it onto an output channel

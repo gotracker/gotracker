@@ -22,6 +22,8 @@ type Instrument interface {
 	GetID() InstrumentID
 	GetSemitoneShift() int8
 	InstantiateOnChannel(int, Filter) InstrumentOnChannel
+	SetFinetune(int8)
+	GetFinetune() int8
 }
 
 // InstrumentOnChannel is an interface for an instrument on a particular output channel

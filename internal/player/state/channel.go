@@ -145,13 +145,12 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData *mixing
 	sample := cs.Instrument
 	if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
 		sample.SetVolume(cs.ActiveVolume * cs.LastGlobalVolume)
-		// make a stand-alone data buffer for this channel for this tick
-		data := mix.NewMixBuffer(tickSamples)
-
 		period := cs.Period + cs.VibratoDelta
 		sample.SetPeriod(period)
 		samplerAdd := samplerSpeed / float32(period)
 		sample.Update(tickDuration)
+		// make a stand-alone data buffer for this channel for this tick
+		data := mix.NewMixBuffer(tickSamples)
 		mixData := mixing.SampleMixIn{
 			Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
 			StaticVol: volume.Volume(1.0),

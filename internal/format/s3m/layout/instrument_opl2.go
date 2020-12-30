@@ -130,6 +130,12 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Perio
 	}
 }
 
+// NoteCut cuts the current playback of the instrument
+func (inst *InstrumentOPL2) NoteCut(ioc *InstrumentOnChannel) {
+	ioc.Volume = 0
+	inst.SetKeyOn(ioc, 0, false)
+}
+
 func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 	reg20 := uint8(0x00)
 	if o.Tremolo {
@@ -150,19 +156,17 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 }
 
 func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
-	levelScale := o.KeyScaleLevel
-
-	totalVol := (float64(o.Volume) * float64(vol))
+	mVol := uint16(vol * 64)
+	oVol := uint16(o.Volume)
+	totalVol := uint8(oVol * mVol / 64)
 	if totalVol > 63 {
 		totalVol = 63
-	} else if totalVol < 0 {
-		totalVol = 0
 	}
-	adlVol := s3mfile.Volume(63) - s3mfile.Volume(uint8(totalVol))
+	adlVol := uint8(63) - totalVol
 
 	reg40 := uint8(0x00)
-	reg40 |= uint8(levelScale) << 6
-	reg40 |= uint8(adlVol) & 0x3f
+	reg40 |= (uint8(o.KeyScaleLevel) & 0x03) << 6
+	reg40 |= adlVol & 0x3f
 	return reg40
 }
 
@@ -175,7 +179,7 @@ func (inst *InstrumentOPL2) getReg60(o *OPL2OperatorData) uint8 {
 
 func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 	reg80 := uint8(0x00)
-	reg80 |= ((15 - o.SustainLevel) & 0x0f) << 4
+	reg80 |= (15 - (o.SustainLevel & 0x0f)) << 4
 	reg80 |= o.ReleaseRate & 0x0f
 	return reg80
 }
@@ -192,15 +196,18 @@ func (inst *InstrumentOPL2) getRegC0() uint8 {
 
 func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
 	regE0 := uint8(0x00)
-	regE0 |= uint8(o.WaveformSelection) & 0x03
+	regE0 |= uint8(o.WaveformSelection & 0x07)
 	return regE0
 }
 
 // twoOperatorMelodic
-var twoOperatorMelodic = [...]uint32{0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12}
+var twoOperatorMelodic = [...]uint32{
+	0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12,
+	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
+}
 
 func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
-	return twoOperatorMelodic[channelIdx%9]
+	return twoOperatorMelodic[channelIdx%18]
 }
 
 func freqToFnumBlock(freq float64) (uint16, uint8) {
@@ -310,7 +317,7 @@ func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.D
 
 	ch.WriteReg(0xC0|index, regC0)
 
-	regB0 |= ym.regB0 & 0x20
+	regB0 |= ym.regB0 & 0x20 // key on bit
 	ym.regB0 = regB0
 	ch.WriteReg(0xB0|index, regB0)
 }

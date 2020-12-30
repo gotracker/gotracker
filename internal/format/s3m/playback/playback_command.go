@@ -42,12 +42,12 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	// post-effect
 	m.doNoteVolCalcs(cs)
 
-	if cs.TargetPeriod == 0 && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
-		if cs.Cmd.GetNote() == note.StopNote {
-			cs.Instrument.SetVolume(0)
-		}
-		cs.Instrument.SetKeyOn(cs.Period, false)
-	} else if cs.DoRetriggerNote && currentTick == cs.NotePlayTick {
+	n := note.EmptyNote
+	if cs.Cmd != nil {
+		n = cs.Cmd.GetNote()
+	}
+	keyOff := n.IsEmpty() || n.IsStop()
+	if cs.DoRetriggerNote && cs.TargetPeriod != 0 && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
 			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
@@ -63,8 +63,19 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		}
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
-		if cs.Period != 0 && cs.Instrument != nil {
+		if cs.Instrument != nil {
 			cs.Instrument.SetKeyOn(cs.Period, true)
+			keyOff = false
+		}
+	}
+
+	if keyOff && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
+		if n == note.StopNote {
+			cs.Instrument.NoteCut()
+			cs.Instrument = nil
+			cs.Period = 0
+		} else {
+			cs.Instrument.SetKeyOn(cs.Period, false)
 		}
 	}
 }

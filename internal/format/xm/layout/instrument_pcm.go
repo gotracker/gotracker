@@ -117,9 +117,13 @@ func (inst *InstrumentPCM) Initialize(ioc *InstrumentOnChannel) error {
 func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
 }
 
+// NoteCut cuts the current playback of the instrument
+func (inst *InstrumentPCM) NoteCut(ioc *InstrumentOnChannel) {
+}
+
 // GetKeyOn gets the key on flag for the instrument
 func (inst *InstrumentPCM) GetKeyOn(ioc *InstrumentOnChannel) bool {
-	return false
+	return true
 }
 
 // Update advances time by the amount specified by `tickDuration`

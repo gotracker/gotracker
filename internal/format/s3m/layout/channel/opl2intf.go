@@ -17,6 +17,5 @@ type OPL2Intf interface {
 
 // NewOPL2Chip generates a new OPL2 chip
 func NewOPL2Chip(rate uint32) OPL2Chip {
-	//return opl2.NewGMEmu(rate)
 	return opl2.NewChip(rate, false)
 }

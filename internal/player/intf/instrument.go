@@ -32,6 +32,7 @@ type InstrumentOnChannel interface {
 
 	GetInstrument() Instrument
 	SetKeyOn(note.Period, bool)
+	NoteCut()
 	GetKeyOn() bool
 	Update(time.Duration)
 	SetFilter(Filter)

@@ -18,6 +18,7 @@ type InstrumentDataIntf interface {
 
 	Initialize(*InstrumentOnChannel) error
 	SetKeyOn(*InstrumentOnChannel, note.Period, bool)
+	NoteCut(*InstrumentOnChannel)
 	GetKeyOn(*InstrumentOnChannel) bool
 	Update(*InstrumentOnChannel, time.Duration)
 }
@@ -169,6 +170,13 @@ func (inst *InstrumentOnChannel) GetInstrument() intf.Instrument {
 func (inst *InstrumentOnChannel) SetKeyOn(period note.Period, on bool) {
 	if inst.Instrument != nil && inst.Instrument.Inst != nil {
 		inst.Instrument.Inst.SetKeyOn(inst, period, on)
+	}
+}
+
+// NoteCut cuts the current playback of the instrument
+func (inst *InstrumentOnChannel) NoteCut() {
+	if inst.Instrument != nil && inst.Instrument.Inst != nil {
+		inst.Instrument.Inst.NoteCut(inst)
 	}
 }
 

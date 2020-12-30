@@ -96,7 +96,6 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`" specifically when using a TCP connection string, make sure to append the default port specifier of `:4713` to the end of the `PULSE_SERVER` environment variable. |
 | `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
 | `flac` | Flac encoding is still very beta. |
-| `player` | Tracker `speed` values which are very long (`1F` for example) will usually underflow the output buffers when played directly through a sound card device. This is caused by the playback system being row-based and not tick-based. Attempts to resolve this will be coming soon-ish. |
 
 ### Unknown bugs
 

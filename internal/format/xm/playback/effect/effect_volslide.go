@@ -22,28 +22,20 @@ func (e VolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e VolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.LastNonZero(uint8(e))
+	xy := mem.VolumeSlide(uint8(e))
 	x := uint8(xy >> 4)
 	y := uint8(xy & 0x0F)
 
-	if x == 0 { // decrease every tick
-		if y == 0x0F {
-			doVolSlide(cs, -float32(y), 1.0)
-		} else if currentTick != 0 {
-			doVolSlide(cs, -float32(y), 1.0)
-		}
-	} else if y == 0 { // increase every tick
-		if currentTick != 0 {
-			doVolSlide(cs, float32(x), 1.0)
-		}
-	} else if x == 0x0F { // finely decrease on the first tick
-		if y != 0x0F && currentTick == 0 {
-			doVolSlide(cs, -float32(y), 1.0)
-		}
-	} else if y == 0x0F { // finely increase on the first tick
-		if x != 0x0F && currentTick == 0 {
-			doVolSlide(cs, float32(x), 1.0)
-		}
+	if currentTick == 0 {
+		return
+	}
+
+	if x == 0 {
+		// vol slide down
+		doVolSlide(cs, -float32(y), 1.0)
+	} else if y == 0 {
+		// vol slide up
+		doVolSlide(cs, float32(y), 1.0)
 	}
 }
 

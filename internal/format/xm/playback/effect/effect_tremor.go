@@ -22,7 +22,7 @@ func (e Tremor) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e Tremor) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.LastNonZero(uint8(e))
+	xy := mem.Tremor(uint8(e))
 	x := int((xy >> 4) + 1)
 	y := int((xy & 0x0f) + 1)
 	doTremor(cs, currentTick, x, y)

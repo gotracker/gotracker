@@ -22,7 +22,7 @@ func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e Tremolo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.LastNonZero(uint8(e))
+	xy := mem.Tremolo(uint8(e))
 	if currentTick == 0 {
 		trem := cs.GetTremoloOscillator()
 		trem.Pos = 0

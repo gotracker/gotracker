@@ -38,6 +38,9 @@ const (
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
+// Finetune is a 1/64th of a Semitone
+type Finetune int16
+
 // Key is a note key component
 type Key uint8
 

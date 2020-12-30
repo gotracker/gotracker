@@ -79,8 +79,6 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		return nil
 	}
 
-	mem := mi.(*channel.Memory)
-	mem.LastNonZero(cd.EffectParameter)
 	switch cd.Effect {
 	case 0x00: // Arpeggio
 		return Arpeggio(cd.EffectParameter)
@@ -134,15 +132,9 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		case 0x9: // Retrig note
 			return RetriggerNote(cd.EffectParameter)
 		case 0xA: // Fine volume slide up
-			{
-				// TODO
-				log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-			}
+			return FineVolumeSlideUp(cd.EffectParameter)
 		case 0xB: // Fine volume slide down
-			{
-				// TODO
-				log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-			}
+			return FineVolumeSlideDown(cd.EffectParameter)
 		case 0xC: // Note cut
 			return NoteCut(cd.EffectParameter)
 		case 0xD: // Note delay

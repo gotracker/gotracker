@@ -3,7 +3,6 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
 )
@@ -19,10 +18,9 @@ func (e SetVolume) PreStart(cs intf.Channel, p intf.Playback) {
 func (e SetVolume) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
-	mem := cs.GetMemory().(*channel.Memory)
-	xx := mem.LastNonZero(uint8(e))
+	xx := uint8(e)
 
-	cs.SetActiveVolume(util.VolumeFromXm(xx))
+	cs.SetActiveVolume(util.VolumeFromXm(0x10 + xx))
 }
 
 // Tick is called on every tick

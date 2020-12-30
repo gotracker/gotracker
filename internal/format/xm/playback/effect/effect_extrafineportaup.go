@@ -12,6 +12,7 @@ type ExtraFinePortaUp uint8 // 'X1x'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e ExtraFinePortaUp) PreStart(cs intf.Channel, p intf.Playback) {
+	cs.SetKeepFinetune(true)
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
@@ -20,10 +21,10 @@ func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
 	cs.UnfreezePlayback()
 
 	mem := cs.GetMemory().(*channel.Memory)
-	xx := mem.LastNonZero(uint8(e))
+	xx := mem.ExtraFinePortaUp(uint8(e))
 	y := xx & 0x0F
 
-	doPortaUp(cs, float32(y), 1)
+	doPortaUp(cs, float32(y), 1, mem.LinearFreqSlides)
 }
 
 // Tick is called on every tick

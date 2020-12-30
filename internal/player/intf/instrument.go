@@ -8,13 +8,18 @@ import (
 	"github.com/gotracker/gomixing/volume"
 )
 
+// InstrumentID is an identifier for an instrument/sample that means something to the format
+type InstrumentID interface {
+	IsEmpty() bool
+}
+
 // Instrument is an interface for instrument/sample data
 type Instrument interface {
 	IsInvalid() bool
 	GetC2Spd() note.C2SPD
 	SetC2Spd(note.C2SPD)
 	GetVolume() volume.Volume
-	GetID() int
+	GetID() InstrumentID
 	GetSemitoneShift() int8
 	InstantiateOnChannel(int, Filter) InstrumentOnChannel
 }

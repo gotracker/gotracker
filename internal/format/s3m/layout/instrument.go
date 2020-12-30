@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -41,7 +42,7 @@ type Instrument struct {
 	Filename string
 	Name     string
 	Inst     InstrumentDataIntf
-	ID       uint8
+	ID       channel.S3MInstrumentID
 	C2Spd    note.C2SPD
 	Volume   volume.Volume
 }
@@ -125,8 +126,8 @@ func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter)
 }
 
 // GetID returns the instrument number (1-based)
-func (inst *Instrument) GetID() int {
-	return int(inst.ID)
+func (inst *Instrument) GetID() intf.InstrumentID {
+	return inst.ID
 }
 
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at

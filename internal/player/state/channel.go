@@ -81,13 +81,13 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 		cs.VibratoOscillator.Pos = 0
 		cs.TremoloOscillator.Pos = 0
 		inst := channel.GetInstrument()
-		if inst == 0 {
+		if inst.IsEmpty() {
 			// use current
 			cs.TargetPos = sampling.Pos{}
-		} else if int(inst)-1 > sd.NumInstruments() {
+		} else if !sd.IsValidInstrumentID(inst) {
 			cs.TargetInst = nil
 		} else {
-			cs.TargetInst = sd.GetInstrument(int(inst) - 1)
+			cs.TargetInst = sd.GetInstrument(inst)
 			cs.TargetPos = sampling.Pos{}
 			if cs.TargetInst != nil {
 				vol := cs.TargetInst.GetVolume()

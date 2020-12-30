@@ -14,7 +14,8 @@ type SongData interface {
 	IsChannelEnabled(int) bool
 	GetOutputChannel(int) int
 	NumInstruments() int
-	GetInstrument(int) Instrument
+	IsValidInstrumentID(InstrumentID) bool
+	GetInstrument(InstrumentID) Instrument
 	GetName() string
 }
 

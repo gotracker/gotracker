@@ -5,14 +5,23 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
+
+// S3MInstrumentID is an instrument ID in S3M world
+type S3MInstrumentID uint8
+
+// IsEmpty returns true if the instrument ID is 'nothing'
+func (s S3MInstrumentID) IsEmpty() bool {
+	return s == 0
+}
 
 // Data is the data for the channel
 type Data struct {
 	What       s3mfile.PatternFlags
 	Note       s3mfile.Note
-	Instrument uint8
+	Instrument S3MInstrumentID
 	Volume     s3mfile.Volume
 	Command    uint8
 	Info       uint8
@@ -34,7 +43,7 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument() uint8 {
+func (d *Data) GetInstrument() intf.InstrumentID {
 	return d.Instrument
 }
 

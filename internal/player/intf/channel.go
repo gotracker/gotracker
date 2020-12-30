@@ -15,7 +15,7 @@ type ChannelData interface {
 	GetNote() note.Note
 
 	HasInstrument() bool
-	GetInstrument() uint8
+	GetInstrument() InstrumentID
 
 	HasVolume() bool
 	GetVolume() volume.Volume

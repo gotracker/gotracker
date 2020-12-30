@@ -3,6 +3,7 @@ package layout
 import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
@@ -29,11 +30,12 @@ type ChannelSetting struct {
 // Song is the full definition of the song data of an Song file
 type Song struct {
 	intf.SongData
-	Head            Header
-	Instruments     []Instrument
-	Patterns        []Pattern
-	ChannelSettings []ChannelSetting
-	OrderList       []intf.PatternIdx
+	Head              Header
+	Instruments       map[uint8]*Instrument
+	InstrumentNoteMap map[uint8]map[note.Semitone]*Instrument
+	Patterns          []Pattern
+	ChannelSettings   []ChannelSetting
+	OrderList         []intf.PatternIdx
 }
 
 // GetOrderList returns the list of all pattern orders for the song
@@ -64,9 +66,33 @@ func (s *Song) NumInstruments() int {
 	return len(s.Instruments)
 }
 
+// IsValidInstrumentID returns true if the instrument exists
+func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
+	if instNum.IsEmpty() {
+		return false
+	}
+	switch id := instNum.(type) {
+	case channel.SampleID:
+		_, ok := s.Instruments[id.InstID]
+		return ok
+	}
+	return false
+}
+
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instNum int) intf.Instrument {
-	return &s.Instruments[instNum]
+func (s *Song) GetInstrument(instNum intf.InstrumentID) intf.Instrument {
+	if instNum.IsEmpty() {
+		return nil
+	}
+	switch id := instNum.(type) {
+	case channel.SampleID:
+		if nm, ok1 := s.InstrumentNoteMap[id.InstID]; ok1 {
+			if sm, ok2 := nm[id.Semitone]; ok2 {
+				return sm
+			}
+		}
+	}
+	return nil
 }
 
 // GetName returns the name of the song

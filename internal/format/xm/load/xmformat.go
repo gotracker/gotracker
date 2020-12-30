@@ -185,6 +185,9 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 			Enabled:        true,
 			InitialVolume:  util.DefaultVolume,
 			InitialPanning: util.DefaultPanning,
+			Memory: channel.Memory{
+				LinearFreqSlides: f.Head.Flags.IsLinearSlides(),
+			},
 		}
 
 		channels[chNum] = cs

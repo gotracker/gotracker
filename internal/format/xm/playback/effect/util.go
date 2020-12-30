@@ -27,34 +27,47 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	cs.SetActiveVolume(nv)
 }
 
-func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
-	delta := int(amount * multiplier)
+func doPortaByDelta(cs intf.Channel, delta int, linearFreqSlides bool) {
 	period := cs.GetPeriod()
-	cs.SetPeriod(period.AddInteger(-delta))
-}
-
-func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
-	delta := int(amount * multiplier)
-	period := cs.GetPeriod()
-	if period.AddInteger(-delta) < target {
-		period = target
+	if linearFreqSlides {
+		finetune := cs.GetFinetune()
+		finetune += note.Finetune(delta)
+		cs.SetFinetune(finetune)
+		c2Spd := note.C2SPD(util.DefaultC2Spd)
+		if inst := cs.GetTargetInst(); inst != nil {
+			c2Spd = inst.GetC2Spd()
+		}
+		p := (10*12-float64(cs.GetNoteSemitone())-1)*16*4 - float64(finetune)/2
+		freq := float64(c2Spd) * math.Pow(2, ((6*12*16*4-p)/(12*16*4)))
+		period = note.Period(float64(util.XMBaseClock) / freq)
+	} else {
+		period = period.AddInteger(delta)
 	}
 	cs.SetPeriod(period)
 }
 
-func doPortaDown(cs intf.Channel, amount float32, multiplier float32) {
+func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) {
 	delta := int(amount * multiplier)
-	period := cs.GetPeriod()
-	cs.SetPeriod(period.AddInteger(delta))
+	doPortaByDelta(cs, -delta, linearFreqSlides)
 }
 
-func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
-	delta := amount * multiplier
-	period := cs.GetPeriod()
-	if period.AddInteger(int(delta)) > target {
-		period = target
+func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
+	doPortaUp(cs, amount, multiplier, linearFreqSlides)
+	if period := cs.GetPeriod(); period < target {
+		cs.SetPeriod(target)
 	}
-	cs.SetPeriod(period)
+}
+
+func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) {
+	delta := int(amount * multiplier)
+	doPortaByDelta(cs, delta, linearFreqSlides)
+}
+
+func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
+	doPortaDown(cs, amount, multiplier, linearFreqSlides)
+	if period := cs.GetPeriod(); period > target {
+		cs.SetPeriod(target)
+	}
 }
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {

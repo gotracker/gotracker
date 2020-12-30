@@ -27,6 +27,7 @@ func (e PortaToNote) PreStart(cs intf.Channel, p intf.Playback) {
 func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
+	cs.SetKeepFinetune(true)
 }
 
 // Tick is called on every tick
@@ -38,9 +39,9 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if period > ptp {
-			doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
+			doPortaUpToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // subtracts
 		} else {
-			doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
+			doPortaDownToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // adds
 		}
 	}
 }

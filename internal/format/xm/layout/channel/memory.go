@@ -2,13 +2,26 @@ package channel
 
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
-	portaToNote   uint8
-	vibrato       uint8
-	vibratoSpeed  uint8
-	sampleOffset  uint8
-	tempoDecrease uint8
-	tempoIncrease uint8
-	lastNonZero   uint8
+	portaToNote         uint8
+	vibrato             uint8
+	vibratoSpeed        uint8
+	sampleOffset        uint8
+	tempoDecrease       uint8
+	tempoIncrease       uint8
+	portaDown           uint8
+	portaUp             uint8
+	tremolo             uint8
+	tremor              uint8
+	volumeSlide         uint8
+	finePortaUp         uint8
+	finePortaDown       uint8
+	fineVolumeSlideUp   uint8
+	fineVolumeSlideDown uint8
+	extraFinePortaUp    uint8
+	extraFinePortaDown  uint8
+
+	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
+	LinearFreqSlides bool
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -51,7 +64,57 @@ func (m *Memory) TempoIncrease(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.tempoIncrease)
 }
 
-// LastNonZero gets or sets the most recent non-zero value (or input)
-func (m *Memory) LastNonZero(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.lastNonZero)
+// PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
+func (m *Memory) PortaDown(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.portaDown)
+}
+
+// PortaUp gets or sets the most recent non-zero value (or input) for Portamento Up
+func (m *Memory) PortaUp(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.portaUp)
+}
+
+// Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
+func (m *Memory) Tremolo(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.tremolo)
+}
+
+// Tremor gets or sets the most recent non-zero value (or input) for Tremor
+func (m *Memory) Tremor(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.tremor)
+}
+
+// VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
+func (m *Memory) VolumeSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.volumeSlide)
+}
+
+// FinePortaUp gets or sets the most recent non-zero value (or input) for Fine Portamento Up
+func (m *Memory) FinePortaUp(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.finePortaUp)
+}
+
+// FinePortaDown gets or sets the most recent non-zero value (or input) for Fine Portamento Down
+func (m *Memory) FinePortaDown(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.finePortaDown)
+}
+
+// FineVolumeSlideUp gets or sets the most recent non-zero value (or input) for Fine Volume Slide Up
+func (m *Memory) FineVolumeSlideUp(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.fineVolumeSlideUp)
+}
+
+// FineVolumeSlideDown gets or sets the most recent non-zero value (or input) for Fine Volume Slide Down
+func (m *Memory) FineVolumeSlideDown(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.fineVolumeSlideDown)
+}
+
+// ExtraFinePortaUp gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Up
+func (m *Memory) ExtraFinePortaUp(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.extraFinePortaUp)
+}
+
+// ExtraFinePortaDown gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Down
+func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.extraFinePortaDown)
 }

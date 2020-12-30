@@ -56,6 +56,8 @@ type ChannelState struct {
 	Semitone           note.Semitone // from TargetSemitone, modified further, used in period calculations
 	WantNoteCalc       bool
 	WantVolCalc        bool
+	Finetune           note.Finetune
+	KeepFinetune       bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
@@ -82,6 +84,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
+	cs.KeepFinetune = false
 
 	if channel.HasNote() {
 		cs.VibratoOscillator.Pos = 0
@@ -106,6 +109,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 			cs.DoRetriggerNote = false
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = 0
+			cs.Finetune = 0
 			cs.WantNoteCalc = false
 		} else if cs.TargetInst != nil {
 			cs.PrevStoredSemitone = cs.StoredSemitone
@@ -190,6 +194,11 @@ func (cs *ChannelState) UnfreezePlayback() {
 // PlaybackFrozen returns true if the mixer progression for the channel is suspended
 func (cs ChannelState) PlaybackFrozen() bool {
 	return cs.freezePlayback
+}
+
+// SetKeepFinetune sets the flag that keeps the finetune value
+func (cs *ChannelState) SetKeepFinetune(keep bool) {
+	cs.KeepFinetune = keep
 }
 
 // SetEffectSharedMemoryIfNonZero stores the `input` value into memory if it is non-zero
@@ -343,6 +352,16 @@ func (cs *ChannelState) GetPeriod() note.Period {
 // SetPeriod sets the current sampler period of the active instrument
 func (cs *ChannelState) SetPeriod(period note.Period) {
 	cs.Period = note.Period(math.Max(float64(period), 0))
+}
+
+// GetFinetune returns the current sampler finetune of the active instrument
+func (cs *ChannelState) GetFinetune() note.Finetune {
+	return cs.Finetune
+}
+
+// SetFinetune sets the current sampler finetune of the active instrument
+func (cs *ChannelState) SetFinetune(finetune note.Finetune) {
+	cs.Finetune = finetune
 }
 
 // GetPos returns the sample position of the active instrument

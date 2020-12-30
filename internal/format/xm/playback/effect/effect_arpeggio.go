@@ -3,7 +3,6 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -23,8 +22,11 @@ func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
 
 // Tick is called on every tick
 func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.LastNonZero(uint8(e))
+	xy := uint8(e)
+	if xy == 0 {
+		return
+	}
+
 	x := int8(xy>>4) - 8
 	y := int8(xy&0x0f) - 8
 	doArpeggio(cs, currentTick, x, y)

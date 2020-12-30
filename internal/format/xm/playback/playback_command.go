@@ -3,11 +3,33 @@ package playback
 import (
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/playback/filter"
+	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
 
+func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
+	inst := cs.TargetInst
+	if inst == nil {
+		return
+	}
+
+	if cs.WantVolCalc {
+		cs.WantVolCalc = false
+		cs.SetStoredVolume(inst.GetVolume(), m.globalVolume)
+	}
+	if cs.WantNoteCalc {
+		cs.WantNoteCalc = false
+		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
+		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune())
+		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
+		cs.PortaTargetPeriod = cs.TargetPeriod
+	}
+}
+
 func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int, lastTick bool) {
+	// pre-effect
+	m.doNoteVolCalcs(cs)
 	if cs.ActiveEffect != nil {
 		if currentTick == 0 {
 			cs.ActiveEffect.Start(cs, m)
@@ -17,6 +39,8 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			cs.ActiveEffect.Stop(cs, m, currentTick)
 		}
 	}
+	// post-effect
+	m.doNoteVolCalcs(cs)
 
 	if cs.TargetPeriod == 0 && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
 		if cs.Cmd.GetNote() == note.StopNote {

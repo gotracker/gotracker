@@ -103,6 +103,11 @@ func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
 	return nil
 }
 
+// GetC2Spd returns the c2spd for the instrument
+func (inst *InstrumentOPL2) GetC2Spd(ioc *InstrumentOnChannel) note.C2SPD {
+	return util.DefaultC2Spd
+}
+
 // SetKeyOn sets the key on flag for the instrument
 func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
 	ym := ioc.Data.(*ym3812)

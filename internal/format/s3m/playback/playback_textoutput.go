@@ -33,7 +33,7 @@ func s3mChannelRender(cdata render.ChannelData) string {
 			}
 		}
 
-		if data.HasCommand() {
+		if data.HasCommand() && data.Command != 0 {
 			e = fmt.Sprintf("%c%0.2X", '@'+data.Command, data.Info)
 		}
 	}

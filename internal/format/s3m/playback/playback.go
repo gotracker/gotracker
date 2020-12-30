@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
-	"github.com/gotracker/opl2"
 
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/layout/channel"
@@ -35,7 +34,7 @@ type Manager struct {
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
 
-	opl2           *opl2.Chip
+	opl2           channel.OPL2Chip
 	s              *sampler.Sampler
 	rowRenderState *rowRenderState
 }
@@ -237,7 +236,7 @@ func (m *Manager) GetName() string {
 }
 
 // GetOPL2Chip returns the current song's OPL2 chip, if it's needed
-func (m *Manager) GetOPL2Chip() *opl2.Chip {
+func (m *Manager) GetOPL2Chip() channel.OPL2Chip {
 	return m.opl2
 }
 

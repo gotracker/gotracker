@@ -87,7 +87,7 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	chip  *opl2.Chip
+	chip  channel.OPL2Chip
 	regB0 uint8
 }
 

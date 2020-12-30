@@ -10,6 +10,7 @@ import (
 
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout"
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -232,7 +233,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		if sample == nil {
 			continue
 		}
-		sample.ID = uint8(instNum + 1)
+		sample.ID = channel.S3MInstrumentID(uint8(instNum + 1))
 		song.Instruments[instNum] = *sample
 	}
 

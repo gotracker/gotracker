@@ -28,61 +28,69 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader) (*layout.Instrument, error) {
-	var si *xmfile.SampleHeader
-	if inst.SamplesCount > 0 {
-		si = &inst.Samples[0]
-	} else {
-		si = &xmfile.SampleHeader{}
-	}
-	sample := layout.Instrument{
-		Filename:           inst.GetName(),
-		Name:               si.GetName(),
-		C2Spd:              note.C2SPD(0), // TODO: use si.Finetune
-		Volume:             util.VolumeFromXm(si.Volume),
-		RelativeNoteNumber: si.RelativeNoteNumber,
-	}
-	if si.Finetune != 0 {
-		n := float64(4 * 12)
-		period := 10*12*16*4 - n*16*4 - float64(si.Finetune)/2
-		frequency := 8363 * math.Pow(2, ((6*12*16*4-period)/(12*16*4)))
-		sample.C2Spd = note.C2SPD(frequency)
-	}
-	if sample.C2Spd == 0 {
-		sample.C2Spd = note.C2SPD(util.DefaultC2Spd)
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader) ([]*layout.Instrument, map[int][]note.Semitone, error) {
+	noteMap := make(map[int][]note.Semitone)
+
+	var instruments []*layout.Instrument
+
+	for _, si := range inst.Samples {
+		sample := layout.Instrument{
+			Filename:           si.GetName(),
+			Name:               inst.GetName(),
+			C2Spd:              note.C2SPD(0), // TODO: use si.Finetune
+			Volume:             util.VolumeFromXm(0x10 + si.Volume),
+			RelativeNoteNumber: si.RelativeNoteNumber,
+		}
+
+		ii := layout.InstrumentPCM{
+			Length:        int(si.Length),
+			Looped:        si.Flags.LoopMode() != xmfile.SampleLoopModeDisabled,
+			LoopBegin:     int(si.LoopStart),
+			LoopEnd:       int(si.LoopStart + si.LoopLength),
+			NumChannels:   1,
+			BitsPerSample: 8,
+		}
+
+		if si.Finetune != 0 {
+			n := float64(4 * 12)
+			period := 10*12*16*4 - n*16*4 - float64(si.Finetune)/2
+			frequency := 8363 * math.Pow(2, ((6*12*16*4-period)/(12*16*4)))
+			sample.C2Spd = note.C2SPD(frequency)
+		}
+		if sample.C2Spd == 0 {
+			sample.C2Spd = note.C2SPD(util.DefaultC2Spd)
+		}
+		if si.Flags.IsStereo() {
+			ii.NumChannels = 2
+		}
+		if si.Flags.Is16Bit() {
+			ii.BitsPerSample = 16
+		}
+		stride := ii.NumChannels * ii.BitsPerSample / 8
+		ii.Length /= stride
+		ii.LoopBegin /= stride
+		ii.LoopEnd /= stride
+
+		ii.Sample = make([]uint8, len(si.SampleData))
+		copy(ii.Sample, si.SampleData)
+
+		sample.Inst = &ii
+		instruments = append(instruments, &sample)
 	}
 
-	idata := layout.InstrumentPCM{
-		Length:        int(si.Length),
-		Looped:        si.Flags.LoopMode() != xmfile.SampleLoopModeDisabled,
-		LoopBegin:     int(si.LoopStart),
-		LoopEnd:       int(si.LoopStart + si.LoopLength),
-		NumChannels:   1,
-		BitsPerSample: 8,
-	}
-	if si.Flags.IsStereo() {
-		idata.NumChannels = 2
-	}
-	if si.Flags.Is16Bit() {
-		idata.BitsPerSample = 16
-	}
-	stride := idata.NumChannels * idata.BitsPerSample / 8
-	idata.Length /= stride
-	idata.LoopBegin /= stride
-	idata.LoopEnd /= stride
-
-	idata.Sample = make([]uint8, len(si.SampleData))
-	for i, s := range si.SampleData {
-		idata.Sample[i] = uint8(s)
+	for st, sn := range inst.SampleNumber {
+		i := int(sn)
+		if i < len(instruments) {
+			noteMap[i] = append(noteMap[i], note.Semitone(st))
+		}
 	}
 
-	sample.Inst = &idata
-	return &sample, nil
+	return instruments, noteMap, nil
 }
 
-func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader) (*layout.Instrument, error) {
+func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader) ([]*layout.Instrument, map[int][]note.Semitone, error) {
 	if s == nil {
-		return nil, errors.New("instrument is nil")
+		return nil, nil, errors.New("instrument is nil")
 	}
 
 	return xmInstrumentToInstrument(s)
@@ -122,27 +130,40 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 	}
 
 	song := layout.Song{
-		Head:        *h,
-		Instruments: make([]layout.Instrument, len(f.Instruments)),
-		Patterns:    make([]layout.Pattern, len(f.Patterns)),
-		OrderList:   make([]intf.PatternIdx, int(f.Head.SongLength)),
+		Head:              *h,
+		Instruments:       make(map[uint8]*layout.Instrument),
+		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*layout.Instrument),
+		Patterns:          make([]layout.Pattern, len(f.Patterns)),
+		OrderList:         make([]intf.PatternIdx, int(f.Head.SongLength)),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
 		song.OrderList[i] = intf.PatternIdx(f.Head.OrderTable[i])
 	}
 
-	song.Instruments = make([]layout.Instrument, len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
-		sample, err := convertXMInstrumentToInstrument(&scrs)
+		samples, noteMap, err := convertXMInstrumentToInstrument(&scrs)
 		if err != nil {
 			return nil, err
 		}
-		if sample == nil {
-			continue
+		for _, sample := range samples {
+			if sample == nil {
+				continue
+			}
+			sample.ID.InstID = uint8(instNum + 1)
+			song.Instruments[sample.ID.InstID] = sample
 		}
-		sample.ID = uint8(instNum + 1)
-		song.Instruments[instNum] = *sample
+		for i, sts := range noteMap {
+			sample := samples[i]
+			inm, ok := song.InstrumentNoteMap[sample.ID.InstID]
+			if !ok {
+				inm = make(map[note.Semitone]*layout.Instrument)
+				song.InstrumentNoteMap[sample.ID.InstID] = inm
+			}
+			for _, st := range sts {
+				inm[st] = samples[i]
+			}
+		}
 	}
 
 	lastEnabledChannel := 0

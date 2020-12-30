@@ -66,9 +66,29 @@ func (s *Song) NumInstruments() int {
 	return len(s.Instruments)
 }
 
+// IsValidInstrumentID returns true if the instrument exists
+func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
+	if instNum.IsEmpty() {
+		return false
+	}
+	switch id := instNum.(type) {
+	case channel.S3MInstrumentID:
+		return int(id) < len(s.Instruments)
+	}
+	return false
+}
+
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instNum int) intf.Instrument {
-	return &s.Instruments[instNum]
+func (s *Song) GetInstrument(instID intf.InstrumentID) intf.Instrument {
+	if instID.IsEmpty() {
+		return nil
+	}
+	switch id := instID.(type) {
+	case channel.S3MInstrumentID:
+		return &s.Instruments[int(id)-1]
+	}
+
+	return nil
 }
 
 // GetName returns the name of the song

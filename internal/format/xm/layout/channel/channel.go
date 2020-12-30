@@ -9,6 +9,18 @@ import (
 	"gotracker/internal/player/note"
 )
 
+// SampleID is an InstrumentID that is a combination of InstID and SampID
+type SampleID struct {
+	intf.InstrumentID
+	InstID   uint8
+	Semitone note.Semitone
+}
+
+// IsEmpty returns true if the sample ID is empty
+func (s SampleID) IsEmpty() bool {
+	return s.InstID == 0
+}
+
 // Data is the data for the channel
 type Data struct {
 	intf.ChannelData
@@ -36,8 +48,10 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument() uint8 {
-	return d.Instrument
+func (d *Data) GetInstrument() intf.InstrumentID {
+	return SampleID{
+		InstID: d.Instrument,
+	}
 }
 
 // HasVolume returns true if there exists a volume on the channel

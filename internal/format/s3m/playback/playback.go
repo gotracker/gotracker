@@ -35,8 +35,9 @@ type Manager struct {
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
 
-	opl2 *opl2.Chip
-	s    *sampler.Sampler
+	opl2           *opl2.Chip
+	s              *sampler.Sampler
+	rowRenderState *rowRenderState
 }
 
 // NewManager creates a new manager for an S3M song

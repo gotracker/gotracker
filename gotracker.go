@@ -83,7 +83,9 @@ func main() {
 		row := premix.Userdata.(*render.RowRender)
 		switch deviceKind {
 		case device.KindSoundCard:
-			fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
+			if row.RowText != nil {
+				fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
+			}
 		case device.KindFile:
 			if progress == nil {
 				progress = progressBar.StartNew(playback.GetNumOrders())

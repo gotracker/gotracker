@@ -37,6 +37,8 @@ type Manager struct {
 
 	opl2 *opl2.Chip
 	s    *sampler.Sampler
+
+	rowRenderState *rowRenderState
 }
 
 // NewManager creates a new manager for an XM song

@@ -41,7 +41,7 @@ func s3mChannelRender(cdata render.ChannelData) string {
 	return strings.Join([]string{n, i, v, e}, " ")
 }
 
-func (m *Manager) getRowText() render.RowDisplay {
+func (m *Manager) getRowText() *render.RowDisplay {
 	nCh := 0
 	for ch := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
@@ -49,7 +49,7 @@ func (m *Manager) getRowText() render.RowDisplay {
 		}
 		nCh++
 	}
-	var rowText = render.NewRowText(nCh, s3mChannelRender)
+	rowText := render.NewRowText(nCh, s3mChannelRender)
 	for ch := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue
@@ -58,5 +58,5 @@ func (m *Manager) getRowText() render.RowDisplay {
 
 		rowText.Channels[ch] = cs.Cmd
 	}
-	return rowText
+	return &rowText
 }

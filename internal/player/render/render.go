@@ -42,8 +42,8 @@ func (rt RowDisplay) String(options ...interface{}) string {
 
 //RowRender is the final output of a single row's data
 type RowRender struct {
-	Stop    bool
 	Order   int
 	Row     int
-	RowText RowDisplay
+	Tick    int
+	RowText *RowDisplay
 }

@@ -133,7 +133,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData []mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData *mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
 	if cs.Command != nil {
 		cs.Command(ch, cs, tick, lastTick)
 	}
@@ -157,7 +157,7 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData []mixin
 		}
 		data.MixInSample(mixData)
 		cs.Pos.Add(samplerAdd * float32(tickSamples))
-		mixerData[tick] = mixing.Data{
+		*mixerData = mixing.Data{
 			Data:       data,
 			Pan:        cs.Pan,
 			Volume:     volume.Volume(1.0),

@@ -40,13 +40,49 @@ func (m *Manager) renderOneRow() (*device.PremixData, error) {
 		Userdata: finalData,
 	}
 
+	if m.rowRenderState == nil || m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
+		tickDuration := time.Duration(2500) * time.Millisecond / time.Duration(m.pattern.GetTempo())
+		ticksThisRow := m.pattern.GetTicksThisRow()
+		samplesPerTick := int(tickDuration.Seconds() * float64(m.s.SampleRate))
+		panmixer := m.s.GetPanMixer()
+		m.rowRenderState = &rowRenderState{
+			mix: m.s.Mixer(),
+
+			samplerSpeed:   m.s.GetSamplerSpeed(),
+			tickDuration:   tickDuration,
+			samplesPerTick: samplesPerTick,
+
+			ticksThisRow: ticksThisRow,
+
+			//samplesThisRow: int(ticksThisRow) * samplesPerTick,
+
+			panmixer: panmixer,
+
+			centerPanning: panmixer.GetMixingMatrix(panning.CenterAhead),
+
+			chRrs:       make([]mixing.ChannelData, len(m.channels)),
+			firstOplCh:  -1,
+			currentTick: 0,
+		}
+	}
+	for ch := range m.channels {
+		m.rowRenderState.chRrs[ch] = make(mixing.ChannelData, 1)
+	}
+
+	premix.SamplesLen = m.rowRenderState.samplesPerTick
+
 	m.soundRenderRow(premix)
 
 	finalData.Order = int(m.pattern.GetCurrentOrder())
 	finalData.Row = int(m.pattern.GetCurrentRow())
-	finalData.RowText = m.getRowText()
-
-	postMixRowTxn.AdvanceRow()
+	finalData.Tick = m.rowRenderState.currentTick
+	if m.rowRenderState.currentTick == 0 {
+		finalData.RowText = m.getRowText()
+	}
+	m.rowRenderState.currentTick++
+	if m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
+		postMixRowTxn.AdvanceRow()
+	}
 
 	postMixRowTxn.Commit()
 	return premix, nil
@@ -68,14 +104,14 @@ func (m *Manager) startNextRow() error {
 	myCurrentRow := m.pattern.GetCurrentRow()
 
 	row := rows.GetRow(myCurrentRow)
-	for channelNum, channel := range row.GetChannels() {
+	for channelNum, cdata := range row.GetChannels() {
 		if channelNum >= m.GetNumChannels() {
 			continue
 		}
 
 		cs := &m.channels[channelNum]
 
-		cs.ProcessRow(row, channel, m.globalVolume, m.song, util.CalcSemitonePeriod, m.processCommand)
+		cs.ProcessRow(row, cdata, m.globalVolume, m.song, util.CalcSemitonePeriod, m.processCommand)
 
 		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.Cmd)
 		if cs.ActiveEffect != nil {
@@ -86,68 +122,28 @@ func (m *Manager) startNextRow() error {
 	return nil
 }
 
+type rowRenderState struct {
+	mix            *mixing.Mixer
+	samplerSpeed   float32
+	tickDuration   time.Duration
+	samplesPerTick int
+	ticksThisRow   int
+	//samplesThisRow int
+	panmixer      mixing.PanMixer
+	centerPanning volume.Matrix
+	chRrs         []mixing.ChannelData
+	firstOplCh    int
+
+	currentTick int
+}
+
 func (m *Manager) soundRenderRow(premix *device.PremixData) {
-	mix := m.s.Mixer()
+	tick := m.rowRenderState.currentTick
+	var lastTick = (tick+1 == m.rowRenderState.ticksThisRow)
 
-	samplerSpeed := m.s.GetSamplerSpeed()
-	tickDuration := time.Duration(2500) * time.Millisecond / time.Duration(m.pattern.GetTempo())
-	samplesPerTick := int(tickDuration.Seconds() * float64(m.s.SampleRate))
+	m.soundRenderRowTick(tick, lastTick)
 
-	ticksThisRow := m.pattern.GetTicksThisRow()
-
-	samplesThisRow := int(ticksThisRow) * samplesPerTick
-
-	panmixer := m.s.GetPanMixer()
-
-	centerPanning := panmixer.GetMixingMatrix(panning.CenterAhead)
-
-	premix.SamplesLen = samplesThisRow
-
-	chRrs := make([][]mixing.Data, len(m.channels))
-	for ch := range m.channels {
-		chRrs[ch] = make([]mixing.Data, ticksThisRow)
-	}
-
-	firstOplCh := -1
-	for tick := 0; tick < ticksThisRow; tick++ {
-		var lastTick = (tick+1 == ticksThisRow)
-
-		for ch := range m.channels {
-			cs := &m.channels[ch]
-			if m.song.IsChannelEnabled(ch) {
-				chCat := m.song.ChannelSettings[ch].Category
-				switch chCat {
-				case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
-					if m.opl2 == nil {
-						m.setOPL2Chip(uint32(m.s.SampleRate))
-					}
-					if firstOplCh < 0 {
-						firstOplCh = ch
-					}
-				}
-
-				rr := chRrs[ch]
-				cs.RenderRowTick(tick, lastTick, rr, ch, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
-
-				switch chCat {
-				case s3mfile.ChannelCategoryPCMLeft, s3mfile.ChannelCategoryPCMRight:
-					for len(premix.Data) <= ch {
-						premix.Data = append(premix.Data, nil)
-					}
-					premix.Data[ch] = rr
-				}
-			}
-		}
-		if m.opl2 != nil {
-			ch := firstOplCh
-			for len(premix.Data) <= ch {
-				premix.Data = append(premix.Data, nil)
-			}
-			rr := chRrs[ch]
-			m.renderOPL2RowTick(tick, rr, ticksThisRow, mix, panmixer, samplerSpeed, samplesPerTick, centerPanning, tickDuration)
-			premix.Data[ch] = rr
-		}
-	}
+	premix.Data = append(premix.Data, m.rowRenderState.chRrs...)
 
 	premix.MixerVolume = m.mixerVolume
 	if m.opl2 != nil {
@@ -163,7 +159,51 @@ func (m *Manager) soundRenderRow(premix *device.PremixData) {
 	}
 }
 
-func (m *Manager) renderOPL2RowTick(tick int, mixerData []mixing.Data, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+func (m *Manager) soundRenderRowTick(tick int, lastTick bool) {
+	for ch := range m.channels {
+		cs := &m.channels[ch]
+		if m.song.IsChannelEnabled(ch) {
+			chCat := m.song.ChannelSettings[ch].Category
+			switch chCat {
+			case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
+				if m.opl2 == nil {
+					m.setOPL2Chip(uint32(m.s.SampleRate))
+				}
+				if m.rowRenderState.firstOplCh < 0 {
+					m.rowRenderState.firstOplCh = ch
+				}
+			}
+
+			rr := &m.rowRenderState.chRrs[ch][0]
+			cs.RenderRowTick(tick, lastTick, rr, ch,
+				m.rowRenderState.ticksThisRow,
+				m.rowRenderState.mix,
+				m.rowRenderState.panmixer,
+				m.rowRenderState.samplerSpeed,
+				m.rowRenderState.samplesPerTick,
+				m.rowRenderState.centerPanning,
+				m.rowRenderState.tickDuration)
+		}
+	}
+	if m.opl2 != nil {
+		ch := m.rowRenderState.firstOplCh
+		for len(m.rowRenderState.chRrs) <= ch {
+			m.rowRenderState.chRrs = append(m.rowRenderState.chRrs, nil)
+		}
+		rr := make(mixing.ChannelData, 1)
+		m.renderOPL2RowTick(tick, &rr[0],
+			m.rowRenderState.ticksThisRow,
+			m.rowRenderState.mix,
+			m.rowRenderState.panmixer,
+			m.rowRenderState.samplerSpeed,
+			m.rowRenderState.samplesPerTick,
+			m.rowRenderState.centerPanning,
+			m.rowRenderState.tickDuration)
+		m.rowRenderState.chRrs[ch] = rr
+	}
+}
+
+func (m *Manager) renderOPL2RowTick(tick int, mixerData *mixing.Data, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
 	// make a stand-alone data buffer for this channel for this tick
 	data := mix.NewMixBuffer(tickSamples)
 
@@ -177,7 +217,7 @@ func (m *Manager) renderOPL2RowTick(tick int, mixerData []mixing.Data, ticksThis
 			data[c][i] = sv
 		}
 	}
-	mixerData[tick] = mixing.Data{
+	*mixerData = mixing.Data{
 		Data:       data,
 		Pan:        panning.CenterAhead,
 		Volume:     util.DefaultVolume * m.globalVolume,

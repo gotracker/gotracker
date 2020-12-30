@@ -8,8 +8,8 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
-	"github.com/gotracker/opl2"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/effect"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
@@ -226,7 +226,7 @@ func (m *Manager) renderOPL2RowTick(tick int, mixerData *mixing.Data, ticksThisR
 }
 
 func (m *Manager) setOPL2Chip(rate uint32) {
-	m.opl2 = opl2.NewChip(rate, false)
+	m.opl2 = channel.NewOPL2Chip(rate)
 	m.opl2.WriteReg(0x01, 0x20) // enable all waveforms
 	m.opl2.WriteReg(0x04, 0x00) // clear timer flags
 	m.opl2.WriteReg(0x08, 0x40) // clear CSW and set NOTE-SEL

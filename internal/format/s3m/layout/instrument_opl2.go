@@ -150,8 +150,6 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 }
 
 func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
-	//levelScale := (o.KeyScaleLevel >> 1) & 1
-	//levelScale |= (o.KeyScaleLevel << 1) & 2
 	levelScale := o.KeyScaleLevel
 
 	totalVol := (float64(o.Volume) * float64(vol))
@@ -206,39 +204,38 @@ func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
 }
 
 func freqToFnumBlock(freq float64) (uint16, uint8) {
-	f := int(freq)
-	octave := 5
+	fnum := uint16(1023)
+	block := uint8(8)
 
-	if f == 0 {
+	if freq > 6208.431 {
 		return 0, 0
-	} else if f < 261 { // C-2
-		for f < 261 && octave >= 0 {
-			octave--
-			f <<= 1
-		}
-	} else if f >= 554 {
-		for f >= 554 && octave < 8 { // C#3
-			octave++
-			f >>= 1
-		}
 	}
 
-	if octave > 7 {
-		octave = 7
-	} else if octave < 0 {
-		octave = 0
+	if freq > 3104.215 {
+		block = 7
+	} else if freq > 1552.107 {
+		block = 6
+	} else if freq > 776.053 {
+		block = 5
+	} else if freq > 388.026 {
+		block = 4
+	} else if freq > 194.013 {
+		block = 3
+	} else if freq > 97.006 {
+		block = 2
+	} else if freq > 48.503 {
+		block = 1
+	} else {
+		block = 0
 	}
+	fnum = uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
 
-	fnumVal := freq * float64(int(1)<<(20-octave)) / opl2.OPLRATE
-
-	fnum := uint16(fnumVal)
-	block := uint8(octave)
 	return fnum, block
 }
 
 func (inst *InstrumentOPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
-	c2scale := float64(c2spd) / float64(s3mfile.DefaultC2Spd)
-	freq := float64(util.FrequencyFromPeriod(period*8)) * c2scale
+	modFreq := util.FrequencyFromPeriod(period)
+	freq := float64(c2spd) * float64(modFreq) / 261625
 
 	return freqToFnumBlock(freq)
 }

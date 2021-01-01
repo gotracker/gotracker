@@ -86,7 +86,7 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	chip  *opl2.Chip
+	chip  channel.OPL2Chip
 	regB0 uint8
 }
 
@@ -101,11 +101,6 @@ func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
 	ioc.Data = &ym
 
 	return nil
-}
-
-// GetC2Spd returns the c2spd for the instrument
-func (inst *InstrumentOPL2) GetC2Spd(ioc *InstrumentOnChannel) note.C2SPD {
-	return util.DefaultC2Spd
 }
 
 // SetKeyOn sets the key on flag for the instrument
@@ -160,21 +155,17 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 }
 
 func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
-	//levelScale := (o.KeyScaleLevel >> 1) & 1
-	//levelScale |= (o.KeyScaleLevel << 1) & 2
-	levelScale := o.KeyScaleLevel
-
-	totalVol := (float64(o.Volume) * float64(vol))
+	mVol := uint16(vol * 64)
+	oVol := uint16(o.Volume)
+	totalVol := uint8(oVol * mVol / 64)
 	if totalVol > 63 {
 		totalVol = 63
-	} else if totalVol < 0 {
-		totalVol = 0
 	}
-	adlVol := uint8(63) - uint8(totalVol)
+	adlVol := uint8(63) - totalVol
 
 	reg40 := uint8(0x00)
-	reg40 |= uint8(levelScale) << 6
-	reg40 |= uint8(adlVol) & 0x3f
+	reg40 |= (uint8(o.KeyScaleLevel) & 0x03) << 6
+	reg40 |= adlVol & 0x3f
 	return reg40
 }
 
@@ -187,7 +178,7 @@ func (inst *InstrumentOPL2) getReg60(o *OPL2OperatorData) uint8 {
 
 func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
 	reg80 := uint8(0x00)
-	reg80 |= ((15 - o.SustainLevel) & 0x0f) << 4
+	reg80 |= (15 - (o.SustainLevel & 0x0f)) << 4
 	reg80 |= o.ReleaseRate & 0x0f
 	return reg80
 }
@@ -204,51 +195,53 @@ func (inst *InstrumentOPL2) getRegC0() uint8 {
 
 func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
 	regE0 := uint8(0x00)
-	regE0 |= uint8(o.WaveformSelection) & 0x03
+	regE0 |= uint8(o.WaveformSelection & 0x07)
 	return regE0
 }
 
 // twoOperatorMelodic
-var twoOperatorMelodic = [...]uint32{0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12}
+var twoOperatorMelodic = [...]uint32{
+	0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12,
+	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
+}
 
 func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
-	return twoOperatorMelodic[channelIdx%9]
+	return twoOperatorMelodic[channelIdx%18]
 }
 
 func freqToFnumBlock(freq float64) (uint16, uint8) {
-	f := int(freq)
-	octave := 5
+	fnum := uint16(1023)
+	block := uint8(8)
 
-	if f == 0 {
+	if freq > 6208.431 {
 		return 0, 0
-	} else if f < 261 { // C-2
-		for f < 261 && octave >= 0 {
-			octave--
-			f <<= 1
-		}
-	} else if f >= 554 {
-		for f >= 554 && octave < 8 { // C#3
-			octave++
-			f >>= 1
-		}
 	}
 
-	if octave > 7 {
-		octave = 7
-	} else if octave < 0 {
-		octave = 0
+	if freq > 3104.215 {
+		block = 7
+	} else if freq > 1552.107 {
+		block = 6
+	} else if freq > 776.053 {
+		block = 5
+	} else if freq > 388.026 {
+		block = 4
+	} else if freq > 194.013 {
+		block = 3
+	} else if freq > 97.006 {
+		block = 2
+	} else if freq > 48.503 {
+		block = 1
+	} else {
+		block = 0
 	}
+	fnum = uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
 
-	fnumVal := freq * float64(int(1)<<(20-octave)) / opl2.OPLRATE
-
-	fnum := uint16(fnumVal)
-	block := uint8(octave)
 	return fnum, block
 }
 
 func (inst *InstrumentOPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
-	c2scale := float64(c2spd) / float64(util.DefaultC2Spd)
-	freq := float64(util.FrequencyFromPeriod(period*8)) * c2scale
+	modFreq := util.FrequencyFromPeriod(period)
+	freq := float64(c2spd) * float64(modFreq) / 261625
 
 	return freqToFnumBlock(freq)
 }
@@ -323,7 +316,7 @@ func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.D
 
 	ch.WriteReg(0xC0|index, regC0)
 
-	regB0 |= ym.regB0 & 0x20
+	regB0 |= ym.regB0 & 0x20 // key on bit
 	ym.regB0 = regB0
 	ch.WriteReg(0xB0|index, regB0)
 }

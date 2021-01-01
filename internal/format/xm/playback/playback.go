@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
-	"github.com/gotracker/opl2"
 
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
@@ -35,9 +34,8 @@ type Manager struct {
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
 
-	opl2 *opl2.Chip
-	s    *sampler.Sampler
-
+	opl2           channel.OPL2Chip
+	s              *sampler.Sampler
 	rowRenderState *rowRenderState
 }
 
@@ -76,7 +74,7 @@ func NewManager(song *layout.Song) *Manager {
 
 // Update updates the manager, producing premixed sound data
 func (m *Manager) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
-	premix, err := m.renderOneRow()
+	premix, err := m.renderTick()
 	if err != nil {
 		return err
 	}
@@ -238,7 +236,7 @@ func (m *Manager) GetName() string {
 }
 
 // GetOPL2Chip returns the current song's OPL2 chip, if it's needed
-func (m *Manager) GetOPL2Chip() *opl2.Chip {
+func (m *Manager) GetOPL2Chip() channel.OPL2Chip {
 	return m.opl2
 }
 

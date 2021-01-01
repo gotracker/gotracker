@@ -74,7 +74,7 @@ func NewManager(song *layout.Song) *Manager {
 
 // Update updates the manager, producing premixed sound data
 func (m *Manager) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
-	premix, err := m.renderOneRow()
+	premix, err := m.renderTick()
 	if err != nil {
 		return err
 	}

@@ -16,62 +16,36 @@ import (
 	"gotracker/internal/player/render"
 )
 
+const (
+	tickBaseDuration = time.Duration(2500) * time.Millisecond
+)
+
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
-func (m *Manager) renderOneRow() (*device.PremixData, error) {
-	preMixRowTxn := m.pattern.StartTransaction()
+func (m *Manager) renderTick() (*device.PremixData, error) {
 	postMixRowTxn := m.pattern.StartTransaction()
 	defer func() {
-		preMixRowTxn.Cancel()
-		m.preMixRowTxn = nil
 		postMixRowTxn.Cancel()
 		m.postMixRowTxn = nil
 	}()
-	m.preMixRowTxn = preMixRowTxn
 	m.postMixRowTxn = postMixRowTxn
 
-	if err := m.startNextRow(); err != nil {
-		return nil, err
+	if m.rowRenderState == nil || m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
+		if err := m.startNextRow(); err != nil {
+			return nil, err
+		}
 	}
 
-	preMixRowTxn.Commit()
+	//for ch := range m.channels {
+	//	m.rowRenderState.chRrs[ch] = make(mixing.ChannelData, 1)
+	//}
 
 	finalData := &render.RowRender{}
 	premix := &device.PremixData{
-		Userdata: finalData,
+		Userdata:   finalData,
+		SamplesLen: m.rowRenderState.samplesPerTick,
 	}
 
-	if m.rowRenderState == nil || m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
-		tickDuration := time.Duration(2500) * time.Millisecond / time.Duration(m.pattern.GetTempo())
-		ticksThisRow := m.pattern.GetTicksThisRow()
-		samplesPerTick := int(tickDuration.Seconds() * float64(m.s.SampleRate))
-		panmixer := m.s.GetPanMixer()
-		m.rowRenderState = &rowRenderState{
-			mix: m.s.Mixer(),
-
-			samplerSpeed:   m.s.GetSamplerSpeed(),
-			tickDuration:   tickDuration,
-			samplesPerTick: samplesPerTick,
-
-			ticksThisRow: ticksThisRow,
-
-			//samplesThisRow: int(ticksThisRow) * samplesPerTick,
-
-			panmixer: panmixer,
-
-			centerPanning: panmixer.GetMixingMatrix(panning.CenterAhead),
-
-			chRrs:       make([]mixing.ChannelData, len(m.channels)),
-			firstOplCh:  -1,
-			currentTick: 0,
-		}
-	}
-	for ch := range m.channels {
-		m.rowRenderState.chRrs[ch] = make(mixing.ChannelData, 1)
-	}
-
-	premix.SamplesLen = m.rowRenderState.samplesPerTick
-
-	m.soundRenderRow(premix)
+	m.soundRenderTick(premix)
 
 	finalData.Order = int(m.pattern.GetCurrentOrder())
 	finalData.Row = int(m.pattern.GetCurrentRow())
@@ -104,6 +78,32 @@ func (m *Manager) startNextRow() error {
 	myCurrentRow := m.pattern.GetCurrentRow()
 
 	row := rows.GetRow(myCurrentRow)
+
+	preMixRowTxn := m.pattern.StartTransaction()
+	defer func() {
+		preMixRowTxn.Cancel()
+		m.preMixRowTxn = nil
+	}()
+	m.preMixRowTxn = preMixRowTxn
+
+	if m.rowRenderState == nil {
+		panmixer := m.s.GetPanMixer()
+		m.rowRenderState = &rowRenderState{
+			mix:           m.s.Mixer(),
+			samplerSpeed:  m.s.GetSamplerSpeed(),
+			panmixer:      panmixer,
+			centerPanning: panmixer.GetMixingMatrix(panning.CenterAhead),
+		}
+	}
+
+	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
+
+	m.rowRenderState.tickDuration = tickDuration
+	m.rowRenderState.samplesPerTick = int(tickDuration.Seconds() * float64(m.s.SampleRate))
+	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
+	m.rowRenderState.firstOplCh = -1
+	m.rowRenderState.currentTick = 0
+
 	for channelNum, cdata := range row.GetChannels() {
 		if channelNum >= m.GetNumChannels() {
 			continue
@@ -119,6 +119,7 @@ func (m *Manager) startNextRow() error {
 		}
 	}
 
+	preMixRowTxn.Commit()
 	return nil
 }
 
@@ -128,38 +129,17 @@ type rowRenderState struct {
 	tickDuration   time.Duration
 	samplesPerTick int
 	ticksThisRow   int
-	//samplesThisRow int
-	panmixer      mixing.PanMixer
-	centerPanning volume.Matrix
-	chRrs         []mixing.ChannelData
-	firstOplCh    int
+	panmixer       mixing.PanMixer
+	centerPanning  volume.Matrix
+	firstOplCh     int
 
 	currentTick int
 }
 
-func (m *Manager) soundRenderRow(premix *device.PremixData) {
+func (m *Manager) soundRenderTick(premix *device.PremixData) {
 	tick := m.rowRenderState.currentTick
 	var lastTick = (tick+1 == m.rowRenderState.ticksThisRow)
 
-	m.soundRenderRowTick(tick, lastTick)
-
-	premix.Data = append(premix.Data, m.rowRenderState.chRrs...)
-
-	premix.MixerVolume = m.mixerVolume
-	if m.opl2 != nil {
-		// make room in the mixer for the OPL2 data
-		// effectively, we can do this by calculating the new number (+1) of channels from the mixer volume (channels = reciprocal of mixer volume):
-		//   numChannels = (1/mv) + 1
-		// then by taking the reciprocal of it:
-		//   1 / numChannels
-		// but that ends up being simplified to:
-		//   mv / (mv + 1)
-		// and we get protection from div/0 in the process - provided, of course, that the mixerVolume is not exactly -1...
-		premix.MixerVolume = m.mixerVolume / (m.mixerVolume + 1)
-	}
-}
-
-func (m *Manager) soundRenderRowTick(tick int, lastTick bool) {
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		if m.song.IsChannelEnabled(ch) {
@@ -174,8 +154,8 @@ func (m *Manager) soundRenderRowTick(tick int, lastTick bool) {
 				}
 			}
 
-			rr := &m.rowRenderState.chRrs[ch][0]
-			cs.RenderRowTick(tick, lastTick, rr, ch,
+			rr := [1]mixing.Data{}
+			cs.RenderRowTick(tick, lastTick, &rr[0], ch,
 				m.rowRenderState.ticksThisRow,
 				m.rowRenderState.mix,
 				m.rowRenderState.panmixer,
@@ -183,14 +163,11 @@ func (m *Manager) soundRenderRowTick(tick int, lastTick bool) {
 				m.rowRenderState.samplesPerTick,
 				m.rowRenderState.centerPanning,
 				m.rowRenderState.tickDuration)
+			premix.Data = append(premix.Data, rr[:])
 		}
 	}
 	if m.opl2 != nil {
-		ch := m.rowRenderState.firstOplCh
-		for len(m.rowRenderState.chRrs) <= ch {
-			m.rowRenderState.chRrs = append(m.rowRenderState.chRrs, nil)
-		}
-		rr := make(mixing.ChannelData, 1)
+		rr := [1]mixing.Data{}
 		m.renderOPL2RowTick(tick, &rr[0],
 			m.rowRenderState.ticksThisRow,
 			m.rowRenderState.mix,
@@ -199,7 +176,20 @@ func (m *Manager) soundRenderRowTick(tick int, lastTick bool) {
 			m.rowRenderState.samplesPerTick,
 			m.rowRenderState.centerPanning,
 			m.rowRenderState.tickDuration)
-		m.rowRenderState.chRrs[ch] = rr
+		premix.Data = append(premix.Data, rr[:])
+	}
+
+	premix.MixerVolume = m.mixerVolume
+	if m.opl2 != nil {
+		// make room in the mixer for the OPL2 data
+		// effectively, we can do this by calculating the new number (+1) of channels from the mixer volume (channels = reciprocal of mixer volume):
+		//   numChannels = (1/mv) + 1
+		// then by taking the reciprocal of it:
+		//   1 / numChannels
+		// but that ends up being simplified to:
+		//   mv / (mv + 1)
+		// and we get protection from div/0 in the process - provided, of course, that the mixerVolume is not exactly -1...
+		premix.MixerVolume = m.mixerVolume / (m.mixerVolume + 1)
 	}
 }
 

@@ -38,6 +38,16 @@ const (
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
+// Key returns the key from the Semitone
+func (s Semitone) Key() Key {
+	return Key(s % 12)
+}
+
+// Octave returns the octave from the Semitone
+func (s Semitone) Octave() Octave {
+	return Octave(s / 12)
+}
+
 // Finetune is a 1/64th of a Semitone
 type Finetune int16
 
@@ -127,39 +137,61 @@ func (o Octave) String() string {
 	return fmt.Sprintf("%X", uint8(o))
 }
 
-// Note is a combination of key and octave
-type Note uint8
+type noteSpecial int
 
 const (
-	// EmptyNote denotes an empty note
-	EmptyNote = Note(255)
-	// StopNote denotes a stop for the instrument
-	StopNote = Note(254)
+	noteSpecialEmpty = noteSpecial(iota)
+	noteSpecialStop
+	noteSpecialNone
+	noteSpecialInvalid
 )
+
+// Note is a combination of key and octave
+type Note struct {
+	special  noteSpecial
+	semitone Semitone
+}
+
+var (
+	// EmptyNote denotes an empty note
+	EmptyNote = Note{special: noteSpecialEmpty}
+	// StopNote denotes a stop for the instrument
+	StopNote = Note{special: noteSpecialStop}
+	// InvalidNote denotes an invalid note
+	InvalidNote = Note{special: noteSpecialInvalid}
+)
+
+// NewNote returns a note from a semitone
+func NewNote(s Semitone) Note {
+	return Note{
+		special:  noteSpecialNone,
+		semitone: s,
+	}
+}
 
 // Key returns the key component of the note
 func (n Note) Key() Key {
-	return Key(n & 0x0F)
+	return n.semitone.Key()
 }
 
 // Octave returns the octave component of the note
 func (n Note) Octave() Octave {
-	return Octave((n & 0xF0) >> 4)
+	return n.semitone.Octave()
 }
 
 // IsStop returns true if the note is a stop
 func (n Note) IsStop() bool {
-	return n == StopNote
+	return n.special == noteSpecialStop
 }
 
 // IsEmpty returns true if the note is empty
 func (n Note) IsEmpty() bool {
-	return n == EmptyNote
+	return n.special == noteSpecialEmpty
 }
 
 // IsInvalid returns true if the note is invalid in any way
 func (n Note) IsInvalid() bool {
-	return n.Key().IsInvalid()
+	return n.special == noteSpecialInvalid
 }
 
 func (n Note) String() string {
@@ -175,7 +207,5 @@ func (n Note) String() string {
 
 // Semitone returns the semitone value for the note
 func (n Note) Semitone() Semitone {
-	key := Semitone(n.Key())
-	octave := Semitone(n.Octave())
-	return Semitone(octave*12 + key)
+	return n.semitone
 }

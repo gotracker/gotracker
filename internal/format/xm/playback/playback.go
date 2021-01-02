@@ -1,19 +1,14 @@
 package playback
 
 import (
-	"errors"
-	"time"
-
 	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/xm/layout"
-	"gotracker/internal/format/xm/layout/channel"
 	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
-	"gotracker/internal/format/xm/playback/sampler"
 	"gotracker/internal/format/xm/playback/state/pattern"
 	"gotracker/internal/format/xm/playback/util"
+	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/state"
@@ -21,36 +16,39 @@ import (
 
 // Manager is a playback manager for XM music
 type Manager struct {
-	intf.Playback
+	player.Tracker
 	effectIntf.XM
-	channel.OPL2Intf
+
 	song *layout.Song
 
-	channels     []state.ChannelState
-	pattern      pattern.State
-	globalVolume volume.Volume
-	mixerVolume  volume.Volume
+	channels []state.ChannelState
+	pattern  pattern.State
 
 	preMixRowTxn  intf.SongPositionState
 	postMixRowTxn intf.SongPositionState
+	premix        *device.PremixData
 
-	opl2           channel.OPL2Chip
-	s              *sampler.Sampler
 	rowRenderState *rowRenderState
 }
 
 // NewManager creates a new manager for an XM song
 func NewManager(song *layout.Song) *Manager {
 	m := Manager{
+		Tracker: player.Tracker{
+			BaseClockRate: util.XMBaseClock,
+		},
 		song: song,
 	}
+
+	m.Tracker.Tickable = &m
+	m.Tracker.Premixable = &m
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
 	m.pattern.Patterns = song.Patterns
 
-	m.globalVolume = song.Head.GlobalVolume
-	m.mixerVolume = song.Head.MixingVolume
+	m.SetGlobalVolume(song.Head.GlobalVolume)
+	m.SetMixerVolume(song.Head.MixingVolume)
 
 	m.SetNumChannels(len(song.ChannelSettings))
 	for i, ch := range song.ChannelSettings {
@@ -70,19 +68,6 @@ func NewManager(song *layout.Song) *Manager {
 	txn.Commit()
 
 	return &m
-}
-
-// Update updates the manager, producing premixed sound data
-func (m *Manager) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
-	premix, err := m.renderTick()
-	if err != nil {
-		return err
-	}
-	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
-		out <- premix
-	}
-
-	return nil
 }
 
 // GetNumChannels returns the number of channels
@@ -180,16 +165,6 @@ func (m *Manager) IncreaseTempo(delta int) {
 	}
 }
 
-// GetGlobalVolume returns the global volume value
-func (m *Manager) GetGlobalVolume() volume.Volume {
-	return m.globalVolume
-}
-
-// SetGlobalVolume sets the global volume to the specified `vol` value
-func (m *Manager) SetGlobalVolume(vol volume.Volume) {
-	m.globalVolume = vol
-}
-
 // DisableFeatures disables specified features
 func (m *Manager) DisableFeatures(features []feature.Feature) {
 	for _, f := range features {
@@ -233,19 +208,4 @@ func (m *Manager) GetCurrentRow() intf.RowIdx {
 // GetName returns the current song's name
 func (m *Manager) GetName() string {
 	return m.song.GetName()
-}
-
-// GetOPL2Chip returns the current song's OPL2 chip, if it's needed
-func (m *Manager) GetOPL2Chip() channel.OPL2Chip {
-	return m.opl2
-}
-
-// SetupSampler configures the internal sampler
-func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
-	m.s = sampler.NewSampler(samplesPerSecond, channels, bitsPerSample, util.XMBaseClock)
-	if m.s == nil {
-		return errors.New("NewSampler() returned nil")
-	}
-
-	return nil
 }

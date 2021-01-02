@@ -63,8 +63,8 @@ type ChannelState struct {
 	Filter           intf.Filter
 }
 
-// ProcessRow processes a channel's row data
-func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globalVol volume.Volume, sd intf.SongData, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) {
+// Process processes a channel's row data
+func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) {
 	cs.Command = processCommand
 
 	cs.PrevInstrument = cs.Instrument
@@ -80,16 +80,19 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 	cs.TremorOn = true
 	cs.TremorTime = 0
 	cs.VibratoDelta = 0
-	cs.Cmd = channel
 
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
 	cs.KeepFinetune = false
 
-	if channel.HasNote() {
+	if cs.Cmd == nil {
+		return
+	}
+
+	if cs.Cmd.HasNote() {
 		cs.VibratoOscillator.Pos = 0
 		cs.TremoloOscillator.Pos = 0
-		inst := channel.GetInstrument()
+		inst := cs.Cmd.GetInstrument()
 		if inst.IsEmpty() {
 			// use current
 			cs.TargetPos = sampling.Pos{}
@@ -103,7 +106,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 			}
 		}
 
-		n := channel.GetNote()
+		n := cs.Cmd.GetNote()
 		if n == note.EmptyNote {
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
@@ -123,9 +126,9 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 		cs.DoRetriggerNote = false
 	}
 
-	if channel.HasVolume() {
+	if cs.Cmd.HasVolume() {
 		cs.WantVolCalc = false
-		v := channel.GetVolume()
+		v := cs.Cmd.GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if cs.TargetInst != nil {
 				cs.WantVolCalc = true
@@ -137,7 +140,7 @@ func (cs *ChannelState) ProcessRow(row intf.Row, channel intf.ChannelData, globa
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData *mixing.Data, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) {
+func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) (*mixing.Data, error) {
 	if cs.Command != nil {
 		cs.Command(ch, cs, tick, lastTick)
 	}
@@ -160,13 +163,14 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, mixerData *mixing
 		}
 		data.MixInSample(mixData)
 		cs.Pos.Add(samplerAdd * float32(tickSamples))
-		*mixerData = mixing.Data{
+		return &mixing.Data{
 			Data:       data,
 			Pan:        cs.Pan,
 			Volume:     volume.Volume(1.0),
 			SamplesLen: tickSamples,
-		}
+		}, nil
 	}
+	return nil, nil
 }
 
 // SetStoredVolume sets the stored volume value for the channel

@@ -87,10 +87,10 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.Period = 0
 		cs.Command = nil
 
-		cs.TargetPeriod = cs.Period
+		cs.TargetPeriod = 0
 		cs.TargetPos = cs.Pos
 		cs.TargetInst = nil
-		cs.PortaTargetPeriod = cs.TargetPeriod
+		cs.PortaTargetPeriod = 0
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
 		cs.TremorOn = true

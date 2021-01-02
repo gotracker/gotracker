@@ -12,21 +12,16 @@ type PortaToNote uint8 // 'G'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e PortaToNote) PreStart(cs intf.Channel, p intf.Playback) {
-	cmd := cs.GetData().(*channel.Data)
-	if cmd == nil {
-		return
-	}
-
-	if cmd.What.HasNote() {
-		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
-		cs.SetDoRetriggerNote(false)
-	}
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
+	if cmd := cs.GetData().(*channel.Data); cmd != nil && cmd.HasNote() {
+		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
+		cs.SetDoRetriggerNote(false)
+	}
 }
 
 // Tick is called on every tick

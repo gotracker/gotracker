@@ -22,7 +22,6 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
 		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune())
 		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
-		cs.PortaTargetPeriod = cs.TargetPeriod
 	}
 }
 
@@ -58,7 +57,9 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 				cs.Instrument = inst
 			}
 		}
-		cs.Period = cs.TargetPeriod
+		if cs.UseTargetPeriod {
+			cs.Period = cs.TargetPeriod
+		}
 		cs.Pos = cs.TargetPos
 		if cs.Instrument != nil {
 			cs.Instrument.Attack()

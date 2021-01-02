@@ -56,6 +56,7 @@ type ChannelState struct {
 	Semitone           note.Semitone // from TargetSemitone, modified further, used in period calculations
 	WantNoteCalc       bool
 	WantVolCalc        bool
+	UseTargetPeriod    bool
 	Finetune           note.Finetune
 	KeepFinetune       bool
 
@@ -84,12 +85,14 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
 	cs.KeepFinetune = false
+	cs.UseTargetPeriod = false
 
 	if cs.Cmd == nil {
 		return
 	}
 
 	if cs.Cmd.HasNote() {
+		cs.UseTargetPeriod = true
 		cs.VibratoOscillator.Pos = 0
 		cs.TremoloOscillator.Pos = 0
 		inst := cs.Cmd.GetInstrument()
@@ -401,6 +404,7 @@ func (cs *ChannelState) SetPan(pan panning.Position) {
 // this gets reset on every row
 func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
 	cs.DoRetriggerNote = enabled
+	cs.UseTargetPeriod = enabled
 	if enabled {
 		cs.WantNoteCalc = true
 	}

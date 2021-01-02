@@ -92,24 +92,33 @@ type ym3812 struct {
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *InstrumentOPL2) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
+func (inst *InstrumentOPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	return nil
 }
 
 // Initialize completes the setup of this instrument
-func (inst *InstrumentOPL2) Initialize(ioc *InstrumentOnChannel) error {
+func (inst *InstrumentOPL2) Initialize(ioc intf.NoteControl) error {
 	ym := ym3812{}
-	ioc.Data = &ym
+	ioc.SetData(&ym)
 
 	return nil
 }
 
-// SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
-	ym := ioc.Data.(*ym3812)
+// Attack sets the key on flag for the instrument
+func (inst *InstrumentOPL2) Attack(ioc intf.NoteControl) {
+	inst.setKeyOn(ioc, true)
+}
+
+// Release clears the key on flag for the instrument
+func (inst *InstrumentOPL2) Release(ioc intf.NoteControl) {
+	inst.setKeyOn(ioc, false)
+}
+
+func (inst *InstrumentOPL2) setKeyOn(ioc intf.NoteControl, on bool) {
+	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.Playback.(render.OPL2Intf)
+		p := ioc.GetPlayback().(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -118,7 +127,7 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Perio
 		panic("no ym3812 available")
 	}
 
-	index := uint32(ioc.OutputChannelNum)
+	index := uint32(ioc.GetOutputChannelNum())
 
 	// write the instrument to the channel!
 	if !on {
@@ -131,9 +140,9 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Perio
 }
 
 // NoteCut cuts the current playback of the instrument
-func (inst *InstrumentOPL2) NoteCut(ioc *InstrumentOnChannel) {
-	ioc.Volume = 0
-	inst.SetKeyOn(ioc, 0, false)
+func (inst *InstrumentOPL2) NoteCut(ioc intf.NoteControl) {
+	ioc.SetVolume(0)
+	inst.Release(ioc)
 }
 
 func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
@@ -255,17 +264,17 @@ func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8,
 }
 
 // GetKeyOn gets the key on flag for the instrument
-func (inst *InstrumentOPL2) GetKeyOn(ioc *InstrumentOnChannel) bool {
-	ym := ioc.Data.(*ym3812)
+func (inst *InstrumentOPL2) GetKeyOn(ioc intf.NoteControl) bool {
+	ym := ioc.GetData().(*ym3812)
 	return (ym.regB0 & 0x20) != 0
 }
 
 // Update advances time by the amount specified by `tickDuration`
-func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.Duration) {
-	ym := ioc.Data.(*ym3812)
+func (inst *InstrumentOPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
+	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.Playback.(render.OPL2Intf)
+		p := ioc.GetPlayback().(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -274,17 +283,18 @@ func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.D
 		panic("no ym3812 available")
 	}
 
-	index := uint32(ioc.OutputChannelNum)
+	index := uint32(ioc.GetOutputChannelNum())
 
 	mod := inst.getChannelIndex(int(index))
 	car := mod + 0x03
 
-	freq, block := inst.periodToFreqBlock(ioc.Period, ioc.Instrument.C2Spd)
+	freq, block := inst.periodToFreqBlock(ioc.GetPeriod(), ioc.GetInstrument().GetC2Spd())
 	regA0, regB0 := inst.freqBlockToRegA0B0(freq, block)
 
 	regC0 := inst.getRegC0()
 
-	modVol := ioc.Volume
+	vol := ioc.GetVolume()
+	modVol := vol
 	if !inst.AdditiveSynthesis {
 		modVol = 1.0
 	}
@@ -296,7 +306,7 @@ func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.D
 	modRegE0 := inst.getRegE0(&inst.Modulator)
 
 	carReg20 := inst.getReg20(&inst.Carrier)
-	carReg40 := inst.getReg40(&inst.Carrier, ioc.Volume)
+	carReg40 := inst.getReg40(&inst.Carrier, vol)
 	carReg60 := inst.getReg60(&inst.Carrier)
 	carReg80 := inst.getReg80(&inst.Carrier)
 	carRegE0 := inst.getRegE0(&inst.Carrier)

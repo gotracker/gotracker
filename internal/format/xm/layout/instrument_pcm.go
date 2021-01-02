@@ -9,7 +9,6 @@ import (
 
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
 )
 
 // InstrumentPCM is a PCM-data instrument
@@ -26,12 +25,12 @@ type InstrumentPCM struct {
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *InstrumentPCM) GetSample(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
+func (inst *InstrumentPCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	dry := inst.getSampleDry(ioc, pos)
-	return ioc.Volume.Apply(dry...)
+	return ioc.GetVolume().Apply(dry...)
 }
 
-func (inst *InstrumentPCM) getSampleDry(ioc *InstrumentOnChannel, pos sampling.Pos) volume.Matrix {
+func (inst *InstrumentPCM) getSampleDry(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
 	if len(v0) == 0 && inst.Looped {
 		v01 := inst.getConvertedSample(pos.Pos)
@@ -109,23 +108,27 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 }
 
 // Initialize completes the setup of this instrument
-func (inst *InstrumentPCM) Initialize(ioc *InstrumentOnChannel) error {
+func (inst *InstrumentPCM) Initialize(ioc intf.NoteControl) error {
 	return nil
 }
 
-// SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentPCM) SetKeyOn(ioc *InstrumentOnChannel, period note.Period, on bool) {
+// Attack sets the key on flag for the instrument
+func (inst *InstrumentPCM) Attack(ioc intf.NoteControl) {
+}
+
+// Release sets the key on flag for the instrument
+func (inst *InstrumentPCM) Release(ioc intf.NoteControl) {
 }
 
 // NoteCut cuts the current playback of the instrument
-func (inst *InstrumentPCM) NoteCut(ioc *InstrumentOnChannel) {
+func (inst *InstrumentPCM) NoteCut(ioc intf.NoteControl) {
 }
 
 // GetKeyOn gets the key on flag for the instrument
-func (inst *InstrumentPCM) GetKeyOn(ioc *InstrumentOnChannel) bool {
+func (inst *InstrumentPCM) GetKeyOn(ioc intf.NoteControl) bool {
 	return true
 }
 
 // Update advances time by the amount specified by `tickDuration`
-func (inst *InstrumentPCM) Update(ioc *InstrumentOnChannel, tickDuration time.Duration) {
+func (inst *InstrumentPCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 }

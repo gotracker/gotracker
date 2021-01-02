@@ -73,7 +73,8 @@ func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
 	}
 	switch id := instNum.(type) {
 	case channel.S3MInstrumentID:
-		return int(id) < len(s.Instruments)
+		iid := int(id)
+		return iid > 0 && iid <= len(s.Instruments)
 	}
 	return false
 }

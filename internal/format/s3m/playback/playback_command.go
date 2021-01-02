@@ -1,7 +1,6 @@
 package playback
 
 import (
-	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/note"
@@ -16,7 +15,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 
 	if cs.WantVolCalc {
 		cs.WantVolCalc = false
-		cs.SetStoredVolume(inst.GetVolume(), m.GetGlobalVolume())
+		cs.SetStoredVolume(inst.GetDefaultVolume(), m.GetGlobalVolume())
 	}
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
@@ -52,19 +51,17 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		if cs.TargetInst != nil {
 			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
 				cs.Instrument = cs.PrevInstrument
-				cs.Instrument.SetKeyOn(cs.Period, false)
+				cs.Instrument.Release()
 			} else {
 				inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
-				if opl, ok := inst.(*layout.InstrumentOnChannel); ok {
-					opl.Playback = m
-				}
+				inst.SetPlayback(m)
 				cs.Instrument = inst
 			}
 		}
 		cs.Period = cs.TargetPeriod
 		cs.Pos = cs.TargetPos
 		if cs.Instrument != nil {
-			cs.Instrument.SetKeyOn(cs.Period, true)
+			cs.Instrument.Attack()
 			keyOff = false
 		}
 	}
@@ -75,7 +72,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.Instrument = nil
 			cs.Period = 0
 		} else {
-			cs.Instrument.SetKeyOn(cs.Period, false)
+			cs.Instrument.Release()
 		}
 	}
 }

@@ -20,7 +20,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 
 	if cs.WantVolCalc {
 		cs.WantVolCalc = false
-		cs.SetStoredVolume(inst.GetVolume(), m.globalVolume)
+		cs.SetStoredVolume(inst.GetVolume(), m.GetGlobalVolume())
 	}
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false

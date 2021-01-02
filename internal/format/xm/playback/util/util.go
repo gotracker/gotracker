@@ -122,13 +122,12 @@ func NoteFromXmNote(xn uint8) note.Note {
 	case xn == 0:
 		return note.EmptyNote
 	case xn > 97: // invalid
-		return note.Note(note.KeyInvalid1)
+		return note.InvalidNote
 	}
 
 	an := uint8(xn - 1)
-	k := an % 12
-	o := an / 12
-	return note.Note(o<<4 | k)
+	s := note.Semitone(an)
+	return note.NewNote(s)
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

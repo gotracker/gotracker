@@ -115,7 +115,20 @@ func PanningFromS3M(pos uint8) panning.Position {
 
 // NoteFromS3MNote converts an S3M file note into a player note
 func NoteFromS3MNote(sn s3mfile.Note) note.Note {
-	return note.Note(uint8(sn))
+	switch {
+	case sn == s3mfile.EmptyNote:
+		return note.EmptyNote
+	case sn == s3mfile.StopNote:
+		return note.StopNote
+	default:
+		k := uint8(sn.Key()) & 0x0f
+		o := uint8(sn.Octave()) & 0x0f
+		if k < 12 && o < 10 {
+			s := note.Semitone(o*12 + k)
+			return note.NewNote(s)
+		}
+	}
+	return note.InvalidNote
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

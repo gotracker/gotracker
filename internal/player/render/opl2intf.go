@@ -1,4 +1,4 @@
-package channel
+package render
 
 import (
 	"github.com/gotracker/opl2"

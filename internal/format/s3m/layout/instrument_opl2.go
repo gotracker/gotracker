@@ -8,10 +8,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
 
-	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/render"
 )
 
 // OPL2OperatorData is the operator data for an OPL2/Adlib instrument
@@ -87,7 +87,7 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	chip  channel.OPL2Chip
+	chip  render.OPL2Chip
 	regB0 uint8
 }
 
@@ -109,7 +109,7 @@ func (inst *InstrumentOPL2) SetKeyOn(ioc *InstrumentOnChannel, period note.Perio
 	ym := ioc.Data.(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.Playback.(channel.OPL2Intf)
+		p := ioc.Playback.(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -265,7 +265,7 @@ func (inst *InstrumentOPL2) Update(ioc *InstrumentOnChannel, tickDuration time.D
 	ym := ioc.Data.(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.Playback.(channel.OPL2Intf)
+		p := ioc.Playback.(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}

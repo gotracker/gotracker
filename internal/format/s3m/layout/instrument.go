@@ -10,30 +10,19 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/state"
 )
 
 // InstrumentDataIntf is the interface to implementation-specific functions on an instrument
 type InstrumentDataIntf interface {
-	GetSample(*InstrumentOnChannel, sampling.Pos) volume.Matrix
+	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
 
-	Initialize(*InstrumentOnChannel) error
-	SetKeyOn(*InstrumentOnChannel, note.Period, bool)
-	NoteCut(*InstrumentOnChannel)
-	GetKeyOn(*InstrumentOnChannel) bool
-	Update(*InstrumentOnChannel, time.Duration)
-}
-
-// InstrumentOnChannel is an instance of the instrument on a particular output channel
-type InstrumentOnChannel struct {
-	intf.InstrumentOnChannel
-
-	Instrument       *Instrument
-	OutputChannelNum int
-	Volume           volume.Volume
-	Data             interface{}
-	Filter           intf.Filter
-	Playback         intf.Playback
-	Period           note.Period
+	Initialize(intf.NoteControl) error
+	Attack(intf.NoteControl)
+	Release(intf.NoteControl)
+	NoteCut(intf.NoteControl)
+	GetKeyOn(intf.NoteControl) bool
+	Update(intf.NoteControl, time.Duration)
 }
 
 // Instrument is the mildly-decoded S3M instrument/sample header
@@ -65,8 +54,8 @@ func (inst *Instrument) SetC2Spd(c2spd note.C2SPD) {
 	inst.C2Spd = c2spd
 }
 
-// GetVolume returns the default volume value for the instrument
-func (inst *Instrument) GetVolume() volume.Volume {
+// GetDefaultVolume returns the default volume value for the instrument
+func (inst *Instrument) GetDefaultVolume() volume.Volume {
 	return inst.Volume
 }
 
@@ -123,8 +112,8 @@ func (inst *Instrument) GetLength() sampling.Pos {
 }
 
 // InstantiateOnChannel takes an instrument and loads it onto an output channel
-func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter) intf.InstrumentOnChannel {
-	ioc := InstrumentOnChannel{
+func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter) intf.NoteControl {
+	ioc := state.NoteControl{
 		OutputChannelNum: channelIdx,
 		Instrument:       inst,
 		Filter:           filter,
@@ -147,64 +136,46 @@ func (inst *Instrument) GetSemitoneShift() int8 {
 	return 0
 }
 
-// GetSample returns the sample at position `pos` in the instrument
-func (inst *InstrumentOnChannel) GetSample(pos sampling.Pos) volume.Matrix {
-	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		dry := inst.Instrument.Inst.GetSample(inst, pos)
-		if inst.Filter == nil {
-			return dry
-		}
-		wet := inst.Filter.Filter(dry)
-		return wet
+// GetSample returns a sample from the instrument at the specified position
+func (inst *Instrument) GetSample(nc intf.NoteControl, pos sampling.Pos) volume.Matrix {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetSample(nc, pos)
 	}
 	return nil
 }
 
-// GetInstrument returns the instrument that's on this instance
-func (inst *InstrumentOnChannel) GetInstrument() intf.Instrument {
-	return inst.Instrument
-}
-
-// SetKeyOn sets the key on flag for the instrument
-func (inst *InstrumentOnChannel) SetKeyOn(period note.Period, on bool) {
-	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		inst.Instrument.Inst.SetKeyOn(inst, period, on)
+// Attack sets the key-on flag for the instrument
+func (inst *Instrument) Attack(nc intf.NoteControl) {
+	if ii := inst.Inst; ii != nil {
+		ii.Attack(nc)
 	}
 }
 
-// NoteCut cuts the current playback of the instrument
-func (inst *InstrumentOnChannel) NoteCut() {
-	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		inst.Instrument.Inst.NoteCut(inst)
+// Release clears the key-on flag for the instrument
+func (inst *Instrument) Release(nc intf.NoteControl) {
+	if ii := inst.Inst; ii != nil {
+		ii.Release(nc)
 	}
 }
 
-// GetKeyOn gets the key on flag for the instrument
-func (inst *InstrumentOnChannel) GetKeyOn() bool {
-	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		return inst.Instrument.Inst.GetKeyOn(inst)
+// NoteCut clears the key-on flag for the instrument and stops any output from it
+func (inst *Instrument) NoteCut(nc intf.NoteControl) {
+	if ii := inst.Inst; ii != nil {
+		ii.NoteCut(nc)
+	}
+}
+
+// GetKeyOn returns the key-on flag state for the instrument
+func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetKeyOn(nc)
 	}
 	return false
 }
 
-// Update advances time by the amount specified by `tickDuration`
-func (inst *InstrumentOnChannel) Update(tickDuration time.Duration) {
-	if inst.Instrument != nil && inst.Instrument.Inst != nil {
-		inst.Instrument.Inst.Update(inst, tickDuration)
+// Update updates the instrument
+func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) {
+	if ii := inst.Inst; ii != nil {
+		ii.Update(nc, tickDuration)
 	}
-}
-
-// SetFilter sets the active filter on the instrument (which should be the same as what's on the channel)
-func (inst *InstrumentOnChannel) SetFilter(filter intf.Filter) {
-	inst.Filter = filter
-}
-
-// SetVolume sets the active instrument on channel's volume
-func (inst *InstrumentOnChannel) SetVolume(vol volume.Volume) {
-	inst.Volume = vol
-}
-
-// SetPeriod sets the active instrument on channel's period
-func (inst *InstrumentOnChannel) SetPeriod(period note.Period) {
-	inst.Period = period
 }

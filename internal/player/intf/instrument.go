@@ -1,11 +1,12 @@
 package intf
 
 import (
-	"gotracker/internal/player/note"
 	"time"
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+
+	"gotracker/internal/player/note"
 )
 
 // InstrumentID is an identifier for an instrument/sample that means something to the format
@@ -18,24 +19,17 @@ type Instrument interface {
 	IsInvalid() bool
 	GetC2Spd() note.C2SPD
 	SetC2Spd(note.C2SPD)
-	GetVolume() volume.Volume
+	GetDefaultVolume() volume.Volume
 	GetID() InstrumentID
 	GetSemitoneShift() int8
-	InstantiateOnChannel(int, Filter) InstrumentOnChannel
+	InstantiateOnChannel(int, Filter) NoteControl
 	SetFinetune(int8)
 	GetFinetune() int8
-}
 
-// InstrumentOnChannel is an interface for an instrument on a particular output channel
-type InstrumentOnChannel interface {
-	sampling.SampleStream
-
-	GetInstrument() Instrument
-	SetKeyOn(note.Period, bool)
-	NoteCut()
-	GetKeyOn() bool
-	Update(time.Duration)
-	SetFilter(Filter)
-	SetVolume(volume.Volume)
-	SetPeriod(note.Period)
+	GetSample(NoteControl, sampling.Pos) volume.Matrix
+	Attack(NoteControl)
+	Release(NoteControl)
+	NoteCut(NoteControl)
+	GetKeyOn(NoteControl) bool
+	Update(NoteControl, time.Duration)
 }

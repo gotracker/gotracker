@@ -20,8 +20,8 @@ type commandFunc func(int, *ChannelState, int, bool)
 type ChannelState struct {
 	intf.Channel
 
-	Instrument     intf.InstrumentOnChannel
-	PrevInstrument intf.InstrumentOnChannel
+	Instrument     intf.NoteControl
+	PrevInstrument intf.NoteControl
 	Pos            sampling.Pos
 	Period         note.Period
 	StoredVolume   volume.Volume

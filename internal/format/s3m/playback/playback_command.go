@@ -59,6 +59,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		}
 		if cs.UseTargetPeriod {
 			cs.Period = cs.TargetPeriod
+			cs.PortaTargetPeriod = cs.TargetPeriod
 		}
 		cs.Pos = cs.TargetPos
 		if cs.Instrument != nil {

@@ -24,6 +24,7 @@ type Playback interface {
 	DisableFeatures([]feature.Feature)
 	GetName() string
 	CanOrderLoop() bool
+	BreakOrder()
 
 	SetupSampler(int, int, int) error
 }

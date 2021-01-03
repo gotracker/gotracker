@@ -125,6 +125,19 @@ func (m *Manager) SetNextRow(row intf.RowIdx) {
 	}
 }
 
+// BreakOrder breaks to the next pattern in the order
+func (m *Manager) BreakOrder() {
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.BreakOrder()
+	} else {
+		rowTxn := m.pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.BreakOrder()
+		rowTxn.Commit()
+	}
+}
+
 // SetTempo sets the desired tempo for the song
 func (m *Manager) SetTempo(tempo int) {
 	if m.preMixRowTxn != nil {

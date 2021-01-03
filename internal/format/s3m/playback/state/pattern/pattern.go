@@ -25,12 +25,11 @@ type patternLoop struct {
 func (pl *patternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
 	if pl.Enabled {
 		if currentRow == pl.End {
+			pl.Count++
 			if pl.Count >= pl.Total {
 				pl.Enabled = false
-			} else {
-				pl.Count++
-				return pl.Start, true
 			}
+			return pl.Start, true
 		}
 	}
 	return 0, false
@@ -104,9 +103,9 @@ func (state *State) GetPatNum() intf.PatternIdx {
 }
 
 // GetNumRows returns the number of rows in the current pattern
-func (state *State) GetNumRows() uint8 {
+func (state *State) GetNumRows() int {
 	if rows := state.GetRows(); rows != nil {
-		return uint8(rows.NumRows())
+		return rows.NumRows()
 	}
 	return 0
 }
@@ -201,7 +200,7 @@ func (state *State) GetCurrentRow() intf.RowIdx {
 // setCurrentRow sets the current row
 func (state *State) setCurrentRow(row intf.RowIdx) {
 	state.currentRow = row
-	if state.GetCurrentRow() >= intf.RowIdx(state.GetNumRows()) {
+	if int(state.GetCurrentRow()) >= state.GetNumRows() {
 		state.nextOrder(true)
 	}
 }
@@ -230,8 +229,10 @@ func (state *State) Reset() {
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
+	wantNextRow := true
 	if row, ok := state.patternLoop.ContinueLoop(state.GetCurrentRow()); ok {
 		state.setCurrentRow(row)
+		wantNextRow = false
 	}
 
 	state.rowHasPatternDelay = false
@@ -248,10 +249,11 @@ func (state *State) nextRow() {
 		return
 	}
 
-	state.currentRow++
+	if wantNextRow {
+		state.currentRow++
+	}
 	if state.currentRow >= intf.RowIdx(state.GetNumRows()) {
 		state.nextOrder(true)
-		return
 	}
 }
 

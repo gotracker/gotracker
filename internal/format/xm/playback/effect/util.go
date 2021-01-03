@@ -27,19 +27,39 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	cs.SetActiveVolume(nv)
 }
 
+const (
+	semitonesPerOctave       float64 = 12
+	c2Octave                 float64 = 5
+	c2Key                    float64 = 0
+	c2Semitone               float64 = c2Octave*semitonesPerOctave + c2Key
+	totalFinetuneOctaves     float64 = 6
+	finetunesPerSemitone     float64 = 16 * 4
+	oneOctaveFinetunePeriods float64 = semitonesPerOctave * finetunesPerSemitone
+	floatXmBaseClock                 = float64(util.XMBaseClock)
+)
+
+func calcLinearPeriod(n note.Semitone, ft note.Finetune, c2spd note.C2SPD) note.Period {
+	nSemitones := 1 + float64(n) - c2Semitone
+	finetuneShiftFromC2 := nSemitones * finetunesPerSemitone
+	finetunePeriod := finetuneShiftFromC2 + float64(ft)/2
+	exp := finetunePeriod / oneOctaveFinetunePeriods
+	freq := float64(c2spd) * math.Pow(2, exp+1)
+	return note.Period(floatXmBaseClock / freq)
+}
+
 func doPortaByDelta(cs intf.Channel, delta int, linearFreqSlides bool) {
-	period := cs.GetPeriod()
+	oldPeriod := cs.GetPeriod()
+	period := oldPeriod
 	if linearFreqSlides {
 		finetune := cs.GetFinetune()
-		finetune += note.Finetune(delta)
+		finetune -= note.Finetune(delta)
 		cs.SetFinetune(finetune)
 		c2Spd := note.C2SPD(util.DefaultC2Spd)
 		if inst := cs.GetTargetInst(); inst != nil {
 			c2Spd = inst.GetC2Spd()
 		}
-		p := (10*12-float64(cs.GetNoteSemitone())-1)*16*4 - float64(finetune)/2
-		freq := float64(c2Spd) * math.Pow(2, ((6*12*16*4-p)/(12*16*4)))
-		period = note.Period(float64(util.XMBaseClock) / freq)
+		newPeriod := calcLinearPeriod(cs.GetNoteSemitone(), finetune, c2Spd)
+		period = newPeriod
 	} else {
 		period = period.AddInteger(delta)
 	}

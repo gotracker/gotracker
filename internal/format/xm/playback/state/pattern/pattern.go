@@ -255,8 +255,9 @@ func (state *State) nextRow() {
 	}
 	if nextRow >= state.GetNumRows() {
 		state.nextOrder(true)
+	} else {
+		state.setCurrentRow(intf.RowIdx(nextRow))
 	}
-	state.setCurrentRow(intf.RowIdx(nextRow))
 }
 
 // GetRow returns the current row

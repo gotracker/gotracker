@@ -10,7 +10,7 @@ import (
 // Row is a specification of the current row data
 type Row struct {
 	intf.Row
-	Channels [32]intf.ChannelData
+	Channels []intf.ChannelData
 }
 
 type patternLoop struct {
@@ -25,12 +25,11 @@ type patternLoop struct {
 func (pl *patternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
 	if pl.Enabled {
 		if currentRow == pl.End {
+			pl.Count++
 			if pl.Count >= pl.Total {
 				pl.Enabled = false
-			} else {
-				pl.Count++
-				return pl.Start, true
 			}
+			return pl.Start, true
 		}
 	}
 	return 0, false
@@ -201,8 +200,7 @@ func (state *State) GetCurrentRow() intf.RowIdx {
 // setCurrentRow sets the current row
 func (state *State) setCurrentRow(row intf.RowIdx) {
 	state.currentRow = row
-	numRows := state.GetNumRows()
-	if int(state.GetCurrentRow()) >= numRows {
+	if int(state.GetCurrentRow()) >= state.GetNumRows() {
 		state.nextOrder(true)
 	}
 }
@@ -214,7 +212,7 @@ func (state *State) nextOrder(resetRow ...bool) {
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
-	state.GetCurrentPatternIdx() // called only to clean up order position effectparameter
+	state.GetCurrentPatternIdx() // called only to clean up order position info
 	if len(resetRow) > 0 && resetRow[0] {
 		state.currentRow = 0
 	}
@@ -231,8 +229,10 @@ func (state *State) Reset() {
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
+	wantNextRow := true
 	if row, ok := state.patternLoop.ContinueLoop(state.GetCurrentRow()); ok {
 		state.setCurrentRow(row)
+		wantNextRow = false
 	}
 
 	state.rowHasPatternDelay = false
@@ -249,12 +249,14 @@ func (state *State) nextRow() {
 		return
 	}
 
-	nextRow := int(state.currentRow) + 1
+	nextRow := int(state.currentRow)
+	if wantNextRow {
+		nextRow++
+	}
 	if nextRow >= state.GetNumRows() {
 		state.nextOrder(true)
-	} else {
-		state.currentRow++
 	}
+	state.setCurrentRow(intf.RowIdx(nextRow))
 }
 
 // GetRow returns the current row
@@ -332,19 +334,23 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 
 	state.patternLoop.CommitTransaction(txn)
 
+	if txn.breakOrder {
+		state.nextOrder(true)
+	}
+
 	if txn.orderIdxSet || txn.rowIdxSet {
-		nextRow := intf.RowIdx(0)
-		if txn.rowIdxSet {
-			nextRow = txn.rowIdx
-		}
 		if txn.orderIdxSet {
 			state.setCurrentOrder(txn.orderIdx)
-		} else {
-			state.nextOrder(true)
+			if !txn.rowIdxSet {
+				state.setCurrentRow(0)
+			}
 		}
-		state.setCurrentRow(nextRow)
-	} else if txn.breakOrder {
-		state.nextOrder(true)
+		if txn.rowIdxSet {
+			if !txn.orderIdxSet && state.currentRow > txn.rowIdx {
+				state.nextOrder()
+			}
+			state.setCurrentRow(txn.rowIdx)
+		}
 	} else if txn.advanceRow {
 		state.nextRow()
 	}

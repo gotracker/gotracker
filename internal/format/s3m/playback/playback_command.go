@@ -135,8 +135,8 @@ func (m *Manager) SetPatternDelay(rept int) {
 
 // SetPatternLoopStart sets the pattern loop start position
 func (m *Manager) SetPatternLoopStart() {
-	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetPatternLoopStart()
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.SetPatternLoopStart()
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
@@ -148,8 +148,8 @@ func (m *Manager) SetPatternLoopStart() {
 
 // SetPatternLoopEnd sets the pattern loop end position
 func (m *Manager) SetPatternLoopEnd() {
-	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetPatternLoopEnd()
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.SetPatternLoopEnd()
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
@@ -161,8 +161,8 @@ func (m *Manager) SetPatternLoopEnd() {
 
 // SetPatternLoopCount sets the total loops desired for the pattern loop mechanism
 func (m *Manager) SetPatternLoopCount(loops int) {
-	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetPatternLoopCount(loops)
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.SetPatternLoopCount(loops)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()

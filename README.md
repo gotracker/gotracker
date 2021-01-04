@@ -15,7 +15,7 @@ It's a tracked music player written in Go.
 Files from/of the following formats/trackers:
 * S3M - ScreamTracker 3
 * MOD - Protracker/Fasttracker/Startrekker (_internally up-converted to S3M_)
-* XM - Fasttracker II (_very alpha implementation_)
+* XM - Fasttracker II
 
 ## What systems does it work on?
 
@@ -83,12 +83,15 @@ Not well, but it's good enough to play some moderately complex stuff.
 
 | Tags | Notes |
 |------|-------|
-| `s3m` `xm` | Unknown/unhandled commands (effects) will cause a panic. There aren't many left, but there are still some laying around. |
+| `player` | Unknown/unhandled commands (effects) will cause a panic. There aren't many left, but there are still some laying around. |
 | `player` | The rendering system is fairly bad - it originally was designed only to work with S3M, but we decided to rework some of it to be more flexible. We managed to pull most of the mixing functionality out into somewhat generic structures/algorithms, but it still needs a lot of work. |
-| `s3m` `xm` | Attempting to load a corrupted S3M file may cause the deserializer to panic or go running off into the weeds indefinitely. |
+| `loader` | Attempting to load a corrupted tracker file may cause the deserializer to panic or go running off into the weeds indefinitely. |
 | `mod` | MOD file support is buggy, at best. |
+| `mod` `loader` | MOD files are up-converted to S3M internally and the S3M player uses NTSC-based lookup tables, so with a PAL-based MOD, the period values produced will end up being very slightly divergent from what is expected, as the S3M format converts note information to key-octave pairs, opting to look up the period information at time of need instead. |
 | `xm` | XM file support is in a very nascent state. Don't expect your favorite song to play in it well, if at all. |
 | `s3m` `opl2` | Attempting to play an S3M file with Adlib/OPL2 instruments does not produce the expected output. The OPL2 code has something wrong with it - it sounds pretty bad, though steps have been taken to remedy its strange output. |
+| `mod` `s3m` | Amiga Paula/"LED" low-pass filter support is available, but the filter itself is a very lazy (and very over-optimized) Butterworth implementation. It will not produce the expected output.
+| `xm` `opl2` | Attempting to play an XM file with Adlib/OPL2 instruments does not work. Most of the code for playback is there, but there's none for loading OPL2 instruments from file, so there's no way for the instruments to make it to the playback code. |
 | `windows` `winmm` | Setting the number of channels to more than 2 may cause WinMM and/or Gotracker to do unusual things. You might be able to get a hardware 4-channel capable card (such as the Aureal Vortex 2 AU8830) to work, but driver inconsistencies and weirdnesses in WinMM will undoubtedly cause needless strife. |
 | `player` | Channel readouts are lazily attempted to match the layout from the tracker the song file came from. As a result, there are probably strange artifacts presented in it by the attempted simulation. |
 | `s3m` | Setting the default `C2SPD` value for the `s3m` package to something other than 8363 will cause some unusual behavior - Lower values will reduce the fidelity of the audio, but it will generally sound the same. However, the LFOs (vibrato, tremelo) will become significantly more pronounced the lower the `C2SPD` becomes. The inverse of the observed phenomenon occurs when the `C2SPD` value gets raised. At a certain point much higher than 8363, the LFOs become effectively useless. |
@@ -96,7 +99,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `pulseaudio` | PulseAudio support is offered through a Pure Go interface originally created by Johann Freymuth, called [jfreymuth/pulse](https://github.com/jfreymuth/pulse). While it seems to work pretty well, it does have some inconsistencies when compared to the FreeDesktop supported C interface. If you see an error about there being a "`missing port in address`" specifically when using a TCP connection string, make sure to append the default port specifier of `:4713` to the end of the `PULSE_SERVER` environment variable. |
 | `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
 | `flac` | Flac encoding is still very beta. |
-| `xm` | Linear Frequency Slides support is very, very alpha. |
+| `xm` | Linear Frequency Slide support uses an _in-situ_ floating point power-of-2 calculation, which may be very slow on some hardware. Additionally, it is not going to match what Fasttracker II does internally - using a pre-calculated lookup table - so the output may sound slightly different from expectation. |
 
 ### Unknown bugs
 

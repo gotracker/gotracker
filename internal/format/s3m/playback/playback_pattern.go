@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/panning"
 
 	"gotracker/internal/format/s3m/playback/effect"
-	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 )
 
@@ -94,7 +93,7 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
-		cs.Process(row, m.GetGlobalVolume(), m.song, util.CalcSemitonePeriod, m.processCommand)
+		cs.Process(row, m.GetGlobalVolume(), m.song, m.processCommand)
 	}
 
 	return nil

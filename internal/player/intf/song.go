@@ -1,12 +1,5 @@
 package intf
 
-import (
-	"gotracker/internal/player/note"
-)
-
-// CalcSemitonePeriodFunc is a function type that returns the period for a specified note & c2spd
-type CalcSemitonePeriodFunc func(semi note.Semitone, c2spd note.C2SPD) note.Period
-
 // SongData is an interface to the song data
 type SongData interface {
 	GetOrderList() []PatternIdx

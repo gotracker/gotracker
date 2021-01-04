@@ -29,20 +29,25 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 
 func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
 	period := cs.GetPeriod()
-	period = period.AddInteger(delta)
+	if period == nil {
+		return
+	}
+
+	d := util.AmigaPeriod(delta)
+	period = period.Add(&d)
 	cs.SetPeriod(period)
 }
 
 func doPortaByDeltaLinear(cs intf.Channel, delta int) {
 	period := cs.GetPeriod()
-	finetune := cs.GetFinetune()
-	finetune += note.Finetune(delta)
-	cs.SetFinetune(finetune)
-	c2Spd := note.C2SPD(util.DefaultC2Spd)
-	if inst := cs.GetTargetInst(); inst != nil {
-		c2Spd = inst.GetC2Spd()
+	if period == nil {
+		return
 	}
-	period = util.CalcLinearPeriod(cs.GetNoteSemitone(), finetune, c2Spd)
+
+	finetune := &util.LinearPeriod{
+		Finetune: note.Finetune(delta),
+	}
+	period = period.Add(finetune)
 	cs.SetPeriod(period)
 }
 
@@ -57,7 +62,7 @@ func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSl
 
 func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
 	doPortaUp(cs, amount, multiplier, linearFreqSlides)
-	if period := cs.GetPeriod(); period < target {
+	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == 1 {
 		cs.SetPeriod(target)
 	}
 }
@@ -73,14 +78,14 @@ func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreq
 
 func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
 	doPortaDown(cs, amount, multiplier, linearFreqSlides)
-	if period := cs.GetPeriod(); period > target {
+	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == -1 {
 		cs.SetPeriod(target)
 	}
 }
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {
-	delta := note.Period(calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator()))
-	cs.SetVibratoDelta(delta)
+	delta := util.AmigaPeriod(calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator()))
+	cs.SetVibratoDelta(&delta)
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {

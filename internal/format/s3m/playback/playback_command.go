@@ -21,7 +21,8 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
 		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune())
-		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
+		period := util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
+		cs.TargetPeriod = period
 	}
 }
 
@@ -45,7 +46,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		n = cs.Cmd.GetNote()
 	}
 	keyOff := n.IsEmpty() || n.IsStop()
-	if cs.DoRetriggerNote && cs.TargetPeriod != 0 && currentTick == cs.NotePlayTick {
+	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
 			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
@@ -72,7 +73,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		if n == note.StopNote {
 			cs.Instrument.NoteCut()
 			cs.Instrument = nil
-			cs.Period = 0
+			cs.Period = nil
 		} else {
 			cs.Instrument.Release()
 		}

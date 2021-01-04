@@ -5,6 +5,7 @@ import (
 
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // PortaToNote defines a portamento-to-note effect
@@ -32,7 +33,7 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	period := cs.GetPeriod()
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
-		if period > ptp {
+		if note.ComparePeriods(period, ptp) == -1 {
 			doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
 			doPortaDownToNote(cs, float32(xx), 4, ptp) // adds

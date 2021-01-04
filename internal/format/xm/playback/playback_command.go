@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/filter"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/note"
@@ -13,10 +14,6 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		return
 	}
 
-	if !cs.KeepFinetune || cs.DoRetriggerNote {
-		cs.Finetune = 0
-	}
-
 	if cs.WantVolCalc {
 		cs.WantVolCalc = false
 		cs.SetStoredVolume(inst.GetDefaultVolume(), m.GetGlobalVolume())
@@ -24,8 +21,9 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune())
-		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
+		linearFreqSlides := cs.Memory.(*channel.Memory).LinearFreqSlides
+		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune(), linearFreqSlides)
+		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd, linearFreqSlides)
 	}
 }
 
@@ -49,7 +47,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		n = cs.Cmd.GetNote()
 	}
 	keyOff := n.IsEmpty() || n.IsStop()
-	if cs.DoRetriggerNote && cs.TargetPeriod != 0 && currentTick == cs.NotePlayTick {
+	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
 			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
@@ -76,7 +74,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		if n == note.StopNote {
 			cs.Instrument.NoteCut()
 			cs.Instrument = nil
-			cs.Period = 0
+			cs.Period = nil
 		} else {
 			cs.Instrument.Release()
 		}

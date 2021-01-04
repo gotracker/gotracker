@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/panning"
 
 	"gotracker/internal/format/xm/playback/effect"
-	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
 )
 
@@ -94,7 +93,7 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
-		cs.Process(row, m.GetGlobalVolume(), m.song, util.CalcSemitonePeriod, m.processEffect)
+		cs.Process(row, m.GetGlobalVolume(), m.song, m.processEffect)
 	}
 
 	return nil

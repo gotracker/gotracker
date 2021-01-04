@@ -2,20 +2,26 @@ package note
 
 import "fmt"
 
-// Period defines a sampler period
-type Period float32
-
-// AddInteger truncates the current period to an integer and adds the delta integer in
-// then returns the resulting period
-func (p *Period) AddInteger(delta int) Period {
-	*p = Period(int(*p) + delta)
-	return *p
+// Period is an interface that defines a sampler period
+type Period interface {
+	Add(Period) Period
+	Compare(Period) int // <=>
+	Lerp(float64, Period) Period
+	GetSamplerAdd(float64) float64
 }
 
-// Add adds the current period to a delta value then returns the resulting period
-func (p *Period) Add(delta float32) Period {
-	*p += Period(delta)
-	return *p
+// ComparePeriods compares two periods, taking nil into account
+func ComparePeriods(lhs Period, rhs Period) int {
+	if lhs == nil {
+		if rhs == nil {
+			return 0
+		}
+		return 1
+	} else if rhs == nil {
+		return -1
+	}
+
+	return lhs.Compare(rhs)
 }
 
 // C2SPD defines the C-2 (or in some players cases C-4) note sampling rate

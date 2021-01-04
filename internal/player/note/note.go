@@ -38,6 +38,11 @@ const (
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
+// NewSemitone creates a semitone from a key and octave
+func NewSemitone(k Key, o Octave) Semitone {
+	return Semitone(uint8(o)*12 + uint8(k))
+}
+
 // Key returns the key from the Semitone
 func (s Semitone) Key() Key {
 	return Key(s % 12)

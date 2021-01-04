@@ -39,8 +39,8 @@ var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480,
 
 // CalcSemitonePeriod calculates the semitone period for xm notes
 func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD) note.Period {
-	key := int(semi) % len(semitonePeriodTable)
-	octave := uint(int(semi) / len(semitonePeriodTable))
+	key := int(semi.Key())
+	octave := uint32(semi.Octave())
 
 	if key >= len(semitonePeriodTable) {
 		return 0
@@ -139,4 +139,13 @@ func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD) float32 {
 // FrequencyFromPeriod returns the frequency from the period
 func FrequencyFromPeriod(period note.Period) float32 {
 	return XMBaseClock / float32(period)
+}
+
+// CalcLinearPeriod calculates a period for a linear frequency slide
+func CalcLinearPeriod(n note.Semitone, ft note.Finetune, c2spd note.C2SPD) note.Period {
+	nsf := int(n)*64 + int(ft)
+
+	linFreq := math.Pow(2, float64(nsf)/768)
+
+	return note.Period(float64(semitonePeriodTable[0]) / linFreq)
 }

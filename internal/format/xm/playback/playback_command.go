@@ -13,7 +13,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		return
 	}
 
-	if !cs.KeepFinetune {
+	if !cs.KeepFinetune || cs.DoRetriggerNote {
 		cs.Finetune = 0
 	}
 

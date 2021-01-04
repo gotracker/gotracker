@@ -27,48 +27,32 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	cs.SetActiveVolume(nv)
 }
 
-const (
-	semitonesPerOctave       float64 = 12
-	c2Octave                 float64 = 5
-	c2Key                    float64 = 0
-	c2Semitone               float64 = c2Octave*semitonesPerOctave + c2Key
-	totalFinetuneOctaves     float64 = 6
-	finetunesPerSemitone     float64 = 16 * 4
-	oneOctaveFinetunePeriods float64 = semitonesPerOctave * finetunesPerSemitone
-	floatXmBaseClock                 = float64(util.XMBaseClock)
-)
-
-func calcLinearPeriod(n note.Semitone, ft note.Finetune, c2spd note.C2SPD) note.Period {
-	nSemitones := 1 + float64(n) - c2Semitone
-	finetuneShiftFromC2 := nSemitones * finetunesPerSemitone
-	finetunePeriod := finetuneShiftFromC2 + float64(ft)/2
-	exp := finetunePeriod / oneOctaveFinetunePeriods
-	freq := float64(c2spd) * math.Pow(2, exp+1)
-	return note.Period(floatXmBaseClock / freq)
+func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
+	period := cs.GetPeriod()
+	period = period.AddInteger(delta)
+	cs.SetPeriod(period)
 }
 
-func doPortaByDelta(cs intf.Channel, delta int, linearFreqSlides bool) {
-	oldPeriod := cs.GetPeriod()
-	period := oldPeriod
-	if linearFreqSlides {
-		finetune := cs.GetFinetune()
-		finetune -= note.Finetune(delta)
-		cs.SetFinetune(finetune)
-		c2Spd := note.C2SPD(util.DefaultC2Spd)
-		if inst := cs.GetTargetInst(); inst != nil {
-			c2Spd = inst.GetC2Spd()
-		}
-		newPeriod := calcLinearPeriod(cs.GetNoteSemitone(), finetune, c2Spd)
-		period = newPeriod
-	} else {
-		period = period.AddInteger(delta)
+func doPortaByDeltaLinear(cs intf.Channel, delta int) {
+	period := cs.GetPeriod()
+	finetune := cs.GetFinetune()
+	finetune += note.Finetune(delta)
+	cs.SetFinetune(finetune)
+	c2Spd := note.C2SPD(util.DefaultC2Spd)
+	if inst := cs.GetTargetInst(); inst != nil {
+		c2Spd = inst.GetC2Spd()
 	}
+	period = util.CalcLinearPeriod(cs.GetNoteSemitone(), finetune, c2Spd)
 	cs.SetPeriod(period)
 }
 
 func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) {
 	delta := int(amount * multiplier)
-	doPortaByDelta(cs, -delta, linearFreqSlides)
+	if linearFreqSlides {
+		doPortaByDeltaLinear(cs, delta)
+	} else {
+		doPortaByDeltaAmiga(cs, -delta)
+	}
 }
 
 func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
@@ -80,7 +64,11 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 
 func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) {
 	delta := int(amount * multiplier)
-	doPortaByDelta(cs, delta, linearFreqSlides)
+	if linearFreqSlides {
+		doPortaByDeltaLinear(cs, -delta)
+	} else {
+		doPortaByDeltaAmiga(cs, delta)
+	}
 }
 
 func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {

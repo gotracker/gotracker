@@ -5,6 +5,7 @@ import (
 
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // PortaToNote defines a portamento-to-note effect
@@ -18,7 +19,6 @@ func (e PortaToNote) PreStart(cs intf.Channel, p intf.Playback) {
 func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	cs.SetKeepFinetune(true)
 	if cmd := cs.GetData().(*channel.Data); cmd != nil && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetDoRetriggerNote(false)
@@ -33,7 +33,7 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	period := cs.GetPeriod()
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
-		if period > ptp {
+		if note.ComparePeriods(period, ptp) == -1 {
 			doPortaUpToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // subtracts
 		} else {
 			doPortaDownToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // adds

@@ -30,6 +30,72 @@ var (
 	DefaultPanningRight = PanningFromS3M(0x0C)
 )
 
+// AmigaPeriod defines a sampler period that follows the Amiga-style approach of note
+// definition. Useful in calculating resampling.
+type AmigaPeriod float32
+
+// AddInteger truncates the current period to an integer and adds the delta integer in
+// then returns the resulting period
+func (p *AmigaPeriod) AddInteger(delta int) AmigaPeriod {
+	period := AmigaPeriod(int(*p) + delta)
+	return period
+}
+
+// Add adds the current period to a delta value then returns the resulting period
+func (p *AmigaPeriod) Add(delta note.Period) note.Period {
+	period := AmigaPeriod(*p)
+	if d, ok := delta.(*AmigaPeriod); ok {
+		period += *d
+	}
+	return &period
+}
+
+// ToAmigaPeriod returns an Amiga-style period
+func (p *AmigaPeriod) ToAmigaPeriod() AmigaPeriod {
+	return *p
+}
+
+// Compare returns:
+//  -1 if the current period is higher frequency than the `rhs` period
+//  0 if the current period is equal in frequency to the `rhs` period
+//  1 if the current period is lower frequency than the `rhs` period
+func (p *AmigaPeriod) Compare(rhs note.Period) int {
+	right := AmigaPeriod(0)
+	if r, ok := rhs.(*AmigaPeriod); ok {
+		right = *r
+	}
+
+	switch {
+	case *p > right:
+		return -1
+	case *p < right:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// Lerp linear-interpolates the current period with the `rhs` period
+func (p *AmigaPeriod) Lerp(t float64, rhs note.Period) note.Period {
+	right := AmigaPeriod(0)
+	if r, ok := rhs.(*AmigaPeriod); ok {
+		right = *r
+	}
+
+	period := *p
+	period += AmigaPeriod(t * (float64(right) - float64(period)))
+	return &period
+}
+
+// GetSamplerAdd returns the number of samples to advance an instrument by given the period
+func (p *AmigaPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
+	period := float64(*p)
+	if period == 0 {
+		return 0
+	}
+	return samplerSpeed / period
+}
+
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for S3M notes
@@ -38,15 +104,16 @@ func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD) note.Period {
 	octave := int(semi.Octave())
 
 	if key >= len(semitonePeriodTable) {
-		return 0
+		return nil
 	}
 
 	if c2spd == 0 {
 		c2spd = note.C2SPD(s3mfile.DefaultC2Spd)
 	}
 
-	period := (note.Period(floatDefaultC2Spd*semitonePeriodTable[key]) / note.Period(uint32(c2spd)<<octave))
-	return period.AddInteger(0)
+	period := (AmigaPeriod(floatDefaultC2Spd*semitonePeriodTable[key]) / AmigaPeriod(uint32(c2spd)<<octave))
+	period = period.AddInteger(0)
+	return &period
 }
 
 // CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
@@ -68,7 +135,7 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune int8) note.C2SPD {
 	fFt := float64(finetune) / 16
 	iFt := math.Trunc(fFt)
 	f := fFt - iFt
-	period := period0 + note.Period(float64(period1-period0)*f)
+	period := period0.Lerp(f, period1)
 	return note.C2SPD(FrequencyFromPeriod(period))
 }
 
@@ -139,5 +206,8 @@ func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD) float32 {
 
 // FrequencyFromPeriod returns the frequency from the period
 func FrequencyFromPeriod(period note.Period) float32 {
-	return S3MBaseClock / float32(period)
+	if p, ok := period.(*AmigaPeriod); ok {
+		return S3MBaseClock / float32(*p)
+	}
+	return 0
 }

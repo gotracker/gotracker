@@ -84,18 +84,18 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.Pos = sampling.Pos{}
 		cs.PrevInstrument = nil
 		cs.Instrument = nil
-		cs.Period = 0
+		cs.Period = nil
 		cs.Command = nil
 
-		cs.TargetPeriod = 0
+		cs.TargetPeriod = nil
 		cs.TargetPos = cs.Pos
 		cs.TargetInst = nil
-		cs.PortaTargetPeriod = 0
+		cs.PortaTargetPeriod = nil
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
 		cs.TremorOn = true
 		cs.TremorTime = 0
-		cs.VibratoDelta = 0
+		cs.VibratoDelta = nil
 		cs.Cmd = nil
 		cs.OutputChannelNum = m.song.GetOutputChannel(ch)
 	}

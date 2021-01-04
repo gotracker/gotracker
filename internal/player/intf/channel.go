@@ -42,8 +42,6 @@ type Channel interface {
 	SetTargetPeriod(note.Period)
 	GetPeriod() note.Period
 	SetPeriod(note.Period)
-	GetFinetune() note.Finetune
-	SetFinetune(note.Finetune)
 	SetVibratoDelta(note.Period)
 	GetVibratoOscillator() *oscillator.Oscillator
 	GetTremoloOscillator() *oscillator.Oscillator
@@ -69,5 +67,4 @@ type Channel interface {
 	GetFilter() Filter
 	SetFilter(Filter)
 	SetOutputChannelNum(int)
-	SetKeepFinetune(bool)
 }

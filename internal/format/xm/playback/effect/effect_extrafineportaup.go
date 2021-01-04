@@ -12,7 +12,6 @@ type ExtraFinePortaUp uint8 // 'X1x'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e ExtraFinePortaUp) PreStart(cs intf.Channel, p intf.Playback) {
-	cs.SetKeepFinetune(true)
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

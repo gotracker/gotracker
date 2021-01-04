@@ -1,7 +1,6 @@
 package state
 
 import (
-	"math"
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -57,15 +56,13 @@ type ChannelState struct {
 	WantNoteCalc       bool
 	WantVolCalc        bool
 	UseTargetPeriod    bool
-	Finetune           note.Finetune
-	KeepFinetune       bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
 }
 
 // Process processes a channel's row data
-func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData, calcSemitonePeriod intf.CalcSemitonePeriodFunc, processCommand commandFunc) {
+func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData, processCommand commandFunc) {
 	cs.Command = processCommand
 
 	cs.PrevInstrument = cs.Instrument
@@ -80,11 +77,10 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 	cs.RetriggerCount = 0
 	cs.TremorOn = true
 	cs.TremorTime = 0
-	cs.VibratoDelta = 0
+	cs.VibratoDelta = nil
 
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
-	cs.KeepFinetune = false
 	cs.UseTargetPeriod = false
 
 	if cs.Cmd == nil {
@@ -114,8 +110,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
 		} else if n.IsInvalid() {
-			cs.TargetPeriod = 0
-			cs.Finetune = 0
+			cs.TargetPeriod = nil
 			cs.WantNoteCalc = false
 		} else if cs.TargetInst != nil {
 			cs.PrevStoredSemitone = cs.StoredSemitone
@@ -149,11 +144,11 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThis
 	}
 
 	sample := cs.Instrument
-	if sample != nil && cs.Period != 0 && !cs.PlaybackFrozen() {
+	if sample != nil && cs.Period != nil && !cs.PlaybackFrozen() {
 		sample.SetVolume(cs.ActiveVolume * cs.LastGlobalVolume)
-		period := cs.Period + cs.VibratoDelta
+		period := cs.Period.Add(cs.VibratoDelta)
 		sample.SetPeriod(period)
-		samplerAdd := samplerSpeed / float32(period)
+		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
 		sample.Update(tickDuration)
 		// make a stand-alone data buffer for this channel for this tick
 		data := mix.NewMixBuffer(tickSamples)
@@ -200,11 +195,6 @@ func (cs *ChannelState) UnfreezePlayback() {
 // PlaybackFrozen returns true if the mixer progression for the channel is suspended
 func (cs ChannelState) PlaybackFrozen() bool {
 	return cs.freezePlayback
-}
-
-// SetKeepFinetune sets the flag that keeps the finetune value
-func (cs *ChannelState) SetKeepFinetune(keep bool) {
-	cs.KeepFinetune = keep
 }
 
 // SetEffectSharedMemoryIfNonZero stores the `input` value into memory if it is non-zero
@@ -357,17 +347,7 @@ func (cs *ChannelState) GetPeriod() note.Period {
 
 // SetPeriod sets the current sampler period of the active instrument
 func (cs *ChannelState) SetPeriod(period note.Period) {
-	cs.Period = note.Period(math.Max(float64(period), 0))
-}
-
-// GetFinetune returns the current sampler finetune of the active instrument
-func (cs *ChannelState) GetFinetune() note.Finetune {
-	return cs.Finetune
-}
-
-// SetFinetune sets the current sampler finetune of the active instrument
-func (cs *ChannelState) SetFinetune(finetune note.Finetune) {
-	cs.Finetune = finetune
+	cs.Period = period
 }
 
 // GetPos returns the sample position of the active instrument

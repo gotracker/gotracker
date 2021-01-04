@@ -28,38 +28,62 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 }
 
 func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
-	delta := int(amount * multiplier)
 	period := cs.GetPeriod()
-	cs.SetPeriod(period.AddInteger(-delta))
+	if period == nil {
+		return
+	}
+
+	delta := int(amount * multiplier)
+	d := util.AmigaPeriod(-delta)
+	period = period.Add(&d)
+	cs.SetPeriod(period)
 }
 
 func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
-	delta := int(amount * multiplier)
 	period := cs.GetPeriod()
-	if period.AddInteger(-delta) < target {
+	if period == nil {
+		return
+	}
+
+	delta := int(amount * multiplier)
+	d := util.AmigaPeriod(-delta)
+	period = period.Add(&d)
+	if period.Compare(target) == 1 {
 		period = target
 	}
 	cs.SetPeriod(period)
 }
 
 func doPortaDown(cs intf.Channel, amount float32, multiplier float32) {
-	delta := int(amount * multiplier)
 	period := cs.GetPeriod()
-	cs.SetPeriod(period.AddInteger(delta))
+	if period == nil {
+		return
+	}
+
+	delta := int(amount * multiplier)
+	d := util.AmigaPeriod(delta)
+	period = period.Add(&d)
+	cs.SetPeriod(period)
 }
 
 func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period) {
-	delta := amount * multiplier
 	period := cs.GetPeriod()
-	if period.AddInteger(int(delta)) > target {
+	if period == nil {
+		return
+	}
+
+	delta := int(amount * multiplier)
+	d := util.AmigaPeriod(delta)
+	period = period.Add(&d)
+	if period.Compare(target) == -1 {
 		period = target
 	}
 	cs.SetPeriod(period)
 }
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {
-	delta := note.Period(calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator()))
-	cs.SetVibratoDelta(delta)
+	delta := util.AmigaPeriod(calculateWaveTable(cs, currentTick, speed, depth, multiplier, cs.GetVibratoOscillator()))
+	cs.SetVibratoDelta(&delta)
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {

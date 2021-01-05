@@ -73,6 +73,9 @@ func (m *Manager) processPatternRow() error {
 
 		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.TrackData)
 		if cs.ActiveEffect != nil {
+			if m.OnEffect != nil {
+				m.OnEffect(cs.ActiveEffect)
+			}
 			cs.ActiveEffect.PreStart(cs, m)
 		}
 	}

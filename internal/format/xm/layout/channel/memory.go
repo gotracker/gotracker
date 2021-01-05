@@ -93,32 +93,32 @@ func (m *Memory) VolumeSlide(input uint8) uint8 {
 
 // FinePortaUp gets or sets the most recent non-zero value (or input) for Fine Portamento Up
 func (m *Memory) FinePortaUp(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.finePortaUp)
+	return m.getEffectMemory(input&0x0F, &m.finePortaUp)
 }
 
 // FinePortaDown gets or sets the most recent non-zero value (or input) for Fine Portamento Down
 func (m *Memory) FinePortaDown(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.finePortaDown)
+	return m.getEffectMemory(input&0x0F, &m.finePortaDown)
 }
 
 // FineVolumeSlideUp gets or sets the most recent non-zero value (or input) for Fine Volume Slide Up
 func (m *Memory) FineVolumeSlideUp(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.fineVolumeSlideUp)
+	return m.getEffectMemory(input&0x0F, &m.fineVolumeSlideUp)
 }
 
 // FineVolumeSlideDown gets or sets the most recent non-zero value (or input) for Fine Volume Slide Down
 func (m *Memory) FineVolumeSlideDown(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.fineVolumeSlideDown)
+	return m.getEffectMemory(input&0x0F, &m.fineVolumeSlideDown)
 }
 
 // ExtraFinePortaUp gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Up
 func (m *Memory) ExtraFinePortaUp(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.extraFinePortaUp)
+	return m.getEffectMemory(input&0x0F, &m.extraFinePortaUp)
 }
 
 // ExtraFinePortaDown gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Down
 func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.extraFinePortaDown)
+	return m.getEffectMemory(input&0x0F, &m.extraFinePortaDown)
 }
 
 // TremorMem returns the Tremor object

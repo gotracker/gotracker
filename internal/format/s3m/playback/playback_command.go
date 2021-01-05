@@ -42,8 +42,8 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	m.doNoteVolCalcs(cs)
 
 	n := note.EmptyNote
-	if cs.Cmd != nil {
-		n = cs.Cmd.GetNote()
+	if cs.TrackData != nil {
+		n = cs.TrackData.GetNote()
 	}
 	keyOff := n.IsEmpty() || n.IsStop()
 	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {

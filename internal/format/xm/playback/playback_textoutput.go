@@ -70,7 +70,7 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		}
 		cs := &m.channels[ch]
 
-		rowText.Channels[ch] = cs.Cmd
+		rowText.Channels[ch] = cs.TrackData
 	}
 	return &rowText
 }

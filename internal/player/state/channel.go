@@ -44,7 +44,7 @@ type ChannelState struct {
 	VibratoDelta       note.Period
 	Memory             intf.Memory
 	effectLastNonZero  uint8
-	Cmd                intf.ChannelData
+	TrackData          intf.ChannelData
 	freezePlayback     bool
 	LastGlobalVolume   volume.Volume
 	VibratoOscillator  oscillator.Oscillator
@@ -80,15 +80,15 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 	cs.WantVolCalc = false
 	cs.UseTargetPeriod = false
 
-	if cs.Cmd == nil {
+	if cs.TrackData == nil {
 		return
 	}
 
-	if cs.Cmd.HasNote() {
+	if cs.TrackData.HasNote() {
 		cs.UseTargetPeriod = true
 		cs.VibratoOscillator.Pos = 0
 		cs.TremoloOscillator.Pos = 0
-		inst := cs.Cmd.GetInstrument()
+		inst := cs.TrackData.GetInstrument()
 		if inst.IsEmpty() {
 			// use current
 			cs.TargetPos = sampling.Pos{}
@@ -102,7 +102,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 			}
 		}
 
-		n := cs.Cmd.GetNote()
+		n := cs.TrackData.GetNote()
 		if n == note.EmptyNote {
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
@@ -121,9 +121,9 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 		cs.DoRetriggerNote = false
 	}
 
-	if cs.Cmd.HasVolume() {
+	if cs.TrackData.HasVolume() {
 		cs.WantVolCalc = false
-		v := cs.Cmd.GetVolume()
+		v := cs.TrackData.GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if cs.TargetInst != nil {
 				cs.WantVolCalc = true
@@ -246,7 +246,7 @@ func (cs *ChannelState) SetActiveVolume(vol volume.Volume) {
 
 // GetData returns the interface to the current channel song pattern data
 func (cs *ChannelState) GetData() intf.ChannelData {
-	return cs.Cmd
+	return cs.TrackData
 }
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period

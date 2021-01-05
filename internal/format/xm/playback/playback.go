@@ -93,7 +93,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
 		cs.VibratoDelta = nil
-		cs.Cmd = nil
+		cs.TrackData = nil
 		cs.OutputChannelNum = m.song.GetOutputChannel(ch)
 		cs.SetVolumeActive(true)
 	}

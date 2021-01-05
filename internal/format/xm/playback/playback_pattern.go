@@ -69,9 +69,9 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
-		cs.Cmd = cdata
+		cs.TrackData = cdata
 
-		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.Cmd)
+		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.TrackData)
 		if cs.ActiveEffect != nil {
 			cs.ActiveEffect.PreStart(cs, m)
 		}

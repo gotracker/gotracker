@@ -25,6 +25,7 @@ type Playback interface {
 	GetName() string
 	CanOrderLoop() bool
 	BreakOrder()
+	SetOnEffect(func(Effect))
 
 	SetupSampler(int, int, int) error
 }

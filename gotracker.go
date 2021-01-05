@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"reflect"
 	"sort"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format"
+	xmEffect "gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
@@ -24,6 +26,7 @@ var (
 	startingOrder  int
 	startingRow    int
 	canLoop        bool
+	effectCoverage bool
 )
 
 func main() {
@@ -37,6 +40,7 @@ func main() {
 	flag.BoolVar(&canLoop, "l", false, "enable pattern loop")
 	flag.StringVar(&outputSettings.Name, "O", output.DefaultOutputDeviceName, "output device")
 	flag.StringVar(&outputSettings.Filepath, "f", "output.wav", "output filepath")
+	flag.BoolVar(&effectCoverage, "E", false, "gather and display effect coverage data")
 
 	flag.Parse()
 
@@ -110,6 +114,26 @@ func main() {
 	}
 	playback.DisableFeatures(disableFeatures)
 
+	var effectMap map[string]int
+	if effectCoverage {
+		effectMap = make(map[string]int)
+		playback.SetOnEffect(func(e intf.Effect) {
+			var name string
+			switch t := e.(type) {
+			case *xmEffect.VolEff:
+				for _, eff := range t.Effects {
+					typ := reflect.TypeOf(eff)
+					name = typ.Name()
+					effectMap[name]++
+				}
+			default:
+				typ := reflect.TypeOf(t)
+				name = typ.Name()
+				effectMap[name]++
+			}
+		})
+	}
+
 	fmt.Printf("Output device: %s\n", waveOut.Name())
 	fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
 	fmt.Printf("Song: %s\n", playback.GetName())
@@ -140,5 +164,11 @@ func main() {
 	}()
 
 	waveOut.Play(outBufs)
+
+	for k, v := range effectMap {
+		fmt.Println(k, v)
+	}
+	fmt.Println()
+
 	fmt.Println("done!")
 }

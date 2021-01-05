@@ -29,6 +29,7 @@ type Manager struct {
 	premix        *device.PremixData
 
 	rowRenderState *rowRenderState
+	OnEffect       func(intf.Effect)
 }
 
 // NewManager creates a new manager for an XM song
@@ -220,4 +221,9 @@ func (m *Manager) GetCurrentRow() intf.RowIdx {
 // GetName returns the current song's name
 func (m *Manager) GetName() string {
 	return m.song.GetName()
+}
+
+// SetOnEffect sets the callback for an effect being generated for a channel
+func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
+	m.OnEffect = fn
 }

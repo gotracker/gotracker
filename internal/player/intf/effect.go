@@ -45,3 +45,14 @@ func (e CombinedEffect) Stop(cs Channel, p Playback, lastTick int) {
 		effect.Stop(cs, p, lastTick)
 	}
 }
+
+// String returns the string for the effect list
+func (e CombinedEffect) String() string {
+	for _, eff := range e.Effects {
+		s := eff.String()
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}

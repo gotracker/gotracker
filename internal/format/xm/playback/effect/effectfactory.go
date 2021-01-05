@@ -7,12 +7,13 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type volEff struct {
+// VolEff is a combined effect that includes a volume effect and a standard effect
+type VolEff struct {
 	intf.CombinedEffect
 	eff intf.Effect
 }
 
-func (e volEff) String() string {
+func (e VolEff) String() string {
 	if e.eff == nil {
 		return "..."
 	}
@@ -30,7 +31,7 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 		return nil
 	}
 
-	eff := volEff{}
+	eff := VolEff{}
 	if cd.What.HasVolume() {
 		v := cd.Volume
 		var ve intf.Effect
@@ -67,11 +68,14 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 		eff.eff = e
 	}
 
-	if len(eff.Effects) == 0 {
+	switch len(eff.Effects) {
+	case 0:
 		return nil
+	case 1:
+		return eff.Effects[0]
+	default:
+		return &eff
 	}
-
-	return &eff
 }
 
 func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {

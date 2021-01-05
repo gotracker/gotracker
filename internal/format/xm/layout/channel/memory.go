@@ -22,6 +22,8 @@ type Memory struct {
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
+
+	tremorMem Tremor
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -117,4 +119,9 @@ func (m *Memory) ExtraFinePortaUp(input uint8) uint8 {
 // ExtraFinePortaDown gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Down
 func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.extraFinePortaDown)
+}
+
+// TremorMem returns the Tremor object
+func (m *Memory) TremorMem() *Tremor {
+	return &m.tremorMem
 }

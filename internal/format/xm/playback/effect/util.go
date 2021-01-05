@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -89,18 +90,18 @@ func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
-	if cs.GetTremorOn() {
-		if cs.GetTremorTime() >= onTicks {
-			cs.SetTremorOn(false)
-			cs.SetTremorTime(0)
+	mem := cs.GetMemory().(*channel.Memory)
+	tremor := mem.TremorMem()
+	if tremor.IsActive() {
+		if tremor.Advance() >= onTicks {
+			tremor.ToggleAndReset()
 		}
 	} else {
-		if cs.GetTremorTime() >= offTicks {
-			cs.SetTremorOn(true)
-			cs.SetTremorTime(0)
+		if tremor.Advance() >= offTicks {
+			tremor.ToggleAndReset()
 		}
 	}
-	cs.SetTremorTime(cs.GetTremorTime() + 1)
+	cs.SetVolumeActive(tremor.IsActive())
 }
 
 func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) {

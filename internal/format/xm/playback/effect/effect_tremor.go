@@ -21,11 +21,13 @@ func (e Tremor) Start(cs intf.Channel, p intf.Playback) {
 
 // Tick is called on every tick
 func (e Tremor) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.Tremor(uint8(e))
-	x := int((xy >> 4) + 1)
-	y := int((xy & 0x0f) + 1)
-	doTremor(cs, currentTick, x, y)
+	if currentTick != 0 {
+		mem := cs.GetMemory().(*channel.Memory)
+		xy := mem.Tremor(uint8(e))
+		x := int((xy >> 4) + 1)
+		y := int((xy & 0x0f) + 1)
+		doTremor(cs, currentTick, x, y)
+	}
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called

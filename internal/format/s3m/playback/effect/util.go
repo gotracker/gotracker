@@ -6,6 +6,7 @@ import (
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -87,18 +88,18 @@ func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
-	if cs.GetTremorOn() {
-		if cs.GetTremorTime() >= onTicks {
-			cs.SetTremorOn(false)
-			cs.SetTremorTime(0)
+	mem := cs.GetMemory().(*channel.Memory)
+	tremor := mem.TremorMem()
+	if tremor.IsActive() {
+		if tremor.Advance() > onTicks {
+			tremor.ToggleAndReset()
 		}
 	} else {
-		if cs.GetTremorTime() >= offTicks {
-			cs.SetTremorOn(true)
-			cs.SetTremorTime(0)
+		if tremor.Advance() > offTicks {
+			tremor.ToggleAndReset()
 		}
 	}
-	cs.SetTremorTime(cs.GetTremorTime() + 1)
+	cs.SetVolumeActive(tremor.IsActive())
 }
 
 func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) {

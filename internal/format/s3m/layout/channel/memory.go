@@ -8,6 +8,7 @@ type Memory struct {
 	tempoDecrease uint8
 	tempoIncrease uint8
 	lastNonZero   uint8
+	tremorMem     Tremor
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -48,4 +49,9 @@ func (m *Memory) TempoIncrease(input uint8) uint8 {
 // LastNonZero gets or sets the most recent non-zero value (or input)
 func (m *Memory) LastNonZero(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.lastNonZero)
+}
+
+// TremorMem returns the Tremor object
+func (m *Memory) TremorMem() *Tremor {
+	return &m.tremorMem
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gotracker/gomixing/panning"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/player/intf"
 )
@@ -93,8 +94,14 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
+		m.processRowForChannel(cs)
 		cs.Process(row, m.GetGlobalVolume(), m.song, m.processEffect)
 	}
 
 	return nil
+}
+
+func (m *Manager) processRowForChannel(cs intf.Channel) {
+	mem := cs.GetMemory().(*channel.Memory)
+	mem.TremorMem().Reset()
 }

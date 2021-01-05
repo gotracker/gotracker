@@ -179,7 +179,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 		song.Patterns[patNum] = *pattern
 	}
 
-	channels := make([]layout.ChannelSetting, lastEnabledChannel)
+	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
 			Enabled:        true,

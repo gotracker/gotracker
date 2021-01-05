@@ -41,8 +41,6 @@ type ChannelState struct {
 	PortaTargetPeriod  note.Period
 	NotePlayTick       int
 	RetriggerCount     uint8
-	TremorOn           bool
-	TremorTime         int
 	VibratoDelta       note.Period
 	Memory             intf.Memory
 	effectLastNonZero  uint8
@@ -56,6 +54,7 @@ type ChannelState struct {
 	WantNoteCalc       bool
 	WantVolCalc        bool
 	UseTargetPeriod    bool
+	volumeActive       bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
@@ -75,8 +74,6 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0
-	cs.TremorOn = true
-	cs.TremorTime = 0
 	cs.VibratoDelta = nil
 
 	cs.WantNoteCalc = false
@@ -148,19 +145,27 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThis
 		sample.SetVolume(cs.ActiveVolume * cs.LastGlobalVolume)
 		period := cs.Period.Add(cs.VibratoDelta)
 		sample.SetPeriod(period)
+
 		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
+
 		sample.Update(tickDuration)
+
 		// make a stand-alone data buffer for this channel for this tick
-		data := mix.NewMixBuffer(tickSamples)
-		mixData := mixing.SampleMixIn{
-			Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
-			StaticVol: volume.Volume(1.0),
-			VolMatrix: centerPanning,
-			MixPos:    0,
-			MixLen:    tickSamples,
+		var data mixing.MixBuffer
+		if cs.volumeActive {
+			data = mix.NewMixBuffer(tickSamples)
+			mixData := mixing.SampleMixIn{
+				Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
+				StaticVol: volume.Volume(1.0),
+				VolMatrix: centerPanning,
+				MixPos:    0,
+				MixLen:    tickSamples,
+			}
+			data.MixInSample(mixData)
 		}
-		data.MixInSample(mixData)
+
 		cs.Pos.Add(samplerAdd * float32(tickSamples))
+
 		return &mixing.Data{
 			Data:       data,
 			Pan:        cs.Pan,
@@ -279,24 +284,9 @@ func (cs *ChannelState) GetTremoloOscillator() *oscillator.Oscillator {
 	return &cs.TremoloOscillator
 }
 
-// GetTremorOn returns true if the tremor setting is enabled
-func (cs *ChannelState) GetTremorOn() bool {
-	return cs.TremorOn
-}
-
-// SetTremorOn sets the current tremor enablement setting
-func (cs *ChannelState) SetTremorOn(on bool) {
-	cs.TremorOn = on
-}
-
-// GetTremorTime returns the tick the tremor should be enabled (or disabled) until
-func (cs *ChannelState) GetTremorTime() int {
-	return cs.TremorTime
-}
-
-// SetTremorTime sets the tick that the tremor should be enabled (or disabled) until
-func (cs *ChannelState) SetTremorTime(time int) {
-	cs.TremorTime = time
+// SetVolumeActive enables or disables the sample of the instrument
+func (cs *ChannelState) SetVolumeActive(on bool) {
+	cs.volumeActive = on
 }
 
 // GetInstrument returns the interface to the active instrument

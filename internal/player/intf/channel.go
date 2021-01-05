@@ -45,10 +45,6 @@ type Channel interface {
 	SetVibratoDelta(note.Period)
 	GetVibratoOscillator() *oscillator.Oscillator
 	GetTremoloOscillator() *oscillator.Oscillator
-	GetTremorOn() bool
-	SetTremorOn(bool)
-	GetTremorTime() int
-	SetTremorTime(int)
 	SetInstrument(Instrument)
 	GetInstrument() Instrument
 	GetTargetInst() Instrument
@@ -67,4 +63,5 @@ type Channel interface {
 	GetFilter() Filter
 	SetFilter(Filter)
 	SetOutputChannelNum(int)
+	SetVolumeActive(bool)
 }

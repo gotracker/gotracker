@@ -80,7 +80,8 @@ func (m *Manager) GetNumChannels() int {
 func (m *Manager) SetNumChannels(num int) {
 	m.channels = make([]state.ChannelState, num)
 
-	for ch, cs := range m.channels {
+	for ch := range m.channels {
+		cs := &m.channels[ch]
 		cs.Pos = sampling.Pos{}
 		cs.PrevInstrument = nil
 		cs.Instrument = nil
@@ -93,11 +94,10 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod = nil
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
-		cs.TremorOn = true
-		cs.TremorTime = 0
 		cs.VibratoDelta = nil
 		cs.Cmd = nil
 		cs.OutputChannelNum = m.song.GetOutputChannel(ch)
+		cs.SetVolumeActive(true)
 	}
 }
 

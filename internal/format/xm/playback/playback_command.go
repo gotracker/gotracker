@@ -40,6 +40,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	}
 	// post-effect
 	m.doNoteVolCalcs(cs)
+	cs.LastGlobalVolume = m.GetGlobalVolume()
 
 	n := note.EmptyNote
 	if cs.TrackData != nil {
@@ -64,7 +65,6 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		}
 		cs.Pos = cs.TargetPos
 		if cs.Instrument != nil {
-			cs.LastGlobalVolume = m.GetGlobalVolume()
 			cs.Instrument.Attack()
 			keyOff = false
 			mem := cs.GetMemory().(*channel.Memory)

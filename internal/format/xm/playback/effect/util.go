@@ -15,11 +15,11 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	v := util.VolumeToXm(av)
 	if v >= 0x10 && v <= 0x50 {
 		vol := int16((float32(v-0x10) + delta) * multiplier)
-		if vol >= 64 {
-			vol = 63
+		if vol >= 0x40 {
+			vol = 0x40
 		}
-		if vol < 0 {
-			vol = 0
+		if vol < 0x00 {
+			vol = 0x00
 		}
 		v = uint8(vol) + 0x10
 	}
@@ -138,7 +138,10 @@ func doVolSlideTwoThirds(cs intf.Channel) {
 			vol = 63
 		}
 
-		v := volSlideTwoThirdsTable[vol] & 0x3f
+		v := volSlideTwoThirdsTable[vol]
+		if v >= 0x40 {
+			v = 0x40
+		}
 
 		cs.SetActiveVolume(util.VolumeFromXm(0x10 + v))
 	}

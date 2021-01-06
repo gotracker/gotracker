@@ -27,20 +27,6 @@ func ComparePeriods(lhs Period, rhs Period) int {
 // C2SPD defines the C-2 (or in some players cases C-4) note sampling rate
 type C2SPD uint16
 
-// Volume defines a volume value
-type Volume uint8
-
-const (
-	// DefaultC2Spd is the default C2SPD for S3M files
-	DefaultC2Spd = C2SPD(8363)
-
-	// DefaultVolume is the default volume for many things in S3M files
-	DefaultVolume = Volume(64)
-
-	// EmptyVolume is a volume value that uses the volume value on the instrument
-	EmptyVolume = Volume(255)
-)
-
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
@@ -206,14 +192,18 @@ func (n Note) IsInvalid() bool {
 }
 
 func (n Note) String() string {
-	if n.IsStop() {
-		return "^^."
-	} else if n.IsEmpty() {
+	switch n.special {
+	case noteSpecialEmpty:
 		return "..."
-	} else if n.IsInvalid() {
+	case noteSpecialStop:
+		return "^^."
+	case noteSpecialNone:
+		return n.Key().String() + n.Octave().String()
+	case noteSpecialInvalid:
+		fallthrough
+	default:
 		return "???"
 	}
-	return n.Key().String() + n.Octave().String()
 }
 
 // Semitone returns the semitone value for the note

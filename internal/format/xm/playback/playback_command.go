@@ -66,6 +66,8 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		if cs.Instrument != nil {
 			cs.Instrument.Attack()
 			keyOff = false
+			mem := cs.GetMemory().(*channel.Memory)
+			mem.Retrigger()
 		}
 	}
 

@@ -1,8 +1,6 @@
 package effect
 
 import (
-	"log"
-
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
@@ -36,6 +34,10 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 		v := cd.Volume
 		var ve intf.Effect
 		switch {
+		case v >= 0x00 && v <= 0x0f:
+			// nothing
+		case v >= 0x10 && v <= 0x5f:
+			// volume set - handled elsewhere
 		case v >= 0x60 && v <= 0x6f: // vol slide down
 			ve = VolumeSlide(v & 0x0f)
 		case v >= 0x70 && v <= 0x7f: // vol slide up
@@ -51,12 +53,14 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 			ve = Vibrato(vs<<4 | (v & 0x0f))
 		case v >= 0xC0 && v <= 0xCf: // set panning
 			ve = SetFinePanPosition(v & 0x0f)
-		case v >= 0xD0 && v <= 0xDf: // panning slide left
-			// TODO
-		case v >= 0xE0 && v <= 0xEf: // panning slide right
-			// TODO
+		//case v >= 0xD0 && v <= 0xDf: // panning slide left
+
+		//case v >= 0xE0 && v <= 0xEf: // panning slide right
+
 		case v >= 0xF0 && v <= 0xFf: // tone portamento
 			ve = PortaToNote(v & 0x0f)
+		default:
+			ve = UnhandledVolCommand{Vol: v}
 		}
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
@@ -118,11 +122,8 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 			return FinePortaUp(cd.EffectParameter)
 		case 0x2: // Fine porta down
 			return FinePortaDown(cd.EffectParameter)
-		case 0x3: // Set glissando control
-			{
-				// TODO
-				log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-			}
+		//case 0x3: // Set glissando control
+
 		case 0x4: // Set vibrato control
 			return SetVibratoWaveform(cd.EffectParameter)
 		case 0x5: // Set finetune
@@ -145,6 +146,9 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 			return NoteDelay(cd.EffectParameter)
 		case 0xE: // Pattern delay
 			return PatternDelay(cd.EffectParameter)
+
+		default:
+			return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 		}
 	case 0x0F: // Set tempo/BPM
 		if cd.EffectParameter < 0x20 {
@@ -153,23 +157,11 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		return SetTempo(cd.EffectParameter)
 	case 0x10: // Set global volume
 		return SetGlobalVolume(cd.EffectParameter)
-	case 0x11: // Global volume slide
-		{
-			// TODO
-			log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-		}
+	//case 0x11: // Global volume slide
 
-	case 0x15: // Set envelope position
-		{
-			// TODO
-			log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-		}
+	//case 0x15: // Set envelope position
 
-	case 0x19: // Panning slide
-		{
-			// TODO
-			log.Panicf("%0.2x%0.2x", cd.Effect, cd.EffectParameter)
-		}
+	//case 0x19: // Panning slide
 
 	case 0x1B: // Multi retrig note
 		return RetrigVolumeSlide(cd.EffectParameter)
@@ -184,6 +176,9 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		case 0x2: // Extra fine porta down
 			return ExtraFinePortaDown(cd.EffectParameter)
 		}
+
+	default:
+		return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 	}
 	return nil
 }

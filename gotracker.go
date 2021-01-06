@@ -12,6 +12,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format"
+	s3mEffect "gotracker/internal/format/s3m/playback/effect"
 	xmEffect "gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
@@ -126,6 +127,9 @@ func main() {
 					name = typ.Name()
 					effectMap[name]++
 				}
+			case *s3mEffect.UnhandledCommand:
+				name = fmt.Sprintf("UnhandledCommand(%c)", t.Command+'@')
+				effectMap[name]++
 			default:
 				typ := reflect.TypeOf(t)
 				name = typ.Name()

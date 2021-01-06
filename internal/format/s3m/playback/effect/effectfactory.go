@@ -1,8 +1,6 @@
 package effect
 
 import (
-	"log"
-
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 )
@@ -21,6 +19,7 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 	mem := mi.(*channel.Memory)
 	mem.LastNonZero(cd.Info)
 	switch cd.Command + '@' {
+	case '@': // unused
 	case 'A': // Set Speed
 		return SetSpeed(cd.Info)
 	case 'B': // Pattern Jump
@@ -76,6 +75,8 @@ func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
 		return FineVibrato(cd.Info)
 	case 'V': // Global Volume
 		return SetGlobalVolume(cd.Info)
+	default:
+		return UnhandledCommand{Command: cd.Command, Info: cd.Info}
 	}
 	return nil
 }
@@ -85,11 +86,8 @@ func specialEffect(mem *channel.Memory, cd *channel.Data) intf.Effect {
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
 		return EnableFilter(cd.Info)
-	case 0x1: // Set Glissando on/off
-		{
-			// TODO
-			log.Panicf("%c%0.2x", cd.Command+'@', cd.Info)
-		}
+	//case 0x1: // Set Glissando on/off
+
 	case 0x2: // Set FineTune
 		return SetFinetune(cd.Info)
 	case 0x3: // Set Vibrato Waveform
@@ -112,11 +110,10 @@ func specialEffect(mem *channel.Memory, cd *channel.Data) intf.Effect {
 		return NoteDelay(cd.Info)
 	case 0xE: // Pattern Delay
 		return PatternDelay(cd.Info)
-	case 0xF: // Funk Repeat (invert loop)
-		{
-			// TODO
-			log.Panicf("%c%0.2x", cd.Command+'@', cd.Info)
-		}
+	//case 0xF: // Funk Repeat (invert loop)
+
+	default:
+		return UnhandledCommand{Command: cd.Command, Info: cd.Info}
 	}
 	return nil
 }

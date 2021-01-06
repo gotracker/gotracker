@@ -18,7 +18,7 @@ func (e SetVolume) PreStart(cs intf.Channel, p intf.Playback) {
 func (e SetVolume) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
-	xx := uint8(e)
+	xx := uint8(e) & 0x3f
 
 	cs.SetActiveVolume(util.VolumeFromXm(0x10 + xx))
 }

@@ -2,7 +2,6 @@ package load
 
 import (
 	"errors"
-	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 
@@ -28,17 +27,18 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader) ([]*layout.Instrument, map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*layout.Instrument, map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
 	var instruments []*layout.Instrument
 
 	for _, si := range inst.Samples {
+		v := si.Volume & 0x3f
 		sample := layout.Instrument{
 			Filename:           si.GetName(),
 			Name:               inst.GetName(),
-			C2Spd:              note.C2SPD(0), // TODO: use si.Finetune
-			Volume:             util.VolumeFromXm(0x10 + si.Volume),
+			C2Spd:              note.C2SPD(0), // uses si.Finetune, below
+			Volume:             util.VolumeFromXm(0x10 + v),
 			RelativeNoteNumber: si.RelativeNoteNumber,
 		}
 
@@ -52,10 +52,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader) ([]*layout.Instrume
 		}
 
 		if si.Finetune != 0 {
-			n := float64(4 * 12)
-			period := 10*12*16*4 - n*16*4 - float64(si.Finetune)/2
-			frequency := 8363 * math.Pow(2, ((6*12*16*4-period)/(12*16*4)))
-			sample.C2Spd = note.C2SPD(frequency)
+			sample.C2Spd = util.CalcFinetuneC2Spd(util.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
 		}
 		if sample.C2Spd == 0 {
 			sample.C2Spd = note.C2SPD(util.DefaultC2Spd)
@@ -88,12 +85,12 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader) ([]*layout.Instrume
 	return instruments, noteMap, nil
 }
 
-func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader) ([]*layout.Instrument, map[int][]note.Semitone, error) {
+func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*layout.Instrument, map[int][]note.Semitone, error) {
 	if s == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
 
-	return xmInstrumentToInstrument(s)
+	return xmInstrumentToInstrument(s, linearFrequencySlides)
 }
 
 func convertXmPattern(pkt xmfile.Pattern) (*layout.Pattern, int) {
@@ -129,6 +126,8 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 		return nil, err
 	}
 
+	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
+
 	song := layout.Song{
 		Head:              *h,
 		Instruments:       make(map[uint8]*layout.Instrument),
@@ -142,7 +141,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 	}
 
 	for instNum, scrs := range f.Instruments {
-		samples, noteMap, err := convertXMInstrumentToInstrument(&scrs)
+		samples, noteMap, err := convertXMInstrumentToInstrument(&scrs, linearFrequencySlides)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +185,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 			InitialVolume:  util.DefaultVolume,
 			InitialPanning: util.DefaultPanning,
 			Memory: channel.Memory{
-				LinearFreqSlides: f.Head.Flags.IsLinearSlides(),
+				LinearFreqSlides: linearFrequencySlides,
 			},
 		}
 

@@ -66,10 +66,7 @@ func (d *Data) HasVolume() bool {
 
 // GetVolume returns the volume for the channel
 func (d *Data) GetVolume() volume.Volume {
-	if d.Volume == 0 {
-		return volume.VolumeUseInstVol
-	}
-	return util.VolumeFromXm(d.Volume - 0x10)
+	return util.VolumeFromXm(d.Volume)
 }
 
 // HasEffect returns true if there exists a effect on the channel

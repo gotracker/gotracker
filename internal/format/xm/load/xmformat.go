@@ -33,7 +33,10 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 	var instruments []*layout.Instrument
 
 	for _, si := range inst.Samples {
-		v := si.Volume & 0x3f
+		v := si.Volume
+		if v >= 0x40 {
+			v = 0x40
+		}
 		sample := layout.Instrument{
 			Filename:           si.GetName(),
 			Name:               inst.GetName(),

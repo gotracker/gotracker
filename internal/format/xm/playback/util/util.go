@@ -22,7 +22,7 @@ const (
 
 var (
 	// DefaultVolume is the default volume value for most everything in xm format
-	DefaultVolume = VolumeFromXm(0x50)
+	DefaultVolume = VolumeFromXm(0x10 + 0x40)
 
 	// DefaultMixingVolume is the default mixing volume
 	DefaultMixingVolume = volume.Volume(0x30) / 0x80
@@ -59,7 +59,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 	}
 
 	if ft != 0 {
-		c2spd = calcFinetuneC2Spd(c2spd, ft, linearFreqSlides)
+		c2spd = CalcFinetuneC2Spd(c2spd, ft, linearFreqSlides)
 	}
 
 	period := (AmigaPeriod(floatDefaultC2Spd*semitonePeriodTable[key]) / AmigaPeriod(uint32(c2spd)<<octave))
@@ -67,8 +67,8 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 	return &period
 }
 
-// calcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
-func calcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlides bool) note.C2SPD {
+// CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
+func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlides bool) note.C2SPD {
 	if finetune == 0 {
 		return c2spd
 	}

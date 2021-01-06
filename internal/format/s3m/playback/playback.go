@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	device "github.com/gotracker/gosound"
 
@@ -56,8 +57,16 @@ func NewManager(song *layout.Song) *Manager {
 	for i, ch := range song.ChannelSettings {
 		cs := m.GetChannel(i)
 		cs.SetOutputChannelNum(ch.OutputChannelNum)
-		cs.SetStoredVolume(ch.InitialVolume, song.Head.GlobalVolume)
-		cs.SetPan(ch.InitialPanning)
+		cs.SetGlobalVolume(m.GetGlobalVolume())
+		cs.SetActiveVolume(ch.InitialVolume)
+		if song.Head.Stereo {
+			cs.SetPanEnabled(true)
+			cs.SetPan(ch.InitialPanning)
+		} else {
+			cs.SetPanEnabled(true)
+			cs.SetPan(panning.CenterAhead)
+			cs.SetPanEnabled(false)
+		}
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
 	}
 

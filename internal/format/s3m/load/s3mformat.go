@@ -25,6 +25,7 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
 		GlobalVolume: util.VolumeFromS3M(fh.GlobalVolume),
+		Stereo:       (fh.MixingVolume & 0x80) != 0,
 	}
 
 	z := uint32(fh.MixingVolume & 0x7f)

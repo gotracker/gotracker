@@ -31,7 +31,6 @@ type Channel interface {
 	GetMemory() Memory
 	GetActiveVolume() volume.Volume
 	SetActiveVolume(volume.Volume)
-	SetStoredVolume(volume.Volume, volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() ChannelData
@@ -55,10 +54,12 @@ type Channel interface {
 	SetNotePlayTick(int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
+	SetPanEnabled(bool)
 	SetPan(panning.Position)
 	SetDoRetriggerNote(bool)
 	GetFilter() Filter
 	SetFilter(Filter)
 	SetOutputChannelNum(int)
 	SetVolumeActive(bool)
+	SetGlobalVolume(volume.Volume)
 }

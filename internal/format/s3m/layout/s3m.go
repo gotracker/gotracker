@@ -16,6 +16,7 @@ type Header struct {
 	InitialTempo int
 	GlobalVolume volume.Volume
 	MixingVolume volume.Volume
+	Stereo       bool
 }
 
 // ChannelSetting is settings specific to a single channel

@@ -55,7 +55,9 @@ func NewManager(song *layout.Song) *Manager {
 	for i, ch := range song.ChannelSettings {
 		cs := m.GetChannel(i)
 		cs.SetOutputChannelNum(ch.OutputChannelNum)
-		cs.SetStoredVolume(ch.InitialVolume, song.Head.GlobalVolume)
+		cs.SetGlobalVolume(m.GetGlobalVolume())
+		cs.SetActiveVolume(ch.InitialVolume)
+		cs.SetPanEnabled(true)
 		cs.SetPan(ch.InitialPanning)
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
 	}

@@ -22,9 +22,9 @@ type ChannelState struct {
 	PrevInstrument intf.NoteControl
 	Pos            sampling.Pos
 	Period         note.Period
-	StoredVolume   volume.Volume
 	ActiveVolume   volume.Volume
 	Pan            panning.Position
+	PanEnabled     bool
 
 	Command      commandFunc
 	ActiveEffect intf.Effect
@@ -120,7 +120,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 				cs.WantVolCalc = true
 			}
 		} else {
-			cs.SetStoredVolume(v, globalVol)
+			cs.SetActiveVolume(v)
 		}
 	}
 }
@@ -165,17 +165,6 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThis
 		}, nil
 	}
 	return nil, nil
-}
-
-// SetStoredVolume sets the stored volume value for the channel
-// this also modifies the active volume
-// and stores the active global volume value (which doesn't always get set on channels immediately)
-func (cs *ChannelState) SetStoredVolume(vol volume.Volume, globalVol volume.Volume) {
-	if vol != volume.VolumeUseInstVol {
-		cs.StoredVolume = vol
-	}
-	cs.SetActiveVolume(vol)
-	cs.LastGlobalVolume = globalVol
 }
 
 // FreezePlayback suspends mixer progression on the channel
@@ -331,9 +320,16 @@ func (cs *ChannelState) SetRetriggerCount(cnt uint8) {
 	cs.RetriggerCount = cnt
 }
 
+// SetPanEnabled activates or deactivates the panning. If enabled, then pan updates work (see SetPan)
+func (cs *ChannelState) SetPanEnabled(on bool) {
+	cs.PanEnabled = on
+}
+
 // SetPan sets the active panning value of the channel (0 = full left, 15 = full right)
 func (cs *ChannelState) SetPan(pan panning.Position) {
-	cs.Pan = pan
+	if cs.PanEnabled {
+		cs.Pan = pan
+	}
 }
 
 // SetDoRetriggerNote sets the enablement flag for DoRetriggerNote
@@ -367,4 +363,9 @@ func (cs *ChannelState) SetFilter(filter intf.Filter) {
 // SetOutputChannelNum sets the output channel number for the channel
 func (cs *ChannelState) SetOutputChannelNum(outputChNum int) {
 	cs.OutputChannelNum = outputChNum
+}
+
+// SetGlobalVolume sets the last-known global volume on the channel
+func (cs *ChannelState) SetGlobalVolume(gv volume.Volume) {
+	cs.LastGlobalVolume = gv
 }

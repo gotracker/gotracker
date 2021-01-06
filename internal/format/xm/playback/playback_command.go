@@ -16,7 +16,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 
 	if cs.WantVolCalc {
 		cs.WantVolCalc = false
-		cs.SetStoredVolume(inst.GetDefaultVolume(), m.GetGlobalVolume())
+		cs.SetActiveVolume(inst.GetDefaultVolume())
 	}
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
@@ -64,6 +64,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		}
 		cs.Pos = cs.TargetPos
 		if cs.Instrument != nil {
+			cs.LastGlobalVolume = m.GetGlobalVolume()
 			cs.Instrument.Attack()
 			keyOff = false
 			mem := cs.GetMemory().(*channel.Memory)

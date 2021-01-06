@@ -35,26 +35,24 @@ type ChannelState struct {
 	TargetInst     intf.Instrument
 	TargetSemitone note.Semitone // from pattern, modified
 
-	StoredSemitone     note.Semitone // from pattern, unmodified, current note
-	PrevStoredSemitone note.Semitone // from pattern, unmodified, previous note
-	DoRetriggerNote    bool
-	PortaTargetPeriod  note.Period
-	NotePlayTick       int
-	RetriggerCount     uint8
-	VibratoDelta       note.Period
-	Memory             intf.Memory
-	effectLastNonZero  uint8
-	TrackData          intf.ChannelData
-	freezePlayback     bool
-	LastGlobalVolume   volume.Volume
-	VibratoOscillator  oscillator.Oscillator
-	TremoloOscillator  oscillator.Oscillator
-	TargetC2Spd        note.C2SPD
-	Semitone           note.Semitone // from TargetSemitone, modified further, used in period calculations
-	WantNoteCalc       bool
-	WantVolCalc        bool
-	UseTargetPeriod    bool
-	volumeActive       bool
+	StoredSemitone    note.Semitone // from pattern, unmodified, current note
+	DoRetriggerNote   bool
+	PortaTargetPeriod note.Period
+	NotePlayTick      int
+	RetriggerCount    uint8
+	VibratoDelta      note.Period
+	Memory            intf.Memory
+	effectLastNonZero uint8
+	TrackData         intf.ChannelData
+	freezePlayback    bool
+	LastGlobalVolume  volume.Volume
+	VibratoOscillator oscillator.Oscillator
+	TremoloOscillator oscillator.Oscillator
+	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
+	WantNoteCalc      bool
+	WantVolCalc       bool
+	UseTargetPeriod   bool
+	volumeActive      bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
@@ -110,7 +108,6 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 			cs.TargetPeriod = nil
 			cs.WantNoteCalc = false
 		} else if cs.TargetInst != nil {
-			cs.PrevStoredSemitone = cs.StoredSemitone
 			cs.StoredSemitone = n.Semitone()
 			cs.TargetSemitone = cs.StoredSemitone
 			cs.WantNoteCalc = true

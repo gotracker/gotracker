@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // SetFinetune defines a mod-style set finetune effect
@@ -15,7 +16,8 @@ func (e SetFinetune) PreStart(cs intf.Channel, p intf.Playback) {
 
 	inst := cs.GetTargetInst()
 	if inst != nil {
-		inst.SetFinetune(int8(x) - 8)
+		ft := (note.Finetune(x) - 8) * 4
+		inst.SetFinetune(ft)
 	}
 }
 

@@ -23,8 +23,8 @@ type Instrument interface {
 	GetID() InstrumentID
 	GetSemitoneShift() int8
 	InstantiateOnChannel(int, Filter) NoteControl
-	SetFinetune(int8)
-	GetFinetune() int8
+	SetFinetune(note.Finetune)
+	GetFinetune() note.Finetune
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	Attack(NoteControl)

@@ -36,7 +36,7 @@ type Instrument struct {
 	C2Spd              note.C2SPD
 	Volume             volume.Volume
 	RelativeNoteNumber int8
-	Finetune           int8
+	Finetune           note.Finetune
 }
 
 // IsInvalid always returns false (valid)
@@ -103,12 +103,12 @@ func (inst *Instrument) GetLength() sampling.Pos {
 }
 
 // SetFinetune sets the finetune value on the instrument
-func (inst *Instrument) SetFinetune(ft int8) {
+func (inst *Instrument) SetFinetune(ft note.Finetune) {
 	inst.Finetune = ft
 }
 
 // GetFinetune returns the finetune value on the instrument
-func (inst *Instrument) GetFinetune() int8 {
+func (inst *Instrument) GetFinetune() note.Finetune {
 	return inst.Finetune
 }
 

@@ -38,11 +38,11 @@ var (
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for xm notes
-func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD, linearFreqSlides bool) note.Period {
+func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, linearFreqSlides bool) note.Period {
 	if linearFreqSlides {
 		return &LinearPeriod{
 			Semitone: semi,
-			Finetune: 0,
+			Finetune: ft,
 			C2Spd:    c2spd,
 		}
 	}
@@ -58,28 +58,32 @@ func CalcSemitonePeriod(semi note.Semitone, c2spd note.C2SPD, linearFreqSlides b
 		c2spd = note.C2SPD(DefaultC2Spd)
 	}
 
+	if ft != 0 {
+		c2spd = calcFinetuneC2Spd(c2spd, ft, linearFreqSlides)
+	}
+
 	period := (AmigaPeriod(floatDefaultC2Spd*semitonePeriodTable[key]) / AmigaPeriod(uint32(c2spd)<<octave))
 	period = period.AddInteger(0)
 	return &period
 }
 
-// CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
-func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune int8, linearFreqSlides bool) note.C2SPD {
+// calcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
+func calcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlides bool) note.C2SPD {
 	if finetune == 0 {
 		return c2spd
 	}
 
 	o := 5
 	st := note.Semitone(o * 12) // C-5
-	stShift := int8(finetune / 16)
+	stShift := int8(finetune / 64)
 	if stShift >= 0 {
 		st += note.Semitone(stShift)
 	} else {
 		st -= note.Semitone(-stShift)
 	}
-	period0 := CalcSemitonePeriod(st, c2spd, linearFreqSlides)
-	period1 := CalcSemitonePeriod(st+1, c2spd, linearFreqSlides)
-	fFt := float64(finetune) / 16
+	period0 := CalcSemitonePeriod(st, 0, c2spd, linearFreqSlides)
+	period1 := CalcSemitonePeriod(st+1, 0, c2spd, linearFreqSlides)
+	fFt := float64(finetune) / 64
 	iFt := math.Trunc(fFt)
 	f := fFt - iFt
 	period := period0.Lerp(f, period1)
@@ -141,7 +145,7 @@ func NoteFromXmNote(xn uint8) note.Note {
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
 func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD, linearFreqSlides bool) float32 {
-	period := CalcSemitonePeriod(semitone, c2spd, linearFreqSlides)
+	period := CalcSemitonePeriod(semitone, 0, c2spd, linearFreqSlides)
 	return FrequencyFromPeriod(period)
 }
 

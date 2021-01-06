@@ -6,7 +6,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/note"
-	"gotracker/internal/player/oscillator"
 )
 
 // ChannelData is an interface for channel data
@@ -43,8 +42,6 @@ type Channel interface {
 	GetPeriod() note.Period
 	SetPeriod(note.Period)
 	SetVibratoDelta(note.Period)
-	GetVibratoOscillator() *oscillator.Oscillator
-	GetTremoloOscillator() *oscillator.Oscillator
 	SetInstrument(Instrument)
 	GetInstrument() Instrument
 	GetTargetInst() Instrument

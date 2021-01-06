@@ -23,14 +23,11 @@ func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
 func (e Tremolo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.LastNonZero(uint8(e))
-	if currentTick == 0 {
-		trem := cs.GetTremoloOscillator()
-		trem.Pos = 0
-	} else {
-		x := xy >> 4
-		y := xy & 0x0f
-		doTremolo(cs, currentTick, x, y, 4)
-	}
+	// NOTE: JBC - S3M updates on tick 0, but MOD does not.
+	// Maybe need to add a flag for converted MOD backward compatibility?
+	x := xy >> 4
+	y := xy & 0x0f
+	doTremolo(cs, currentTick, x, y, 4)
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called

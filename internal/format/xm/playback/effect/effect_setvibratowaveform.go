@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/oscillator"
 )
 
 // SetVibratoWaveform defines a set vibrato waveform effect
@@ -20,8 +20,9 @@ func (e SetVibratoWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	x := uint8(e) & 0xf
 
-	vib := cs.GetVibratoOscillator()
-	vib.Table = oscillator.WaveTableSelect(x)
+	mem := cs.GetMemory().(*channel.Memory)
+	vib := mem.VibratoOscillator()
+	vib.Table = channel.WaveTableSelect(x)
 }
 
 // Tick is called on every tick

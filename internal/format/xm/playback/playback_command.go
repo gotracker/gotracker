@@ -22,8 +22,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
 		linearFreqSlides := cs.Memory.(*channel.Memory).LinearFreqSlides
-		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune(), linearFreqSlides)
-		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd, linearFreqSlides)
+		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
 	}
 }
 

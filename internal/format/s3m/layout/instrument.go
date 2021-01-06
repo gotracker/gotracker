@@ -35,7 +35,7 @@ type Instrument struct {
 	ID       channel.S3MInstrumentID
 	C2Spd    note.C2SPD
 	Volume   volume.Volume
-	Finetune int8
+	Finetune note.Finetune
 }
 
 // IsInvalid always returns false (valid)
@@ -60,12 +60,12 @@ func (inst *Instrument) GetDefaultVolume() volume.Volume {
 }
 
 // SetFinetune sets the finetune value on the instrument
-func (inst *Instrument) SetFinetune(ft int8) {
+func (inst *Instrument) SetFinetune(ft note.Finetune) {
 	inst.Finetune = ft
 }
 
 // GetFinetune returns the finetune value on the instrument
-func (inst *Instrument) GetFinetune() int8 {
+func (inst *Instrument) GetFinetune() note.Finetune {
 	return inst.Finetune
 }
 

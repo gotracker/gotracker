@@ -20,8 +20,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		cs.TargetC2Spd = util.CalcFinetuneC2Spd(inst.GetC2Spd(), inst.GetFinetune())
-		period := util.CalcSemitonePeriod(cs.Semitone, cs.TargetC2Spd)
+		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
 		cs.TargetPeriod = period
 	}
 }

@@ -137,7 +137,10 @@ func doVolSlideTwoThirds(cs intf.Channel) {
 		if vol >= 64 {
 			vol = 63
 		}
-		cs.SetActiveVolume(util.VolumeFromXm(0x10 + volSlideTwoThirdsTable[vol]))
+
+		v := volSlideTwoThirdsTable[vol] & 0x3f
+
+		cs.SetActiveVolume(util.VolumeFromXm(0x10 + v))
 	}
 }
 

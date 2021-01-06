@@ -10,7 +10,6 @@ import (
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
-	"gotracker/internal/player/oscillator"
 )
 
 type commandFunc func(int, *ChannelState, int, bool)
@@ -42,12 +41,9 @@ type ChannelState struct {
 	RetriggerCount    uint8
 	VibratoDelta      note.Period
 	Memory            intf.Memory
-	effectLastNonZero uint8
 	TrackData         intf.ChannelData
 	freezePlayback    bool
 	LastGlobalVolume  volume.Volume
-	VibratoOscillator oscillator.Oscillator
-	TremoloOscillator oscillator.Oscillator
 	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
 	WantNoteCalc      bool
 	WantVolCalc       bool
@@ -84,8 +80,6 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 
 	if cs.TrackData.HasNote() {
 		cs.UseTargetPeriod = true
-		cs.VibratoOscillator.Pos = 0
-		cs.TremoloOscillator.Pos = 0
 		inst := cs.TrackData.GetInstrument()
 		if inst.IsEmpty() {
 			// use current
@@ -199,21 +193,6 @@ func (cs ChannelState) PlaybackFrozen() bool {
 	return cs.freezePlayback
 }
 
-// SetEffectSharedMemoryIfNonZero stores the `input` value into memory if it is non-zero
-func (cs *ChannelState) SetEffectSharedMemoryIfNonZero(input uint8) {
-	if input != 0 {
-		cs.effectLastNonZero = input
-	}
-}
-
-// GetEffectSharedMemory returns the last non-zero value (if one exists) or the input value
-func (cs *ChannelState) GetEffectSharedMemory(input uint8) uint8 {
-	if input == 0 {
-		return cs.effectLastNonZero
-	}
-	return input
-}
-
 // ResetRetriggerCount sets the retrigger count to 0
 func (cs *ChannelState) ResetRetriggerCount() {
 	cs.RetriggerCount = 0
@@ -269,16 +248,6 @@ func (cs *ChannelState) SetTargetPeriod(period note.Period) {
 // SetVibratoDelta sets the vibrato (ephemeral) delta sampler period
 func (cs *ChannelState) SetVibratoDelta(delta note.Period) {
 	cs.VibratoDelta = delta
-}
-
-// GetVibratoOscillator returns the oscillator object for the Vibrato LFO
-func (cs *ChannelState) GetVibratoOscillator() *oscillator.Oscillator {
-	return &cs.VibratoOscillator
-}
-
-// GetTremoloOscillator returns the oscillator object for the Tremolo LFO
-func (cs *ChannelState) GetTremoloOscillator() *oscillator.Oscillator {
-	return &cs.TremoloOscillator
 }
 
 // SetVolumeActive enables or disables the sample of the instrument

@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player/note"
@@ -65,6 +66,8 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		if cs.Instrument != nil {
 			cs.Instrument.Attack()
 			keyOff = false
+			mem := cs.GetMemory().(*channel.Memory)
+			mem.Retrigger()
 		}
 	}
 

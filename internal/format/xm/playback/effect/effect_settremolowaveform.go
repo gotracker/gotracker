@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/oscillator"
 )
 
 // SetTremoloWaveform defines a set tremolo waveform effect
@@ -20,8 +20,9 @@ func (e SetTremoloWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	x := uint8(e) & 0xf
 
-	trem := cs.GetTremoloOscillator()
-	trem.Table = oscillator.WaveTableSelect(x)
+	mem := cs.GetMemory().(*channel.Memory)
+	trem := mem.TremoloOscillator()
+	trem.Table = channel.WaveTableSelect(x)
 }
 
 // Tick is called on every tick

@@ -23,7 +23,9 @@ type Memory struct {
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
 
-	tremorMem Tremor
+	tremorMem         Tremor
+	vibratoOscillator Oscillator
+	tremoloOscillator Oscillator
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -124,4 +126,24 @@ func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
 // TremorMem returns the Tremor object
 func (m *Memory) TremorMem() *Tremor {
 	return &m.tremorMem
+}
+
+// VibratoOscillator returns the Vibrato oscillator object
+func (m *Memory) VibratoOscillator() *Oscillator {
+	return &m.vibratoOscillator
+}
+
+// TremoloOscillator returns the Tremolo oscillator object
+func (m *Memory) TremoloOscillator() *Oscillator {
+	return &m.tremoloOscillator
+}
+
+// Retrigger runs certain operations when a note is retriggered
+func (m *Memory) Retrigger() {
+	for _, osc := range []*Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
+		switch osc.Table {
+		case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
+			osc.Pos = 0
+		}
+	}
 }

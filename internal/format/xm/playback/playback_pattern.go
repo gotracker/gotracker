@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gotracker/gomixing/panning"
-
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/player/intf"
@@ -47,17 +45,10 @@ func (m *Manager) processPatternRow() error {
 	if m.rowRenderState == nil {
 		panmixer := s.GetPanMixer()
 
-		fullVolume := panmixer.GetMixingMatrix(panning.CenterAhead)
-		// we don't want to apply a double panning, so make sure it's full volume
-		for i := range fullVolume {
-			fullVolume[i] = 1.0
-		}
-
 		m.rowRenderState = &rowRenderState{
-			mix:           s.Mixer(),
-			samplerSpeed:  s.GetSamplerSpeed(),
-			panmixer:      panmixer,
-			centerPanning: fullVolume,
+			mix:          s.Mixer(),
+			samplerSpeed: s.GetSamplerSpeed(),
+			panmixer:     panmixer,
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -53,6 +54,16 @@ func (inst *InstrumentPCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) vol
 	wet = volEnv.Apply(wet...)
 	wet = ed.fadeoutVol.Apply(wet...)
 	return ioc.GetVolume().Apply(wet...)
+}
+
+// GetCurrentPanning returns the panning envelope position
+func (inst *InstrumentPCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
+	if !inst.PanEnv.Enabled {
+		return panning.CenterAhead
+	}
+
+	ed := ioc.GetData().(*envData)
+	return ed.panEnvValue
 }
 
 func (inst *InstrumentPCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {

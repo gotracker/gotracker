@@ -3,6 +3,7 @@ package state
 import (
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -34,6 +35,14 @@ func (nc *NoteControl) GetSample(pos sampling.Pos) volume.Matrix {
 		return dry
 	}
 	return nil
+}
+
+// GetCurrentPanning returns the panning envelope position
+func (nc *NoteControl) GetCurrentPanning() panning.Position {
+	if inst := nc.Instrument; inst != nil {
+		return inst.GetCurrentPanning(nc)
+	}
+	return panning.CenterAhead
 }
 
 // GetOutputChannelNum returns the note-control's output channel number

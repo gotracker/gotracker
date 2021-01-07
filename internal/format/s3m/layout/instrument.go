@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -16,6 +17,7 @@ import (
 // InstrumentDataIntf is the interface to implementation-specific functions on an instrument
 type InstrumentDataIntf interface {
 	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
+	GetCurrentPanning(intf.NoteControl) panning.Position
 
 	Initialize(intf.NoteControl) error
 	Attack(intf.NoteControl)
@@ -142,6 +144,14 @@ func (inst *Instrument) GetSample(nc intf.NoteControl, pos sampling.Pos) volume.
 		return ii.GetSample(nc, pos)
 	}
 	return nil
+}
+
+// GetCurrentPanning returns the panning envelope position
+func (inst *Instrument) GetCurrentPanning(nc intf.NoteControl) panning.Position {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetCurrentPanning(nc)
+	}
+	return panning.CenterAhead
 }
 
 // Attack sets the key-on flag for the instrument

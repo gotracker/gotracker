@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/render"
@@ -75,7 +74,6 @@ type rowRenderState struct {
 	samplesPerTick int
 	ticksThisRow   int
 	panmixer       mixing.PanMixer
-	centerPanning  volume.Matrix
 	firstOplCh     int
 
 	currentTick int
@@ -94,7 +92,6 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 				m.rowRenderState.panmixer,
 				m.rowRenderState.samplerSpeed,
 				m.rowRenderState.samplesPerTick,
-				m.rowRenderState.centerPanning,
 				m.rowRenderState.tickDuration)
 			if err != nil {
 				return err

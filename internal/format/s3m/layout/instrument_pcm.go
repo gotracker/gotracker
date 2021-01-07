@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -28,6 +29,11 @@ type InstrumentPCM struct {
 func (inst *InstrumentPCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	dry := inst.getSampleDry(ioc, pos)
 	return ioc.GetVolume().Apply(dry...)
+}
+
+// GetCurrentPanning returns the panning envelope position
+func (inst *InstrumentPCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
+	return panning.CenterAhead
 }
 
 func (inst *InstrumentPCM) getSampleDry(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {

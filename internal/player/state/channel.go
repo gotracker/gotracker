@@ -134,7 +134,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, centerPanning volume.Matrix, tickDuration time.Duration) (*mixing.Data, error) {
+func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, tickDuration time.Duration) (*mixing.Data, error) {
 	if cs.Command != nil {
 		cs.Command(ch, cs, tick, lastTick)
 	}
@@ -149,6 +149,9 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThis
 
 		sample.Update(tickDuration)
 
+		panning := sample.GetCurrentPanning()
+		volMatrix := panmixer.GetMixingMatrix(panning)
+
 		// make a stand-alone data buffer for this channel for this tick
 		var data mixing.MixBuffer
 		if cs.volumeActive {
@@ -156,7 +159,7 @@ func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThis
 			mixData := mixing.SampleMixIn{
 				Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
 				StaticVol: volume.Volume(1.0),
-				VolMatrix: centerPanning,
+				VolMatrix: volMatrix,
 				MixPos:    0,
 				MixLen:    tickSamples,
 			}

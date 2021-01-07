@@ -3,6 +3,7 @@ package layout
 import (
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
@@ -93,6 +94,11 @@ type ym3812 struct {
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentOPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	return nil
+}
+
+// GetCurrentPanning returns the panning envelope position
+func (inst *InstrumentOPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
+	return panning.CenterAhead
 }
 
 // Initialize completes the setup of this instrument

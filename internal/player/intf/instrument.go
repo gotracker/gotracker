@@ -3,6 +3,7 @@ package intf
 import (
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -27,6 +28,7 @@ type Instrument interface {
 	GetFinetune() note.Finetune
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
+	GetCurrentPanning(NoteControl) panning.Position
 	Attack(NoteControl)
 	Release(NoteControl)
 	NoteCut(NoteControl)

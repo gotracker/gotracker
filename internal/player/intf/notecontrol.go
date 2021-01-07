@@ -3,6 +3,7 @@ package intf
 import (
 	"time"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -15,6 +16,7 @@ type NoteControl interface {
 
 	GetOutputChannelNum() int
 	GetInstrument() Instrument
+	GetCurrentPanning() panning.Position
 	Attack()
 	Release()
 	NoteCut()

@@ -5,7 +5,6 @@ import (
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/render"
@@ -76,7 +75,6 @@ type rowRenderState struct {
 	samplesPerTick int
 	ticksThisRow   int
 	panmixer       mixing.PanMixer
-	centerPanning  volume.Matrix
 
 	currentTick int
 }
@@ -100,7 +98,6 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 				m.rowRenderState.panmixer,
 				m.rowRenderState.samplerSpeed,
 				m.rowRenderState.samplesPerTick,
-				m.rowRenderState.centerPanning,
 				m.rowRenderState.tickDuration)
 			if err != nil {
 				return err

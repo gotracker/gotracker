@@ -49,7 +49,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 
 		ii := layout.InstrumentPCM{
 			Length:        int(si.Length),
-			Looped:        si.Flags.LoopMode() != xmfile.SampleLoopModeDisabled,
+			LoopMode:      si.Flags.LoopMode(),
 			LoopBegin:     int(si.LoopStart),
 			LoopEnd:       int(si.LoopStart + si.LoopLength),
 			NumChannels:   1,

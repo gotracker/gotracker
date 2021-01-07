@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"time"
 
+	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
@@ -35,7 +36,7 @@ type InstrumentPCM struct {
 
 	Sample        []uint8
 	Length        int
-	Looped        bool
+	LoopMode      xmfile.SampleLoopMode
 	LoopBegin     int
 	LoopEnd       int
 	NumChannels   int
@@ -76,7 +77,7 @@ func (inst *InstrumentPCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volum
 
 func (inst *InstrumentPCM) getSampleDry(pos sampling.Pos) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos)
-	if len(v0) == 0 && inst.Looped {
+	if len(v0) == 0 && inst.LoopMode != xmfile.SampleLoopModeDisabled {
 		v01 := inst.getConvertedSample(pos.Pos)
 		panic(v01)
 	}
@@ -91,7 +92,7 @@ func (inst *InstrumentPCM) getSampleDry(pos sampling.Pos) volume.Matrix {
 }
 
 func (inst *InstrumentPCM) getConvertedSample(pos int) volume.Matrix {
-	if inst.Looped {
+	if inst.LoopMode != xmfile.SampleLoopModeDisabled {
 		pos = inst.calcLoopedSamplePosMode2(pos)
 	}
 	bps := inst.BitsPerSample / 8
@@ -134,7 +135,7 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode1(pos int) int {
 
 func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 	// |start>-----------------------------loopEnd|>-----------end|   <= on playthrough 1, play from start to loopEnd if looped, otherwise continue to end
-	// |----------------|loopBegin>--------loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays
+	// |----------------|loopBegin>-------<loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays and can ping-pong if mode dictates
 	if pos < 0 {
 		return 0
 	}
@@ -150,7 +151,16 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 		return inst.Length
 	}
 
-	loopedPos := (pos - inst.LoopEnd) % loopLen
+	dist := pos - inst.LoopEnd
+	if inst.LoopMode == xmfile.SampleLoopModePingPong {
+		if times := int(dist / loopLen); (times & 1) == 0 {
+			// even loops are reversed
+			loopedPos := dist % loopLen
+			return inst.LoopEnd - loopedPos - 1
+		}
+		// odd loops are forward... or normal loop
+	}
+	loopedPos := dist % loopLen
 	return inst.LoopBegin + loopedPos
 }
 

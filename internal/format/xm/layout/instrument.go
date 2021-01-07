@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
@@ -66,7 +67,7 @@ func (inst *Instrument) GetDefaultVolume() volume.Volume {
 func (inst *Instrument) IsLooped() bool {
 	switch si := inst.Inst.(type) {
 	case *InstrumentPCM:
-		return si.Looped
+		return si.LoopMode != xmfile.SampleLoopModeDisabled
 	default:
 	}
 	return false

@@ -88,7 +88,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `loader` | Attempting to load a corrupted tracker file may cause the deserializer to panic or go running off into the weeds indefinitely. |
 | `mod` | MOD file support is buggy, at best. |
 | `mod` `loader` | MOD files are up-converted to S3M internally and the S3M player uses NTSC-based lookup tables, so with a PAL-based MOD, the period values produced will end up being very slightly divergent from what is expected, as the S3M format converts note information to key-octave pairs, opting to look up the period information at time of need instead. |
-| `xm` | XM file support is in a very nascent state. Don't expect your favorite song to play in it well, if at all. |
+| `xm` | XM file support is in a somewhat nascent state. Don't expect your favorite song to play in it well. |
 | `s3m` `opl2` | Attempting to play an S3M file with Adlib/OPL2 instruments does not produce the expected output. The OPL2 code has something wrong with it - it sounds pretty bad, though steps have been taken to remedy its strange output. |
 | `mod` `s3m` | Amiga Paula/"LED" low-pass filter support is available, but the filter itself is a very lazy (and very over-optimized) Butterworth implementation. It will not produce the expected output.
 | `xm` `opl2` | Attempting to play an XM file with Adlib/OPL2 instruments does not work. Most of the code for playback is there, but there's none for loading OPL2 instruments from file, so there's no way for the instruments to make it to the playback code. |

@@ -101,6 +101,14 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = nil
 			cs.WantNoteCalc = false
+			cs.DoRetriggerNote = false
+		} else if n == note.StopNote {
+			cs.TargetPeriod = cs.Period
+			if cs.PrevInstrument != nil {
+				cs.TargetInst = cs.PrevInstrument.GetInstrument()
+			}
+			cs.WantNoteCalc = false
+			cs.DoRetriggerNote = false
 		} else if cs.TargetInst != nil {
 			cs.StoredSemitone = n.Semitone()
 			cs.TargetSemitone = cs.StoredSemitone

@@ -2,8 +2,10 @@ package load
 
 import (
 	"errors"
+	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
+	"github.com/gotracker/gomixing/volume"
 
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/xm/layout"
@@ -52,6 +54,65 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			LoopEnd:       int(si.LoopStart + si.LoopLength),
 			NumChannels:   1,
 			BitsPerSample: 8,
+			VolumeFadeout: volume.Volume(inst.VolumeFadeout) / 65536,
+			VolEnv: layout.InstEnv{
+				Enabled:        (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
+				LoopEnabled:    (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
+				SustainEnabled: (inst.VolFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
+				LoopStart:      int(inst.VolLoopStartPoint),
+				LoopEnd:        int(inst.VolLoopEndPoint),
+				SustainIndex:   int(inst.VolSustainPoint),
+			},
+			PanEnv: layout.InstEnv{
+				Enabled:        (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
+				LoopEnabled:    (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
+				SustainEnabled: (inst.PanFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
+				LoopStart:      int(inst.PanLoopStartPoint),
+				LoopEnd:        int(inst.PanLoopEndPoint),
+				SustainIndex:   int(inst.PanSustainPoint),
+			},
+		}
+
+		if ii.VolEnv.LoopEnabled && ii.VolEnv.LoopStart > ii.VolEnv.LoopEnd {
+			ii.VolEnv.LoopEnabled = false
+		}
+
+		if ii.PanEnv.LoopEnabled && ii.PanEnv.LoopStart > ii.PanEnv.LoopEnd {
+			ii.PanEnv.LoopEnabled = false
+		}
+
+		if ii.VolEnv.Enabled {
+			ii.VolEnv.Values = make([]layout.EnvPoint, int(inst.VolPoints))
+			for i := range ii.VolEnv.Values {
+				x1 := int(inst.VolEnv[i].X)
+				x2 := x1
+				if i+1 < len(ii.VolEnv.Values) {
+					x2 = int(inst.VolEnv[i+1].X)
+				} else {
+					x2 = math.MaxInt64
+				}
+				ii.VolEnv.Values[i] = layout.EnvPoint{
+					Ticks: x2 - x1,
+					Y:     volume.Volume(uint8(inst.VolEnv[i].Y)) / 64,
+				}
+			}
+		}
+
+		if ii.PanEnv.Enabled {
+			ii.PanEnv.Values = make([]layout.EnvPoint, int(inst.VolPoints))
+			for i := range ii.PanEnv.Values {
+				x1 := int(inst.PanEnv[i].X)
+				x2 := x1
+				if i+1 < len(ii.PanEnv.Values) {
+					x2 = int(inst.PanEnv[i+1].X)
+				} else {
+					x2 = math.MaxInt64
+				}
+				ii.PanEnv.Values[i] = layout.EnvPoint{
+					Ticks: x2 - x1,
+					Y:     util.PanningFromXm(uint8(inst.PanEnv[i].Y)),
+				}
+			}
 		}
 
 		if si.Finetune != 0 {
@@ -71,8 +132,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii.LoopBegin /= stride
 		ii.LoopEnd /= stride
 
-		ii.Sample = make([]uint8, len(si.SampleData))
-		copy(ii.Sample, si.SampleData)
+		ii.Sample = si.SampleData
 
 		sample.Inst = &ii
 		instruments = append(instruments, &sample)

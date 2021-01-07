@@ -46,38 +46,29 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	if cs.TrackData != nil {
 		n = cs.TrackData.GetNote()
 	}
-	keyOff := n.IsEmpty() || n.IsStop()
+	keyOff := n.IsStop()
+	keyOn := false
 	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {
 		cs.Instrument = nil
 		if cs.TargetInst != nil {
-			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
-				cs.Instrument = cs.PrevInstrument
-				cs.Instrument.Release()
-			} else {
-				inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
-				inst.SetPlayback(m)
-				cs.Instrument = inst
-			}
+			inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
+			inst.SetPlayback(m)
+			keyOn = true
+			cs.Instrument = inst
 		}
 		if cs.UseTargetPeriod {
 			cs.Period = cs.TargetPeriod
 			cs.PortaTargetPeriod = cs.TargetPeriod
 		}
 		cs.Pos = cs.TargetPos
-		if cs.Instrument != nil {
-			cs.Instrument.Attack()
-			keyOff = false
-			mem := cs.GetMemory().(*channel.Memory)
-			mem.Retrigger()
-		}
 	}
 
-	if keyOff && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
-		if n == note.StopNote {
-			cs.Instrument.NoteCut()
-			cs.Instrument = nil
-			cs.Period = nil
-		} else {
+	if cs.Instrument != nil {
+		if keyOn {
+			cs.Instrument.Attack()
+			mem := cs.GetMemory().(*channel.Memory)
+			mem.Retrigger()
+		} else if keyOff {
 			cs.Instrument.Release()
 		}
 	}

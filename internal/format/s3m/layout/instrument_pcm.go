@@ -97,6 +97,9 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 
 	loopLen := inst.LoopEnd - inst.LoopBegin
 	if loopLen <= 0 {
+		if pos < inst.Length {
+			return pos
+		}
 		return inst.Length
 	}
 

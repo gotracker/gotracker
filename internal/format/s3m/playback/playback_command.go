@@ -74,7 +74,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 
 	if keyOff && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
 		if n == note.StopNote {
-			cs.Instrument.NoteCut()
+			cs.Instrument.Release()
 			cs.Instrument = nil
 			cs.Period = nil
 		} else {

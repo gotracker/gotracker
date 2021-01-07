@@ -49,7 +49,7 @@ type InstrumentPCM struct {
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *InstrumentPCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	ed := ioc.GetData().(*envData)
-	dry := inst.getSampleDry(pos)
+	dry := inst.getSampleDry(pos, ed.keyOn)
 	volEnv := inst.getVolEnv(ed, pos)
 	wet := dry
 	wet = volEnv.Apply(wet...)
@@ -75,25 +75,25 @@ func (inst *InstrumentPCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volum
 	return ed.volEnvValue
 }
 
-func (inst *InstrumentPCM) getSampleDry(pos sampling.Pos) volume.Matrix {
-	v0 := inst.getConvertedSample(pos.Pos)
-	if len(v0) == 0 && inst.LoopMode != xmfile.SampleLoopModeDisabled {
-		v01 := inst.getConvertedSample(pos.Pos)
+func (inst *InstrumentPCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
+	v0 := inst.getConvertedSample(pos.Pos, keyOn)
+	if len(v0) == 0 && inst.LoopMode != xmfile.SampleLoopModeDisabled && keyOn {
+		v01 := inst.getConvertedSample(pos.Pos, keyOn)
 		panic(v01)
 	}
 	if pos.Frac == 0 {
 		return v0
 	}
-	v1 := inst.getConvertedSample(pos.Pos + 1)
+	v1 := inst.getConvertedSample(pos.Pos+1, keyOn)
 	for c, s := range v1 {
 		v0[c] += volume.Volume(pos.Frac) * (s - v0[c])
 	}
 	return v0
 }
 
-func (inst *InstrumentPCM) getConvertedSample(pos int) volume.Matrix {
+func (inst *InstrumentPCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
 	if inst.LoopMode != xmfile.SampleLoopModeDisabled {
-		pos = inst.calcLoopedSamplePosMode2(pos)
+		pos = inst.calcLoopedSamplePosMode2(pos, keyOn)
 	}
 	bps := inst.BitsPerSample / 8
 	if pos < 0 || pos >= inst.Length {
@@ -133,9 +133,10 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode1(pos int) int {
 	return inst.LoopBegin + loopedPos
 }
 
-func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
-	// |start>-----------------------------loopEnd|>-----------end|   <= on playthrough 1, play from start to loopEnd if looped, otherwise continue to end
-	// |----------------|loopBegin>-------<loopEnd|---------------|   <= on playthrough 2+, only the part that loops plays and can ping-pong if mode dictates
+func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int, keyOn bool) int {
+	// |start>-----------------------------loopEnd|>-----------end|   <= on playthrough 1, play from start to loopEnd if looped and keyOn is true, otherwise continue to end
+	// |----------------|loopBegin>-------<loopEnd|---------------|   <= on playthrough 2+, if keyOn is true, only the part that loops plays and can ping-pong if mode dictates
+	// |----------------|loopBegin>----------------------------end|   <= on playthrough 2+, the loop ends and playback continues to end, if keyOn is false
 	if pos < 0 {
 		return 0
 	}
@@ -144,7 +145,7 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 	}
 
 	loopLen := inst.LoopEnd - inst.LoopBegin
-	if loopLen <= 0 {
+	if loopLen <= 0 || !keyOn {
 		if pos < inst.Length {
 			return pos
 		}
@@ -152,15 +153,14 @@ func (inst *InstrumentPCM) calcLoopedSamplePosMode2(pos int) int {
 	}
 
 	dist := pos - inst.LoopEnd
+	loopedPos := dist % loopLen
 	if inst.LoopMode == xmfile.SampleLoopModePingPong {
 		if times := int(dist / loopLen); (times & 1) == 0 {
 			// even loops are reversed
-			loopedPos := dist % loopLen
 			return inst.LoopEnd - loopedPos - 1
 		}
 		// odd loops are forward... or normal loop
 	}
-	loopedPos := dist % loopLen
 	return inst.LoopBegin + loopedPos
 }
 

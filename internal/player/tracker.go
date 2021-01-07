@@ -37,7 +37,7 @@ type Tracker struct {
 
 // Update runs processing on the tracker, producing premixed sound data
 func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
-	premix, err := t.renderTick()
+	premix, err := t.Generate(deltaTime)
 	if err != nil {
 		return err
 	}
@@ -46,6 +46,20 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData)
 	}
 
 	return nil
+}
+
+// Generate runs processing on the tracker, then returns the premixed sound data (if possible)
+func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) {
+	premix, err := t.renderTick()
+	if err != nil {
+		return nil, err
+	}
+
+	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
+		return premix, nil
+	}
+
+	return nil, nil
 }
 
 func (t *Tracker) renderTick() (*device.PremixData, error) {

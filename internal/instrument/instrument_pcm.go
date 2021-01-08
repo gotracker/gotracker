@@ -31,9 +31,8 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 	ed := ioc.GetData().(*envData)
 	dry := inst.getSampleDry(pos, ed.keyOn)
 	envVol := inst.getVolEnv(ed, pos)
-	fadeVol := ed.fadeoutVol
 	chVol := ioc.GetVolume()
-	postVol := fadeVol * envVol * chVol
+	postVol := envVol * chVol
 	wet := postVol.Apply(dry...)
 	return wet
 }
@@ -53,7 +52,8 @@ func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {
 		return volume.Volume(1.0)
 	}
 
-	return ed.volEnvValue
+	fadeVol := ed.fadeoutVol
+	return fadeVol * ed.volEnvValue
 }
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
@@ -129,7 +129,7 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 
 	ed.advance(&inst.VolEnv, &inst.PanEnv)
 
-	if !ed.keyOn && inst.VolumeFadeout != 0 {
+	if !ed.keyOn && inst.VolEnv.Enabled {
 		ed.fadeoutVol -= inst.VolumeFadeout
 		if ed.fadeoutVol < 0 {
 			ed.fadeoutVol = 0

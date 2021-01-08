@@ -26,10 +26,10 @@ func (pl *patternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) 
 	if pl.Enabled {
 		if currentRow == pl.End {
 			pl.Count++
-			if pl.Count >= pl.Total {
-				pl.Enabled = false
+			if pl.Count <= pl.Total {
+				return pl.Start, true
 			}
-			return pl.Start, true
+			pl.Enabled = false
 		}
 	}
 	return 0, false

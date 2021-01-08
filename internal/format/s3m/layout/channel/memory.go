@@ -1,13 +1,16 @@
 package channel
 
+import "gotracker/internal/player/intf"
+
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	portaToNote   uint8
-	vibrato       uint8
-	sampleOffset  uint8
-	tempoDecrease uint8
-	tempoIncrease uint8
-	lastNonZero   uint8
+	portaToNote      uint8
+	vibrato          uint8
+	sampleOffset     uint8
+	tempoDecrease    uint8
+	tempoIncrease    uint8
+	lastNonZero      uint8
+	patternLoopStart intf.RowIdx
 
 	tremorMem         Tremor
 	vibratoOscillator Oscillator
@@ -73,4 +76,14 @@ func (m *Memory) TremoloOscillator() *Oscillator {
 func (m *Memory) Retrigger() {
 	m.vibratoOscillator.Pos = 0
 	m.tremoloOscillator.Pos = 0
+}
+
+// SetPatternLoopStart sets the pattern loop start location in memory
+func (m *Memory) SetPatternLoopStart(row intf.RowIdx) {
+	m.patternLoopStart = row
+}
+
+// GetPatternLoopStart gets the pattern loop start location from memory
+func (m *Memory) GetPatternLoopStart() intf.RowIdx {
+	return m.patternLoopStart
 }

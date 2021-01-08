@@ -12,6 +12,7 @@ import (
 // Playback is an interface for rendering a song to output data
 type Playback interface {
 	Update(time.Duration, chan<- *device.PremixData) error
+	Generate(time.Duration) (*device.PremixData, error)
 
 	GetSongData() SongData
 

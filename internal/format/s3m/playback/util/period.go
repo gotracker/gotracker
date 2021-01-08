@@ -75,3 +75,8 @@ func (p *AmigaPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 	}
 	return samplerSpeed / period
 }
+
+// GetFrequency returns the frequency defined by the period
+func (p *AmigaPeriod) GetFrequency() float64 {
+	return float64(S3MBaseClock / float32(*p))
+}

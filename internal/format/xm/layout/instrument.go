@@ -83,7 +83,7 @@ func (inst *Instrument) GetLoopEnd() sampling.Pos {
 // GetLength returns the length of the instrument
 func (inst *Instrument) GetLength() sampling.Pos {
 	switch si := inst.Inst.(type) {
-	case *InstrumentOPL2:
+	case *instrument.OPL2:
 		return sampling.Pos{Pos: math.MaxInt64, Frac: 0}
 	case *instrument.PCM:
 		return sampling.Pos{Pos: si.Length}

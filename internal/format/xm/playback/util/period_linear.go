@@ -1,6 +1,8 @@
 package util
 
-import "gotracker/internal/player/note"
+import (
+	"gotracker/internal/player/note"
+)
 
 // LinearPeriod is a linear period, based on semitone and finetune values
 type LinearPeriod struct {
@@ -63,4 +65,10 @@ func (p *LinearPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 		return 0
 	}
 	return samplerSpeed / period
+}
+
+// GetFrequency returns the frequency defined by the period
+func (p *LinearPeriod) GetFrequency() float64 {
+	am := CalcLinearPeriod(p.Semitone, p.Finetune, p.C2Spd)
+	return am.GetFrequency()
 }

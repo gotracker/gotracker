@@ -87,7 +87,7 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlide
 	iFt := math.Trunc(fFt)
 	f := fFt - iFt
 	period := period0.Lerp(f, period1)
-	return note.C2SPD(FrequencyFromPeriod(period))
+	return note.C2SPD(period.GetFrequency())
 }
 
 // VolumeFromXm converts an xm volume to a player volume
@@ -146,20 +146,7 @@ func NoteFromXmNote(xn uint8) note.Note {
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
 func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD, linearFreqSlides bool) float32 {
 	period := CalcSemitonePeriod(semitone, 0, c2spd, linearFreqSlides)
-	return FrequencyFromPeriod(period)
-}
-
-// FrequencyFromPeriod returns the frequency from the period
-func FrequencyFromPeriod(period note.Period) float32 {
-	switch p := period.(type) {
-	case *AmigaPeriod:
-		return XMBaseClock / float32(*p)
-	case *LinearPeriod:
-		am := CalcLinearPeriod(p.Semitone, p.Finetune, p.C2Spd).(*AmigaPeriod)
-		return FrequencyFromPeriod(am)
-	default:
-		return 0
-	}
+	return float32(period.GetFrequency())
 }
 
 // CalcLinearPeriod calculates a period for a linear frequency slide

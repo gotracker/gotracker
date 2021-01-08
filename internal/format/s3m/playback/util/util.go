@@ -74,7 +74,7 @@ func calcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune) note.C2SPD {
 	iFt := math.Trunc(fFt)
 	f := fFt - iFt
 	period := period0.Lerp(f, period1)
-	return note.C2SPD(FrequencyFromPeriod(period))
+	return note.C2SPD(period.GetFrequency())
 }
 
 // VolumeFromS3M converts an S3M volume to a player volume
@@ -139,13 +139,5 @@ func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
 func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD) float32 {
 	period := CalcSemitonePeriod(semitone, 0, c2spd)
-	return FrequencyFromPeriod(period)
-}
-
-// FrequencyFromPeriod returns the frequency from the period
-func FrequencyFromPeriod(period note.Period) float32 {
-	if p, ok := period.(*AmigaPeriod); ok {
-		return S3MBaseClock / float32(*p)
-	}
-	return 0
+	return float32(period.GetFrequency())
 }

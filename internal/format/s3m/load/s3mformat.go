@@ -91,36 +91,36 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 		Volume:   util.VolumeFromS3M(si.Volume),
 	}
 
-	idata := layout.InstrumentOPL2{
-		Modulator: layout.OPL2OperatorData{
+	idata := instrument.OPL2{
+		Modulator: instrument.OPL2OperatorData{
 			KeyScaleRateSelect:  si.OPL2.ModulatorKeyScaleRateSelect(),
 			Sustain:             si.OPL2.ModulatorSustain(),
 			Vibrato:             si.OPL2.ModulatorVibrato(),
 			Tremolo:             si.OPL2.ModulatorTremolo(),
-			FrequencyMultiplier: si.OPL2.ModulatorFrequencyMultiplier(),
-			KeyScaleLevel:       si.OPL2.ModulatorKeyScaleLevel(),
-			Volume:              s3mfile.Volume(si.OPL2.ModulatorVolume()),
+			FrequencyMultiplier: uint8(si.OPL2.ModulatorFrequencyMultiplier()),
+			KeyScaleLevel:       uint8(si.OPL2.ModulatorKeyScaleLevel()),
+			Volume:              uint8(si.OPL2.ModulatorVolume()),
 			AttackRate:          si.OPL2.ModulatorAttackRate(),
 			DecayRate:           si.OPL2.ModulatorDecayRate(),
 			SustainLevel:        si.OPL2.ModulatorSustainLevel(),
 			ReleaseRate:         si.OPL2.ModulatorReleaseRate(),
-			WaveformSelection:   si.OPL2.ModulatorWaveformSelection(),
+			WaveformSelection:   uint8(si.OPL2.ModulatorWaveformSelection()),
 		},
-		Carrier: layout.OPL2OperatorData{
+		Carrier: instrument.OPL2OperatorData{
 			KeyScaleRateSelect:  si.OPL2.CarrierKeyScaleRateSelect(),
 			Sustain:             si.OPL2.CarrierSustain(),
 			Vibrato:             si.OPL2.CarrierVibrato(),
 			Tremolo:             si.OPL2.CarrierTremolo(),
-			FrequencyMultiplier: si.OPL2.CarrierFrequencyMultiplier(),
-			KeyScaleLevel:       si.OPL2.CarrierKeyScaleLevel(),
-			Volume:              s3mfile.Volume(si.OPL2.CarrierVolume()),
+			FrequencyMultiplier: uint8(si.OPL2.CarrierFrequencyMultiplier()),
+			KeyScaleLevel:       uint8(si.OPL2.CarrierKeyScaleLevel()),
+			Volume:              uint8(si.OPL2.CarrierVolume()),
 			AttackRate:          si.OPL2.CarrierAttackRate(),
 			DecayRate:           si.OPL2.CarrierDecayRate(),
 			SustainLevel:        si.OPL2.CarrierSustainLevel(),
 			ReleaseRate:         si.OPL2.CarrierReleaseRate(),
-			WaveformSelection:   si.OPL2.CarrierWaveformSelection(),
+			WaveformSelection:   uint8(si.OPL2.CarrierWaveformSelection()),
 		},
-		ModulationFeedback: si.OPL2.ModulationFeedback(),
+		ModulationFeedback: uint8(si.OPL2.ModulationFeedback()),
 		AdditiveSynthesis:  si.OPL2.AdditiveSynthesis(),
 	}
 

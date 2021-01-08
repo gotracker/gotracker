@@ -30,11 +30,12 @@ type PCM struct {
 func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	ed := ioc.GetData().(*envData)
 	dry := inst.getSampleDry(pos, ed.keyOn)
-	volEnv := inst.getVolEnv(ed, pos)
-	wet := dry
-	wet = volEnv.Apply(wet...)
-	wet = ed.fadeoutVol.Apply(wet...)
-	return ioc.GetVolume().Apply(wet...)
+	envVol := inst.getVolEnv(ed, pos)
+	fadeVol := ed.fadeoutVol
+	chVol := ioc.GetVolume()
+	postVol := fadeVol * envVol * chVol
+	wet := postVol.Apply(dry...)
+	return wet
 }
 
 // GetCurrentPanning returns the panning envelope position

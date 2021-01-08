@@ -8,6 +8,7 @@ type Period interface {
 	Compare(Period) int // <=>
 	Lerp(float64, Period) Period
 	GetSamplerAdd(float64) float64
+	GetFrequency() float64
 }
 
 // ComparePeriods compares two periods, taking nil into account

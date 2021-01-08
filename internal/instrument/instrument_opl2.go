@@ -1,4 +1,4 @@
-package layout
+package instrument
 
 import (
 	"time"
@@ -8,10 +8,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
 
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/render"
 )
 
 // OPL2OperatorData is the operator data for an OPL2/Adlib instrument
@@ -72,8 +71,8 @@ type OPL2OperatorData struct {
 	WaveformSelection uint8
 }
 
-// InstrumentOPL2 is an OPL2/Adlib instrument
-type InstrumentOPL2 struct {
+// OPL2 is an OPL2/Adlib instrument
+type OPL2 struct {
 	intf.Instrument
 
 	Modulator OPL2OperatorData
@@ -87,22 +86,22 @@ type InstrumentOPL2 struct {
 }
 
 type ym3812 struct {
-	chip  channel.OPL2Chip
+	chip  render.OPL2Chip
 	regB0 uint8
 }
 
 // GetSample returns the sample at position `pos` in the instrument
-func (inst *InstrumentOPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
+func (inst *OPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
 	return nil
 }
 
 // GetCurrentPanning returns the panning envelope position
-func (inst *InstrumentOPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
+func (inst *OPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	return panning.CenterAhead
 }
 
 // Initialize completes the setup of this instrument
-func (inst *InstrumentOPL2) Initialize(ioc intf.NoteControl) error {
+func (inst *OPL2) Initialize(ioc intf.NoteControl) error {
 	ym := ym3812{}
 	ioc.SetData(&ym)
 
@@ -110,20 +109,20 @@ func (inst *InstrumentOPL2) Initialize(ioc intf.NoteControl) error {
 }
 
 // Attack sets the key on flag for the instrument
-func (inst *InstrumentOPL2) Attack(ioc intf.NoteControl) {
+func (inst *OPL2) Attack(ioc intf.NoteControl) {
 	inst.setKeyOn(ioc, true)
 }
 
 // Release clears the key on flag for the instrument
-func (inst *InstrumentOPL2) Release(ioc intf.NoteControl) {
+func (inst *OPL2) Release(ioc intf.NoteControl) {
 	inst.setKeyOn(ioc, false)
 }
 
-func (inst *InstrumentOPL2) setKeyOn(ioc intf.NoteControl, on bool) {
+func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.GetPlayback().(channel.OPL2Intf)
+		p := ioc.GetPlayback().(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -145,12 +144,12 @@ func (inst *InstrumentOPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 }
 
 // NoteCut cuts the current playback of the instrument
-func (inst *InstrumentOPL2) NoteCut(ioc intf.NoteControl) {
+func (inst *OPL2) NoteCut(ioc intf.NoteControl) {
 	ioc.SetVolume(0)
 	inst.Release(ioc)
 }
 
-func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
+func (inst *OPL2) getReg20(o *OPL2OperatorData) uint8 {
 	reg20 := uint8(0x00)
 	if o.Tremolo {
 		reg20 |= 0x80
@@ -169,7 +168,7 @@ func (inst *InstrumentOPL2) getReg20(o *OPL2OperatorData) uint8 {
 	return reg20
 }
 
-func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
+func (inst *OPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
 	mVol := uint16(vol * 64)
 	oVol := uint16(o.Volume)
 	totalVol := uint8(oVol * mVol / 64)
@@ -184,21 +183,21 @@ func (inst *InstrumentOPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uin
 	return reg40
 }
 
-func (inst *InstrumentOPL2) getReg60(o *OPL2OperatorData) uint8 {
+func (inst *OPL2) getReg60(o *OPL2OperatorData) uint8 {
 	reg60 := uint8(0x00)
 	reg60 |= (o.AttackRate & 0x0f) << 4
 	reg60 |= o.DecayRate & 0x0f
 	return reg60
 }
 
-func (inst *InstrumentOPL2) getReg80(o *OPL2OperatorData) uint8 {
+func (inst *OPL2) getReg80(o *OPL2OperatorData) uint8 {
 	reg80 := uint8(0x00)
 	reg80 |= (15 - (o.SustainLevel & 0x0f)) << 4
 	reg80 |= o.ReleaseRate & 0x0f
 	return reg80
 }
 
-func (inst *InstrumentOPL2) getRegC0() uint8 {
+func (inst *OPL2) getRegC0() uint8 {
 	regC0 := uint8(0x00)
 	regC0 |= 0x20 | 0x10 // right and left enable [OPL3 only]
 	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
@@ -208,7 +207,7 @@ func (inst *InstrumentOPL2) getRegC0() uint8 {
 	return regC0
 }
 
-func (inst *InstrumentOPL2) getRegE0(o *OPL2OperatorData) uint8 {
+func (inst *OPL2) getRegE0(o *OPL2OperatorData) uint8 {
 	regE0 := uint8(0x00)
 	regE0 |= uint8(o.WaveformSelection & 0x07)
 	return regE0
@@ -220,7 +219,7 @@ var twoOperatorMelodic = [...]uint32{
 	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
 }
 
-func (inst *InstrumentOPL2) getChannelIndex(channelIdx int) uint32 {
+func (inst *OPL2) getChannelIndex(channelIdx int) uint32 {
 	return twoOperatorMelodic[channelIdx%18]
 }
 
@@ -254,14 +253,14 @@ func freqToFnumBlock(freq float64) (uint16, uint8) {
 	return fnum, block
 }
 
-func (inst *InstrumentOPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
-	modFreq := util.FrequencyFromPeriod(period)
+func (inst *OPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
+	modFreq := period.GetFrequency()
 	freq := float64(c2spd) * float64(modFreq) / 261625
 
 	return freqToFnumBlock(freq)
 }
 
-func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
+func (inst *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
 	regA0 := uint8(freq)
 	regB0 := uint8(uint16(freq)>>8) & 0x03
 	regB0 |= (block & 0x07) << 3
@@ -269,17 +268,17 @@ func (inst *InstrumentOPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8,
 }
 
 // GetKeyOn gets the key on flag for the instrument
-func (inst *InstrumentOPL2) GetKeyOn(ioc intf.NoteControl) bool {
+func (inst *OPL2) GetKeyOn(ioc intf.NoteControl) bool {
 	ym := ioc.GetData().(*ym3812)
 	return (ym.regB0 & 0x20) != 0
 }
 
 // Update advances time by the amount specified by `tickDuration`
-func (inst *InstrumentOPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
+func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.GetPlayback().(channel.OPL2Intf)
+		p := ioc.GetPlayback().(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}

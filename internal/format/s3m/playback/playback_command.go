@@ -4,6 +4,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
@@ -138,14 +139,14 @@ func (m *Manager) SetPatternDelay(rept int) {
 }
 
 // SetPatternLoopStart sets the pattern loop start position
-func (m *Manager) SetPatternLoopStart() {
+func (m *Manager) SetPatternLoopStart(row intf.RowIdx) {
 	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetPatternLoopStart()
+		m.postMixRowTxn.SetPatternLoopStart(row)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetPatternLoopStart()
+		rowTxn.SetPatternLoopStart(row)
 		rowTxn.Commit()
 	}
 }

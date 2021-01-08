@@ -84,8 +84,8 @@ func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx) {
 }
 
 // SetPatternLoopStart will set the pattern loop starting row index
-func (txn *RowUpdateTransaction) SetPatternLoopStart() {
-	txn.patternLoopStartRowIdx = txn.state.currentRow
+func (txn *RowUpdateTransaction) SetPatternLoopStart(row intf.RowIdx) {
+	txn.patternLoopStartRowIdx = row
 	txn.patternLoopStartRowIdxSet = true
 }
 

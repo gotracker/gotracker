@@ -20,6 +20,7 @@ type Playback interface {
 	GetNumOrders() int
 	SetNextOrder(OrderIdx)
 	SetNextRow(RowIdx)
+	GetCurrentRow() RowIdx
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
 	DisableFeatures([]feature.Feature)

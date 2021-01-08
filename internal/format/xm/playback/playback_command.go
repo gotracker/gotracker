@@ -4,6 +4,7 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/filter"
 	"gotracker/internal/format/xm/playback/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
@@ -129,14 +130,14 @@ func (m *Manager) SetPatternDelay(rept int) {
 }
 
 // SetPatternLoopStart sets the pattern loop start position
-func (m *Manager) SetPatternLoopStart() {
+func (m *Manager) SetPatternLoopStart(row intf.RowIdx) {
 	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetPatternLoopStart()
+		m.preMixRowTxn.SetPatternLoopStart(row)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetPatternLoopStart()
+		rowTxn.SetPatternLoopStart(row)
 		rowTxn.Commit()
 	}
 }

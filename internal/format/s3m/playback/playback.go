@@ -125,14 +125,14 @@ func (m *Manager) SetNextOrder(order intf.OrderIdx) {
 }
 
 // SetNextRow sets the next row index
-func (m *Manager) SetNextRow(row intf.RowIdx) {
+func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) {
 	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetNextRow(row)
+		m.postMixRowTxn.SetNextRow(row, opts...)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetNextRow(row)
+		rowTxn.SetNextRow(row, opts...)
 		rowTxn.Commit()
 	}
 }

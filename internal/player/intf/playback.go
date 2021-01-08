@@ -19,7 +19,7 @@ type Playback interface {
 	GetNumChannels() int
 	GetNumOrders() int
 	SetNextOrder(OrderIdx)
-	SetNextRow(RowIdx)
+	SetNextRow(RowIdx, ...bool)
 	GetCurrentRow() RowIdx
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)

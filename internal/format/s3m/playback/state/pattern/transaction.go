@@ -5,25 +5,26 @@ import "gotracker/internal/player/intf"
 // RowUpdateTransaction is a transactional operation for row/order updates
 type RowUpdateTransaction struct {
 	intf.SongPositionState
-	orderIdx            intf.OrderIdx
-	orderIdxSet         bool
-	rowIdx              intf.RowIdx
-	rowIdxSet           bool
-	advanceRow          bool
-	breakOrder          bool
-	committed           bool
-	rowHasPatternDelay  bool
-	patternDelay        int
-	patternDelaySet     bool
-	finePatternDelay    int
-	finePatternDelaySet bool
-	tempo               int
-	tempoSet            bool
-	ticks               int
-	ticksSet            bool
-	tempoDelta          int
-	tempoDeltaSet       bool
-	state               *State
+	orderIdx             intf.OrderIdx
+	orderIdxSet          bool
+	rowIdx               intf.RowIdx
+	rowIdxSet            bool
+	rowIdxAllowBacktrack bool
+	advanceRow           bool
+	breakOrder           bool
+	committed            bool
+	rowHasPatternDelay   bool
+	patternDelay         int
+	patternDelaySet      bool
+	finePatternDelay     int
+	finePatternDelaySet  bool
+	tempo                int
+	tempoSet             bool
+	ticks                int
+	ticksSet             bool
+	tempoDelta           int
+	tempoDeltaSet        bool
+	state                *State
 }
 
 // Cancel will mark a transaction as void/spent, i.e.: cancelled
@@ -53,9 +54,12 @@ func (txn *RowUpdateTransaction) SetNextOrder(ordIdx intf.OrderIdx) {
 }
 
 // SetNextRow will set the next row index
-func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx) {
+func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx, opts ...bool) {
 	txn.rowIdx = rowIdx
 	txn.rowIdxSet = true
+	if len(opts) > 0 {
+		txn.rowIdxAllowBacktrack = opts[0]
+	}
 }
 
 // SetPatternDelay sets the row pattern delay

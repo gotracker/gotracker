@@ -17,7 +17,7 @@ type SongPositionState interface {
 	AdvanceRow()
 	BreakOrder()
 	SetNextOrder(OrderIdx)
-	SetNextRow(RowIdx)
+	SetNextRow(RowIdx, ...bool)
 	SetPatternDelay(int)
 	SetTempo(int)
 	SetTicks(int)

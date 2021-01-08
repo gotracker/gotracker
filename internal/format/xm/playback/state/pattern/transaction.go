@@ -13,26 +13,27 @@ const (
 // RowUpdateTransaction is a transactional operation for row/order updates
 type RowUpdateTransaction struct {
 	intf.SongPositionState
-	orderIdx            intf.OrderIdx
-	orderIdxSet         bool
-	rowIdx              intf.RowIdx
-	rowIdxSet           bool
-	whoJumpedFirst      whoJumpedFirst
-	advanceRow          bool
-	breakOrder          bool
-	committed           bool
-	rowHasPatternDelay  bool
-	patternDelay        int
-	patternDelaySet     bool
-	finePatternDelay    int
-	finePatternDelaySet bool
-	tempo               int
-	tempoSet            bool
-	ticks               int
-	ticksSet            bool
-	tempoDelta          int
-	tempoDeltaSet       bool
-	state               *State
+	orderIdx             intf.OrderIdx
+	orderIdxSet          bool
+	rowIdx               intf.RowIdx
+	rowIdxSet            bool
+	rowIdxAllowBacktrack bool
+	whoJumpedFirst       whoJumpedFirst
+	advanceRow           bool
+	breakOrder           bool
+	committed            bool
+	rowHasPatternDelay   bool
+	patternDelay         int
+	patternDelaySet      bool
+	finePatternDelay     int
+	finePatternDelaySet  bool
+	tempo                int
+	tempoSet             bool
+	ticks                int
+	ticksSet             bool
+	tempoDelta           int
+	tempoDeltaSet        bool
+	state                *State
 }
 
 // Cancel will mark a transaction as void/spent, i.e.: cancelled
@@ -67,12 +68,15 @@ func (txn *RowUpdateTransaction) SetNextOrder(ordIdx intf.OrderIdx) {
 }
 
 // SetNextRow will set the next row index
-func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx) {
+func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx, opts ...bool) {
 	if !txn.rowIdxSet {
 		txn.rowIdx = rowIdx
 		txn.rowIdxSet = true
 		if txn.whoJumpedFirst == wjfNone {
 			txn.whoJumpedFirst = wjfRow
+		}
+		if len(opts) > 0 {
+			txn.rowIdxAllowBacktrack = opts[0]
 		}
 	}
 }

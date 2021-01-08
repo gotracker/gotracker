@@ -294,7 +294,7 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 			}
 		}
 		if txn.rowIdxSet {
-			if !txn.orderIdxSet && state.currentRow > txn.rowIdx {
+			if !txn.orderIdxSet && !txn.rowIdxAllowBacktrack && state.currentRow > txn.rowIdx {
 				state.nextOrder()
 			}
 			state.setCurrentRow(txn.rowIdx)

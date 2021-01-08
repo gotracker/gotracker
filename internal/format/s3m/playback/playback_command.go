@@ -4,7 +4,6 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
@@ -134,45 +133,6 @@ func (m *Manager) SetPatternDelay(rept int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.SetPatternDelay(rept)
-		rowTxn.Commit()
-	}
-}
-
-// SetPatternLoopStart sets the pattern loop start position
-func (m *Manager) SetPatternLoopStart(row intf.RowIdx) {
-	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetPatternLoopStart(row)
-	} else {
-		rowTxn := m.pattern.StartTransaction()
-		defer rowTxn.Cancel()
-
-		rowTxn.SetPatternLoopStart(row)
-		rowTxn.Commit()
-	}
-}
-
-// SetPatternLoopEnd sets the pattern loop end position
-func (m *Manager) SetPatternLoopEnd() {
-	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetPatternLoopEnd()
-	} else {
-		rowTxn := m.pattern.StartTransaction()
-		defer rowTxn.Cancel()
-
-		rowTxn.SetPatternLoopEnd()
-		rowTxn.Commit()
-	}
-}
-
-// SetPatternLoopCount sets the total loops desired for the pattern loop mechanism
-func (m *Manager) SetPatternLoopCount(loops int) {
-	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetPatternLoopCount(loops)
-	} else {
-		rowTxn := m.pattern.StartTransaction()
-		defer rowTxn.Cancel()
-
-		rowTxn.SetPatternLoopCount(loops)
 		rowTxn.Commit()
 	}
 }

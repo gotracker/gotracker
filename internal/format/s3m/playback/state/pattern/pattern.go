@@ -13,46 +13,6 @@ type Row struct {
 	Channels [32]intf.ChannelData
 }
 
-type patternLoop struct {
-	Enabled bool
-	Start   intf.RowIdx
-	End     intf.RowIdx
-	Total   uint8
-
-	Count uint8
-}
-
-func (pl *patternLoop) ContinueLoop(currentRow intf.RowIdx) (intf.RowIdx, bool) {
-	if pl.Enabled {
-		if currentRow == pl.End {
-			pl.Count++
-			if pl.Count <= pl.Total {
-				return pl.Start, true
-			}
-			pl.Enabled = false
-		}
-	}
-	return 0, false
-}
-
-func (pl *patternLoop) CommitTransaction(txn *RowUpdateTransaction) {
-	if !pl.Enabled {
-		if txn.patternLoopCountSet {
-			pl.Enabled = true
-			pl.Total = uint8(txn.patternLoopCount)
-			pl.Count = 0
-		}
-
-		if txn.patternLoopStartRowIdxSet {
-			pl.Start = txn.patternLoopStartRowIdx
-		}
-
-		if txn.patternLoopEndRowIdxSet {
-			pl.End = txn.patternLoopEndRowIdx
-		}
-	}
-}
-
 // State is the current pattern state
 type State struct {
 	currentOrder       intf.OrderIdx
@@ -62,8 +22,6 @@ type State struct {
 	rowHasPatternDelay bool
 	patternDelay       int
 	finePatternDelay   int
-
-	patternLoop patternLoop
 
 	OrderLoopEnabled bool
 	playedOrders     []intf.OrderIdx // when OrderLoopEnabled is false, this is used to detect loops
@@ -208,7 +166,6 @@ func (state *State) setCurrentRow(row intf.RowIdx) {
 // nextOrder travels to the next pattern in the order list
 func (state *State) nextOrder(resetRow ...bool) {
 	state.setCurrentOrder(state.currentOrder + 1)
-	state.patternLoop.Enabled = false
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
@@ -229,12 +186,6 @@ func (state *State) Reset() {
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
-	wantNextRow := true
-	if row, ok := state.patternLoop.ContinueLoop(state.GetCurrentRow()); ok {
-		state.setCurrentRow(row)
-		wantNextRow = false
-	}
-
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
@@ -249,9 +200,7 @@ func (state *State) nextRow() {
 		return
 	}
 
-	if wantNextRow {
-		state.currentRow++
-	}
+	state.currentRow++
 	if state.currentRow >= intf.RowIdx(state.GetNumRows()) {
 		state.nextOrder(true)
 	}
@@ -329,8 +278,6 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 		state.patternDelay = txn.patternDelay
 		state.rowHasPatternDelay = true
 	}
-
-	state.patternLoop.CommitTransaction(txn)
 
 	if txn.orderIdxSet || txn.rowIdxSet {
 		if txn.orderIdxSet {

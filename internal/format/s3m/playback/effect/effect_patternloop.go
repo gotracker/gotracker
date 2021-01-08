@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"gotracker/internal/format/s3m/layout/channel"
-	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
 	"gotracker/internal/player/intf"
 )
 
@@ -29,15 +28,20 @@ func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	x := uint8(e) & 0xF
 
 	mem := cs.GetMemory().(*channel.Memory)
-	m := p.(effectIntf.S3M)
+	pl := mem.GetPatternLoop()
 	if x == 0 {
 		// set loop
-		mem.SetPatternLoopStart(p.GetCurrentRow())
+		pl.Start = p.GetCurrentRow()
 	} else {
-		row := mem.GetPatternLoopStart()
-		m.SetPatternLoopStart(row)
-		m.SetPatternLoopEnd()
-		m.SetPatternLoopCount(int(x))
+		if !pl.Enabled {
+			pl.Enabled = true
+			pl.Total = x
+			pl.End = p.GetCurrentRow()
+			pl.Count = 0
+		}
+		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
+			p.SetNextRow(row)
+		}
 	}
 }
 

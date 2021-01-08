@@ -97,7 +97,10 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 		n := cs.TrackData.GetNote()
 		if n == note.EmptyNote {
 			cs.WantNoteCalc = false
-			cs.DoRetriggerNote = false
+			cs.DoRetriggerNote = cs.TrackData.HasInstrument()
+			if cs.DoRetriggerNote {
+				cs.TargetPos = sampling.Pos{}
+			}
 		} else if n.IsInvalid() {
 			cs.TargetPeriod = nil
 			cs.WantNoteCalc = false

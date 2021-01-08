@@ -67,11 +67,13 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 }
 
 func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp uint8) intf.Effect {
-	switch ce >> 4 {
+	switch cp >> 4 {
+	case 0x0: // none
+		return nil
 	case 0x1: // Extra fine porta up
-		return ExtraFinePortaUp(ce)
+		return ExtraFinePortaUp(cp)
 	case 0x2: // Extra fine porta down
-		return ExtraFinePortaDown(ce)
+		return ExtraFinePortaDown(cp)
 	}
 	return UnhandledCommand{Command: ce, Info: cp}
 }

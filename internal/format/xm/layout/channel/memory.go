@@ -26,6 +26,7 @@ type Memory struct {
 	tremorMem         Tremor
 	vibratoOscillator Oscillator
 	tremoloOscillator Oscillator
+	patternLoop       PatternLoop
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -146,4 +147,9 @@ func (m *Memory) Retrigger() {
 			osc.Pos = 0
 		}
 	}
+}
+
+// GetPatternLoop returns the pattern loop object from the memory
+func (m *Memory) GetPatternLoop() *PatternLoop {
+	return &m.patternLoop
 }

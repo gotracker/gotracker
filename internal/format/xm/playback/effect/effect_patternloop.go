@@ -3,7 +3,7 @@ package effect
 import (
 	"fmt"
 
-	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -20,13 +20,21 @@ func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
 
 	x := uint8(e) & 0xF
 
-	m := p.(effectIntf.XM)
+	mem := cs.GetMemory().(*channel.Memory)
+	pl := mem.GetPatternLoop()
 	if x == 0 {
 		// set loop
-		m.SetPatternLoopStart()
+		pl.Start = p.GetCurrentRow()
 	} else {
-		m.SetPatternLoopEnd()
-		m.SetPatternLoopCount(int(x))
+		if !pl.Enabled {
+			pl.Enabled = true
+			pl.Total = x
+			pl.End = p.GetCurrentRow()
+			pl.Count = 0
+		}
+		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
+			p.SetNextRow(row)
+		}
 	}
 }
 

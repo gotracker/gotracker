@@ -1,9 +1,26 @@
-package layout
+package instrument
 
 import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 )
+
+// EnvPoint is a point for the envelope
+type EnvPoint struct {
+	Ticks int
+	Y     interface{}
+}
+
+// InstEnv is an envelope for instruments
+type InstEnv struct {
+	Enabled        bool
+	LoopEnabled    bool
+	SustainEnabled bool
+	LoopStart      int
+	LoopEnd        int
+	SustainIndex   int
+	Values         []EnvPoint
+}
 
 type envData struct {
 	fadeoutVol           volume.Volume

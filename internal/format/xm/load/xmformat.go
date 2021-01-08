@@ -11,6 +11,7 @@ import (
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
+	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -47,15 +48,15 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			RelativeNoteNumber: si.RelativeNoteNumber,
 		}
 
-		ii := layout.InstrumentPCM{
+		ii := instrument.PCM{
 			Length:        int(si.Length),
-			LoopMode:      si.Flags.LoopMode(),
+			LoopMode:      xmLoopModeToLoopMode(si.Flags.LoopMode()),
 			LoopBegin:     int(si.LoopStart),
 			LoopEnd:       int(si.LoopStart + si.LoopLength),
 			NumChannels:   1,
-			BitsPerSample: 8,
+			Format:        instrument.SampleDataFormat8BitSigned,
 			VolumeFadeout: volume.Volume(inst.VolumeFadeout) / 65536,
-			VolEnv: layout.InstEnv{
+			VolEnv: instrument.InstEnv{
 				Enabled:        (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
 				LoopEnabled:    (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
 				SustainEnabled: (inst.VolFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
@@ -63,7 +64,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				LoopEnd:        int(inst.VolLoopEndPoint),
 				SustainIndex:   int(inst.VolSustainPoint),
 			},
-			PanEnv: layout.InstEnv{
+			PanEnv: instrument.InstEnv{
 				Enabled:        (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
 				LoopEnabled:    (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
 				SustainEnabled: (inst.PanFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
@@ -82,7 +83,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		}
 
 		if ii.VolEnv.Enabled {
-			ii.VolEnv.Values = make([]layout.EnvPoint, int(inst.VolPoints))
+			ii.VolEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				x2 := x1
@@ -91,7 +92,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.VolEnv.Values[i] = layout.EnvPoint{
+				ii.VolEnv.Values[i] = instrument.EnvPoint{
 					Ticks: x2 - x1,
 					Y:     volume.Volume(uint8(inst.VolEnv[i].Y)) / 64,
 				}
@@ -99,7 +100,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		}
 
 		if ii.PanEnv.Enabled {
-			ii.PanEnv.Values = make([]layout.EnvPoint, int(inst.VolPoints))
+			ii.PanEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
 				x2 := x1
@@ -108,7 +109,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.PanEnv.Values[i] = layout.EnvPoint{
+				ii.PanEnv.Values[i] = instrument.EnvPoint{
 					Ticks: x2 - x1,
 					Y:     util.PanningFromXm(uint8(inst.PanEnv[i].Y)),
 				}
@@ -124,10 +125,11 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		if si.Flags.IsStereo() {
 			ii.NumChannels = 2
 		}
+		stride := ii.NumChannels
 		if si.Flags.Is16Bit() {
-			ii.BitsPerSample = 16
+			ii.Format = instrument.SampleDataFormat16BitLESigned
+			stride *= 2
 		}
-		stride := ii.NumChannels * ii.BitsPerSample / 8
 		ii.Length /= stride
 		ii.LoopBegin /= stride
 		ii.LoopEnd /= stride
@@ -146,6 +148,19 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 	}
 
 	return instruments, noteMap, nil
+}
+
+func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) instrument.LoopMode {
+	switch mode {
+	case xmfile.SampleLoopModeDisabled:
+		return instrument.LoopModeDisabled
+	case xmfile.SampleLoopModeEnabled:
+		return instrument.LoopModeNormalType2
+	case xmfile.SampleLoopModePingPong:
+		return instrument.LoopModePingPong
+	default:
+		return instrument.LoopModeDisabled
+	}
 }
 
 func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*layout.Instrument, map[int][]note.Semitone, error) {

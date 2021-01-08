@@ -4,29 +4,16 @@ import (
 	"math"
 	"time"
 
-	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/xm/layout/channel"
+	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
-
-// InstrumentDataIntf is the interface to implementation-specific functions on an instrument
-type InstrumentDataIntf interface {
-	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
-	GetCurrentPanning(intf.NoteControl) panning.Position
-
-	Initialize(intf.NoteControl) error
-	Attack(intf.NoteControl)
-	Release(intf.NoteControl)
-	NoteCut(intf.NoteControl)
-	GetKeyOn(intf.NoteControl) bool
-	Update(intf.NoteControl, time.Duration)
-}
 
 // Instrument is the mildly-decoded XM instrument/sample header
 type Instrument struct {
@@ -34,7 +21,7 @@ type Instrument struct {
 
 	Filename           string
 	Name               string
-	Inst               InstrumentDataIntf
+	Inst               instrument.DataIntf
 	ID                 channel.SampleID
 	C2Spd              note.C2SPD
 	Volume             volume.Volume
@@ -66,8 +53,8 @@ func (inst *Instrument) GetDefaultVolume() volume.Volume {
 // IsLooped returns true if the instrument has the loop flag set
 func (inst *Instrument) IsLooped() bool {
 	switch si := inst.Inst.(type) {
-	case *InstrumentPCM:
-		return si.LoopMode != xmfile.SampleLoopModeDisabled
+	case *instrument.PCM:
+		return si.LoopMode != instrument.LoopModeDisabled
 	default:
 	}
 	return false
@@ -76,7 +63,7 @@ func (inst *Instrument) IsLooped() bool {
 // GetLoopBegin returns the loop start position
 func (inst *Instrument) GetLoopBegin() sampling.Pos {
 	switch si := inst.Inst.(type) {
-	case *InstrumentPCM:
+	case *instrument.PCM:
 		return sampling.Pos{Pos: si.LoopBegin}
 	default:
 	}
@@ -86,7 +73,7 @@ func (inst *Instrument) GetLoopBegin() sampling.Pos {
 // GetLoopEnd returns the loop end position
 func (inst *Instrument) GetLoopEnd() sampling.Pos {
 	switch si := inst.Inst.(type) {
-	case *InstrumentPCM:
+	case *instrument.PCM:
 		return sampling.Pos{Pos: si.LoopEnd}
 	default:
 	}
@@ -98,7 +85,7 @@ func (inst *Instrument) GetLength() sampling.Pos {
 	switch si := inst.Inst.(type) {
 	case *InstrumentOPL2:
 		return sampling.Pos{Pos: math.MaxInt64, Frac: 0}
-	case *InstrumentPCM:
+	case *instrument.PCM:
 		return sampling.Pos{Pos: si.Length}
 	default:
 	}

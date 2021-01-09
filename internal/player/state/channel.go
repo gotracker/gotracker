@@ -339,11 +339,16 @@ func (cs *ChannelState) SetPanEnabled(on bool) {
 	cs.PanEnabled = on
 }
 
-// SetPan sets the active panning value of the channel (0 = full left, 15 = full right)
+// SetPan sets the active panning value of the channel
 func (cs *ChannelState) SetPan(pan panning.Position) {
 	if cs.PanEnabled {
 		cs.Pan = pan
 	}
+}
+
+// GetPan gets the active panning value of the channel
+func (cs *ChannelState) GetPan() panning.Position {
+	return cs.Pan
 }
 
 // SetDoRetriggerNote sets the enablement flag for DoRetriggerNote

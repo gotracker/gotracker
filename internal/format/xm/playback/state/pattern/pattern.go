@@ -22,6 +22,7 @@ type State struct {
 	rowHasPatternDelay bool
 	patternDelay       int
 	finePatternDelay   int
+	resetPatternLoops  bool
 
 	OrderLoopEnabled bool
 	playedOrders     []intf.OrderIdx // when OrderLoopEnabled is false, this is used to detect loops
@@ -253,6 +254,13 @@ func (state *State) GetRows() intf.Rows {
 		pattern := state.Patterns[patNum]
 		return pattern.GetRows()
 	}
+}
+
+// NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
+func (state *State) NeedResetPatternLoops() bool {
+	rpl := state.resetPatternLoops
+	state.resetPatternLoops = false
+	return rpl
 }
 
 // CommitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.

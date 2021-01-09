@@ -22,6 +22,7 @@ type State struct {
 	rowHasPatternDelay bool
 	patternDelay       int
 	finePatternDelay   int
+	resetPatternLoops  bool
 
 	OrderLoopEnabled bool
 	playedOrders     []intf.OrderIdx // when OrderLoopEnabled is false, this is used to detect loops
@@ -79,6 +80,7 @@ func (state *State) WantsStop() bool {
 // setCurrentOrder sets the current order index
 func (state *State) setCurrentOrder(order intf.OrderIdx) {
 	state.currentOrder = order
+	state.resetPatternLoops = true
 }
 
 func (state *State) advanceOrder() {
@@ -109,6 +111,13 @@ func (state *State) getCurrentPattern() (*layout.Pattern, error) {
 		return nil, errors.New("invalid pattern index")
 	}
 	return &state.Patterns[patIdx], nil
+}
+
+// NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
+func (state *State) NeedResetPatternLoops() bool {
+	rpl := state.resetPatternLoops
+	state.resetPatternLoops = false
+	return rpl
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list

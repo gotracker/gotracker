@@ -19,6 +19,15 @@ func (m *Manager) processPatternRow() error {
 		return err
 	}
 
+	if m.pattern.NeedResetPatternLoops() {
+		for i := range m.channels {
+			mem := m.channels[i].GetMemory().(*channel.Memory)
+			pl := mem.GetPatternLoop()
+			pl.Count = 0
+			pl.Enabled = false
+		}
+	}
+
 	pat := m.song.GetPattern(patIdx)
 	if pat == nil {
 		return intf.ErrStopSong

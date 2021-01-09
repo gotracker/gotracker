@@ -14,7 +14,8 @@ type LinearPeriod struct {
 // Add adds the current period to a delta value then returns the resulting period
 func (p *LinearPeriod) Add(delta note.Period) note.Period {
 	period := LinearPeriod(*p)
-	if d, ok := delta.(*LinearPeriod); ok {
+	dper := ToLinearPeriod(delta)
+	if d, ok := dper.(*LinearPeriod); ok {
 		period.Semitone += d.Semitone
 		period.Finetune += d.Finetune
 		// ignore c2spd from delta

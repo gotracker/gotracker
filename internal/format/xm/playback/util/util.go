@@ -73,20 +73,8 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlide
 		return c2spd
 	}
 
-	o := 5
-	st := note.Semitone(o * 12) // C-5
-	stShift := int8(finetune / 64)
-	if stShift >= 0 {
-		st += note.Semitone(stShift)
-	} else {
-		st -= note.Semitone(-stShift)
-	}
-	period0 := CalcSemitonePeriod(st, 0, c2spd, linearFreqSlides)
-	period1 := CalcSemitonePeriod(st+1, 0, c2spd, linearFreqSlides)
-	fFt := float64(finetune) / 64
-	iFt := math.Trunc(fFt)
-	f := fFt - iFt
-	period := period0.Lerp(f, period1)
+	nft := (5*12)*64 + int(finetune)
+	period := CalcSemitonePeriod(note.Semitone(nft/64), note.Finetune(nft%64), c2spd, linearFreqSlides)
 	return note.C2SPD(period.GetFrequency())
 }
 

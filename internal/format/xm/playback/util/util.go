@@ -151,3 +151,24 @@ func CalcLinearPeriod(n note.Semitone, ft note.Finetune, c2spd note.C2SPD) note.
 	period := AmigaPeriod(float64(semitonePeriodTable[0]) / linFreq)
 	return &period
 }
+
+// ToLinearPeriod returns the linear frequency period for a given period
+func ToLinearPeriod(p note.Period) note.Period {
+	switch pp := p.(type) {
+	case *LinearPeriod:
+		return pp
+	case *AmigaPeriod:
+		c5 := note.NewSemitone(note.KeyC, 5)
+		freq := pp.GetFrequency()
+		for f := -3840; f < 3840; f++ {
+			lp := LinearPeriod{
+				Semitone: c5,
+				Finetune: note.Finetune(f),
+			}
+			if lp.GetFrequency() >= freq {
+				return &lp
+			}
+		}
+	}
+	return nil
+}

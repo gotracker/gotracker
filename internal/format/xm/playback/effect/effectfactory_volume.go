@@ -27,10 +27,10 @@ func volumeEffectFactory(mi intf.Memory, v uint8) intf.Effect {
 		return Vibrato(vs<<4 | (v & 0x0f))
 	case v >= 0xC0 && v <= 0xCf: // set panning
 		return SetCoarsePanPosition(v & 0x0f)
-	//case v >= 0xD0 && v <= 0xDf: // panning slide left
-
-	//case v >= 0xE0 && v <= 0xEf: // panning slide right
-
+	case v >= 0xD0 && v <= 0xDf: // panning slide left
+		return PanSlide(v & 0x0f)
+	case v >= 0xE0 && v <= 0xEf: // panning slide right
+		return PanSlide((v & 0x0f) << 4)
 	case v >= 0xF0 && v <= 0xFf: // tone portamento
 		return PortaToNote(v & 0x0f)
 	}

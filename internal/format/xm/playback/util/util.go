@@ -127,6 +127,10 @@ func PanningFromXm(pos uint8) panning.Position {
 	return panning.MakeStereoPosition(float32(pos), 0, 0xFF)
 }
 
+func PanningToXm(pan panning.Position) uint8 {
+	return uint8(panning.FromStereoPosition(pan, 0, 0xFF))
+}
+
 // NoteFromXmNote converts an xm file note into a player note
 func NoteFromXmNote(xn uint8) note.Note {
 	switch {

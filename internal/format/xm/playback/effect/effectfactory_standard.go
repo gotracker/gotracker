@@ -52,7 +52,8 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 
 	//case 0x15: // Set envelope position
 
-	//case 0x19: // Panning slide
+	case 0x19: // Panning slide
+		return PanSlide(cd.EffectParameter)
 
 	case 0x1B: // Multi retrig note
 		return RetrigVolumeSlide(cd.EffectParameter)

@@ -53,8 +53,13 @@ func (p *LinearPeriod) Lerp(t float64, rhs note.Period) note.Period {
 	}
 
 	period := *p
-	period.Semitone += note.Semitone(t * (float64(right.Semitone) - float64(period.Semitone)))
-	period.Finetune += note.Finetune(t * (float64(right.Finetune) - float64(period.Finetune)))
+
+	lnft := float64(period.Semitone)*64 + float64(period.Finetune)
+	rnft := float64(right.Semitone)*64 + float64(right.Finetune)
+
+	vnft := int(lnft + (t * (rnft - lnft)))
+	period.Semitone = note.Semitone(vnft / 64)
+	period.Finetune = note.Finetune(vnft % 64)
 	return &period
 }
 

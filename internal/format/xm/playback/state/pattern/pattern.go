@@ -78,8 +78,12 @@ func (state *State) WantsStop() bool {
 
 // setCurrentOrder sets the current order index
 func (state *State) setCurrentOrder(order intf.OrderIdx) {
-	prevOrder := state.currentOrder
 	state.currentOrder = order
+}
+
+func (state *State) advanceOrder() {
+	prevOrder := state.currentOrder
+	state.setCurrentOrder(state.currentOrder + 1)
 	if !state.OrderLoopEnabled && prevOrder != state.currentOrder {
 		state.playedOrders = append(state.playedOrders, prevOrder)
 	}
@@ -165,7 +169,7 @@ func (state *State) setCurrentRow(row intf.RowIdx) {
 
 // nextOrder travels to the next pattern in the order list
 func (state *State) nextOrder(resetRow ...bool) {
-	state.setCurrentOrder(state.currentOrder + 1)
+	state.advanceOrder()
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
@@ -294,7 +298,7 @@ func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
 			}
 		}
 		if txn.rowIdxSet {
-			if !txn.orderIdxSet && !txn.rowIdxAllowBacktrack && state.currentRow > txn.rowIdx {
+			if !txn.orderIdxSet && !txn.rowIdxAllowBacktrack {
 				state.nextOrder()
 			}
 			state.setCurrentRow(txn.rowIdx)

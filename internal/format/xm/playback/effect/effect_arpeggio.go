@@ -27,8 +27,8 @@ func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 		return
 	}
 
-	x := int8(xy>>4) - 8
-	y := int8(xy&0x0f) - 8
+	x := int8(xy >> 4)
+	y := int8(xy & 0x0f)
 	doArpeggio(cs, currentTick, x, y)
 }
 

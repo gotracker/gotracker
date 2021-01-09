@@ -55,7 +55,18 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) 
 		return nil, err
 	}
 
-	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
+	if premix != nil {
+		if len(premix.Data) == 0 {
+			cd := mixing.ChannelData{
+				mixing.Data{
+					Data:       nil,
+					Pan:        panning.CenterAhead,
+					Volume:     volume.Volume(0),
+					SamplesLen: premix.SamplesLen,
+				},
+			}
+			premix.Data = append(premix.Data, cd)
+		}
 		return premix, nil
 	}
 

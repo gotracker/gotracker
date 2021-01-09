@@ -26,7 +26,7 @@ func (e RowJump) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	r := uint8(e)
 	rowIdx := intf.RowIdx((r >> 4) * 10)
-	rowIdx |= intf.RowIdx(r & 0xf)
+	rowIdx += intf.RowIdx(r & 0xf)
 	p.SetNextRow(rowIdx)
 }
 

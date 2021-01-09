@@ -22,7 +22,7 @@ func (e FineVolumeSlideDown) Start(cs intf.Channel, p intf.Playback) {
 	xy := mem.FineVolumeSlideDown(uint8(e))
 	y := uint8(xy & 0x0F)
 
-	doVolSlide(cs, float32(y), 1.0)
+	doVolSlide(cs, -float32(y), 1.0)
 }
 
 // Tick is called on every tick

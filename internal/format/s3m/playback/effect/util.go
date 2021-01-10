@@ -1,9 +1,6 @@
 package effect
 
 import (
-	"math"
-	"math/rand"
-
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"gotracker/internal/format/s3m/layout/channel"
@@ -34,8 +31,8 @@ func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
 	}
 
 	delta := int(amount * multiplier)
-	d := util.AmigaPeriod(-delta)
-	period = period.Add(&d)
+	d := note.PeriodDelta(-delta)
+	period = period.Add(d)
 	cs.SetPeriod(period)
 }
 
@@ -46,9 +43,9 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 	}
 
 	delta := int(amount * multiplier)
-	d := util.AmigaPeriod(-delta)
-	period = period.Add(&d)
-	if period.Compare(target) == 1 {
+	d := note.PeriodDelta(-delta)
+	period = period.Add(d)
+	if note.ComparePeriods(period, target) == -1 {
 		period = target
 	}
 	cs.SetPeriod(period)
@@ -61,8 +58,8 @@ func doPortaDown(cs intf.Channel, amount float32, multiplier float32) {
 	}
 
 	delta := int(amount * multiplier)
-	d := util.AmigaPeriod(delta)
-	period = period.Add(&d)
+	d := note.PeriodDelta(delta)
+	period = period.Add(d)
 	cs.SetPeriod(period)
 }
 
@@ -73,9 +70,9 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 	}
 
 	delta := int(amount * multiplier)
-	d := util.AmigaPeriod(delta)
-	period = period.Add(&d)
-	if period.Compare(target) == -1 {
+	d := note.PeriodDelta(delta)
+	period = period.Add(d)
+	if note.ComparePeriods(period, target) == 1 {
 		period = target
 	}
 	cs.SetPeriod(period)
@@ -83,8 +80,8 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {
 	mem := cs.GetMemory().(*channel.Memory)
-	delta := util.AmigaPeriod(calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator()))
-	cs.SetVibratoDelta(&delta)
+	delta := note.PeriodDelta(calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator()))
+	cs.SetVibratoDelta(delta)
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
@@ -143,26 +140,7 @@ func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 }
 
 func calculateWaveTable(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32, o *channel.Oscillator) float32 {
-	var vib float32
-	switch o.Table {
-	case channel.WaveTableSelectSine:
-		vib = float32(math.Sin(float64(o.Pos) * math.Pi / 32.0))
-	case channel.WaveTableSelectSawtooth:
-		vib = (32.0 - float32(o.Pos&64)) / 32.0
-	case channel.WaveTableSelectSquare:
-		v := float32(math.Sin(float64(o.Pos) * math.Pi / 32.0))
-		if v > 0 {
-			vib = 1.0
-		} else {
-			vib = -1.0
-		}
-	case channel.WaveTableSelectRandom:
-		vib = rand.Float32()*2.0 - 1.0
-	}
-	delta := float32(vib) * float32(depth) * multiplier
-	o.Pos += int8(speed)
-	if o.Pos > 31 {
-		o.Pos -= 64
-	}
+	delta := o.GetWave(float32(depth) * multiplier)
+	o.Advance(int(speed))
 	return delta
 }

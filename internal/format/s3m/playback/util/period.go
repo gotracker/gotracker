@@ -18,11 +18,9 @@ func (p *AmigaPeriod) AddInteger(delta int) AmigaPeriod {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p *AmigaPeriod) Add(delta note.Period) note.Period {
+func (p *AmigaPeriod) Add(delta note.PeriodDelta) note.Period {
 	period := AmigaPeriod(*p)
-	if d, ok := delta.(*AmigaPeriod); ok {
-		period += *d
-	}
+	period += AmigaPeriod(delta)
 	// clamp to 64 as minimum
 	if period < 64 {
 		period = 64
@@ -30,25 +28,18 @@ func (p *AmigaPeriod) Add(delta note.Period) note.Period {
 	return &period
 }
 
-// ToAmigaPeriod returns an Amiga-style period
-func (p *AmigaPeriod) ToAmigaPeriod() AmigaPeriod {
-	return *p
-}
-
 // Compare returns:
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
 func (p *AmigaPeriod) Compare(rhs note.Period) int {
-	right := AmigaPeriod(0)
-	if r, ok := rhs.(*AmigaPeriod); ok {
-		right = *r
-	}
+	lf := p.GetFrequency()
+	rf := rhs.GetFrequency()
 
 	switch {
-	case *p > right:
+	case lf > rf:
 		return -1
-	case *p < right:
+	case lf < rf:
 		return 1
 	default:
 		return 0
@@ -63,7 +54,8 @@ func (p *AmigaPeriod) Lerp(t float64, rhs note.Period) note.Period {
 	}
 
 	period := *p
-	period += AmigaPeriod(t * (float64(right) - float64(period)))
+	delta := note.PeriodDelta(t * (float64(right) - float64(period)))
+	period.Add(delta)
 	return &period
 }
 
@@ -78,5 +70,5 @@ func (p *AmigaPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 
 // GetFrequency returns the frequency defined by the period
 func (p *AmigaPeriod) GetFrequency() float64 {
-	return float64(S3MBaseClock / float32(*p))
+	return p.GetSamplerAdd(float64(S3MBaseClock))
 }

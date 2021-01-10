@@ -1,6 +1,7 @@
 package instrument
 
 import (
+	"math"
 	"time"
 
 	"github.com/gotracker/gomixing/panning"
@@ -21,6 +22,7 @@ type PCM struct {
 	LoopEnd       int
 	NumChannels   int
 	Format        SampleDataFormat
+	Panning       panning.Position
 	VolumeFadeout volume.Volume
 	VolEnv        InstEnv
 	PanEnv        InstEnv
@@ -39,12 +41,39 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 
 // GetCurrentPanning returns the panning envelope position
 func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
+	x := inst.Panning
 	if !inst.PanEnv.Enabled {
-		return panning.CenterAhead
+		return x
 	}
 
 	ed := ioc.GetData().(*envData)
-	return ed.panEnvValue
+	y := ed.panEnvValue
+
+	// panning envelope value `y` modifies instrument panning value `x`
+	// such that `x` is primary component and `y` is secondary
+	// TODO: JBC - move this calculation function into gomixing lib
+
+	xa := float64(x.Angle)
+	ya := float64(y.Angle)
+
+	const p2 = math.Pi / 2
+	const p4 = math.Pi / 4
+	const p8 = math.Pi / 8
+	fa := xa + (ya-p8)*(p4-math.Abs(xa-p4))/p8
+	if fa > p2 {
+		fa = p2
+	} else if fa < 0 {
+		fa = 0
+	}
+
+	fd := math.Sqrt(float64(x.Distance * y.Distance))
+
+	finalPan := panning.Position{
+		Angle:    float32(fa),
+		Distance: float32(fd),
+	}
+
+	return finalPan
 }
 
 func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {

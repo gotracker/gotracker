@@ -310,7 +310,6 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMRight, i>>1)
 			f.Panning[i] = s3mfile.DefaultPanningRight
 		}
-
 	}
 
 	f.Patterns = make([]s3mfile.PackedPattern, f.Head.PatternCount)

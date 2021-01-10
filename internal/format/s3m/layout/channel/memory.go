@@ -10,6 +10,8 @@ type Memory struct {
 	lastNonZero   uint8
 	patternLoop   PatternLoop
 
+	VolSlideEveryFrame bool
+
 	tremorMem         Tremor
 	vibratoOscillator Oscillator
 	tremoloOscillator Oscillator
@@ -72,10 +74,6 @@ func (m *Memory) TremoloOscillator() *Oscillator {
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	if m.vibratoOscillator.Pos != 0 {
-		a := 0
-		a++
-	}
 	m.vibratoOscillator.Pos = 0
 	m.tremoloOscillator.Pos = 0
 }

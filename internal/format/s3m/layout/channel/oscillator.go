@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"math"
 	"math/rand"
 
 	formatutil "gotracker/internal/format/internal/util"
@@ -23,7 +24,7 @@ const (
 // Oscillator is an oscillator
 type Oscillator struct {
 	Table WaveTableSelect
-	Pos   int8
+	Pos   uint8
 }
 
 // GetWave returns the wave amplitude for the current position
@@ -36,11 +37,7 @@ func (o *Oscillator) GetWave(depth float32) float32 {
 		vib = (32.0 - float32(o.Pos&0x3f)) / 32.0
 	case WaveTableSelectSquare:
 		v := formatutil.GetProtrackerSine(int(o.Pos))
-		if v > 0 {
-			vib = 1.0
-		} else {
-			vib = -1.0
-		}
+		vib = float32(math.Copysign(1, float64(v)))
 	case WaveTableSelectRandom:
 		vib = formatutil.GetProtrackerSine(rand.Int() & 0x3f)
 	}
@@ -50,10 +47,7 @@ func (o *Oscillator) GetWave(depth float32) float32 {
 
 // Advance advances the oscillator position by the specified amount
 func (o *Oscillator) Advance(speed int) {
-	o.Pos += int8(speed)
-	for o.Pos < 0 {
-		o.Pos += 64
-	}
+	o.Pos += uint8(speed)
 	for o.Pos > 63 {
 		o.Pos -= 64
 	}

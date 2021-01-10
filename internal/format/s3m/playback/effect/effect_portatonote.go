@@ -30,7 +30,8 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.PortaToNote(uint8(e))
 
-	period := cs.GetPeriod()
+	// vibrato modifies current period for portamento
+	period := cs.GetPeriod().Add(cs.GetVibratoDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if note.ComparePeriods(period, ptp) == 1 {

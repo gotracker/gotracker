@@ -20,8 +20,8 @@ func (m *Manager) processPatternRow() error {
 	}
 
 	if m.pattern.NeedResetPatternLoops() {
-		for i := range m.channels {
-			mem := m.channels[i].GetMemory().(*channel.Memory)
+		for _, cs := range m.channels {
+			mem := cs.GetMemory().(*channel.Memory)
 			pl := mem.GetPatternLoop()
 			pl.Count = 0
 			pl.Enabled = false
@@ -31,6 +31,22 @@ func (m *Manager) processPatternRow() error {
 	pat := m.song.GetPattern(patIdx)
 	if pat == nil {
 		return intf.ErrStopSong
+	}
+
+	withinPatternLoop := false
+	for _, cs := range m.channels {
+		mem := cs.GetMemory().(*channel.Memory)
+		pl := mem.GetPatternLoop()
+		if pl.Enabled {
+			withinPatternLoop = true
+			break
+		}
+	}
+
+	if !withinPatternLoop {
+		if err := m.pattern.Observe(); err != nil {
+			return err
+		}
 	}
 
 	rows := pat.GetRows()

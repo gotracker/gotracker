@@ -185,14 +185,14 @@ func (m *Manager) DisableFeatures(features []feature.Feature) {
 	for _, f := range features {
 		switch f {
 		case feature.OrderLoop:
-			m.pattern.OrderLoopEnabled = false
+			m.pattern.SongLoopEnabled = false
 		}
 	}
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop
 func (m *Manager) CanOrderLoop() bool {
-	return m.pattern.OrderLoopEnabled
+	return m.pattern.SongLoopEnabled
 }
 
 // GetSongData gets the song data object

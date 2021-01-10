@@ -140,7 +140,7 @@ func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 }
 
 func calculateWaveTable(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32, o *channel.Oscillator) float32 {
-	delta := o.GetWave(float32(depth) * multiplier)
+	delta := o.GetWave(float32(depth)) * multiplier
 	o.Advance(int(speed))
 	return delta
 }

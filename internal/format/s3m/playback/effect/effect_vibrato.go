@@ -24,11 +24,13 @@ func (e Vibrato) Start(cs intf.Channel, p intf.Playback) {
 func (e Vibrato) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.Vibrato(uint8(e))
-	// NOTE: JBC - S3M updates on tick 0, but MOD does not.
+	// NOTE: JBC - S3M dos not update on tick 0, but MOD does.
 	// Maybe need to add a flag for converted MOD backward compatibility?
-	x := xy >> 4
-	y := xy & 0x0f
-	doVibrato(cs, currentTick, x, y, 4)
+	if currentTick == 0 {
+		x := xy >> 4
+		y := xy & 0x0f
+		doVibrato(cs, currentTick, x, y, 4)
+	}
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called

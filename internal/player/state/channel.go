@@ -253,6 +253,11 @@ func (cs *ChannelState) SetVibratoDelta(delta note.PeriodDelta) {
 	cs.VibratoDelta = delta
 }
 
+// GetVibratoDelta gets the vibrato (ephemeral) delta sampler period
+func (cs *ChannelState) GetVibratoDelta() note.PeriodDelta {
+	return cs.VibratoDelta
+}
+
 // SetVolumeActive enables or disables the sample of the instrument
 func (cs *ChannelState) SetVolumeActive(on bool) {
 	cs.volumeActive = on

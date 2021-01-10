@@ -3,6 +3,7 @@ package pattern
 import (
 	"errors"
 
+	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/player/intf"
 )
@@ -24,8 +25,8 @@ type State struct {
 	finePatternDelay   int
 	resetPatternLoops  bool
 
-	OrderLoopEnabled bool
-	playedOrders     []intf.OrderIdx // when OrderLoopEnabled is false, this is used to detect loops
+	SongLoopEnabled bool
+	loopDetect      formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 
 	Patterns []layout.Pattern
 	Orders   []intf.PatternIdx
@@ -84,11 +85,7 @@ func (state *State) setCurrentOrder(order intf.OrderIdx) {
 }
 
 func (state *State) advanceOrder() {
-	prevOrder := state.currentOrder
 	state.setCurrentOrder(state.currentOrder + 1)
-	if !state.OrderLoopEnabled && prevOrder != state.currentOrder {
-		state.playedOrders = append(state.playedOrders, prevOrder)
-	}
 }
 
 // GetCurrentOrder returns the current order
@@ -132,7 +129,7 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 	for loopCount := 0; loopCount < ordLen; loopCount++ {
 		ordIdx := int(state.GetCurrentOrder())
 		if ordIdx >= ordLen {
-			if !state.OrderLoopEnabled {
+			if !state.SongLoopEnabled {
 				return 0, intf.ErrStopSong
 			}
 			state.setCurrentOrder(0)
@@ -150,14 +147,6 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 			continue // this is supposed to be a song break
 		}
 
-		if !state.OrderLoopEnabled {
-			for _, o := range state.playedOrders {
-				if o == intf.OrderIdx(ordIdx) {
-					return 0, intf.ErrStopSong
-				}
-			}
-		}
-
 		return patIdx, nil
 	}
 	return 0, errors.New("infinite loop detected in order list")
@@ -166,6 +155,14 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 // GetCurrentRow returns the current row
 func (state *State) GetCurrentRow() intf.RowIdx {
 	return state.currentRow
+}
+
+// Observe will attempt to detect a song loop
+func (state *State) Observe() error {
+	if !state.SongLoopEnabled && state.loopDetect.Observe(state.currentOrder, state.currentRow) {
+		return intf.ErrStopSong
+	}
+	return nil
 }
 
 // setCurrentRow sets the current row
@@ -191,8 +188,7 @@ func (state *State) nextOrder(resetRow ...bool) {
 // Reset resets a pattern state back to zeroes
 func (state *State) Reset() {
 	*state = State{
-		OrderLoopEnabled: true,
-		playedOrders:     make([]intf.OrderIdx, 0),
+		SongLoopEnabled: true,
 	}
 }
 

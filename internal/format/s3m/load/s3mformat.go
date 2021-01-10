@@ -49,7 +49,7 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 	return &sample, nil
 }
 
-func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader) (*layout.Instrument, error) {
+func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool) (*layout.Instrument, error) {
 	sample := layout.Instrument{
 		Filename: scrs.Head.GetFilename(),
 		Name:     si.GetSampleName(),
@@ -69,6 +69,9 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		Format:      instrument.SampleDataFormat8BitUnsigned,
 		Panning:     panning.CenterAhead,
 	}
+	if signedSamples {
+		idata.Format = instrument.SampleDataFormat8BitSigned
+	}
 	if si.Flags.IsLooped() {
 		idata.LoopMode = instrument.LoopModeNormalType1
 	}
@@ -76,7 +79,11 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		idata.NumChannels = 2
 	}
 	if si.Flags.Is16BitSample() {
-		idata.Format = instrument.SampleDataFormat16BitLEUnsigned
+		if signedSamples {
+			idata.Format = instrument.SampleDataFormat16BitLESigned
+		} else {
+			idata.Format = instrument.SampleDataFormat16BitLEUnsigned
+		}
 	}
 
 	idata.Sample = scrs.Sample
@@ -130,7 +137,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 	return &inst, nil
 }
 
-func convertSCRSFullToInstrument(s *s3mfile.SCRSFull) (*layout.Instrument, error) {
+func convertSCRSFullToInstrument(s *s3mfile.SCRSFull, signedSamples bool) (*layout.Instrument, error) {
 	if s == nil {
 		return nil, errors.New("scrs is nil")
 	}
@@ -141,7 +148,7 @@ func convertSCRSFullToInstrument(s *s3mfile.SCRSFull) (*layout.Instrument, error
 	case *s3mfile.SCRSNoneHeader:
 		return scrsNoneToInstrument(s, si)
 	case *s3mfile.SCRSDigiplayerHeader:
-		return scrsDp30ToInstrument(s, si)
+		return scrsDp30ToInstrument(s, si, signedSamples)
 	case *s3mfile.SCRSAdlibHeader:
 		return scrsOpl2ToInstrument(s, si)
 	default:
@@ -227,13 +234,30 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		OrderList:   make([]intf.PatternIdx, len(f.OrderList)),
 	}
 
+	signedSamples := false
+	if f.Head.FileFormatInformation == 1 {
+		signedSamples = true
+	}
+
+	//st2Vibrato := (f.Head.Flags & 0x0001) != 0
+	//st2Tempo := (f.Head.Flags & 0x0002) != 0
+	//amigaSlides := (f.Head.Flags & 0x0004) != 0
+	//zeroVolOpt := (f.Head.Flags & 0x0008) != 0
+	//amigaLimits := (f.Head.Flags & 0x0010) != 0
+	//sbFilterEnable := (f.Head.Flags & 0x0020) != 0
+	st300volSlides := (f.Head.Flags & 0x0040) != 0
+	if f.Head.TrackerVersion == 0x1300 {
+		st300volSlides = true
+	}
+	//ptrSpecialIsValid := (f.Head.Flags & 0x0080) != 0
+
 	for i, o := range f.OrderList {
 		song.OrderList[i] = intf.PatternIdx(o)
 	}
 
 	song.Instruments = make([]layout.Instrument, len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
-		sample, err := convertSCRSFullToInstrument(&scrs)
+		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples)
 		if err != nil {
 			return nil, err
 		}
@@ -266,6 +290,9 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 			OutputChannelNum: int(ch.GetChannel() & 0x07),
 			InitialVolume:    util.DefaultVolume,
 			InitialPanning:   util.DefaultPanning,
+			Memory: channel.Memory{
+				VolSlideEveryFrame: st300volSlides,
+			},
 		}
 
 		pf := f.Panning[chNum]

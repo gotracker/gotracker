@@ -27,13 +27,11 @@ func (e VolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	y := uint8(xy & 0x0F)
 
 	if x == 0 { // decrease every tick
-		if y == 0x0F {
-			doVolSlide(cs, -float32(y), 1.0)
-		} else if currentTick != 0 {
+		if mem.VolSlideEveryFrame || currentTick != 0 {
 			doVolSlide(cs, -float32(y), 1.0)
 		}
 	} else if y == 0 { // increase every tick
-		if currentTick != 0 {
+		if mem.VolSlideEveryFrame || currentTick != 0 {
 			doVolSlide(cs, float32(x), 1.0)
 		}
 	} else if x == 0x0F { // finely decrease on the first tick

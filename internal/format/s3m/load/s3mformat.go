@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
 	formatutil "gotracker/internal/format/internal/util"
@@ -66,6 +67,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		LoopEnd:     int(si.LoopEnd.Lo),
 		NumChannels: 1,
 		Format:      instrument.SampleDataFormat8BitUnsigned,
+		Panning:     panning.CenterAhead,
 	}
 	if si.Flags.IsLooped() {
 		idata.LoopMode = instrument.LoopModeNormalType1

@@ -56,6 +56,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitSigned,
 			VolumeFadeout: volume.Volume(inst.VolumeFadeout) / 65536,
+			Panning:       util.PanningFromXm(si.Panning),
 			VolEnv: instrument.InstEnv{
 				Enabled:        (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
 				LoopEnabled:    (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
@@ -109,9 +110,13 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
+				// XM stores pan envelope values in 0..64
+				// So we have to do some gymnastics to remap the values
+				panEnv01 := float64(uint8(inst.PanEnv[i].Y)) / 64
+				panEnvVal := uint8(panEnv01 * 255)
 				ii.PanEnv.Values[i] = instrument.EnvPoint{
 					Ticks: x2 - x1,
-					Y:     util.PanningFromXm(uint8(inst.PanEnv[i].Y)),
+					Y:     util.PanningFromXm(panEnvVal),
 				}
 			}
 		}

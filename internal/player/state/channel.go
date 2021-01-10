@@ -39,7 +39,7 @@ type ChannelState struct {
 	PortaTargetPeriod note.Period
 	NotePlayTick      int
 	RetriggerCount    uint8
-	VibratoDelta      note.Period
+	VibratoDelta      note.PeriodDelta
 	Memory            intf.Memory
 	TrackData         intf.ChannelData
 	freezePlayback    bool
@@ -68,7 +68,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0
-	cs.VibratoDelta = nil
+	cs.VibratoDelta = 0
 
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
@@ -249,7 +249,7 @@ func (cs *ChannelState) SetTargetPeriod(period note.Period) {
 }
 
 // SetVibratoDelta sets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState) SetVibratoDelta(delta note.Period) {
+func (cs *ChannelState) SetVibratoDelta(delta note.PeriodDelta) {
 	cs.VibratoDelta = delta
 }
 

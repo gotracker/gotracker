@@ -6,19 +6,19 @@ import (
 
 // LinearPeriod is a linear period, based on semitone and finetune values
 type LinearPeriod struct {
-	Semitone note.Semitone
 	Finetune note.Finetune
 	C2Spd    note.C2SPD
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p *LinearPeriod) Add(delta note.Period) note.Period {
-	period := LinearPeriod(*p)
-	dper := ToLinearPeriod(delta)
-	if d, ok := dper.(*LinearPeriod); ok {
-		period.Semitone += d.Semitone
-		period.Finetune += d.Finetune
-		// ignore c2spd from delta
+func (p *LinearPeriod) Add(delta note.PeriodDelta) note.Period {
+	period := *p
+	// 0 means "not playing", so keep it that way
+	if period.Finetune > 0 {
+		period.Finetune += note.Finetune(delta)
+		if period.Finetune < 1 {
+			period.Finetune = 1
+		}
 	}
 	return &period
 }
@@ -28,45 +28,36 @@ func (p *LinearPeriod) Add(delta note.Period) note.Period {
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
 func (p *LinearPeriod) Compare(rhs note.Period) int {
-	right := LinearPeriod{
-		Semitone: 0,
-		Finetune: 0,
-		C2Spd:    0,
-	}
-	if r, ok := rhs.(*LinearPeriod); ok {
-		right = *r
-	}
+	lf := p.GetFrequency()
+	rf := rhs.GetFrequency()
 
-	// convert to amiga periods
-	lp := CalcLinearPeriod(p.Semitone, p.Finetune, p.C2Spd)
-	rp := CalcLinearPeriod(right.Semitone, right.Finetune, right.C2Spd)
-
-	return lp.Compare(rp)
+	switch {
+	case lf > rf:
+		return -1
+	case lf < rf:
+		return 1
+	default:
+		return 0
+	}
 }
 
 // Lerp linear-interpolates the current period with the `rhs` period
 func (p *LinearPeriod) Lerp(t float64, rhs note.Period) note.Period {
-	var right *LinearPeriod
-	if r, ok := rhs.(*LinearPeriod); ok {
-		right = r
-	} else {
-		return p
-	}
+	right := ToLinearPeriod(rhs)
 
 	period := *p
 
-	lnft := float64(period.Semitone)*64 + float64(period.Finetune)
-	rnft := float64(right.Semitone)*64 + float64(right.Finetune)
+	lnft := float64(period.Finetune)
+	rnft := float64(right.Finetune)
 
-	vnft := int(lnft + (t * (rnft - lnft)))
-	period.Semitone = note.Semitone(vnft / 64)
-	period.Finetune = note.Finetune(vnft % 64)
+	delta := note.PeriodDelta(t * (rnft - lnft))
+	period.Add(delta)
 	return &period
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
 func (p *LinearPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
-	period := float64(*(CalcLinearPeriod(p.Semitone, p.Finetune, DefaultC2Spd).(*AmigaPeriod)))
+	period := float64(ToAmigaPeriod(p.Finetune, DefaultC2Spd))
 	if period == 0 {
 		return 0
 	}
@@ -75,6 +66,6 @@ func (p *LinearPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 
 // GetFrequency returns the frequency defined by the period
 func (p *LinearPeriod) GetFrequency() float64 {
-	am := CalcLinearPeriod(p.Semitone, p.Finetune, p.C2Spd)
+	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
 }

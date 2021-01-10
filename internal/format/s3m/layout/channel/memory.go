@@ -72,6 +72,10 @@ func (m *Memory) TremoloOscillator() *Oscillator {
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
+	if m.vibratoOscillator.Pos != 0 {
+		a := 0
+		a++
+	}
 	m.vibratoOscillator.Pos = 0
 	m.tremoloOscillator.Pos = 0
 }

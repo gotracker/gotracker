@@ -27,10 +27,6 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 }
 
 func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int, lastTick bool) {
-	if currentTick == 0 {
-		mem := cs.GetMemory().(*channel.Memory)
-		mem.Retrigger()
-	}
 	// pre-effect
 	m.doNoteVolCalcs(cs)
 	if cs.ActiveEffect != nil {
@@ -71,6 +67,8 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.LastGlobalVolume = m.GetGlobalVolume()
 			cs.Instrument.Attack()
 			keyOff = false
+			mem := cs.GetMemory().(*channel.Memory)
+			mem.Retrigger()
 		}
 	}
 

@@ -3,7 +3,10 @@ package channel
 // Memory is the storage object for custom effect/command values
 type Memory struct {
 	portaToNote   uint8
-	vibrato       uint8
+	vibratoSpeed  uint8
+	vibratoDepth  uint8
+	tremoloSpeed  uint8
+	tremoloDepth  uint8
 	sampleOffset  uint8
 	tempoDecrease uint8
 	tempoIncrease uint8
@@ -33,8 +36,19 @@ func (m *Memory) PortaToNote(input uint8) uint8 {
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Vibrato(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.vibrato)
+func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
+	// vibrato is unusual, because each nibble is treated uniquely
+	vx := m.getEffectMemory(input>>4, &m.vibratoSpeed)
+	vy := m.getEffectMemory(input&0x0f, &m.vibratoDepth)
+	return vx, vy
+}
+
+// Tremolo gets or sets the most recent non-zero value (or input) for Vibrato
+func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
+	// tremolo is unusual, because each nibble is treated uniquely
+	vx := m.getEffectMemory(input>>4, &m.tremoloSpeed)
+	vy := m.getEffectMemory(input&0x0f, &m.tremoloDepth)
+	return vx, vy
 }
 
 // SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
@@ -74,8 +88,9 @@ func (m *Memory) TremoloOscillator() *Oscillator {
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	m.vibratoOscillator.Pos = 0
-	m.tremoloOscillator.Pos = 0
+	for _, osc := range []*Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
+		osc.Reset()
+	}
 }
 
 // GetPatternLoop returns the pattern loop object from the memory

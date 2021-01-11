@@ -142,10 +142,7 @@ func (m *Memory) TremoloOscillator() *Oscillator {
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
 	for _, osc := range []*Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
-		switch osc.Table {
-		case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
-			osc.Pos = 0
-		}
+		osc.Reset()
 	}
 }
 

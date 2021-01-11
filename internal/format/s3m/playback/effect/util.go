@@ -80,8 +80,8 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 
 func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {
 	mem := cs.GetMemory().(*channel.Memory)
-	delta := note.PeriodDelta(calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator()))
-	cs.SetVibratoDelta(delta)
+	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
+	cs.SetVibratoDelta(note.PeriodDelta(delta))
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {

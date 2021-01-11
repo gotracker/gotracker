@@ -66,3 +66,21 @@ func (o *Oscillator) Advance(speed int) {
 		o.Pos -= 64
 	}
 }
+
+// Reset resets the position of the oscillator
+func (o *Oscillator) Reset(hard ...bool) {
+	hardReset := false
+	if len(hard) > 0 {
+		hardReset = hard[1]
+	}
+
+	doReset := hardReset
+	switch o.Table {
+	case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
+		doReset = true
+	}
+
+	if doReset {
+		o.Pos = 0
+	}
+}

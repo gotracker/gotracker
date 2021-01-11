@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"math"
 	"math/rand"
 
 	formatutil "gotracker/internal/format/internal/util"
@@ -11,14 +10,22 @@ import (
 type WaveTableSelect uint8
 
 const (
-	// WaveTableSelectSine is for a sine wave
-	WaveTableSelectSine = WaveTableSelect(iota)
-	// WaveTableSelectSawtooth is for a sawtooth wave
-	WaveTableSelectSawtooth
-	// WaveTableSelectSquare is for a square wave
-	WaveTableSelectSquare
-	// WaveTableSelectRandom is for random data wave
-	WaveTableSelectRandom
+	// WaveTableSelectSineRetrigger is for a sine wave that retriggers when a new note is played
+	WaveTableSelectSineRetrigger = WaveTableSelect(iota)
+	// WaveTableSelectSawtoothRetrigger is for a sawtooth wave that retriggers when a new note is played
+	WaveTableSelectSawtoothRetrigger
+	// WaveTableSelectSquareRetrigger is for a square wave that retriggers when a new note is played
+	WaveTableSelectSquareRetrigger
+	// WaveTableSelectRandomRetrigger is for random data wave that retriggers when a new note is played
+	WaveTableSelectRandomRetrigger
+	// WaveTableSelectSineContinue is for a sine wave that does not retrigger when a new note is played
+	WaveTableSelectSineContinue
+	// WaveTableSelectSawtoothContinue is for a sawtooth wave that does not retrigger when a new note is played
+	WaveTableSelectSawtoothContinue
+	// WaveTableSelectSquareContinue is for a square wave that does not retrigger when a new note is played
+	WaveTableSelectSquareContinue
+	// WaveTableSelectRandomContinue is for random data wave that does not retrigger when a new note is played
+	WaveTableSelectRandomContinue
 )
 
 // Oscillator is an oscillator
@@ -31,14 +38,18 @@ type Oscillator struct {
 func (o *Oscillator) GetWave(depth float32) float32 {
 	var vib float32
 	switch o.Table {
-	case WaveTableSelectSine:
+	case WaveTableSelectSineRetrigger, WaveTableSelectSineContinue:
 		vib = formatutil.GetProtrackerSine(int(o.Pos))
-	case WaveTableSelectSawtooth:
+	case WaveTableSelectSawtoothRetrigger, WaveTableSelectSawtoothContinue:
 		vib = (32.0 - float32(o.Pos&0x3f)) / 32.0
-	case WaveTableSelectSquare:
+	case WaveTableSelectSquareRetrigger, WaveTableSelectSquareContinue:
 		v := formatutil.GetProtrackerSine(int(o.Pos))
-		vib = float32(math.Copysign(1, float64(v)))
-	case WaveTableSelectRandom:
+		if v > 0 {
+			vib = 1.0
+		} else {
+			vib = -1.0
+		}
+	case WaveTableSelectRandomRetrigger, WaveTableSelectRandomContinue:
 		vib = formatutil.GetProtrackerSine(rand.Int() & 0x3f)
 	}
 	delta := vib * depth
@@ -48,7 +59,23 @@ func (o *Oscillator) GetWave(depth float32) float32 {
 // Advance advances the oscillator position by the specified amount
 func (o *Oscillator) Advance(speed int) {
 	o.Pos += uint8(speed)
-	for o.Pos > 63 {
-		o.Pos -= 64
+	o.Pos &= 63
+}
+
+// Reset resets the position of the oscillator
+func (o *Oscillator) Reset(hard ...bool) {
+	hardReset := false
+	if len(hard) > 0 {
+		hardReset = hard[1]
+	}
+
+	doReset := hardReset
+	switch o.Table {
+	case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
+		doReset = true
+	}
+
+	if doReset {
+		o.Pos = 0
 	}
 }

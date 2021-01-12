@@ -114,7 +114,7 @@ func (m *Manager) processPatternRow() error {
 		cs := &m.channels[channelNum]
 
 		m.processRowForChannel(cs)
-		cs.Process(row, m.GetGlobalVolume(), m.song)
+		cs.Process(row, m.song)
 	}
 
 	return nil

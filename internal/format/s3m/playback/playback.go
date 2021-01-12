@@ -34,7 +34,6 @@ type Manager struct {
 	OnEffect       func(intf.Effect)
 
 	chOrder [4][]intf.Channel
-	hasOPL2 bool
 }
 
 // NewManager creates a new manager for an S3M song
@@ -77,9 +76,6 @@ func NewManager(song *layout.Song) *Manager {
 		switch s3mfile.ChannelCategory(ch.Category) {
 		case s3mfile.ChannelCategoryUnknown:
 			// do nothing
-		case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
-			m.hasOPL2 = true
-			fallthrough
 		default:
 			cIdx := int(ch.Category) - 1
 			m.chOrder[cIdx] = append(m.chOrder[cIdx], cs)
@@ -103,7 +99,10 @@ func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample
 		return err
 	}
 
-	if m.hasOPL2 {
+	oplLen := len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Melody)-1])
+	oplLen += len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Drums)-1])
+
+	if oplLen > 0 {
 		m.ensureOPL2()
 	}
 	return nil

@@ -3,7 +3,6 @@ package playback
 import (
 	"time"
 
-	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/mixing"
 	device "github.com/gotracker/gosound"
 
@@ -86,12 +85,6 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		if m.song.IsChannelEnabled(ch) {
-			chCat := m.song.ChannelSettings[ch].Category
-			switch chCat {
-			case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
-				m.ensureOPL2()
-			}
-
 			m.processCommand(ch, cs, tick, lastTick)
 
 			rr, err := cs.RenderRowTick(m.rowRenderState.mix,

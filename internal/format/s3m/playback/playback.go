@@ -1,6 +1,7 @@
 package playback
 
 import (
+	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	device "github.com/gotracker/gosound"
 
@@ -31,6 +32,9 @@ type Manager struct {
 
 	rowRenderState *rowRenderState
 	OnEffect       func(intf.Effect)
+
+	chOrder  [4][]intf.Channel
+	needOPL2 bool
 }
 
 // NewManager creates a new manager for an S3M song
@@ -67,6 +71,19 @@ func NewManager(song *layout.Song) *Manager {
 			cs.SetPanEnabled(false)
 		}
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
+
+		// weirdly, S3M processes channels in channel category order
+		// so we have to make a list with the order we're expecting
+		switch s3mfile.ChannelCategory(ch.Category) {
+		case s3mfile.ChannelCategoryUnknown:
+			// do nothing
+		case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
+			m.needOPL2 = true
+			fallthrough
+		default:
+			cIdx := int(ch.Category) - 1
+			m.chOrder[cIdx] = append(m.chOrder[cIdx], cs)
+		}
 	}
 
 	txn := m.pattern.StartTransaction()
@@ -78,6 +95,18 @@ func NewManager(song *layout.Song) *Manager {
 	txn.Commit()
 
 	return &m
+}
+
+// SetupSampler configures the internal sampler
+func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
+	if err := m.Tracker.SetupSampler(samplesPerSecond, channels, bitsPerSample); err != nil {
+		return err
+	}
+
+	if m.needOPL2 {
+		m.ensureOPL2()
+	}
+	return nil
 }
 
 // GetNumChannels returns the number of channels

@@ -105,16 +105,11 @@ func (m *Manager) processPatternRow() error {
 	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
 	m.rowRenderState.currentTick = 0
 
-	// run row processing, now that prestart has completed
-	for channelNum := range row.GetChannels() {
-		if channelNum >= m.GetNumChannels() {
-			continue
+	for _, order := range m.chOrder {
+		for _, cs := range order {
+			m.processRowForChannel(cs)
+			cs.Process(row, m.song)
 		}
-
-		cs := &m.channels[channelNum]
-
-		m.processRowForChannel(cs)
-		cs.Process(row, m.song)
 	}
 
 	return nil

@@ -27,6 +27,7 @@ type ChannelData interface {
 // Channel is an interface for channel state
 type Channel interface {
 	ResetRetriggerCount()
+	Process(Row, SongData)
 	SetMemory(Memory)
 	GetMemory() Memory
 	GetActiveVolume() volume.Volume

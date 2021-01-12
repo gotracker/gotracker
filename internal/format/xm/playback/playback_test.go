@@ -193,7 +193,7 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 
 func TestMain(m *testing.M) {
 	flag.BoolVar(&enableTremor, "Tremor", false, "Enable Tremor test")
-	flag.BoolVar(&enablePortaLinkMem, "PortaLinkMem", true, "Enable PortaLinkMem test")
+	flag.BoolVar(&enablePortaLinkMem, "PortaLinkMem", false, "Enable PortaLinkMem test")
 	flag.Parse()
 	os.Exit(m.Run())
 }

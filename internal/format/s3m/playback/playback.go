@@ -33,8 +33,8 @@ type Manager struct {
 	rowRenderState *rowRenderState
 	OnEffect       func(intf.Effect)
 
-	chOrder  [4][]intf.Channel
-	needOPL2 bool
+	chOrder [4][]intf.Channel
+	hasOPL2 bool
 }
 
 // NewManager creates a new manager for an S3M song
@@ -78,7 +78,7 @@ func NewManager(song *layout.Song) *Manager {
 		case s3mfile.ChannelCategoryUnknown:
 			// do nothing
 		case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
-			m.needOPL2 = true
+			m.hasOPL2 = true
 			fallthrough
 		default:
 			cIdx := int(ch.Category) - 1
@@ -103,7 +103,7 @@ func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample
 		return err
 	}
 
-	if m.needOPL2 {
+	if m.hasOPL2 {
 		m.ensureOPL2()
 	}
 	return nil

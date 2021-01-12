@@ -47,7 +47,7 @@ type ChannelState struct {
 }
 
 // Process processes a channel's row data
-func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData) {
+func (cs *ChannelState) Process(row intf.Row, sd intf.SongData) {
 	cs.prevState = cs.activeState.RenderState
 	cs.targetState = cs.activeState.RenderState
 	cs.DoRetriggerNote = true

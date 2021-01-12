@@ -42,8 +42,9 @@ type Channel interface {
 	SetPeriod(note.Period)
 	SetVibratoDelta(note.PeriodDelta)
 	GetVibratoDelta() note.PeriodDelta
-	SetInstrument(Instrument)
+	SetInstrument(Instrument, Playback)
 	GetInstrument() Instrument
+	GetNoteControl() NoteControl
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)
 	GetNoteSemitone() note.Semitone

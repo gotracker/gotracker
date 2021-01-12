@@ -18,20 +18,12 @@ type commandFunc func(int, *ChannelState, int, bool)
 type ChannelState struct {
 	intf.Channel
 
-	Instrument     intf.NoteControl
-	PrevInstrument intf.NoteControl
-	Pos            sampling.Pos
-	Period         note.Period
-	ActiveVolume   volume.Volume
-	Pan            panning.Position
-	PanEnabled     bool
+	activeState ActiveState
+	targetState RenderState
+	prevState   RenderState
 
-	Command      commandFunc
 	ActiveEffect intf.Effect
 
-	TargetPeriod   note.Period
-	TargetPos      sampling.Pos
-	TargetInst     intf.Instrument
 	TargetSemitone note.Semitone // from pattern, modified
 
 	StoredSemitone    note.Semitone // from pattern, unmodified, current note
@@ -39,7 +31,6 @@ type ChannelState struct {
 	PortaTargetPeriod note.Period
 	NotePlayTick      int
 	RetriggerCount    uint8
-	VibratoDelta      note.PeriodDelta
 	Memory            intf.Memory
 	TrackData         intf.ChannelData
 	freezePlayback    bool
@@ -49,26 +40,20 @@ type ChannelState struct {
 	WantVolCalc       bool
 	UseTargetPeriod   bool
 	volumeActive      bool
+	PanEnabled        bool
 
 	OutputChannelNum int
 	Filter           intf.Filter
 }
 
 // Process processes a channel's row data
-func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData, processCommand commandFunc) {
-	cs.Command = processCommand
-
-	cs.PrevInstrument = cs.Instrument
-	cs.TargetPeriod = cs.Period
-	cs.TargetPos = cs.Pos
-	cs.TargetInst = nil
-	if cs.Instrument != nil {
-		cs.TargetInst = cs.Instrument.GetInstrument()
-	}
+func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.SongData) {
+	cs.prevState = cs.activeState.RenderState
+	cs.targetState = cs.activeState.RenderState
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0
-	cs.VibratoDelta = 0
+	cs.activeState.PeriodDelta = 0
 
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
@@ -83,13 +68,13 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 		inst := cs.TrackData.GetInstrument()
 		if inst.IsEmpty() {
 			// use current
-			cs.TargetPos = sampling.Pos{}
+			cs.targetState.Pos = sampling.Pos{}
 		} else if !sd.IsValidInstrumentID(inst) {
-			cs.TargetInst = nil
+			cs.targetState.Instrument = nil
 		} else {
-			cs.TargetInst = sd.GetInstrument(inst)
-			cs.TargetPos = sampling.Pos{}
-			if cs.TargetInst != nil {
+			cs.targetState.Instrument = sd.GetInstrument(inst)
+			cs.targetState.Pos = sampling.Pos{}
+			if cs.targetState.Instrument != nil {
 				cs.WantVolCalc = true
 			}
 		}
@@ -99,20 +84,20 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = cs.TrackData.HasInstrument()
 			if cs.DoRetriggerNote {
-				cs.TargetPos = sampling.Pos{}
+				cs.targetState.Pos = sampling.Pos{}
 			}
 		} else if n.IsInvalid() {
-			cs.TargetPeriod = nil
+			cs.targetState.Period = nil
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
 		} else if n == note.StopNote {
-			cs.TargetPeriod = cs.Period
-			if cs.PrevInstrument != nil {
-				cs.TargetInst = cs.PrevInstrument.GetInstrument()
+			cs.targetState.Period = cs.activeState.Period
+			if cs.prevState.Instrument != nil {
+				cs.targetState.Instrument = cs.prevState.Instrument
 			}
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
-		} else if cs.TargetInst != nil {
+		} else if cs.targetState.Instrument != nil {
 			cs.StoredSemitone = n.Semitone()
 			cs.TargetSemitone = cs.StoredSemitone
 			cs.WantNoteCalc = true
@@ -127,7 +112,7 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 		cs.WantVolCalc = false
 		v := cs.TrackData.GetVolume()
 		if v == volume.VolumeUseInstVol {
-			if cs.TargetInst != nil {
+			if cs.targetState.Instrument != nil {
 				cs.WantVolCalc = true
 			}
 		} else {
@@ -137,48 +122,19 @@ func (cs *ChannelState) Process(row intf.Row, globalVol volume.Volume, sd intf.S
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState) RenderRowTick(tick int, lastTick bool, ch int, ticksThisRow int, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, tickDuration time.Duration) (*mixing.Data, error) {
-	if cs.Command != nil {
-		cs.Command(ch, cs, tick, lastTick)
+func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, tickDuration time.Duration) (*mixing.Data, error) {
+	if cs.PlaybackFrozen() {
+		return nil, nil
 	}
 
-	sample := cs.Instrument
-	if sample != nil && cs.Period != nil && !cs.PlaybackFrozen() {
-		sample.SetVolume(cs.ActiveVolume * cs.LastGlobalVolume)
-		period := cs.Period.Add(cs.VibratoDelta)
-		sample.SetPeriod(period)
+	return cs.activeState.Render(cs.LastGlobalVolume, mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+}
 
-		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
-
-		sample.Update(tickDuration)
-
-		panning := sample.GetCurrentPanning()
-		volMatrix := panmixer.GetMixingMatrix(panning)
-
-		// make a stand-alone data buffer for this channel for this tick
-		var data mixing.MixBuffer
-		if cs.volumeActive {
-			data = mix.NewMixBuffer(tickSamples)
-			mixData := mixing.SampleMixIn{
-				Sample:    sampling.NewSampler(sample, cs.Pos, samplerAdd),
-				StaticVol: volume.Volume(1.0),
-				VolMatrix: volMatrix,
-				MixPos:    0,
-				MixLen:    tickSamples,
-			}
-			data.MixInSample(mixData)
-		}
-
-		cs.Pos.Add(samplerAdd * float32(tickSamples))
-
-		return &mixing.Data{
-			Data:       data,
-			Pan:        cs.Pan,
-			Volume:     volume.Volume(1.0),
-			SamplesLen: tickSamples,
-		}, nil
-	}
-	return nil, nil
+// ResetStates resets the channel's internal states
+func (cs *ChannelState) ResetStates() {
+	cs.activeState.Reset()
+	cs.targetState.Reset()
+	cs.prevState.Reset()
 }
 
 // FreezePlayback suspends mixer progression on the channel
@@ -213,13 +169,13 @@ func (cs *ChannelState) SetMemory(mem intf.Memory) {
 
 // GetActiveVolume returns the current active volume on the channel
 func (cs *ChannelState) GetActiveVolume() volume.Volume {
-	return cs.ActiveVolume
+	return cs.activeState.Volume
 }
 
 // SetActiveVolume sets the active volume on the channel
 func (cs *ChannelState) SetActiveVolume(vol volume.Volume) {
 	if vol != volume.VolumeUseInstVol {
-		cs.ActiveVolume = vol
+		cs.activeState.Volume = vol
 	}
 }
 
@@ -240,22 +196,22 @@ func (cs *ChannelState) SetPortaTargetPeriod(period note.Period) {
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
 func (cs *ChannelState) GetTargetPeriod() note.Period {
-	return cs.TargetPeriod
+	return cs.targetState.Period
 }
 
 // SetTargetPeriod sets the soon-to-be-committed sampler period (when the note retriggers)
 func (cs *ChannelState) SetTargetPeriod(period note.Period) {
-	cs.TargetPeriod = period
+	cs.targetState.Period = period
 }
 
 // SetVibratoDelta sets the vibrato (ephemeral) delta sampler period
 func (cs *ChannelState) SetVibratoDelta(delta note.PeriodDelta) {
-	cs.VibratoDelta = delta
+	cs.activeState.PeriodDelta = delta
 }
 
 // GetVibratoDelta gets the vibrato (ephemeral) delta sampler period
 func (cs *ChannelState) GetVibratoDelta() note.PeriodDelta {
-	return cs.VibratoDelta
+	return cs.activeState.PeriodDelta
 }
 
 // SetVolumeActive enables or disables the sample of the instrument
@@ -265,28 +221,31 @@ func (cs *ChannelState) SetVolumeActive(on bool) {
 
 // GetInstrument returns the interface to the active instrument
 func (cs *ChannelState) GetInstrument() intf.Instrument {
-	if cs.Instrument == nil {
-		return nil
-	}
-	return cs.Instrument.GetInstrument()
+	return cs.activeState.Instrument
 }
 
 // SetInstrument sets the interface to the active instrument
-func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
-	if inst == nil {
-		cs.Instrument = nil
+func (cs *ChannelState) SetInstrument(inst intf.Instrument, pb intf.Playback) {
+	cs.activeState.Instrument = inst
+	if inst != nil {
+		cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
+		cs.activeState.NoteControl.SetPlayback(pb)
 	}
-	cs.Instrument = inst.InstantiateOnChannel(int(cs.OutputChannelNum), cs.Filter)
+}
+
+// GetNoteControl returns the active note-control interface
+func (cs *ChannelState) GetNoteControl() intf.NoteControl {
+	return cs.activeState.NoteControl
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
 func (cs *ChannelState) GetTargetInst() intf.Instrument {
-	return cs.TargetInst
+	return cs.targetState.Instrument
 }
 
 // SetTargetInst sets the soon-to-be-committed active instrument (when the note retriggers)
 func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
-	cs.TargetInst = inst
+	cs.targetState.Instrument = inst
 }
 
 // GetNoteSemitone returns the note semitone for the channel
@@ -296,32 +255,32 @@ func (cs *ChannelState) GetNoteSemitone() note.Semitone {
 
 // GetTargetPos returns the soon-to-be-committed sample position of the instrument
 func (cs *ChannelState) GetTargetPos() sampling.Pos {
-	return cs.TargetPos
+	return cs.targetState.Pos
 }
 
 // SetTargetPos sets the soon-to-be-committed sample position of the instrument
 func (cs *ChannelState) SetTargetPos(pos sampling.Pos) {
-	cs.TargetPos = pos
+	cs.targetState.Pos = pos
 }
 
 // GetPeriod returns the current sampler period of the active instrument
 func (cs *ChannelState) GetPeriod() note.Period {
-	return cs.Period
+	return cs.activeState.Period
 }
 
 // SetPeriod sets the current sampler period of the active instrument
 func (cs *ChannelState) SetPeriod(period note.Period) {
-	cs.Period = period
+	cs.activeState.Period = period
 }
 
 // GetPos returns the sample position of the active instrument
 func (cs *ChannelState) GetPos() sampling.Pos {
-	return cs.Pos
+	return cs.activeState.Pos
 }
 
 // SetPos sets the sample position of the active instrument
 func (cs *ChannelState) SetPos(pos sampling.Pos) {
-	cs.Pos = pos
+	cs.activeState.Pos = pos
 }
 
 // SetNotePlayTick sets the tick on which the note will retrigger
@@ -347,13 +306,13 @@ func (cs *ChannelState) SetPanEnabled(on bool) {
 // SetPan sets the active panning value of the channel
 func (cs *ChannelState) SetPan(pan panning.Position) {
 	if cs.PanEnabled {
-		cs.Pan = pan
+		cs.activeState.Pan = pan
 	}
 }
 
 // GetPan gets the active panning value of the channel
 func (cs *ChannelState) GetPan() panning.Position {
-	return cs.Pan
+	return cs.activeState.Pan
 }
 
 // SetDoRetriggerNote sets the enablement flag for DoRetriggerNote
@@ -379,8 +338,8 @@ func (cs *ChannelState) GetFilter() intf.Filter {
 // SetFilter sets the active filter on the channel
 func (cs *ChannelState) SetFilter(filter intf.Filter) {
 	cs.Filter = filter
-	if cs.Instrument != nil {
-		cs.Instrument.SetFilter(filter)
+	if cs.activeState.NoteControl != nil {
+		cs.activeState.NoteControl.SetFilter(filter)
 	}
 }
 

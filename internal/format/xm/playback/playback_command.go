@@ -9,7 +9,7 @@ import (
 )
 
 func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
-	inst := cs.TargetInst
+	inst := cs.GetTargetInst()
 	if inst == nil {
 		return
 	}
@@ -22,7 +22,8 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
 		linearFreqSlides := cs.Memory.(*channel.Memory).LinearFreqSlides
-		cs.TargetPeriod = util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		cs.SetTargetPeriod(period)
 	}
 }
 
@@ -48,28 +49,28 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	}
 	keyOff := n.IsStop()
 	keyOn := false
-	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {
-		cs.Instrument = nil
-		if cs.TargetInst != nil {
-			inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
-			inst.SetPlayback(m)
+	targetPeriod := cs.GetTargetPeriod()
+	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
+		if targetInst := cs.GetTargetInst(); targetInst != nil {
+			cs.SetInstrument(targetInst, m)
 			keyOn = true
-			cs.Instrument = inst
+		} else {
+			cs.SetInstrument(nil, nil)
 		}
 		if cs.UseTargetPeriod {
-			cs.Period = cs.TargetPeriod
-			cs.PortaTargetPeriod = cs.TargetPeriod
+			cs.SetPeriod(targetPeriod)
+			cs.PortaTargetPeriod = targetPeriod
 		}
-		cs.Pos = cs.TargetPos
+		cs.SetPos(cs.GetTargetPos())
 	}
 
-	if cs.Instrument != nil {
+	if nc := cs.GetNoteControl(); nc != nil {
 		if keyOn {
-			cs.Instrument.Attack()
+			nc.Attack()
 			mem := cs.GetMemory().(*channel.Memory)
 			mem.Retrigger()
 		} else if keyOff {
-			cs.Instrument.Release()
+			nc.Release()
 		}
 	}
 }

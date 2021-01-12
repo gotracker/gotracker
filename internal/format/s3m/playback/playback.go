@@ -2,7 +2,6 @@ package playback
 
 import (
 	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/s3m/layout"
@@ -92,22 +91,13 @@ func (m *Manager) SetNumChannels(num int) {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.Pos = sampling.Pos{}
-		cs.PrevInstrument = nil
-		cs.Instrument = nil
-		cs.Period = nil
-		cs.Command = nil
+		cs.ResetStates()
 
-		cs.TargetPeriod = nil
-		cs.TargetPos = cs.Pos
-		cs.TargetInst = nil
 		cs.PortaTargetPeriod = nil
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
-		cs.VibratoDelta = 0
 		cs.TrackData = nil
 		cs.OutputChannelNum = m.song.GetOutputChannel(ch)
-		cs.SetVolumeActive(true)
 	}
 }
 

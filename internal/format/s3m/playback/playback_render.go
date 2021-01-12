@@ -92,9 +92,9 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 				m.ensureOPL2()
 			}
 
-			rr, err := cs.RenderRowTick(tick, lastTick, ch,
-				m.rowRenderState.ticksThisRow,
-				m.rowRenderState.mix,
+			m.processCommand(ch, cs, tick, lastTick)
+
+			rr, err := cs.RenderRowTick(m.rowRenderState.mix,
 				m.rowRenderState.panmixer,
 				m.rowRenderState.samplerSpeed,
 				m.rowRenderState.samplesPerTick,

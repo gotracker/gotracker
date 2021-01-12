@@ -9,7 +9,7 @@ import (
 )
 
 func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
-	inst := cs.TargetInst
+	inst := cs.GetTargetInst()
 	if inst == nil {
 		return
 	}
@@ -22,7 +22,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
 		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
-		cs.TargetPeriod = period
+		cs.SetTargetPeriod(period)
 	}
 }
 
@@ -46,39 +46,32 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		n = cs.TrackData.GetNote()
 	}
 	keyOff := n.IsEmpty() || n.IsStop()
-	if cs.DoRetriggerNote && cs.TargetPeriod != nil && currentTick == cs.NotePlayTick {
-		cs.Instrument = nil
-		if cs.TargetInst != nil {
-			if cs.PrevInstrument != nil && cs.PrevInstrument.GetInstrument() == cs.TargetInst {
-				cs.Instrument = cs.PrevInstrument
-				cs.Instrument.Release()
-			} else {
-				inst := cs.TargetInst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
-				inst.SetPlayback(m)
-				cs.Instrument = inst
-			}
+	targetPeriod := cs.GetTargetPeriod()
+	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
+		if targetInst := cs.GetTargetInst(); targetInst != nil {
+			cs.SetInstrument(targetInst, m)
+		} else {
+			cs.SetInstrument(nil, nil)
 		}
 		if cs.UseTargetPeriod {
-			cs.Period = cs.TargetPeriod
-			cs.PortaTargetPeriod = cs.TargetPeriod
+			cs.SetPeriod(targetPeriod)
+			cs.PortaTargetPeriod = targetPeriod
 		}
-		cs.Pos = cs.TargetPos
-		if cs.Instrument != nil {
+		cs.SetPos(cs.GetTargetPos())
+		if nc := cs.GetNoteControl(); nc != nil {
 			cs.LastGlobalVolume = m.GetGlobalVolume()
-			cs.Instrument.Attack()
+			nc.Attack()
 			keyOff = false
 			mem := cs.GetMemory().(*channel.Memory)
 			mem.Retrigger()
 		}
 	}
 
-	if keyOff && cs.Instrument != nil && cs.Instrument.GetKeyOn() {
+	if nc := cs.GetNoteControl(); keyOff && nc != nil && nc.GetKeyOn() {
+		nc.Release()
 		if n == note.StopNote {
-			cs.Instrument.Release()
-			cs.Instrument = nil
-			cs.Period = nil
-		} else {
-			cs.Instrument.Release()
+			cs.SetInstrument(nil, nil)
+			cs.SetPeriod(nil)
 		}
 	}
 }

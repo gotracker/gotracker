@@ -12,8 +12,8 @@ import (
 	"gotracker/internal/player/note"
 )
 
-// RenderState is the information needed to make an instrument play
-type RenderState struct {
+// renderState is the information needed to make an instrument play
+type renderState struct {
 	Instrument   intf.Instrument
 	Period       note.Period
 	Volume       volume.Volume
@@ -24,7 +24,7 @@ type RenderState struct {
 }
 
 // Reset sets the render state to defaults
-func (r *RenderState) Reset() {
+func (r *renderState) Reset() {
 	r.Instrument = nil
 	r.Period = nil
 	r.Volume = 1
@@ -34,20 +34,20 @@ func (r *RenderState) Reset() {
 	r.Pan = panning.CenterAhead
 }
 
-// ActiveState is the active state of a channel
-type ActiveState struct {
-	RenderState
+// activeState is the active state of a channel
+type activeState struct {
+	renderState
 	NoteControl intf.NoteControl
 }
 
 // Reset sets the active state to defaults
-func (a *ActiveState) Reset() {
-	a.RenderState.Reset()
+func (a *activeState) Reset() {
+	a.renderState.Reset()
 	a.NoteControl = nil
 }
 
 // Render renders an active channel's sample data for a the provided number of samples
-func (a *ActiveState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
+func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
 	if a.Period == nil {
 		return nil, nil
 	}

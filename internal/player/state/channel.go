@@ -18,9 +18,9 @@ type commandFunc func(int, *ChannelState, int, bool)
 type ChannelState struct {
 	intf.Channel
 
-	activeState ActiveState
-	targetState RenderState
-	prevState   RenderState
+	activeState activeState
+	targetState renderState
+	prevState   renderState
 
 	ActiveEffect intf.Effect
 
@@ -48,8 +48,8 @@ type ChannelState struct {
 
 // Process processes a channel's row data
 func (cs *ChannelState) Process(row intf.Row, sd intf.SongData) {
-	cs.prevState = cs.activeState.RenderState
-	cs.targetState = cs.activeState.RenderState
+	cs.prevState = cs.activeState.renderState
+	cs.targetState = cs.activeState.renderState
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0

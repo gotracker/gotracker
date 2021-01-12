@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	enableTremor bool
+	enableTremor       bool
+	enablePortaLinkMem bool
 )
 
 func TestTremor(t *testing.T) {
@@ -22,6 +23,20 @@ func TestTremor(t *testing.T) {
 	}
 
 	fn := "../../../../test/Tremor.xm"
+
+	sampleRate := 44100
+	channels := 2
+	bitsPerSample := 16
+
+	performChannelComparison(t, fn, sampleRate, channels, bitsPerSample)
+}
+
+func TestPortaLinkMem(t *testing.T) {
+	if !enablePortaLinkMem {
+		t.Skip()
+	}
+
+	fn := "../../../../test/Porta-LinkMem.xm"
 
 	sampleRate := 44100
 	channels := 2
@@ -178,6 +193,7 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 
 func TestMain(m *testing.M) {
 	flag.BoolVar(&enableTremor, "Tremor", false, "Enable Tremor test")
+	flag.BoolVar(&enablePortaLinkMem, "PortaLinkMem", true, "Enable PortaLinkMem test")
 	flag.Parse()
 	os.Exit(m.Run())
 }

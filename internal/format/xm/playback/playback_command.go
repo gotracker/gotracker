@@ -71,6 +71,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()
+			cs.SetPeriod(nil)
 		}
 	}
 }

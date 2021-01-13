@@ -24,6 +24,23 @@ func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	cs.SetActiveVolume(nv)
 }
 
+func doGlobalVolSlide(p intf.Playback, delta float32, multiplier float32) {
+	gv := p.GetGlobalVolume()
+	v := util.VolumeToXm(gv)
+	if v >= 0x10 && v <= 0x50 {
+		vol := int16((float32(v-0x10) + delta) * multiplier)
+		if vol >= 0x40 {
+			vol = 0x40
+		}
+		if vol < 0x00 {
+			vol = 0x00
+		}
+		v = uint8(vol) + 0x10
+	}
+	ngv := util.VolumeFromXm(v)
+	p.SetGlobalVolume(ngv)
+}
+
 func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
 	period := cs.GetPeriod()
 	if period == nil {

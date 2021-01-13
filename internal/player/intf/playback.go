@@ -28,6 +28,7 @@ type Playback interface {
 	CanOrderLoop() bool
 	BreakOrder()
 	SetOnEffect(func(Effect))
+	IgnoreUnknownEffect() bool
 
 	SetupSampler(int, int, int) error
 }

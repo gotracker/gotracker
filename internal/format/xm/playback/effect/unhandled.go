@@ -8,14 +8,15 @@ import (
 
 // UnhandledCommand is an unhandled command
 type UnhandledCommand struct {
-	intf.Effect
 	Command uint8
 	Info    uint8
 }
 
 // PreStart triggers when the effect enters onto the channel state
 func (e UnhandledCommand) PreStart(cs intf.Channel, p intf.Playback) {
-	panic("unhandled command")
+	if !p.IgnoreUnknownEffect() {
+		panic("unhandled command")
+	}
 }
 
 func (e UnhandledCommand) String() string {
@@ -31,13 +32,14 @@ func (e UnhandledCommand) String() string {
 
 // UnhandledVolCommand is an unhandled volume command
 type UnhandledVolCommand struct {
-	intf.Effect
 	Vol uint8
 }
 
 // PreStart triggers when the effect enters onto the channel state
 func (e UnhandledVolCommand) PreStart(cs intf.Channel, p intf.Playback) {
-	panic("unhandled command")
+	if !p.IgnoreUnknownEffect() {
+		panic("unhandled command")
+	}
 }
 
 func (e UnhandledVolCommand) String() string {

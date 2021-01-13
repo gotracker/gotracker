@@ -9,6 +9,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
 	"gotracker/internal/player/sampler"
@@ -33,6 +34,8 @@ type Tracker struct {
 
 	globalVolume volume.Volume
 	mixerVolume  volume.Volume
+
+	panicOnUnknownEffect bool
 }
 
 // Update runs processing on the tracker, producing premixed sound data
@@ -171,4 +174,19 @@ func (t *Tracker) GetMixerVolume() volume.Volume {
 // SetMixerVolume sets the mixer volume to the specified `vol` value
 func (t *Tracker) SetMixerVolume(vol volume.Volume) {
 	t.mixerVolume = vol
+}
+
+// IgnoreUnknownEffect returns true if the tracker wants unknown effects to be ignored
+func (t *Tracker) IgnoreUnknownEffect() bool {
+	return !t.panicOnUnknownEffect
+}
+
+// DisableFeatures disables specified features
+func (t *Tracker) DisableFeatures(features []feature.Feature) {
+	for _, f := range features {
+		switch f {
+		case feature.IgnoreUnknownEffect:
+			t.panicOnUnknownEffect = true
+		}
+	}
 }

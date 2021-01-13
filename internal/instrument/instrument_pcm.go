@@ -76,6 +76,12 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	return finalPan
 }
 
+// SetEnvelopePosition sets the envelope position for the note-control
+func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
+	ed := ioc.GetData().(*envData)
+	ed.setEnvelopePosition(ticks, &ed.volEnvPos, &ed.volEnvTicksRemaining, &inst.VolEnv, ed.updateVolEnv)
+}
+
 func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {
 	if !inst.VolEnv.Enabled {
 		return volume.Volume(1.0)

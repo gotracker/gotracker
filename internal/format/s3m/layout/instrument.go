@@ -177,3 +177,10 @@ func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) 
 		ii.Update(nc, tickDuration)
 	}
 }
+
+// SetEnvelopePosition sets the envelope position for the instrument
+func (inst *Instrument) SetEnvelopePosition(nc intf.NoteControl, ticks int) {
+	if ii := inst.Inst; ii != nil {
+		ii.SetEnvelopePosition(nc, ticks)
+	}
+}

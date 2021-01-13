@@ -137,3 +137,19 @@ func (ed *envData) getEnv(pos int, env *InstEnv) (EnvPoint, int) {
 	cur := env.Values[pos]
 	return cur, pos
 }
+
+func (ed *envData) setEnvelopePosition(ticks int, pos *int, rem *int, env *InstEnv, update envUpdateFunc) {
+	*pos = 0
+	*rem = 0
+	for ticks > 0 {
+		ed.updateEnv(pos, rem, env, update)
+		if ticks >= *rem {
+			ticks -= *rem
+			*rem = 0
+		} else {
+			*rem -= ticks
+			ticks = 0
+		}
+	}
+	ed.updateEnv(pos, rem, env, update)
+}

@@ -14,7 +14,7 @@ import (
 type DataIntf interface {
 	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPanning(intf.NoteControl) panning.Position
-
+	SetEnvelopePosition(intf.NoteControl, int)
 	Initialize(intf.NoteControl) error
 	Attack(intf.NoteControl)
 	Release(intf.NoteControl)

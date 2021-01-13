@@ -100,6 +100,10 @@ func (inst *OPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	return panning.CenterAhead
 }
 
+// SetEnvelopePosition sets the envelope position for the note-control
+func (inst *OPL2) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
+}
+
 // Initialize completes the setup of this instrument
 func (inst *OPL2) Initialize(ioc intf.NoteControl) error {
 	ym := ym3812{}

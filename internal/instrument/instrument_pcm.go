@@ -80,6 +80,9 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 	ed := ioc.GetData().(*envData)
 	ed.setEnvelopePosition(ticks, &ed.volEnvPos, &ed.volEnvTicksRemaining, &inst.VolEnv, ed.updateVolEnv)
+	if inst.VolEnv.SustainEnabled {
+		ed.setEnvelopePosition(ticks, &ed.panEnvPos, &ed.panEnvTicksRemaining, &inst.PanEnv, ed.updatePanEnv)
+	}
 }
 
 func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {

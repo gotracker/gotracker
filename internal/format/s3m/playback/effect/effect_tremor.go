@@ -10,10 +10,6 @@ import (
 // Tremor defines a tremor effect
 type Tremor uint8 // 'I'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e Tremor) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Tremor) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -26,10 +22,6 @@ func (e Tremor) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	x := int((xy >> 4) + 1)
 	y := int((xy & 0x0f) + 1)
 	doTremor(cs, currentTick, x, y)
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e Tremor) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e Tremor) String() string {

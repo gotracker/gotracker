@@ -10,10 +10,6 @@ import (
 // Tremolo defines a tremolo effect
 type Tremolo uint8 // 'R'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e Tremolo) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -28,10 +24,6 @@ func (e Tremolo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	if currentTick != 0 {
 		doTremolo(cs, currentTick, x, y, 4)
 	}
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e Tremolo) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e Tremolo) String() string {

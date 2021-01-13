@@ -10,10 +10,6 @@ import (
 // VolumeSlide defines a volume slide effect
 type VolumeSlide uint8 // 'D'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e VolumeSlide) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e VolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -43,10 +39,6 @@ func (e VolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 			doVolSlide(cs, float32(x), 1.0)
 		}
 	}
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e VolumeSlide) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e VolumeSlide) String() string {

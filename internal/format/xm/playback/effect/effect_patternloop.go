@@ -10,10 +10,6 @@ import (
 // PatternLoop defines a pattern loop effect
 type PatternLoop uint8 // 'E6x'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e PatternLoop) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -36,14 +32,6 @@ func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
 			p.SetNextRow(row, true)
 		}
 	}
-}
-
-// Tick is called on every tick
-func (e PatternLoop) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e PatternLoop) String() string {

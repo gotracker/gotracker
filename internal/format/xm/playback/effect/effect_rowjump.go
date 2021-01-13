@@ -9,17 +9,9 @@ import (
 // RowJump defines a row jump effect
 type RowJump uint8 // 'D'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e RowJump) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e RowJump) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
-}
-
-// Tick is called on every tick
-func (e RowJump) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called

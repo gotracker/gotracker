@@ -10,10 +10,6 @@ import (
 // ExtraFinePortaUp defines an extra-fine portamento up effect
 type ExtraFinePortaUp uint8 // 'FEx'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e ExtraFinePortaUp) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -24,14 +20,6 @@ func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
 	y := xx & 0x0F
 
 	doPortaUp(cs, float32(y), 1)
-}
-
-// Tick is called on every tick
-func (e ExtraFinePortaUp) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e ExtraFinePortaUp) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e ExtraFinePortaUp) String() string {

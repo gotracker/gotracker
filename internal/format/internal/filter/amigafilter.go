@@ -27,9 +27,8 @@ func NewAmigaLPF() *AmigaLPF {
 
 var (
 	amigaLPFCoeffA0 volume.Volume = 1.0
-	amigaLPFCoeffA1 volume.Volume = volume.Volume(math.Sqrt(2.0))
+	amigaLPFCoeffA1 volume.Volume = math.Sqrt2
 	amigaLPFCoeffA2 volume.Volume = 1.0
-	amigaLPFDen     volume.Volume = amigaLPFCoeffA0 + amigaLPFCoeffA1 + amigaLPFCoeffA1
 
 	amigaLPFCoeffB0 volume.Volume = 1.0
 	amigaLPFCoeffB1 volume.Volume = 0.0
@@ -46,7 +45,7 @@ func (f *AmigaLPF) Filter(dry volume.Matrix) volume.Matrix {
 		c := &f.channels[i]
 		xn := s
 		//yn := amigaLPFCoeffA0*xn + amigaLPFCoeffA1*c.xnz1 + amigaLPFCoeffA2*c.xnz2 - amigaLPFCoeffB1*c.ynz1 - amigaLPFCoeffB2*c.ynz2
-		yn := (xn + amigaLPFCoeffA1*c.xnz1 + c.xnz2) / amigaLPFDen // since B1 and B2 are 0, they simplify out.  Similarly, the multiply on A0 and A2 become simpler.
+		yn := (xn + amigaLPFCoeffA1*c.xnz1 + c.xnz2) / 3 // since B1 and B2 are 0, they simplify out.  Similarly, the multiply on A0 and A2 become simpler.
 
 		c.xnz2 = c.xnz1
 		c.xnz1 = xn

@@ -11,4 +11,7 @@ const (
 
 	// PlayerSleepInterval describes the player sleep interval feature
 	PlayerSleepInterval
+
+	// IgnoreUnknownEffect describes a bypass/ignore of unknown effects
+	IgnoreUnknownEffect
 )

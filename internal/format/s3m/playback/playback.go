@@ -196,6 +196,7 @@ func (m *Manager) IncreaseTempo(delta int) {
 
 // DisableFeatures disables specified features
 func (m *Manager) DisableFeatures(features []feature.Feature) {
+	m.Tracker.DisableFeatures(features)
 	for _, f := range features {
 		switch f {
 		case feature.OrderLoop:

@@ -13,6 +13,7 @@ type Memory struct {
 	tremolo             uint8
 	tremor              uint8
 	volumeSlide         uint8
+	globalVolumeSlide   uint8
 	finePortaUp         uint8
 	finePortaDown       uint8
 	fineVolumeSlideUp   uint8
@@ -92,6 +93,11 @@ func (m *Memory) Tremor(input uint8) uint8 {
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
 func (m *Memory) VolumeSlide(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.volumeSlide)
+}
+
+// GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
+func (m *Memory) GlobalVolumeSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.globalVolumeSlide)
 }
 
 // FinePortaUp gets or sets the most recent non-zero value (or input) for Fine Portamento Up

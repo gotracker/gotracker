@@ -48,7 +48,8 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		return SetTempo(cd.EffectParameter)
 	case 0x10: // Set global volume
 		return SetGlobalVolume(cd.EffectParameter)
-	//case 0x11: // Global volume slide
+	case 0x11: // Global volume slide
+		return GlobalVolumeSlide(cd.EffectParameter)
 
 	//case 0x15: // Set envelope position
 

@@ -1,12 +1,10 @@
 package intf
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Effect is an interface to command/effect
 type Effect interface {
-	fmt.Stringer
+	//fmt.Stringer
 }
 
 type effectPreStartIntf interface {
@@ -89,7 +87,7 @@ func (e CombinedEffect) Stop(cs Channel, p Playback, lastTick int) {
 // String returns the string for the effect list
 func (e CombinedEffect) String() string {
 	for _, eff := range e.Effects {
-		s := eff.String()
+		s := fmt.Sprintf("%v", eff)
 		if s != "" {
 			return s
 		}

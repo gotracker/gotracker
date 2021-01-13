@@ -3,7 +3,6 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -15,9 +14,7 @@ func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
-	mem := cs.GetMemory().(*channel.Memory)
-	xx := mem.LastNonZero(uint8(e))
-	y := xx & 0x0F
+	y := uint8(e) & 0x0F
 
 	doPortaUp(cs, float32(y), 1)
 }

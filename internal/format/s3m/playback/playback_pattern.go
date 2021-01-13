@@ -92,7 +92,7 @@ func (m *Manager) processPatternRow() error {
 			if m.OnEffect != nil {
 				m.OnEffect(cs.ActiveEffect)
 			}
-			cs.ActiveEffect.PreStart(cs, m)
+			intf.EffectPreStart(cs.ActiveEffect, cs, m)
 		}
 	}
 

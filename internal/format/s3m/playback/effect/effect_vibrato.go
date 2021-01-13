@@ -10,10 +10,6 @@ import (
 // Vibrato defines a vibrato effect
 type Vibrato uint8 // 'H'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e Vibrato) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Vibrato) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -29,10 +25,6 @@ func (e Vibrato) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	if currentTick != 0 {
 		doVibrato(cs, currentTick, x, y, 4)
 	}
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e Vibrato) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e Vibrato) String() string {

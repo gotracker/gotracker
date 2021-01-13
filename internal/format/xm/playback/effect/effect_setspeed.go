@@ -23,14 +23,6 @@ func (e SetSpeed) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
-// Tick is called on every tick
-func (e SetSpeed) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e SetSpeed) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
-}
-
 func (e SetSpeed) String() string {
 	return fmt.Sprintf("F%0.2x", uint8(e))
 }

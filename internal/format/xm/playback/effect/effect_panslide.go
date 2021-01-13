@@ -10,10 +10,6 @@ import (
 // PanSlide defines a pan slide effect
 type PanSlide uint8 // 'Pxx'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e PanSlide) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PanSlide) Start(cs intf.Channel, p intf.Playback) {
 	xx := uint8(e)
@@ -37,14 +33,6 @@ func (e PanSlide) Start(cs intf.Channel, p intf.Playback) {
 		}
 	}
 	cs.SetPan(util.PanningFromXm(xp))
-}
-
-// Tick is called on every tick
-func (e PanSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PanSlide) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e PanSlide) String() string {

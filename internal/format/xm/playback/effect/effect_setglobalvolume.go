@@ -20,14 +20,6 @@ func (e SetGlobalVolume) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
-// Tick is called on every tick
-func (e SetGlobalVolume) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e SetGlobalVolume) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
-}
-
 func (e SetGlobalVolume) String() string {
 	return fmt.Sprintf("G%0.2x", uint8(e))
 }

@@ -10,10 +10,6 @@ import (
 // EnableFilter defines a set filter enable effect
 type EnableFilter uint8 // 'S0x'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e EnableFilter) PreStart(cs intf.Channel, p intf.Playback) {
-}
-
 // Start triggers on the first tick, but before the Tick() function is called
 func (e EnableFilter) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
@@ -23,14 +19,6 @@ func (e EnableFilter) Start(cs intf.Channel, p intf.Playback) {
 
 	pb := p.(effectIntf.S3M)
 	pb.SetFilterEnable(on)
-}
-
-// Tick is called on every tick
-func (e EnableFilter) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e EnableFilter) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 }
 
 func (e EnableFilter) String() string {

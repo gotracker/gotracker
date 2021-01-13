@@ -44,10 +44,6 @@ func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	}
 }
 
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e SetTempo) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
-}
-
 func (e SetTempo) String() string {
 	return fmt.Sprintf("F%0.2x", uint8(e))
 }

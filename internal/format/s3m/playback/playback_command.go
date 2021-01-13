@@ -1,9 +1,10 @@
 package playback
 
 import (
+	"gotracker/internal/format/internal/filter"
 	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/filter"
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
@@ -29,15 +30,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int, lastTick bool) {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	if cs.ActiveEffect != nil {
-		if currentTick == 0 {
-			cs.ActiveEffect.Start(cs, m)
-		}
-		cs.ActiveEffect.Tick(cs, m, currentTick)
-		if lastTick {
-			cs.ActiveEffect.Stop(cs, m, currentTick)
-		}
-	}
+	intf.DoEffect(cs.ActiveEffect, cs, m, currentTick, lastTick)
 	// post-effect
 	m.doNoteVolCalcs(cs)
 

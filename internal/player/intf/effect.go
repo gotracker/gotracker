@@ -7,10 +7,50 @@ import (
 // Effect is an interface to command/effect
 type Effect interface {
 	fmt.Stringer
-	PreStart(cs Channel, p Playback)
-	Start(cs Channel, p Playback)
-	Tick(cs Channel, p Playback, currentTick int)
-	Stop(cs Channel, p Playback, lastTick int)
+}
+
+type effectPreStartIntf interface {
+	PreStart(Channel, Playback)
+}
+
+// EffectPreStart triggers when the effect enters onto the channel state
+func EffectPreStart(e Effect, cs Channel, p Playback) {
+	if eff, ok := e.(effectPreStartIntf); ok {
+		eff.PreStart(cs, p)
+	}
+}
+
+type effectStartIntf interface {
+	Start(Channel, Playback)
+}
+
+// EffectStart triggers on the first tick, but before the Tick() function is called
+func EffectStart(e Effect, cs Channel, p Playback) {
+	if eff, ok := e.(effectStartIntf); ok {
+		eff.Start(cs, p)
+	}
+}
+
+type effectTickIntf interface {
+	Tick(Channel, Playback, int)
+}
+
+// EffectTick is called on every tick
+func EffectTick(e Effect, cs Channel, p Playback, currentTick int) {
+	if eff, ok := e.(effectTickIntf); ok {
+		eff.Tick(cs, p, currentTick)
+	}
+}
+
+type effectStopIntf interface {
+	Stop(Channel, Playback, int)
+}
+
+// EffectStop is called on the last tick of the row, but after the Tick() function is called
+func EffectStop(e Effect, cs Channel, p Playback, lastTick int) {
+	if eff, ok := e.(effectStopIntf); ok {
+		eff.Stop(cs, p, lastTick)
+	}
 }
 
 // CombinedEffect specifies multiple simultaneous effects into one
@@ -21,28 +61,28 @@ type CombinedEffect struct {
 // PreStart triggers when the effect enters onto the channel state
 func (e CombinedEffect) PreStart(cs Channel, p Playback) {
 	for _, effect := range e.Effects {
-		effect.PreStart(cs, p)
+		EffectPreStart(effect, cs, p)
 	}
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e CombinedEffect) Start(cs Channel, p Playback) {
 	for _, effect := range e.Effects {
-		effect.Start(cs, p)
+		EffectStart(effect, cs, p)
 	}
 }
 
 // Tick is called on every tick
 func (e CombinedEffect) Tick(cs Channel, p Playback, currentTick int) {
 	for _, effect := range e.Effects {
-		effect.Tick(cs, p, currentTick)
+		EffectTick(effect, cs, p, currentTick)
 	}
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
 func (e CombinedEffect) Stop(cs Channel, p Playback, lastTick int) {
 	for _, effect := range e.Effects {
-		effect.Stop(cs, p, lastTick)
+		EffectStop(effect, cs, p, lastTick)
 	}
 }
 
@@ -55,4 +95,19 @@ func (e CombinedEffect) String() string {
 		}
 	}
 	return ""
+}
+
+// DoEffect runs the standard tick lifetime of an effect
+func DoEffect(e Effect, cs Channel, p Playback, currentTick int, lastTick bool) {
+	if e == nil {
+		return
+	}
+
+	if currentTick == 0 {
+		EffectStart(e, cs, p)
+	}
+	EffectTick(e, cs, p, currentTick)
+	if lastTick {
+		EffectStop(e, cs, p, currentTick)
+	}
 }

@@ -1,6 +1,7 @@
 package effect
 
 import (
+	"fmt"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
@@ -15,7 +16,7 @@ func (e VolEff) String() string {
 	if e.eff == nil {
 		return "..."
 	}
-	return e.eff.String()
+	return fmt.Sprintf("%v", e.eff)
 }
 
 // Factory produces an effect for the provided channel pattern data

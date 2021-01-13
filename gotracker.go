@@ -23,11 +23,12 @@ import (
 
 // flags
 var (
-	outputSettings device.Settings
-	startingOrder  int
-	startingRow    int
-	canLoop        bool
-	effectCoverage bool
+	outputSettings         device.Settings
+	startingOrder          int
+	startingRow            int
+	canLoop                bool
+	effectCoverage         bool
+	panicOnUnhandledEffect bool
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 	flag.StringVar(&outputSettings.Name, "O", output.DefaultOutputDeviceName, "output device")
 	flag.StringVar(&outputSettings.Filepath, "f", "output.wav", "output filepath")
 	flag.BoolVar(&effectCoverage, "E", false, "gather and display effect coverage data")
+	flag.BoolVar(&panicOnUnhandledEffect, "P", false, "panic when an unhandled effect is encountered")
 
 	flag.Parse()
 
@@ -112,6 +114,9 @@ func main() {
 
 	if !canLoop {
 		disableFeatures = append(disableFeatures, feature.OrderLoop)
+	}
+	if panicOnUnhandledEffect {
+		disableFeatures = append(disableFeatures, feature.IgnoreUnknownEffect)
 	}
 	playback.DisableFeatures(disableFeatures)
 

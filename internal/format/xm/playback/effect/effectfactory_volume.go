@@ -10,6 +10,7 @@ func volumeEffectFactory(mi intf.Memory, v uint8) intf.Effect {
 	case v >= 0x00 && v <= 0x0f: // nothing
 		return nil
 	case v >= 0x10 && v <= 0x5f: // volume set - handled elsewhere
+		// really should be v >= 0x10 && v <= 0x50
 		return nil
 	case v >= 0x60 && v <= 0x6f: // vol slide down
 		return VolumeSlide(v & 0x0f)

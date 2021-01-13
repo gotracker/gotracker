@@ -352,3 +352,10 @@ func (cs *ChannelState) SetOutputChannelNum(outputChNum int) {
 func (cs *ChannelState) SetGlobalVolume(gv volume.Volume) {
 	cs.LastGlobalVolume = gv
 }
+
+// SetEnvelopePosition sets the envelope position for the active instrument
+func (cs *ChannelState) SetEnvelopePosition(ticks int) {
+	if nc := cs.GetNoteControl(); nc != nil {
+		nc.SetEnvelopePosition(ticks)
+	}
+}

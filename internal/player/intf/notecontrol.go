@@ -31,4 +31,5 @@ type NoteControl interface {
 	GetPlayback() Playback
 	SetData(interface{})
 	GetData() interface{}
+	SetEnvelopePosition(int)
 }

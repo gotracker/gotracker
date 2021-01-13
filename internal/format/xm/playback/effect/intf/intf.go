@@ -9,4 +9,5 @@ type XM interface {
 	SetTempo(int)
 	DecreaseTempo(int)
 	IncreaseTempo(int)
+	SetEnvelopePosition(uint8)
 }

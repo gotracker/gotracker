@@ -66,4 +66,5 @@ type Channel interface {
 	SetOutputChannelNum(int)
 	SetVolumeActive(bool)
 	SetGlobalVolume(volume.Volume)
+	SetEnvelopePosition(int)
 }

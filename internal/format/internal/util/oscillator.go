@@ -1,9 +1,7 @@
-package channel
+package util
 
 import (
 	"math/rand"
-
-	formatutil "gotracker/internal/format/internal/util"
 )
 
 // WaveTableSelect is the selection code for which waveform to use in an oscillator
@@ -39,18 +37,18 @@ func (o *Oscillator) GetWave(depth float32) float32 {
 	var vib float32
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSineContinue:
-		vib = formatutil.GetProtrackerSine(int(o.Pos))
+		vib = GetProtrackerSine(int(o.Pos))
 	case WaveTableSelectSawtoothRetrigger, WaveTableSelectSawtoothContinue:
 		vib = (32.0 - float32(o.Pos&0x3f)) / 32.0
 	case WaveTableSelectSquareRetrigger, WaveTableSelectSquareContinue:
-		v := formatutil.GetProtrackerSine(int(o.Pos))
+		v := GetProtrackerSine(int(o.Pos))
 		if v > 0 {
 			vib = 1.0
 		} else {
 			vib = -1.0
 		}
 	case WaveTableSelectRandomRetrigger, WaveTableSelectRandomContinue:
-		vib = formatutil.GetProtrackerSine(rand.Int() & 0x3f)
+		vib = GetProtrackerSine(rand.Int() & 0x3f)
 	}
 	delta := vib * depth
 	return delta

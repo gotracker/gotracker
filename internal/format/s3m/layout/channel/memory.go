@@ -15,13 +15,13 @@ type Memory struct {
 	tempoDecrease uint8
 	tempoIncrease uint8
 	lastNonZero   uint8
-	patternLoop   PatternLoop
 
 	VolSlideEveryFrame bool
 
-	tremorMem         Tremor
+	tremorMem         formatutil.Tremor
 	vibratoOscillator formatutil.Oscillator
 	tremoloOscillator formatutil.Oscillator
+	patternLoop       formatutil.PatternLoop
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -76,7 +76,7 @@ func (m *Memory) LastNonZero(input uint8) uint8 {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *Tremor {
+func (m *Memory) TremorMem() *formatutil.Tremor {
 	return &m.tremorMem
 }
 
@@ -98,6 +98,6 @@ func (m *Memory) Retrigger() {
 }
 
 // GetPatternLoop returns the pattern loop object from the memory
-func (m *Memory) GetPatternLoop() *PatternLoop {
+func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 	return &m.patternLoop
 }

@@ -28,10 +28,10 @@ type Memory struct {
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
 
-	tremorMem         Tremor
+	tremorMem         formatutil.Tremor
 	vibratoOscillator formatutil.Oscillator
 	tremoloOscillator formatutil.Oscillator
-	patternLoop       PatternLoop
+	patternLoop       formatutil.PatternLoop
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -135,7 +135,7 @@ func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *Tremor {
+func (m *Memory) TremorMem() *formatutil.Tremor {
 	return &m.tremorMem
 }
 
@@ -157,6 +157,6 @@ func (m *Memory) Retrigger() {
 }
 
 // GetPatternLoop returns the pattern loop object from the memory
-func (m *Memory) GetPatternLoop() *PatternLoop {
+func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 	return &m.patternLoop
 }

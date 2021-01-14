@@ -1,4 +1,4 @@
-package channel
+package util
 
 import "gotracker/internal/player/intf"
 

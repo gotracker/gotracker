@@ -11,17 +11,35 @@ import (
 	"gotracker/internal/player/note"
 )
 
+// playbackState is the information needed to make an instrument play
+type playbackState struct {
+	Instrument  intf.Instrument
+	Period      note.Period
+	Volume      volume.Volume
+	VoiceActive bool
+	Pos         sampling.Pos
+	Pan         panning.Position
+}
+
+// Reset sets the render state to defaults
+func (p *playbackState) Reset() {
+	p.Instrument = nil
+	p.Period = nil
+	p.Volume = 1
+	p.VoiceActive = true
+	p.Pos = sampling.Pos{}
+	p.Pan = panning.CenterAhead
+}
+
 // NoteControl is an instance of the instrument on a particular output channel
 type NoteControl struct {
 	intf.NoteControl
+	playbackState
 
-	Instrument       intf.Instrument
 	OutputChannelNum int
-	Volume           volume.Volume
 	Data             interface{}
 	Filter           intf.Filter
 	Playback         intf.Playback
-	Period           note.Period
 }
 
 // GetSample returns the sample at position `pos` in the instrument

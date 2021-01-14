@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
@@ -12,38 +11,18 @@ import (
 	"gotracker/internal/player/note"
 )
 
-// renderState is the information needed to make an instrument play
-type renderState struct {
-	Instrument   intf.Instrument
-	Period       note.Period
-	Volume       volume.Volume
-	PeriodDelta  note.PeriodDelta
-	volumeActive bool
-	Pos          sampling.Pos
-	Pan          panning.Position
-}
-
-// Reset sets the render state to defaults
-func (r *renderState) Reset() {
-	r.Instrument = nil
-	r.Period = nil
-	r.Volume = 1
-	r.PeriodDelta = 0
-	r.volumeActive = true
-	r.Pos = sampling.Pos{}
-	r.Pan = panning.CenterAhead
-}
-
 // activeState is the active state of a channel
 type activeState struct {
-	renderState
+	playbackState
 	NoteControl intf.NoteControl
+	PeriodDelta note.PeriodDelta
 }
 
 // Reset sets the active state to defaults
 func (a *activeState) Reset() {
-	a.renderState.Reset()
+	a.playbackState.Reset()
 	a.NoteControl = nil
+	a.PeriodDelta = 0
 }
 
 // Render renders an active channel's sample data for a the provided number of samples
@@ -69,7 +48,7 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 
 	// make a stand-alone data buffer for this channel for this tick
 	var data mixing.MixBuffer
-	if a.volumeActive {
+	if a.VoiceActive {
 		data = mix.NewMixBuffer(samples)
 		mixData := mixing.SampleMixIn{
 			Sample:    sampling.NewSampler(nc, a.Pos, samplerAdd),

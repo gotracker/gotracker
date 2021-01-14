@@ -105,9 +105,9 @@ func (inst *Instrument) GetLength() sampling.Pos {
 func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter) intf.NoteControl {
 	ioc := state.NoteControl{
 		OutputChannelNum: channelIdx,
-		Instrument:       inst,
 		Filter:           filter,
 	}
+	ioc.Instrument = inst
 
 	if inst.Inst != nil {
 		inst.Inst.Initialize(&ioc)

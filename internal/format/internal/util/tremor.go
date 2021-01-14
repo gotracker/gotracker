@@ -1,4 +1,4 @@
-package channel
+package util
 
 // Tremor is the storage object for the tremor values
 type Tremor struct {

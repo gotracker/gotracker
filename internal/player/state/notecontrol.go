@@ -13,12 +13,11 @@ import (
 
 // playbackState is the information needed to make an instrument play
 type playbackState struct {
-	Instrument  intf.Instrument
-	Period      note.Period
-	Volume      volume.Volume
-	VoiceActive bool
-	Pos         sampling.Pos
-	Pan         panning.Position
+	Instrument intf.Instrument
+	Period     note.Period
+	Volume     volume.Volume
+	Pos        sampling.Pos
+	Pan        panning.Position
 }
 
 // Reset sets the render state to defaults
@@ -26,7 +25,6 @@ func (p *playbackState) Reset() {
 	p.Instrument = nil
 	p.Period = nil
 	p.Volume = 1
-	p.VoiceActive = true
 	p.Pos = sampling.Pos{}
 	p.Pan = panning.CenterAhead
 }

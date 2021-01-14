@@ -14,6 +14,7 @@ import (
 // activeState is the active state of a channel
 type activeState struct {
 	playbackState
+	VoiceActive bool
 	NoteControl intf.NoteControl
 	PeriodDelta note.PeriodDelta
 }
@@ -21,6 +22,7 @@ type activeState struct {
 // Reset sets the active state to defaults
 func (a *activeState) Reset() {
 	a.playbackState.Reset()
+	a.VoiceActive = true
 	a.NoteControl = nil
 	a.PeriodDelta = 0
 }

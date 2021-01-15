@@ -126,7 +126,7 @@ func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.GetPlayback().(render.OPL2Intf)
+		p := ioc.GetOutputChannel().Playback.(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -135,7 +135,7 @@ func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 		panic("no ym3812 available")
 	}
 
-	index := uint32(ioc.GetOutputChannelNum())
+	index := uint32(ioc.GetOutputChannel().ChannelNum)
 
 	// write the instrument to the channel!
 	if !on {
@@ -282,7 +282,7 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
 	if ch == nil {
-		p := ioc.GetPlayback().(render.OPL2Intf)
+		p := ioc.GetOutputChannel().Playback.(render.OPL2Intf)
 		ch = p.GetOPL2Chip()
 		ym.chip = ch
 	}
@@ -291,7 +291,7 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 		panic("no ym3812 available")
 	}
 
-	index := uint32(ioc.GetOutputChannelNum())
+	index := uint32(ioc.GetOutputChannel().ChannelNum)
 
 	mod := inst.getChannelIndex(int(index))
 	car := mod + 0x03

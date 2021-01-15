@@ -34,21 +34,17 @@ type NoteControl struct {
 	intf.NoteControl
 	playbackState
 
-	OutputChannelNum int
-	Data             interface{}
-	Filter           intf.Filter
-	Playback         intf.Playback
+	Data   interface{}
+	Output *intf.OutputChannel
 }
 
 // GetSample returns the sample at position `pos` in the instrument
 func (nc *NoteControl) GetSample(pos sampling.Pos) volume.Matrix {
 	if inst := nc.Instrument; inst != nil {
 		dry := inst.GetSample(nc, pos)
-		if nc.Filter != nil {
-			wet := nc.Filter.Filter(dry)
-			return wet
+		if nc.Output != nil {
+			return nc.Output.ApplyFilter(dry)
 		}
-		return dry
 	}
 	return nil
 }
@@ -61,9 +57,9 @@ func (nc *NoteControl) GetCurrentPanning() panning.Position {
 	return panning.CenterAhead
 }
 
-// GetOutputChannelNum returns the note-control's output channel number
-func (nc *NoteControl) GetOutputChannelNum() int {
-	return nc.OutputChannelNum
+// GetOutputChannel returns the note-control's output channel
+func (nc *NoteControl) GetOutputChannel() *intf.OutputChannel {
+	return nc.Output
 }
 
 // GetInstrument returns the instrument that's on this instance
@@ -107,11 +103,6 @@ func (nc *NoteControl) Update(tickDuration time.Duration) {
 	}
 }
 
-// SetFilter sets the active filter on the instrument (which should be the same as what's on the channel)
-func (nc *NoteControl) SetFilter(filter intf.Filter) {
-	nc.Filter = filter
-}
-
 // SetVolume sets the active note-control's volume
 func (nc *NoteControl) SetVolume(vol volume.Volume) {
 	nc.Volume = vol
@@ -130,16 +121,6 @@ func (nc *NoteControl) SetPeriod(period note.Period) {
 // GetPeriod gets the active note-control's period
 func (nc *NoteControl) GetPeriod() note.Period {
 	return nc.Period
-}
-
-// SetPlayback sets the playback interface for the note-control
-func (nc *NoteControl) SetPlayback(pb intf.Playback) {
-	nc.Playback = pb
-}
-
-// GetPlayback gets the playback interface for the note-control
-func (nc *NoteControl) GetPlayback() intf.Playback {
-	return nc.Playback
 }
 
 // SetData sets the data interface for the note-control

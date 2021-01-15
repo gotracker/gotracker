@@ -43,7 +43,7 @@ type Channel interface {
 	SetPeriod(note.Period)
 	SetVibratoDelta(note.PeriodDelta)
 	GetVibratoDelta() note.PeriodDelta
-	SetInstrument(Instrument, Playback)
+	SetInstrument(Instrument)
 	GetInstrument() Instrument
 	GetNoteControl() NoteControl
 	GetTargetInst() Instrument
@@ -61,9 +61,8 @@ type Channel interface {
 	GetPan() panning.Position
 	SetPan(panning.Position)
 	SetDoRetriggerNote(bool)
-	GetFilter() Filter
-	SetFilter(Filter)
-	SetOutputChannelNum(int)
+	SetOutputChannel(*OutputChannel)
+	GetOutputChannel() *OutputChannel
 	SetVolumeActive(bool)
 	SetGlobalVolume(volume.Volume)
 	SetEnvelopePosition(int)

@@ -103,10 +103,9 @@ func (inst *Instrument) GetFinetune() note.Finetune {
 }
 
 // InstantiateOnChannel takes an instrument and loads it onto an output channel
-func (inst *Instrument) InstantiateOnChannel(channelIdx int, filter intf.Filter) intf.NoteControl {
+func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteControl {
 	ioc := state.NoteControl{
-		OutputChannelNum: channelIdx,
-		Filter:           filter,
+		Output: oc,
 	}
 	ioc.Instrument = inst
 

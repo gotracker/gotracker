@@ -43,10 +43,10 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			if targetInst != cs.GetInstrument() {
-				cs.SetInstrument(targetInst, m)
+				cs.SetInstrument(targetInst)
 			}
 		} else {
-			cs.SetInstrument(nil, nil)
+			cs.SetInstrument(nil)
 		}
 		if cs.UseTargetPeriod {
 			cs.SetPeriod(targetPeriod)
@@ -77,12 +77,14 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 func (m *Manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
-		if on {
-			if c.GetFilter() == nil {
-				c.SetFilter(filter.NewAmigaLPF())
+		if o := c.GetOutputChannel(); o != nil {
+			if on {
+				if o.Filter == nil {
+					o.Filter = filter.NewAmigaLPF()
+				}
+			} else {
+				o.Filter = nil
 			}
-		} else {
-			c.SetFilter(nil)
 		}
 	}
 }

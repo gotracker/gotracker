@@ -74,7 +74,6 @@ type rowRenderState struct {
 	samplesPerTick int
 	ticksThisRow   int
 	panmixer       mixing.PanMixer
-	firstOplCh     int
 
 	currentTick int
 }

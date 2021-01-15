@@ -23,7 +23,7 @@ type Instrument interface {
 	GetDefaultVolume() volume.Volume
 	GetID() InstrumentID
 	GetSemitoneShift() int8
-	InstantiateOnChannel(int, Filter) NoteControl
+	InstantiateOnChannel(*OutputChannel) NoteControl
 	SetFinetune(note.Finetune)
 	GetFinetune() note.Finetune
 

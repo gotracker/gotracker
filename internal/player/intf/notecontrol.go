@@ -14,7 +14,7 @@ import (
 type NoteControl interface {
 	sampling.SampleStream
 
-	GetOutputChannelNum() int
+	GetOutputChannel() *OutputChannel
 	GetInstrument() Instrument
 	GetCurrentPanning() panning.Position
 	Attack()
@@ -27,8 +27,6 @@ type NoteControl interface {
 	GetVolume() volume.Volume
 	SetPeriod(note.Period)
 	GetPeriod() note.Period
-	SetPlayback(Playback)
-	GetPlayback() Playback
 	SetData(interface{})
 	GetData() interface{}
 	SetEnvelopePosition(int)

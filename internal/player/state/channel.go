@@ -42,8 +42,7 @@ type ChannelState struct {
 	volumeActive      bool
 	PanEnabled        bool
 
-	OutputChannelNum int
-	Filter           intf.Filter
+	Output *intf.OutputChannel
 }
 
 // Process processes a channel's row data
@@ -225,11 +224,10 @@ func (cs *ChannelState) GetInstrument() intf.Instrument {
 }
 
 // SetInstrument sets the interface to the active instrument
-func (cs *ChannelState) SetInstrument(inst intf.Instrument, pb intf.Playback) {
+func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 	cs.activeState.Instrument = inst
 	if inst != nil {
-		cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.OutputChannelNum, cs.Filter)
-		cs.activeState.NoteControl.SetPlayback(pb)
+		cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.Output)
 	}
 }
 
@@ -330,22 +328,14 @@ func (cs *ChannelState) SetSemitone(st note.Semitone) {
 	cs.TargetSemitone = st
 }
 
-// GetFilter returns the active filter on the channel
-func (cs *ChannelState) GetFilter() intf.Filter {
-	return cs.Filter
+// SetOutputChannel sets the output channel for the channel
+func (cs *ChannelState) SetOutputChannel(outputCh *intf.OutputChannel) {
+	cs.Output = outputCh
 }
 
-// SetFilter sets the active filter on the channel
-func (cs *ChannelState) SetFilter(filter intf.Filter) {
-	cs.Filter = filter
-	if cs.activeState.NoteControl != nil {
-		cs.activeState.NoteControl.SetFilter(filter)
-	}
-}
-
-// SetOutputChannelNum sets the output channel number for the channel
-func (cs *ChannelState) SetOutputChannelNum(outputChNum int) {
-	cs.OutputChannelNum = outputChNum
+// GetOutputChannel returns the output channel for the channel
+func (cs *ChannelState) GetOutputChannel() *intf.OutputChannel {
+	return cs.Output
 }
 
 // SetGlobalVolume sets the last-known global volume on the channel

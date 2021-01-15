@@ -52,8 +52,10 @@ func NewManager(song *layout.Song) *Manager {
 
 	m.SetNumChannels(len(song.ChannelSettings))
 	for i, ch := range song.ChannelSettings {
+		oc := m.GetOutputChannel(ch.OutputChannelNum, &m)
+
 		cs := m.GetChannel(i)
-		cs.SetOutputChannelNum(ch.OutputChannelNum)
+		cs.SetOutputChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
 		cs.SetPanEnabled(true)
@@ -89,7 +91,8 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.NotePlayTick = 0
 		cs.RetriggerCount = 0
 		cs.TrackData = nil
-		cs.OutputChannelNum = m.song.GetOutputChannel(ch)
+		ocNum := m.song.GetOutputChannel(ch)
+		cs.Output = m.GetOutputChannel(ocNum, m)
 	}
 }
 

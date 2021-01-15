@@ -36,6 +36,7 @@ type Tracker struct {
 	mixerVolume  volume.Volume
 
 	panicOnUnknownEffect bool
+	outputChannels       map[int]*intf.OutputChannel
 }
 
 // Update runs processing on the tracker, producing premixed sound data
@@ -74,6 +75,24 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) 
 	}
 
 	return nil, nil
+}
+
+// GetOutputChannel returns the output channel for the provided index `ch`
+func (t *Tracker) GetOutputChannel(ch int, pb intf.Playback) *intf.OutputChannel {
+	if t.outputChannels == nil {
+		t.outputChannels = make(map[int]*intf.OutputChannel)
+	}
+
+	oc, ok := t.outputChannels[ch]
+	if !ok {
+		oc = &intf.OutputChannel{
+			ChannelNum: ch,
+			Filter:     nil,
+			Playback:   pb,
+		}
+		t.outputChannels[ch] = oc
+	}
+	return oc
 }
 
 func (t *Tracker) renderTick() (*device.PremixData, error) {

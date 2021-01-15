@@ -9,7 +9,7 @@ import (
 	"gotracker/internal/player/render"
 )
 
-// OnTick runs the S3M tick processing
+// OnTick runs the XM tick processing
 func (m *Manager) OnTick() error {
 	m.premix = nil
 	premix, err := m.renderTick()

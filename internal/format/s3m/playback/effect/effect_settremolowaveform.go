@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/xm/layout/channel"
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 )
 

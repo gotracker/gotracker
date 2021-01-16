@@ -15,7 +15,7 @@ type PortaToNote uint8 // '3'
 func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	if cmd := cs.GetData().(*channel.Data); cmd != nil && cmd.HasNote() {
+	if cmd, ok := cs.GetData().(*channel.Data); ok && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetDoRetriggerNote(false)
 	}

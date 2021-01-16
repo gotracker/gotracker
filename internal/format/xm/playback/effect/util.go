@@ -100,7 +100,7 @@ func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 	mem := cs.GetMemory().(*channel.Memory)
 	vib := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
 	delta := note.PeriodDelta(vib)
-	cs.SetVibratoDelta(delta)
+	cs.SetPeriodDelta(delta)
 }
 
 func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) {
@@ -129,7 +129,7 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSem
 	case 2:
 		arpSemitoneTarget = note.Semitone(int8(ns) + arpSemitoneBDelta)
 	}
-	cs.SetSemitone(arpSemitoneTarget)
+	cs.SetTargetSemitone(arpSemitoneTarget)
 	cs.SetTargetPos(cs.GetPos())
 	cs.SetNotePlayTick(currentTick)
 	cs.SetDoRetriggerNote(true)

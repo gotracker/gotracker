@@ -15,7 +15,7 @@ type PortaToNote uint8 // 'G'
 func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	if cmd := cs.GetData().(*channel.Data); cmd != nil && cmd.HasNote() {
+	if cmd, ok := cs.GetData().(*channel.Data); ok && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetDoRetriggerNote(false)
 	}
@@ -27,7 +27,11 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	xx := mem.PortaToNote(uint8(e))
 
 	// vibrato modifies current period for portamento
-	period := cs.GetPeriod().Add(cs.GetVibratoDelta())
+	period := cs.GetPeriod()
+	if period == nil {
+		return
+	}
+	period = period.Add(cs.GetPeriodDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if note.ComparePeriods(period, ptp) == 1 {

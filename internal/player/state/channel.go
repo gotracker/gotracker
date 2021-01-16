@@ -20,7 +20,7 @@ type ChannelState struct {
 
 	activeState activeState
 	targetState playbackState
-	prevState   playbackState
+	prevState   activeState
 
 	ActiveEffect intf.Effect
 
@@ -45,9 +45,9 @@ type ChannelState struct {
 	Output *intf.OutputChannel
 }
 
-// Process processes a channel's row data
-func (cs *ChannelState) Process(row intf.Row, sd intf.SongData) {
-	cs.prevState = cs.activeState.playbackState
+// AdvanceRow will update the current state to make room for the next row's state data
+func (cs *ChannelState) AdvanceRow() {
+	cs.prevState = cs.activeState
 	cs.targetState = cs.activeState.playbackState
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
@@ -57,67 +57,6 @@ func (cs *ChannelState) Process(row intf.Row, sd intf.SongData) {
 	cs.WantNoteCalc = false
 	cs.WantVolCalc = false
 	cs.UseTargetPeriod = false
-
-	if cs.TrackData == nil {
-		return
-	}
-
-	if cs.TrackData.HasNote() {
-		cs.UseTargetPeriod = true
-		inst := cs.TrackData.GetInstrument()
-		if inst.IsEmpty() {
-			// use current
-			cs.targetState.Pos = sampling.Pos{}
-		} else if !sd.IsValidInstrumentID(inst) {
-			cs.targetState.Instrument = nil
-		} else {
-			cs.targetState.Instrument = sd.GetInstrument(inst)
-			cs.targetState.Pos = sampling.Pos{}
-			if cs.targetState.Instrument != nil {
-				cs.WantVolCalc = true
-			}
-		}
-
-		n := cs.TrackData.GetNote()
-		if n == note.EmptyNote {
-			cs.WantNoteCalc = false
-			cs.DoRetriggerNote = cs.TrackData.HasInstrument()
-			if cs.DoRetriggerNote {
-				cs.targetState.Pos = sampling.Pos{}
-			}
-		} else if n.IsInvalid() {
-			cs.targetState.Period = nil
-			cs.WantNoteCalc = false
-			cs.DoRetriggerNote = false
-		} else if n == note.StopNote {
-			cs.targetState.Period = cs.activeState.Period
-			if cs.prevState.Instrument != nil {
-				cs.targetState.Instrument = cs.prevState.Instrument
-			}
-			cs.WantNoteCalc = false
-			cs.DoRetriggerNote = false
-		} else if cs.targetState.Instrument != nil {
-			cs.StoredSemitone = n.Semitone()
-			cs.TargetSemitone = cs.StoredSemitone
-			cs.WantNoteCalc = true
-		}
-	} else {
-		cs.WantNoteCalc = false
-		cs.WantVolCalc = false
-		cs.DoRetriggerNote = false
-	}
-
-	if cs.TrackData.HasVolume() {
-		cs.WantVolCalc = false
-		v := cs.TrackData.GetVolume()
-		if v == volume.VolumeUseInstVol {
-			if cs.targetState.Instrument != nil {
-				cs.WantVolCalc = true
-			}
-		} else {
-			cs.SetActiveVolume(v)
-		}
-	}
 }
 
 // RenderRowTick renders a channel's row data for a single tick
@@ -203,13 +142,13 @@ func (cs *ChannelState) SetTargetPeriod(period note.Period) {
 	cs.targetState.Period = period
 }
 
-// SetVibratoDelta sets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState) SetVibratoDelta(delta note.PeriodDelta) {
+// SetPeriodDelta sets the vibrato (ephemeral) delta sampler period
+func (cs *ChannelState) SetPeriodDelta(delta note.PeriodDelta) {
 	cs.activeState.PeriodDelta = delta
 }
 
-// GetVibratoDelta gets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState) GetVibratoDelta() note.PeriodDelta {
+// GetPeriodDelta gets the vibrato (ephemeral) delta sampler period
+func (cs *ChannelState) GetPeriodDelta() note.PeriodDelta {
 	return cs.activeState.PeriodDelta
 }
 
@@ -226,8 +165,17 @@ func (cs *ChannelState) GetInstrument() intf.Instrument {
 // SetInstrument sets the interface to the active instrument
 func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 	cs.activeState.Instrument = inst
+	if cs.prevState.Instrument != inst {
+		if prevNc := cs.prevState.NoteControl; prevNc != nil && prevNc.GetKeyOn() {
+			prevNc.Release()
+		}
+	}
 	if inst != nil {
-		cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.Output)
+		if inst == cs.prevState.Instrument {
+			cs.activeState.NoteControl = cs.prevState.NoteControl
+		} else {
+			cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.Output)
+		}
 	}
 }
 
@@ -244,6 +192,16 @@ func (cs *ChannelState) GetTargetInst() intf.Instrument {
 // SetTargetInst sets the soon-to-be-committed active instrument (when the note retriggers)
 func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
 	cs.targetState.Instrument = inst
+}
+
+// GetPrevInst returns the interface to the last row's active instrument
+func (cs *ChannelState) GetPrevInst() intf.Instrument {
+	return cs.prevState.Instrument
+}
+
+// GetPrevNoteControl returns the interface to the last row's active note-control
+func (cs *ChannelState) GetPrevNoteControl() intf.NoteControl {
+	return cs.prevState.NoteControl
 }
 
 // GetNoteSemitone returns the note semitone for the channel
@@ -323,9 +281,14 @@ func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
 	}
 }
 
-// SetSemitone sets the target semitone for the channel
-func (cs *ChannelState) SetSemitone(st note.Semitone) {
+// SetTargetSemitone sets the target semitone for the channel
+func (cs *ChannelState) SetTargetSemitone(st note.Semitone) {
 	cs.TargetSemitone = st
+}
+
+// SetStoredSemitone sets the stored semitone for the channel
+func (cs *ChannelState) SetStoredSemitone(st note.Semitone) {
+	cs.StoredSemitone = st
 }
 
 // SetOutputChannel sets the output channel for the channel

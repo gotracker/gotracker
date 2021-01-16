@@ -7,6 +7,11 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
+	"gotracker/internal/player/state"
+
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 )
 
 const (
@@ -77,6 +82,11 @@ func (m *Manager) processPatternRow() error {
 		}
 	}
 
+	for ch := range m.channels {
+		cs := &m.channels[ch]
+		cs.TrackData = nil
+	}
+
 	// generate effects and run prestart
 	for channelNum, cdata := range row.GetChannels() {
 		if channelNum >= m.GetNumChannels() {
@@ -84,8 +94,11 @@ func (m *Manager) processPatternRow() error {
 		}
 
 		cs := &m.channels[channelNum]
-
 		cs.TrackData = cdata
+	}
+
+	for ch := range m.channels {
+		cs := &m.channels[ch]
 
 		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.TrackData)
 		if cs.ActiveEffect != nil {
@@ -113,14 +126,75 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
+		cs.AdvanceRow()
 		m.processRowForChannel(cs)
-		cs.Process(row, m.song)
 	}
 
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs intf.Channel) {
+func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 	mem := cs.GetMemory().(*channel.Memory)
 	mem.TremorMem().Reset()
+
+	if cs.TrackData == nil {
+		return
+	}
+
+	if cs.TrackData.HasNote() {
+		cs.UseTargetPeriod = true
+		inst := cs.TrackData.GetInstrument()
+		if inst.IsEmpty() {
+			// use current
+			cs.SetTargetPos(sampling.Pos{})
+		} else if !m.song.IsValidInstrumentID(inst) {
+			cs.SetTargetInst(nil)
+		} else {
+			cs.SetTargetInst(m.song.GetInstrument(inst))
+			cs.SetTargetPos(sampling.Pos{})
+			if cs.GetTargetInst() != nil {
+				cs.WantVolCalc = true
+			}
+		}
+
+		n := cs.TrackData.GetNote()
+		if n == note.EmptyNote {
+			cs.WantNoteCalc = false
+			cs.DoRetriggerNote = cs.TrackData.HasInstrument()
+			if cs.DoRetriggerNote {
+				cs.SetTargetPos(sampling.Pos{})
+			}
+		} else if n.IsInvalid() {
+			cs.SetTargetPeriod(nil)
+			cs.WantNoteCalc = false
+			cs.DoRetriggerNote = false
+		} else if n == note.StopNote {
+			cs.SetTargetPeriod(cs.GetPeriod())
+			if prevInst := cs.GetPrevInst(); prevInst != nil {
+				cs.SetTargetInst(prevInst)
+			}
+			cs.WantNoteCalc = false
+			cs.DoRetriggerNote = false
+		} else if cs.GetTargetInst() != nil {
+			cs.StoredSemitone = n.Semitone()
+			cs.TargetSemitone = cs.StoredSemitone
+			cs.WantNoteCalc = true
+		}
+	} else {
+		cs.WantNoteCalc = false
+		cs.WantVolCalc = false
+		cs.DoRetriggerNote = false
+	}
+
+	if cs.TrackData.HasVolume() {
+		cs.WantVolCalc = false
+		v := cs.TrackData.GetVolume()
+		if v == volume.VolumeUseInstVol {
+			if cs.GetTargetInst() != nil {
+				cs.WantVolCalc = true
+			}
+		} else {
+			cs.SetActiveVolume(v)
+		}
+	}
 }

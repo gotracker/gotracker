@@ -31,7 +31,6 @@ type Instrument interface {
 	GetCurrentPanning(NoteControl) panning.Position
 	Attack(NoteControl)
 	Release(NoteControl)
-	NoteCut(NoteControl)
 	GetKeyOn(NoteControl) bool
 	Update(NoteControl, time.Duration)
 	SetEnvelopePosition(NoteControl, int)

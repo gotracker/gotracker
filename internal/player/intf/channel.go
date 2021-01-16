@@ -27,7 +27,6 @@ type ChannelData interface {
 // Channel is an interface for channel state
 type Channel interface {
 	ResetRetriggerCount()
-	Process(Row, SongData)
 	SetMemory(Memory)
 	GetMemory() Memory
 	GetActiveVolume() volume.Volume
@@ -41,15 +40,18 @@ type Channel interface {
 	SetTargetPeriod(note.Period)
 	GetPeriod() note.Period
 	SetPeriod(note.Period)
-	SetVibratoDelta(note.PeriodDelta)
-	GetVibratoDelta() note.PeriodDelta
+	SetPeriodDelta(note.PeriodDelta)
+	GetPeriodDelta() note.PeriodDelta
 	SetInstrument(Instrument)
 	GetInstrument() Instrument
 	GetNoteControl() NoteControl
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)
+	GetPrevInst() Instrument
+	GetPrevNoteControl() NoteControl
 	GetNoteSemitone() note.Semitone
-	SetSemitone(note.Semitone)
+	SetStoredSemitone(note.Semitone)
+	SetTargetSemitone(note.Semitone)
 	GetTargetPos() sampling.Pos
 	SetTargetPos(sampling.Pos)
 	GetPos() sampling.Pos

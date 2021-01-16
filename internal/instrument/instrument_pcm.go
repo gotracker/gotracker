@@ -148,13 +148,6 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 	ed.keyOn = false
 }
 
-// NoteCut cuts the current playback of the instrument
-func (inst *PCM) NoteCut(ioc intf.NoteControl) {
-	ed := ioc.GetData().(*envData)
-	ed.keyOn = false
-	ed.fadeoutVol = volume.Volume(0.0)
-}
-
 // GetKeyOn gets the key on flag for the instrument
 func (inst *PCM) GetKeyOn(ioc intf.NoteControl) bool {
 	ed := ioc.GetData().(*envData)

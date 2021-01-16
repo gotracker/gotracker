@@ -41,6 +41,7 @@ func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 			m.IncreaseTempo(val)
 		}
 	default:
+		m.SetTempo(int(e))
 	}
 }
 

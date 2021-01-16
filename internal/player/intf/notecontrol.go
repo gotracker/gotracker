@@ -19,7 +19,6 @@ type NoteControl interface {
 	GetCurrentPanning() panning.Position
 	Attack()
 	Release()
-	NoteCut()
 	GetKeyOn() bool
 	Update(time.Duration)
 	SetFilter(Filter)

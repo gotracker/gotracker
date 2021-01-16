@@ -3,7 +3,6 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
 	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
 	"gotracker/internal/player/intf"
 )
@@ -27,21 +26,7 @@ func (e SetTempo) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	m := p.(effectIntf.XM)
-	switch uint8(e >> 4) {
-	case 0: // decrease tempo
-		if currentTick != 0 {
-			mem := cs.GetMemory().(*channel.Memory)
-			val := int(mem.TempoDecrease(uint8(e & 0x0F)))
-			m.DecreaseTempo(val)
-		}
-	case 1: // increase tempo
-		if currentTick != 0 {
-			mem := cs.GetMemory().(*channel.Memory)
-			val := int(mem.TempoIncrease(uint8(e & 0x0F)))
-			m.IncreaseTempo(val)
-		}
-	default:
-	}
+	m.SetTempo(int(e))
 }
 
 func (e SetTempo) String() string {

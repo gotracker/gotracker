@@ -50,11 +50,10 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		nCh++
 	}
 	rowText := render.NewRowText(nCh, s3mChannelRender)
-	for ch := range m.channels {
+	for ch, cs := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue
 		}
-		cs := &m.channels[ch]
 
 		rowText.Channels[ch] = cs.TrackData
 	}

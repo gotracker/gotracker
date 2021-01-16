@@ -38,13 +38,13 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	if cs.TrackData != nil {
 		n = cs.TrackData.GetNote()
 	}
-	keyOff := n.IsEmpty() || n.IsStop()
+	keyOff := n.IsStop()
+	keyOn := false
 	targetPeriod := cs.GetTargetPeriod()
 	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
-			if targetInst != cs.GetInstrument() {
-				cs.SetInstrument(targetInst)
-			}
+			cs.SetInstrument(targetInst)
+			keyOn = true
 		} else {
 			cs.SetInstrument(nil)
 		}
@@ -53,23 +53,18 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.PortaTargetPeriod = targetPeriod
 		}
 		cs.SetPos(cs.GetTargetPos())
-		if nc := cs.GetNoteControl(); nc != nil {
-			cs.LastGlobalVolume = m.GetGlobalVolume()
-			if nc.GetKeyOn() {
-				nc.Release()
-			}
-			nc.Attack()
-			keyOff = false
-			mem := cs.GetMemory().(*channel.Memory)
-			mem.Retrigger()
-		}
 	}
 
-	if keyOff {
-		if nc := cs.GetNoteControl(); nc != nil && nc.GetKeyOn() {
+	if nc := cs.GetNoteControl(); nc != nil {
+		cs.LastGlobalVolume = m.GetGlobalVolume()
+		if keyOn {
+			nc.Attack()
+			mem := cs.GetMemory().(*channel.Memory)
+			mem.Retrigger()
+		} else if keyOff {
 			nc.Release()
+			cs.SetPeriod(nil)
 		}
-		cs.SetPeriod(nil)
 	}
 }
 

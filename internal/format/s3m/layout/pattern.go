@@ -7,11 +7,20 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// Pattern is the data for each pattern
-type Pattern struct {
-	intf.Pattern
-	Packed s3mfile.PackedPattern
-	Rows   Rows
+// RowData is the data for each row
+type RowData struct {
+	intf.Row
+	Channels []channel.Data
+}
+
+// GetChannels returns an interface to all the channels in the row
+func (r RowData) GetChannels() []intf.ChannelData {
+	c := make([]intf.ChannelData, len(r.Channels))
+	for i := range r.Channels {
+		c[i] = &r.Channels[i]
+	}
+
+	return c
 }
 
 // Rows is a list of row data (channels and whatnot)
@@ -27,6 +36,13 @@ func (r Rows) NumRows() int {
 	return len(r)
 }
 
+// Pattern is the data for each pattern
+type Pattern struct {
+	intf.Pattern
+	Packed s3mfile.PackedPattern
+	Rows   Rows
+}
+
 // GetRow returns the interface to the row at index `row`
 func (p Pattern) GetRow(row intf.RowIdx) intf.Row {
 	return &p.Rows[row]
@@ -35,20 +51,4 @@ func (p Pattern) GetRow(row intf.RowIdx) intf.Row {
 // GetRows returns the interfaces to all the rows in the pattern
 func (p Pattern) GetRows() intf.Rows {
 	return p.Rows
-}
-
-// RowData is the data for each row
-type RowData struct {
-	intf.Row
-	Channels [32]channel.Data
-}
-
-// GetChannels returns an interface to all the channels in the row
-func (r RowData) GetChannels() []intf.ChannelData {
-	c := make([]intf.ChannelData, len(r.Channels))
-	for i := range r.Channels {
-		c[i] = &r.Channels[i]
-	}
-
-	return c
 }

@@ -8,12 +8,6 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// Row is a specification of the current row data
-type Row struct {
-	intf.Row
-	Channels [32]intf.ChannelData
-}
-
 // State is the current pattern state
 type State struct {
 	currentOrder       intf.OrderIdx
@@ -215,46 +209,26 @@ func (state *State) nextRow() {
 	}
 }
 
-// GetRow returns the current row
-func (state *State) GetRow() *Row {
-	var patNum = state.GetPatNum()
-	switch patNum {
-	case intf.InvalidPattern:
-		return nil
-	case intf.NextPattern:
-		{
-			state.nextRow()
-			return state.GetRow()
-		}
-	default:
-		{
-			var pattern = state.Patterns[patNum]
-			if row, ok := pattern.GetRow(state.currentRow).(*Row); ok {
-				return row
-			}
-			return nil
-		}
-	}
-}
-
 // GetRows returns all the rows in the pattern
 func (state *State) GetRows() intf.Rows {
-	var patNum = state.GetPatNum()
-	switch patNum {
-	case intf.InvalidPattern:
-		return nil
-	case intf.NextPattern:
-		{
-			state.nextRow()
-			return state.GetRows()
-		}
-	default:
-		if int(patNum) >= len(state.Patterns) {
+nextRow:
+	for loops := 0; loops < len(state.Patterns); loops++ {
+		var patNum = state.GetPatNum()
+		switch patNum {
+		case intf.InvalidPattern:
 			return nil
+		case intf.NextPattern:
+			state.nextRow()
+			continue nextRow
+		default:
+			if int(patNum) >= len(state.Patterns) {
+				return nil
+			}
+			pattern := state.Patterns[patNum]
+			return pattern.GetRows()
 		}
-		pattern := state.Patterns[patNum]
-		return pattern.GetRows()
 	}
+	return nil
 }
 
 // CommitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.

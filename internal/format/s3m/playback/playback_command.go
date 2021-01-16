@@ -49,6 +49,9 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.SetInstrument(nil)
 		}
 		if cs.UseTargetPeriod {
+			if nc := cs.GetNoteControl(); nc != nil {
+				nc.Release()
+			}
 			cs.SetPeriod(targetPeriod)
 			cs.PortaTargetPeriod = targetPeriod
 		}

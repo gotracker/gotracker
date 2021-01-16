@@ -8,7 +8,7 @@ It's a tracked music player written in Go.
 
 ## Why does this exist?
 
-[Heucuva](https://github.com/gotracker/) needed to learn Go forever ago and figured this was a good way to do it.
+[Heucuva](https://github.com/heucuva/) needed to learn Go forever ago and figured this was a good way to do it.
 
 ## What does it play?
 

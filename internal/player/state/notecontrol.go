@@ -81,13 +81,6 @@ func (nc *NoteControl) Release() {
 	}
 }
 
-// NoteCut cuts the current playback of the instrument
-func (nc *NoteControl) NoteCut() {
-	if inst := nc.Instrument; inst != nil {
-		inst.NoteCut(nc)
-	}
-}
-
 // GetKeyOn gets the key on flag for the instrument
 func (nc *NoteControl) GetKeyOn() bool {
 	if inst := nc.Instrument; inst != nil {

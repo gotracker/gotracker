@@ -18,7 +18,6 @@ type DataIntf interface {
 	Initialize(intf.NoteControl) error
 	Attack(intf.NoteControl)
 	Release(intf.NoteControl)
-	NoteCut(intf.NoteControl)
 	GetKeyOn(intf.NoteControl) bool
 	Update(intf.NoteControl, time.Duration)
 }

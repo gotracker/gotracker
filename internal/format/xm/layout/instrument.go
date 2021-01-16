@@ -156,13 +156,6 @@ func (inst *Instrument) Release(nc intf.NoteControl) {
 	}
 }
 
-// NoteCut clears the key-on flag for the instrument and stops any output from it
-func (inst *Instrument) NoteCut(nc intf.NoteControl) {
-	if ii := inst.Inst; ii != nil {
-		ii.NoteCut(nc)
-	}
-}
-
 // GetKeyOn returns the key-on flag state for the instrument
 func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
 	if ii := inst.Inst; ii != nil {

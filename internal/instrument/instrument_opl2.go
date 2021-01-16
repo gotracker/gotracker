@@ -147,12 +147,6 @@ func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 	}
 }
 
-// NoteCut cuts the current playback of the instrument
-func (inst *OPL2) NoteCut(ioc intf.NoteControl) {
-	ioc.SetVolume(0)
-	inst.Release(ioc)
-}
-
 func (inst *OPL2) getReg20(o *OPL2OperatorData) uint8 {
 	reg20 := uint8(0x00)
 	if o.Tremolo {

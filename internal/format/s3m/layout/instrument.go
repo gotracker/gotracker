@@ -176,3 +176,10 @@ func (inst *Instrument) SetEnvelopePosition(nc intf.NoteControl, ticks int) {
 		ii.SetEnvelopePosition(nc, ticks)
 	}
 }
+
+// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
+func (inst *Instrument) UpdatePosition(nc intf.NoteControl, pos *sampling.Pos) {
+	if ii := inst.Inst; ii != nil {
+		ii.UpdatePosition(nc, pos)
+	}
+}

@@ -45,6 +45,8 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 
 	nc.Update(duration)
 
+	nc.UpdatePosition(&a.Pos)
+
 	panning := nc.GetCurrentPanning()
 	volMatrix := panmixer.GetMixingMatrix(panning)
 

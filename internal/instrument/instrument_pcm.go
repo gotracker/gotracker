@@ -129,6 +129,7 @@ func (inst *PCM) Initialize(ioc intf.NoteControl) error {
 func (inst *PCM) Attack(ioc intf.NoteControl) {
 	ed := ioc.GetData().(*envData)
 	ed.fadeoutVol = volume.Volume(1.0)
+	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = true
 	if inst.VolEnv.Enabled {
 		ed.volEnvPos = 0
@@ -145,6 +146,7 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 // Release sets the key on flag for the instrument
 func (inst *PCM) Release(ioc intf.NoteControl) {
 	ed := ioc.GetData().(*envData)
+	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = false
 }
 
@@ -165,5 +167,13 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 		if ed.fadeoutVol < 0 {
 			ed.fadeoutVol = 0
 		}
+	}
+}
+
+// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
+func (inst *PCM) UpdatePosition(ioc intf.NoteControl, pos *sampling.Pos) {
+	ed := ioc.GetData().(*envData)
+	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
+		pos.Pos = calcLoopedSamplePos(inst.LoopMode, pos.Pos, inst.Length, inst.LoopBegin, inst.LoopEnd, ed.prevKeyOn)
 	}
 }

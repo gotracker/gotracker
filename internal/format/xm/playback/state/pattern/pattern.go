@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/pattern"
 )
 
 // State is the current pattern state
@@ -22,7 +22,7 @@ type State struct {
 	SongLoopEnabled bool
 	loopDetect      formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect loops
 
-	Patterns []layout.Pattern
+	Patterns []pattern.Pattern
 	Orders   []intf.PatternIdx
 }
 
@@ -91,7 +91,7 @@ func (state *State) GetNumOrders() int {
 	return len(state.Orders)
 }
 
-func (state *State) getCurrentPattern() (*layout.Pattern, error) {
+func (state *State) getCurrentPattern() (*pattern.Pattern, error) {
 	patIdx, err := state.GetCurrentPatternIdx()
 	if err != nil {
 		return nil, err

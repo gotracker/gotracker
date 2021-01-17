@@ -8,6 +8,7 @@ import (
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/pattern"
 )
 
 // Header is a mildly-decoded XM header definition
@@ -34,7 +35,7 @@ type Song struct {
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument
 	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
-	Patterns          []Pattern
+	Patterns          []pattern.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []intf.PatternIdx
 }

@@ -14,6 +14,7 @@ import (
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/pattern"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
@@ -176,31 +177,33 @@ func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequency
 	return xmInstrumentToInstrument(s, linearFrequencySlides)
 }
 
-func convertXmPattern(pkt xmfile.Pattern) (*layout.Pattern, int) {
-	pattern := &layout.Pattern{
+func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
+	pat := &pattern.Pattern{
 		Orig: pkt,
 	}
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		pattern.Rows = append(pattern.Rows, layout.RowData{})
-		row := &pattern.Rows[rowNum]
-		row.Channels = make([]channel.Data, len(drow))
+		pat.Rows = append(pat.Rows, pattern.RowData{})
+		row := &pat.Rows[rowNum]
+		row.Channels = make([]intf.ChannelData, len(drow))
 		for channelNum, chn := range drow {
-			cd := &row.Channels[channelNum]
-			cd.What = chn.Flags
-			cd.Note = chn.Note
-			cd.Instrument = chn.Instrument
-			cd.Volume = chn.Volume
-			cd.Effect = chn.Effect
-			cd.EffectParameter = chn.EffectParameter
+			cd := channel.Data{
+				What:            chn.Flags,
+				Note:            chn.Note,
+				Instrument:      chn.Instrument,
+				Volume:          chn.Volume,
+				Effect:          chn.Effect,
+				EffectParameter: chn.EffectParameter,
+			}
+			row.Channels[channelNum] = &cd
 			if maxCh < uint8(channelNum) {
 				maxCh = uint8(channelNum)
 			}
 		}
 	}
 
-	return pattern, int(maxCh)
+	return pat, int(maxCh)
 }
 
 func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
@@ -215,7 +218,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]layout.Pattern, len(f.Patterns)),
+		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]intf.PatternIdx, int(f.Head.SongLength)),
 	}
 
@@ -256,7 +259,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]layout.Pattern, len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertXmPattern(pkt)
 		if pattern == nil {

@@ -8,6 +8,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/pattern"
 )
 
 // Header is a mildly-decoded S3M header definition
@@ -35,7 +36,7 @@ type Song struct {
 	intf.SongData
 	Head            Header
 	Instruments     []instrument.Instrument
-	Patterns        []Pattern
+	Patterns        []pattern.Pattern
 	ChannelSettings []ChannelSetting
 	OrderList       []intf.PatternIdx
 }

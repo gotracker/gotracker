@@ -1,26 +1,17 @@
-package layout
+package pattern
 
 import (
-	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-
-	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
 // RowData is the data for each row
 type RowData struct {
-	intf.Row
-	Channels []channel.Data
+	Channels []intf.ChannelData
 }
 
 // GetChannels returns an interface to all the channels in the row
 func (r RowData) GetChannels() []intf.ChannelData {
-	c := make([]intf.ChannelData, len(r.Channels))
-	for i := range r.Channels {
-		c[i] = &r.Channels[i]
-	}
-
-	return c
+	return r.Channels
 }
 
 // Rows is a list of row data (channels and whatnot)
@@ -38,9 +29,8 @@ func (r Rows) NumRows() int {
 
 // Pattern is the data for each pattern
 type Pattern struct {
-	intf.Pattern
-	Orig xmfile.Pattern
 	Rows Rows
+	Orig interface{}
 }
 
 // GetRow returns the interface to the row at index `row`

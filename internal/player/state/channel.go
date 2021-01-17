@@ -34,7 +34,6 @@ type ChannelState struct {
 	Memory            intf.Memory
 	TrackData         intf.ChannelData
 	freezePlayback    bool
-	LastGlobalVolume  volume.Volume
 	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
 	WantNoteCalc      bool
 	WantVolCalc       bool
@@ -65,7 +64,7 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 		return nil, nil
 	}
 
-	return cs.activeState.Render(cs.LastGlobalVolume, mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+	return cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
 }
 
 // ResetStates resets the channel's internal states
@@ -303,7 +302,7 @@ func (cs *ChannelState) GetOutputChannel() *intf.OutputChannel {
 
 // SetGlobalVolume sets the last-known global volume on the channel
 func (cs *ChannelState) SetGlobalVolume(gv volume.Volume) {
-	cs.LastGlobalVolume = gv
+	cs.Output.PreMixVolume = gv
 }
 
 // SetEnvelopePosition sets the envelope position for the active instrument

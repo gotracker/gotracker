@@ -28,7 +28,7 @@ func (a *activeState) Reset() {
 }
 
 // Render renders an active channel's sample data for a the provided number of samples
-func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
+func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
 	if a.Period == nil {
 		return nil, nil
 	}
@@ -44,7 +44,6 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 
 	*ncs = a.PlaybackState
 
-	ncs.Volume *= globalVolume
 	period := ncs.Period.Add(a.PeriodDelta)
 	ncs.Period = period
 

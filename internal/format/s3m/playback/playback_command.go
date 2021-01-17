@@ -59,8 +59,9 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	}
 
 	if nc := cs.GetNoteControl(); nc != nil {
-		cs.LastGlobalVolume = m.GetGlobalVolume()
 		if keyOn {
+			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
+			cs.SetGlobalVolume(m.GetGlobalVolume())
 			nc.Attack()
 			mem := cs.GetMemory().(*channel.Memory)
 			mem.Retrigger()

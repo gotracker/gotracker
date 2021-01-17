@@ -19,13 +19,14 @@ import (
 type Instrument struct {
 	intf.Instrument
 
-	Filename string
-	Name     string
-	Inst     instrument.DataIntf
-	ID       channel.S3MInstrumentID
-	C2Spd    note.C2SPD
-	Volume   volume.Volume
-	Finetune note.Finetune
+	Filename           string
+	Name               string
+	Inst               instrument.DataIntf
+	ID                 channel.S3MInstrumentID
+	C2Spd              note.C2SPD
+	Volume             volume.Volume
+	RelativeNoteNumber int8
+	Finetune           note.Finetune
 }
 
 // IsInvalid always returns false (valid)
@@ -34,7 +35,7 @@ func (inst *Instrument) IsInvalid() bool {
 }
 
 // GetC2Spd returns the C2SPD value for the instrument
-// This may get mutated if a finetune command is processed
+// This may get mutated if a finetune effect is processed
 func (inst *Instrument) GetC2Spd() note.C2SPD {
 	return inst.C2Spd
 }
@@ -47,16 +48,6 @@ func (inst *Instrument) SetC2Spd(c2spd note.C2SPD) {
 // GetDefaultVolume returns the default volume value for the instrument
 func (inst *Instrument) GetDefaultVolume() volume.Volume {
 	return inst.Volume
-}
-
-// SetFinetune sets the finetune value on the instrument
-func (inst *Instrument) SetFinetune(ft note.Finetune) {
-	inst.Finetune = ft
-}
-
-// GetFinetune returns the finetune value on the instrument
-func (inst *Instrument) GetFinetune() note.Finetune {
-	return inst.Finetune
 }
 
 // IsLooped returns true if the instrument has the loop flag set
@@ -101,6 +92,16 @@ func (inst *Instrument) GetLength() sampling.Pos {
 	return sampling.Pos{}
 }
 
+// SetFinetune sets the finetune value on the instrument
+func (inst *Instrument) SetFinetune(ft note.Finetune) {
+	inst.Finetune = ft
+}
+
+// GetFinetune returns the finetune value on the instrument
+func (inst *Instrument) GetFinetune() note.Finetune {
+	return inst.Finetune
+}
+
 // InstantiateOnChannel takes an instrument and loads it onto an output channel
 func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteControl {
 	ioc := state.NoteControl{
@@ -122,7 +123,7 @@ func (inst *Instrument) GetID() intf.InstrumentID {
 
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at
 func (inst *Instrument) GetSemitoneShift() int8 {
-	return 0
+	return inst.RelativeNoteNumber
 }
 
 // GetSample returns a sample from the instrument at the specified position

@@ -16,6 +16,7 @@ import (
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	"gotracker/internal/player/pattern"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
@@ -157,9 +158,9 @@ func convertSCRSFullToInstrument(s *s3mfile.SCRSFull, signedSamples bool) (*inst
 	return nil, errors.New("unhandled scrs ancillary type")
 }
 
-func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*layout.Pattern, int) {
-	pattern := &layout.Pattern{
-		Packed: pkt,
+func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern.Pattern, int) {
+	pat := &pattern.Pattern{
+		Orig: pkt,
 	}
 
 	buffer := bytes.NewBuffer(pkt.Data)
@@ -167,8 +168,8 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*layout.
 	rowNum := uint8(0)
 	maxCh := uint8(0)
 	for rowNum < numRows {
-		pattern.Rows = append(pattern.Rows, layout.RowData{})
-		row := &pattern.Rows[rowNum]
+		pat.Rows = append(pat.Rows, pattern.RowData{})
+		row := &pat.Rows[rowNum]
 		for {
 			var what s3mfile.PatternFlags
 			if err := binary.Read(buffer, binary.LittleEndian, &what); err != nil {
@@ -182,9 +183,9 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*layout.
 
 			channelNum := what.Channel()
 			for len(row.Channels) <= int(channelNum) {
-				row.Channels = append(row.Channels, channel.Data{})
+				row.Channels = append(row.Channels, &channel.Data{})
 			}
-			temp := &row.Channels[channelNum]
+			temp := row.Channels[channelNum].(*channel.Data)
 			if maxCh < channelNum {
 				maxCh = channelNum
 			}
@@ -222,7 +223,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*layout.
 		}
 	}
 
-	return pattern, int(maxCh)
+	return pat, int(maxCh)
 }
 
 func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8) (*layout.Song, error) {
@@ -272,7 +273,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]layout.Pattern, len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {

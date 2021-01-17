@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout/channel"
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,7 +19,7 @@ func (e SetVibratoWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	mem := cs.GetMemory().(*channel.Memory)
 	vib := mem.VibratoOscillator()
-	vib.Table = formatutil.WaveTableSelect(x)
+	vib.Table = oscillator.WaveTableSelect(x)
 }
 
 func (e SetVibratoWaveform) String() string {

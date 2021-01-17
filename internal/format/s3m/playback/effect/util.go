@@ -3,9 +3,9 @@ package effect
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
-	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -140,7 +140,7 @@ func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multi
 	doVolSlide(cs, delta, 1.0)
 }
 
-func calculateWaveTable(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32, o *formatutil.Oscillator) float32 {
+func calculateWaveTable(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32, o *oscillator.Oscillator) float32 {
 	delta := o.GetWave(float32(depth)) * multiplier
 	o.Advance(int(speed))
 	return delta

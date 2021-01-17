@@ -290,12 +290,17 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	mod := inst.getChannelIndex(int(index))
 	car := mod + 0x03
 
-	freq, block := inst.periodToFreqBlock(ioc.GetPeriod(), ioc.GetInstrument().GetC2Spd())
+	ncs := ioc.GetPlaybackState()
+	if ncs == nil {
+		panic("no playback state on note-control interface")
+	}
+
+	freq, block := inst.periodToFreqBlock(ncs.Period, ncs.Instrument.GetC2Spd())
 	regA0, regB0 := inst.freqBlockToRegA0B0(freq, block)
 
 	regC0 := inst.getRegC0()
 
-	vol := ioc.GetVolume()
+	vol := ncs.Volume
 	modVol := vol
 	if !inst.AdditiveSynthesis {
 		modVol = 1.0
@@ -332,8 +337,4 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	regB0 |= ym.regB0 & 0x20 // key on bit
 	ym.regB0 = regB0
 	ch.WriteReg(0xB0|index, regB0)
-}
-
-// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
-func (inst *OPL2) UpdatePosition(ioc intf.NoteControl, pos *sampling.Pos) {
 }

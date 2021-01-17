@@ -19,7 +19,7 @@ type ChannelState struct {
 	intf.Channel
 
 	activeState activeState
-	targetState playbackState
+	targetState intf.PlaybackState
 	prevState   activeState
 
 	ActiveEffect intf.Effect
@@ -48,7 +48,7 @@ type ChannelState struct {
 // AdvanceRow will update the current state to make room for the next row's state data
 func (cs *ChannelState) AdvanceRow() {
 	cs.prevState = cs.activeState
-	cs.targetState = cs.activeState.playbackState
+	cs.targetState = cs.activeState.PlaybackState
 	cs.DoRetriggerNote = true
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0

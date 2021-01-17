@@ -34,5 +34,4 @@ type Instrument interface {
 	GetKeyOn(NoteControl) bool
 	Update(NoteControl, time.Duration)
 	SetEnvelopePosition(NoteControl, int)
-	UpdatePosition(NoteControl, *sampling.Pos)
 }

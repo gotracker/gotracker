@@ -13,7 +13,7 @@ import (
 
 // activeState is the active state of a channel
 type activeState struct {
-	playbackState
+	intf.PlaybackState
 	VoiceActive bool
 	NoteControl intf.NoteControl
 	PeriodDelta note.PeriodDelta
@@ -21,7 +21,7 @@ type activeState struct {
 
 // Reset sets the active state to defaults
 func (a *activeState) Reset() {
-	a.playbackState.Reset()
+	a.PlaybackState.Reset()
 	a.VoiceActive = true
 	a.NoteControl = nil
 	a.PeriodDelta = 0
@@ -37,15 +37,20 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 	if nc == nil {
 		return nil, nil
 	}
-	nc.SetVolume(a.Volume * globalVolume)
-	period := a.Period.Add(a.PeriodDelta)
-	nc.SetPeriod(period)
+	ncs := nc.GetPlaybackState()
+	if ncs == nil {
+		return nil, nil
+	}
+
+	*ncs = a.PlaybackState
+
+	ncs.Volume *= globalVolume
+	period := ncs.Period.Add(a.PeriodDelta)
+	ncs.Period = period
 
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
 
 	nc.Update(duration)
-
-	nc.UpdatePosition(&a.Pos)
 
 	panning := nc.GetCurrentPanning()
 	volMatrix := panmixer.GetMixingMatrix(panning)
@@ -55,7 +60,7 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 	if a.VoiceActive {
 		data = mix.NewMixBuffer(samples)
 		mixData := mixing.SampleMixIn{
-			Sample:    sampling.NewSampler(nc, a.Pos, samplerAdd),
+			Sample:    sampling.NewSampler(nc, ncs.Pos, samplerAdd),
 			StaticVol: volume.Volume(1.0),
 			VolMatrix: volMatrix,
 			MixPos:    0,
@@ -64,11 +69,12 @@ func (a *activeState) Render(globalVolume volume.Volume, mix *mixing.Mixer, panm
 		data.MixInSample(mixData)
 	}
 
+	a.Pos = ncs.Pos
 	a.Pos.Add(samplerAdd * float32(samples))
 
 	return &mixing.Data{
 		Data:       data,
-		Pan:        a.Pan,
+		Pan:        ncs.Pan,
 		Volume:     volume.Volume(1.0),
 		SamplesLen: samples,
 	}, nil

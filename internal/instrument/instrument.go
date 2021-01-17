@@ -20,5 +20,4 @@ type DataIntf interface {
 	Release(intf.NoteControl)
 	GetKeyOn(intf.NoteControl) bool
 	Update(intf.NoteControl, time.Duration)
-	UpdatePosition(intf.NoteControl, *sampling.Pos)
 }

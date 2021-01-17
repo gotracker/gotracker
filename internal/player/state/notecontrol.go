@@ -8,31 +8,12 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
 )
-
-// playbackState is the information needed to make an instrument play
-type playbackState struct {
-	Instrument intf.Instrument
-	Period     note.Period
-	Volume     volume.Volume
-	Pos        sampling.Pos
-	Pan        panning.Position
-}
-
-// Reset sets the render state to defaults
-func (p *playbackState) Reset() {
-	p.Instrument = nil
-	p.Period = nil
-	p.Volume = 1
-	p.Pos = sampling.Pos{}
-	p.Pan = panning.CenterAhead
-}
 
 // NoteControl is an instance of the instrument on a particular output channel
 type NoteControl struct {
 	intf.NoteControl
-	playbackState
+	intf.PlaybackState
 
 	Data   interface{}
 	Output *intf.OutputChannel
@@ -96,26 +77,6 @@ func (nc *NoteControl) Update(tickDuration time.Duration) {
 	}
 }
 
-// SetVolume sets the active note-control's volume
-func (nc *NoteControl) SetVolume(vol volume.Volume) {
-	nc.Volume = vol
-}
-
-// GetVolume sets the active note-control's volume
-func (nc *NoteControl) GetVolume() volume.Volume {
-	return nc.Volume
-}
-
-// SetPeriod sets the active note-control's period
-func (nc *NoteControl) SetPeriod(period note.Period) {
-	nc.Period = period
-}
-
-// GetPeriod gets the active note-control's period
-func (nc *NoteControl) GetPeriod() note.Period {
-	return nc.Period
-}
-
 // SetData sets the data interface for the note-control
 func (nc *NoteControl) SetData(data interface{}) {
 	nc.Data = data
@@ -126,9 +87,7 @@ func (nc *NoteControl) GetData() interface{} {
 	return nc.Data
 }
 
-// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
-func (nc *NoteControl) UpdatePosition(pos *sampling.Pos) {
-	if inst := nc.Instrument; inst != nil {
-		inst.UpdatePosition(nc, pos)
-	}
+// GetPlaybackState returns the current, mutable playback state
+func (nc *NoteControl) GetPlaybackState() *intf.PlaybackState {
+	return &nc.PlaybackState
 }

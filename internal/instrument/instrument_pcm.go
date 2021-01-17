@@ -30,10 +30,14 @@ type PCM struct {
 
 // GetSample returns the sample at position `pos` in the instrument
 func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
+	ncs := ioc.GetPlaybackState()
+	if ncs == nil {
+		panic("no playback state on note-control interface")
+	}
 	ed := ioc.GetData().(*envData)
 	dry := inst.getSampleDry(pos, ed.keyOn)
 	envVol := inst.getVolEnv(ed, pos)
-	chVol := ioc.GetVolume()
+	chVol := ncs.Volume
 	postVol := envVol * chVol
 	wet := postVol.Apply(dry...)
 	return wet
@@ -160,6 +164,13 @@ func (inst *PCM) GetKeyOn(ioc intf.NoteControl) bool {
 func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ed := ioc.GetData().(*envData)
 
+	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
+		ncs := ioc.GetPlaybackState()
+		if ncs != nil {
+			ncs.Pos.Pos = calcLoopedSamplePos(inst.LoopMode, ncs.Pos.Pos, inst.Length, inst.LoopBegin, inst.LoopEnd, ed.prevKeyOn)
+		}
+	}
+
 	ed.advance(&inst.VolEnv, &inst.PanEnv)
 
 	if !ed.keyOn && inst.VolEnv.Enabled {
@@ -167,13 +178,5 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 		if ed.fadeoutVol < 0 {
 			ed.fadeoutVol = 0
 		}
-	}
-}
-
-// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
-func (inst *PCM) UpdatePosition(ioc intf.NoteControl, pos *sampling.Pos) {
-	ed := ioc.GetData().(*envData)
-	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
-		pos.Pos = calcLoopedSamplePos(inst.LoopMode, pos.Pos, inst.Length, inst.LoopBegin, inst.LoopEnd, ed.prevKeyOn)
 	}
 }

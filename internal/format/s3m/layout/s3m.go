@@ -1,12 +1,13 @@
 package layout
 
 import (
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
-
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+
+	"gotracker/internal/format/s3m/layout/channel"
+	"gotracker/internal/instrument"
+	"gotracker/internal/player/intf"
 )
 
 // Header is a mildly-decoded S3M header definition
@@ -33,7 +34,7 @@ type ChannelSetting struct {
 type Song struct {
 	intf.SongData
 	Head            Header
-	Instruments     []Instrument
+	Instruments     []instrument.Instrument
 	Patterns        []Pattern
 	ChannelSettings []ChannelSetting
 	OrderList       []intf.PatternIdx

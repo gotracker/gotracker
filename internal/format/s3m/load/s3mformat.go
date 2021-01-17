@@ -247,7 +247,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 	//amigaSlides := (f.Head.Flags & 0x0004) != 0
 	//zeroVolOpt := (f.Head.Flags & 0x0008) != 0
 	//amigaLimits := (f.Head.Flags & 0x0010) != 0
-	//sbFilterEnable := (f.Head.Flags & 0x0020) != 0
+	sbFilterEnable := (f.Head.Flags & 0x0020) != 0
 	st300volSlides := (f.Head.Flags & 0x0040) != 0
 	if f.Head.TrackerVersion == 0x1300 {
 		st300volSlides = true
@@ -284,7 +284,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		song.Patterns[patNum] = *pattern
 	}
 
-	channels := []layout.ChannelSetting{}
+	channels := make([]layout.ChannelSetting, 0)
 	for chNum, ch := range f.ChannelSettings {
 		chn := ch.GetChannel()
 		cs := layout.ChannelSetting{
@@ -294,7 +294,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 			InitialVolume:    util.DefaultVolume,
 			InitialPanning:   util.DefaultPanning,
 			Memory: channel.Memory{
-				VolSlideEveryFrame: st300volSlides,
+				VolSlideEveryFrame:  st300volSlides,
+				LowPassFilterEnable: sbFilterEnable,
 			},
 		}
 

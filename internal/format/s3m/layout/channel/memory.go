@@ -16,7 +16,8 @@ type Memory struct {
 	tempoIncrease uint8
 	lastNonZero   uint8
 
-	VolSlideEveryFrame bool
+	VolSlideEveryFrame  bool
+	LowPassFilterEnable bool
 
 	tremorMem         formatutil.Tremor
 	vibratoOscillator formatutil.Oscillator

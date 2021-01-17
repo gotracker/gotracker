@@ -56,10 +56,11 @@ func NewManager(song *layout.Song) *Manager {
 	m.SetMixerVolume(song.Head.MixingVolume)
 
 	m.SetNumChannels(len(song.ChannelSettings))
+	lowpassEnabled := false
 	for i, ch := range song.ChannelSettings {
 		oc := m.GetOutputChannel(ch.OutputChannelNum, &m)
 
-		cs := m.GetChannel(i)
+		cs := m.GetChannel(i).(*state.ChannelState)
 		cs.SetOutputChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
@@ -71,7 +72,11 @@ func NewManager(song *layout.Song) *Manager {
 			cs.SetPan(panning.CenterAhead)
 			cs.SetPanEnabled(false)
 		}
-		cs.SetMemory(&song.ChannelSettings[i].Memory)
+		mem := &song.ChannelSettings[i].Memory
+		cs.SetMemory(mem)
+		if mem.LowPassFilterEnable {
+			lowpassEnabled = true
+		}
 
 		// weirdly, S3M processes channels in channel category order
 		// so we have to make a list with the order we're expecting
@@ -82,6 +87,10 @@ func NewManager(song *layout.Song) *Manager {
 			cIdx := int(ch.Category) - 1
 			m.chOrder[cIdx] = append(m.chOrder[cIdx], cs)
 		}
+	}
+
+	if lowpassEnabled {
+		m.SetFilterEnable(true)
 	}
 
 	txn := m.pattern.StartTransaction()

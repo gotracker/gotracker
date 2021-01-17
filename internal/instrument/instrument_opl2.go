@@ -73,8 +73,6 @@ type OPL2OperatorData struct {
 
 // OPL2 is an OPL2/Adlib instrument
 type OPL2 struct {
-	intf.Instrument
-
 	Modulator OPL2OperatorData
 	Carrier   OPL2OperatorData
 

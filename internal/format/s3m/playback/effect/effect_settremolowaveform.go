@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout/channel"
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 )
 
@@ -19,7 +19,7 @@ func (e SetTremoloWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	mem := cs.GetMemory().(*channel.Memory)
 	trem := mem.TremoloOscillator()
-	trem.Table = formatutil.WaveTableSelect(x)
+	trem.Table = oscillator.WaveTableSelect(x)
 }
 
 func (e SetTremoloWaveform) String() string {

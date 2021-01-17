@@ -13,8 +13,6 @@ import (
 
 // PCM is a PCM-data instrument
 type PCM struct {
-	intf.Instrument
-
 	Sample        []uint8
 	Length        int
 	LoopMode      LoopMode

@@ -2,6 +2,7 @@ package channel
 
 import (
 	formatutil "gotracker/internal/format/internal/util"
+	"gotracker/internal/oscillator"
 )
 
 // Memory is the storage object for custom effect/command values
@@ -20,8 +21,8 @@ type Memory struct {
 	LowPassFilterEnable bool
 
 	tremorMem         formatutil.Tremor
-	vibratoOscillator formatutil.Oscillator
-	tremoloOscillator formatutil.Oscillator
+	vibratoOscillator oscillator.Oscillator
+	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
 }
 
@@ -82,18 +83,18 @@ func (m *Memory) TremorMem() *formatutil.Tremor {
 }
 
 // VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() *formatutil.Oscillator {
+func (m *Memory) VibratoOscillator() *oscillator.Oscillator {
 	return &m.vibratoOscillator
 }
 
 // TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() *formatutil.Oscillator {
+func (m *Memory) TremoloOscillator() *oscillator.Oscillator {
 	return &m.tremoloOscillator
 }
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []*formatutil.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
+	for _, osc := range []*oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
 		osc.Reset()
 	}
 }

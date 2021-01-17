@@ -30,17 +30,17 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*layout.Instrument, map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
-	var instruments []*layout.Instrument
+	var instruments []*instrument.Instrument
 
 	for _, si := range inst.Samples {
 		v := si.Volume
 		if v >= 0x40 {
 			v = 0x40
 		}
-		sample := layout.Instrument{
+		sample := instrument.Instrument{
 			Filename:           si.GetName(),
 			Name:               inst.GetName(),
 			C2Spd:              note.C2SPD(0), // uses si.Finetune, below
@@ -168,7 +168,7 @@ func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) instrument.LoopMode {
 	}
 }
 
-func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*layout.Instrument, map[int][]note.Semitone, error) {
+func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	if s == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
@@ -213,8 +213,8 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 
 	song := layout.Song{
 		Head:              *h,
-		Instruments:       make(map[uint8]*layout.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*layout.Instrument),
+		Instruments:       make(map[uint8]*instrument.Instrument),
+		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
 		Patterns:          make([]layout.Pattern, len(f.Patterns)),
 		OrderList:         make([]intf.PatternIdx, int(f.Head.SongLength)),
 	}
@@ -232,15 +232,22 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 			if sample == nil {
 				continue
 			}
-			sample.ID.InstID = uint8(instNum + 1)
-			song.Instruments[sample.ID.InstID] = sample
+			id := channel.SampleID{
+				InstID: uint8(instNum + 1),
+			}
+			sample.ID = id
+			song.Instruments[id.InstID] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
-			inm, ok := song.InstrumentNoteMap[sample.ID.InstID]
+			id, ok := sample.ID.(channel.SampleID)
 			if !ok {
-				inm = make(map[note.Semitone]*layout.Instrument)
-				song.InstrumentNoteMap[sample.ID.InstID] = inm
+				continue
+			}
+			inm, ok := song.InstrumentNoteMap[id.InstID]
+			if !ok {
+				inm = make(map[note.Semitone]*instrument.Instrument)
+				song.InstrumentNoteMap[id.InstID] = inm
 			}
 			for _, st := range sts {
 				inm[st] = samples[i]

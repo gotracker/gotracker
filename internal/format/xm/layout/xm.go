@@ -1,12 +1,13 @@
 package layout
 
 import (
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+
+	"gotracker/internal/format/xm/layout/channel"
+	"gotracker/internal/instrument"
+	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // Header is a mildly-decoded XM header definition
@@ -31,8 +32,8 @@ type ChannelSetting struct {
 type Song struct {
 	intf.SongData
 	Head              Header
-	Instruments       map[uint8]*Instrument
-	InstrumentNoteMap map[uint8]map[note.Semitone]*Instrument
+	Instruments       map[uint8]*instrument.Instrument
+	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
 	Patterns          []Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []intf.PatternIdx

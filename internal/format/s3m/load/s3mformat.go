@@ -39,8 +39,8 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*layout.Instrument, error) {
-	sample := layout.Instrument{
+func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*instrument.Instrument, error) {
+	sample := instrument.Instrument{
 		Filename: scrs.Head.GetFilename(),
 		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
@@ -49,8 +49,8 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 	return &sample, nil
 }
 
-func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool) (*layout.Instrument, error) {
-	sample := layout.Instrument{
+func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool) (*instrument.Instrument, error) {
+	sample := instrument.Instrument{
 		Filename: scrs.Head.GetFilename(),
 		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
@@ -92,8 +92,8 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 	return &sample, nil
 }
 
-func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*layout.Instrument, error) {
-	inst := layout.Instrument{
+func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*instrument.Instrument, error) {
+	inst := instrument.Instrument{
 		Filename: scrs.Head.GetFilename(),
 		Name:     si.GetSampleName(),
 		C2Spd:    note.C2SPD(si.C2Spd.Lo),
@@ -137,7 +137,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 	return &inst, nil
 }
 
-func convertSCRSFullToInstrument(s *s3mfile.SCRSFull, signedSamples bool) (*layout.Instrument, error) {
+func convertSCRSFullToInstrument(s *s3mfile.SCRSFull, signedSamples bool) (*instrument.Instrument, error) {
 	if s == nil {
 		return nil, errors.New("scrs is nil")
 	}
@@ -233,7 +233,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 
 	song := layout.Song{
 		Head:        *h,
-		Instruments: make([]layout.Instrument, len(f.InstrumentPointers)),
+		Instruments: make([]instrument.Instrument, len(f.InstrumentPointers)),
 		OrderList:   make([]intf.PatternIdx, len(f.OrderList)),
 	}
 
@@ -258,7 +258,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		song.OrderList[i] = intf.PatternIdx(o)
 	}
 
-	song.Instruments = make([]layout.Instrument, len(f.Instruments))
+	song.Instruments = make([]instrument.Instrument, len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
 		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples)
 		if err != nil {

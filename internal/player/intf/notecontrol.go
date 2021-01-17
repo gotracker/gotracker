@@ -1,12 +1,14 @@
 package intf
 
 import (
-	"gotracker/internal/player/note"
 	"time"
 
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+
+	"gotracker/internal/oscillator"
+	"gotracker/internal/player/note"
 )
 
 // NoteControl is an interface for an instrument on a particular output channel
@@ -24,6 +26,7 @@ type NoteControl interface {
 	GetData() interface{}
 	SetEnvelopePosition(int)
 	GetPlaybackState() *PlaybackState
+	GetAutoVibratoState() *AutoVibratoState
 }
 
 // PlaybackState is the information needed to make an instrument play
@@ -42,4 +45,16 @@ func (p *PlaybackState) Reset() {
 	p.Volume = 1
 	p.Pos = sampling.Pos{}
 	p.Pan = panning.CenterAhead
+}
+
+// AutoVibratoState is the information needed to make an instrument auto-vibrato
+type AutoVibratoState struct {
+	Osc   oscillator.Oscillator
+	Ticks int
+}
+
+// Reset sets the auto-vibrato state to defaults
+func (av *AutoVibratoState) Reset() {
+	av.Osc.Reset()
+	av.Ticks = 0
 }

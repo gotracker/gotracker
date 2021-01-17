@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
@@ -25,10 +26,17 @@ type DataIntf interface {
 	Update(intf.NoteControl, time.Duration)
 }
 
+// AutoVibrato is the setting and memory for the auto-vibrato system
+type AutoVibrato struct {
+	Enabled           bool
+	Sweep             uint8
+	WaveformSelection uint8
+	Depth             uint8
+	Rate              uint8
+}
+
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
-	intf.Instrument
-
 	Filename           string
 	Name               string
 	Inst               DataIntf
@@ -37,6 +45,7 @@ type Instrument struct {
 	Volume             volume.Volume
 	RelativeNoteNumber int8
 	Finetune           note.Finetune
+	AutoVibrato        AutoVibrato
 }
 
 // IsInvalid always returns false (valid)
@@ -177,6 +186,21 @@ func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
 // Update updates the instrument
 func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) {
 	if ii := inst.Inst; ii != nil {
+		if inst.AutoVibrato.Enabled {
+			if ncav := nc.GetAutoVibratoState(); ncav != nil {
+				ncav.Osc.Table = oscillator.WaveTableSelect(inst.AutoVibrato.WaveformSelection)
+				ncav.Osc.Advance(int(inst.AutoVibrato.Rate))
+				ncav.Ticks++
+				d := float32(inst.AutoVibrato.Depth) / 64
+				if inst.AutoVibrato.Sweep > 0 && ncav.Ticks < int(inst.AutoVibrato.Sweep) {
+					d *= float32(ncav.Ticks) / float32(inst.AutoVibrato.Sweep)
+				}
+				if ncs := nc.GetPlaybackState(); ncs != nil {
+					pd := note.PeriodDelta(ncav.Osc.GetWave(d))
+					ncs.Period = ncs.Period.Add(pd)
+				}
+			}
+		}
 		ii.Update(nc, tickDuration)
 	}
 }

@@ -14,6 +14,7 @@ import (
 type NoteControl struct {
 	intf.NoteControl
 	intf.PlaybackState
+	intf.AutoVibratoState
 
 	Data   interface{}
 	Output *intf.OutputChannel
@@ -51,6 +52,7 @@ func (nc *NoteControl) GetInstrument() intf.Instrument {
 // Attack sets the key on flag for the instrument
 func (nc *NoteControl) Attack() {
 	if inst := nc.Instrument; inst != nil {
+		nc.AutoVibratoState.Reset()
 		inst.Attack(nc)
 	}
 }
@@ -90,4 +92,9 @@ func (nc *NoteControl) GetData() interface{} {
 // GetPlaybackState returns the current, mutable playback state
 func (nc *NoteControl) GetPlaybackState() *intf.PlaybackState {
 	return &nc.PlaybackState
+}
+
+// GetAutoVibratoState returns the current, mutable auto-vibrato state
+func (nc *NoteControl) GetAutoVibratoState() *intf.AutoVibratoState {
+	return &nc.AutoVibratoState
 }

@@ -75,7 +75,7 @@ func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSl
 
 func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
 	doPortaUp(cs, amount, multiplier, linearFreqSlides)
-	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == -1 {
+	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == note.CompareLeftHigher {
 		cs.SetPeriod(target)
 	}
 }
@@ -91,7 +91,7 @@ func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreq
 
 func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) {
 	doPortaDown(cs, amount, multiplier, linearFreqSlides)
-	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == 1 {
+	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == note.CompareRightHigher {
 		cs.SetPeriod(target)
 	}
 }

@@ -46,7 +46,7 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(-delta)
 	period = period.Add(d)
-	if note.ComparePeriods(period, target) == -1 {
+	if note.ComparePeriods(period, target) == note.CompareLeftHigher {
 		period = target
 	}
 	cs.SetPeriod(period)
@@ -73,7 +73,7 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(delta)
 	period = period.Add(d)
-	if note.ComparePeriods(period, target) == 1 {
+	if note.ComparePeriods(period, target) == note.CompareRightHigher {
 		period = target
 	}
 	cs.SetPeriod(period)

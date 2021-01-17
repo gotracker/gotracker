@@ -29,7 +29,7 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	period := cs.GetPeriod()
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
-		if note.ComparePeriods(period, ptp) == 1 {
+		if note.ComparePeriods(period, ptp) == note.CompareRightHigher {
 			doPortaUpToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // subtracts
 		} else {
 			doPortaDownToNote(cs, float32(xx), 4, ptp, mem.LinearFreqSlides) // adds

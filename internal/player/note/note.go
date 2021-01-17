@@ -2,10 +2,26 @@ package note
 
 import "fmt"
 
+// SpaceshipResult is a comparison result for a three-way comparison (<=>)
+type SpaceshipResult int
+
+func (sr SpaceshipResult) String() string {
+	return fmt.Sprintf("%d", int(sr))
+}
+
+const (
+	// CompareRightHigher is returned when the right-hand side of a spaceship operator (<=>) is higher than the left-hand side
+	CompareRightHigher = SpaceshipResult(-1)
+	// CompareEqual is returned when the right-hand side of a spaceship operator (<=>) is equal to the left-hand side
+	CompareEqual = SpaceshipResult(0)
+	// CompareLeftHigher is returned when the left-hand side of a spaceship operator (<=>) is higher than the right-hand side
+	CompareLeftHigher = SpaceshipResult(1)
+)
+
 // Period is an interface that defines a sampler period
 type Period interface {
 	Add(PeriodDelta) Period
-	Compare(Period) int // <=>
+	Compare(Period) SpaceshipResult // <=>
 	Lerp(float64, Period) Period
 	GetSamplerAdd(float64) float64
 	GetFrequency() float64
@@ -17,14 +33,14 @@ type Period interface {
 type PeriodDelta float64
 
 // ComparePeriods compares two periods, taking nil into account
-func ComparePeriods(lhs Period, rhs Period) int {
+func ComparePeriods(lhs Period, rhs Period) SpaceshipResult {
 	if lhs == nil {
 		if rhs == nil {
-			return 0
+			return CompareEqual
 		}
-		return 1
+		return CompareRightHigher
 	} else if rhs == nil {
-		return -1
+		return CompareLeftHigher
 	}
 
 	return lhs.Compare(rhs)

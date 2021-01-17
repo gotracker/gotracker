@@ -24,17 +24,17 @@ func (p *AmigaPeriod) Add(delta note.PeriodDelta) note.Period {
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *AmigaPeriod) Compare(rhs note.Period) int {
+func (p *AmigaPeriod) Compare(rhs note.Period) note.SpaceshipResult {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
 	switch {
-	case lf > rf:
-		return -1
 	case lf < rf:
-		return 1
+		return note.CompareRightHigher
+	case lf > rf:
+		return note.CompareLeftHigher
 	default:
-		return 0
+		return note.CompareEqual
 	}
 }
 

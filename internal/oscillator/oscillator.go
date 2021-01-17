@@ -69,7 +69,7 @@ func (o *Oscillator) Advance(speed int) {
 func (o *Oscillator) Reset(hard ...bool) {
 	hardReset := false
 	if len(hard) > 0 {
-		hardReset = hard[1]
+		hardReset = hard[0]
 	}
 
 	doReset := hardReset

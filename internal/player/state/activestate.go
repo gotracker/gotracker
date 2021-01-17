@@ -44,12 +44,15 @@ func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, sample
 
 	*ncs = a.PlaybackState
 
-	period := ncs.Period.Add(a.PeriodDelta)
-	ncs.Period = period
+	ncs.Period = ncs.Period.Add(a.PeriodDelta)
+
+	// the period might be updated by the auto-vibrato system, here
+	nc.Update(duration)
+
+	// ... so grab the new value now.
+	period := ncs.Period
 
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
-
-	nc.Update(duration)
 
 	panning := nc.GetCurrentPanning()
 	volMatrix := panmixer.GetMixingMatrix(panning)

@@ -47,6 +47,13 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			C2Spd:              note.C2SPD(0), // uses si.Finetune, below
 			Volume:             util.VolumeFromXm(0x10 + v),
 			RelativeNoteNumber: si.RelativeNoteNumber,
+			AutoVibrato: instrument.AutoVibrato{
+				Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
+				Sweep:             inst.VibratoSweep, // NOTE: for IT support, this needs to be calculated as (Depth * 256 / VibratoSweep) ticks
+				WaveformSelection: inst.VibratoType,
+				Depth:             inst.VibratoDepth,
+				Rate:              inst.VibratoRate,
+			},
 		}
 
 		ii := instrument.PCM{

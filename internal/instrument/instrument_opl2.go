@@ -333,3 +333,7 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ym.regB0 = regB0
 	ch.WriteReg(0xB0|index, regB0)
 }
+
+// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
+func (inst *OPL2) UpdatePosition(ioc intf.NoteControl, pos *sampling.Pos) {
+}

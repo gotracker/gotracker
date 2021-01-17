@@ -31,6 +31,7 @@ type envData struct {
 	panEnvPos            int
 	panEnvTicksRemaining int
 	panEnvValue          panning.Position
+	prevKeyOn            bool
 }
 
 func newEnvData() *envData {

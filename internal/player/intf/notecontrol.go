@@ -29,4 +29,5 @@ type NoteControl interface {
 	SetData(interface{})
 	GetData() interface{}
 	SetEnvelopePosition(int)
+	UpdatePosition(*sampling.Pos)
 }

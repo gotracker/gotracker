@@ -125,3 +125,10 @@ func (nc *NoteControl) SetData(data interface{}) {
 func (nc *NoteControl) GetData() interface{} {
 	return nc.Data
 }
+
+// UpdatePosition corrects the position to account for loop mode characteristics and other state parameters
+func (nc *NoteControl) UpdatePosition(pos *sampling.Pos) {
+	if inst := nc.Instrument; inst != nil {
+		inst.UpdatePosition(nc, pos)
+	}
+}

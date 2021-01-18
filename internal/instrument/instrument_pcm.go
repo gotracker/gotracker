@@ -9,6 +9,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // PCM is a PCM-data instrument
@@ -177,4 +178,9 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 			ed.fadeoutVol = 0
 		}
 	}
+}
+
+// GetKind returns the kind of the instrument
+func (inst *PCM) GetKind() note.InstrumentKind {
+	return note.InstrumentKindPCM
 }

@@ -40,8 +40,9 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	if cs.TrackData != nil {
 		n = cs.TrackData.GetNote()
 	}
-	keyOff := n.IsStop()
+	keyOff := false
 	keyOn := false
+	stop := false
 	targetPeriod := cs.GetTargetPeriod()
 	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
@@ -59,6 +60,11 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		}
 		cs.SetPos(cs.GetTargetPos())
 	}
+	if inst := cs.GetInstrument(); inst != nil {
+		k := inst.GetKind()
+		keyOff = n.IsRelease(k)
+		stop = n.IsStop(k)
+	}
 
 	if nc := cs.GetNoteControl(); nc != nil {
 		if keyOn {
@@ -67,6 +73,9 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()
+			cs.SetPeriod(nil)
+		} else if stop {
+			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
 	}

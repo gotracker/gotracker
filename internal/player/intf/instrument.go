@@ -26,6 +26,7 @@ type Instrument interface {
 	InstantiateOnChannel(*OutputChannel) NoteControl
 	SetFinetune(note.Finetune)
 	GetFinetune() note.Finetune
+	GetKind() note.InstrumentKind
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPanning(NoteControl) panning.Position

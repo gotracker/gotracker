@@ -124,7 +124,7 @@ func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 	case sn == s3mfile.EmptyNote:
 		return note.EmptyNote
 	case sn == s3mfile.StopNote:
-		return note.StopNote
+		return note.StopOrReleaseNote
 	default:
 		k := uint8(sn.Key()) & 0x0f
 		o := uint8(sn.Octave()) & 0x0f

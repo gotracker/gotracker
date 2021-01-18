@@ -18,7 +18,7 @@ func xmChannelRender(cdata render.ChannelData) string {
 	if data, ok := cdata.(*channel.Data); ok && data != nil {
 		if data.HasNote() {
 			nt := data.GetNote()
-			if nt != note.StopNote {
+			if nt != note.ReleaseNote {
 				n = nt.String()
 			} else {
 				n = "== "

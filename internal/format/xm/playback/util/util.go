@@ -124,7 +124,7 @@ func PanningToXm(pan panning.Position) uint8 {
 func NoteFromXmNote(xn uint8) note.Note {
 	switch {
 	case xn == 97:
-		return note.StopNote
+		return note.ReleaseNote
 	case xn == 0:
 		return note.EmptyNote
 	case xn > 97: // invalid

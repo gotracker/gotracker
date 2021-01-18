@@ -246,6 +246,8 @@ func (n Note) String() string {
 		return "^^^"
 	case noteSpecialNone:
 		return n.Key().String() + n.Octave().String()
+	case noteSpecialStopOrRelease:
+		return "^^."
 	case noteSpecialInvalid:
 		fallthrough
 	default:

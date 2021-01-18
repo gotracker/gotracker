@@ -168,7 +168,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			cs.SetTargetPeriod(nil)
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = false
-		} else if n == note.StopNote {
+		} else if n == note.ReleaseNote {
 			cs.SetTargetPeriod(cs.GetPeriod())
 			if prevInst := cs.GetPrevInst(); prevInst != nil {
 				cs.SetTargetInst(prevInst)

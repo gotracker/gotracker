@@ -24,6 +24,7 @@ type DataIntf interface {
 	Release(intf.NoteControl)
 	GetKeyOn(intf.NoteControl) bool
 	Update(intf.NoteControl, time.Duration)
+	GetKind() note.InstrumentKind
 }
 
 // AutoVibrato is the setting and memory for the auto-vibrato system
@@ -143,6 +144,14 @@ func (inst *Instrument) GetID() intf.InstrumentID {
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at
 func (inst *Instrument) GetSemitoneShift() int8 {
 	return inst.RelativeNoteNumber
+}
+
+// GetKind returns the kind of the instrument
+func (inst *Instrument) GetKind() note.InstrumentKind {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetKind()
+	}
+	return note.InstrumentKindPCM
 }
 
 // GetSample returns a sample from the instrument at the specified position

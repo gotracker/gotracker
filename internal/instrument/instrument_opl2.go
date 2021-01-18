@@ -336,3 +336,8 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ym.regB0 = regB0
 	ch.WriteReg(0xB0|index, regB0)
 }
+
+// GetKind returns the kind of the instrument
+func (inst *OPL2) GetKind() note.InstrumentKind {
+	return note.InstrumentKindOPL2
+}

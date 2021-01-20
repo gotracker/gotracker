@@ -62,10 +62,15 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 	}
 
 	idata := instrument.PCM{
-		Length:      int(si.Length.Lo),
-		LoopMode:    instrument.LoopModeDisabled,
-		LoopBegin:   int(si.LoopBegin.Lo),
-		LoopEnd:     int(si.LoopEnd.Lo),
+		Length: int(si.Length.Lo),
+		Loop: instrument.LoopInfo{
+			Mode: instrument.LoopModeDisabled,
+		},
+		SustainLoop: instrument.LoopInfo{
+			Mode:  instrument.LoopModeDisabled,
+			Begin: int(si.LoopBegin.Lo),
+			End:   int(si.LoopEnd.Lo),
+		},
 		NumChannels: 1,
 		Format:      instrument.SampleDataFormat8BitUnsigned,
 		Panning:     panning.CenterAhead,
@@ -74,7 +79,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		idata.Format = instrument.SampleDataFormat8BitSigned
 	}
 	if si.Flags.IsLooped() {
-		idata.LoopMode = instrument.LoopModeNormalType1
+		idata.SustainLoop.Mode = instrument.LoopModeNormalType1
 	}
 	if si.Flags.IsStereo() {
 		idata.NumChannels = 2

@@ -57,10 +57,15 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		}
 
 		ii := instrument.PCM{
-			Length:        int(si.Length),
-			LoopMode:      xmLoopModeToLoopMode(si.Flags.LoopMode()),
-			LoopBegin:     int(si.LoopStart),
-			LoopEnd:       int(si.LoopStart + si.LoopLength),
+			Length: int(si.Length),
+			Loop: instrument.LoopInfo{
+				Mode: instrument.LoopModeDisabled,
+			},
+			SustainLoop: instrument.LoopInfo{
+				Mode:  xmLoopModeToLoopMode(si.Flags.LoopMode()),
+				Begin: int(si.LoopStart),
+				End:   int(si.LoopStart + si.LoopLength),
+			},
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitSigned,
 			VolumeFadeout: volume.Volume(inst.VolumeFadeout) / 65536,
@@ -144,8 +149,8 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			stride *= 2
 		}
 		ii.Length /= stride
-		ii.LoopBegin /= stride
-		ii.LoopEnd /= stride
+		ii.SustainLoop.Begin /= stride
+		ii.SustainLoop.End /= stride
 
 		ii.Sample = si.SampleData
 

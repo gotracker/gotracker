@@ -16,9 +16,8 @@ import (
 type PCM struct {
 	Sample        []uint8
 	Length        int
-	LoopMode      LoopMode
-	LoopBegin     int
-	LoopEnd       int
+	Loop          LoopInfo
+	SustainLoop   LoopInfo
 	NumChannels   int
 	Format        SampleDataFormat
 	Panning       panning.Position
@@ -40,6 +39,14 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 	postVol := envVol * chVol
 	wet := postVol.Apply(dry...)
 	return wet
+}
+
+// IsLooped returns true if the instrument is looping
+func (inst *PCM) IsLooped() bool {
+	if inst.SustainLoop.Mode != LoopModeDisabled {
+		return true
+	}
+	return inst.Loop.Mode != LoopModeDisabled
 }
 
 // GetCurrentPanning returns the panning envelope position
@@ -99,7 +106,7 @@ func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos, keyOn)
-	if len(v0) == 0 && inst.LoopMode != LoopModeDisabled && keyOn {
+	if len(v0) == 0 && inst.IsLooped() {
 		v01 := inst.getConvertedSample(pos.Pos, keyOn)
 		panic(v01)
 	}
@@ -114,7 +121,7 @@ func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 }
 
 func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
-	pos = calcLoopedSamplePos(inst.LoopMode, pos, inst.Length, inst.LoopBegin, inst.LoopEnd, keyOn)
+	pos = calcLoopedSamplePos(inst.Loop, inst.SustainLoop, pos, inst.Length, keyOn)
 	if pos < 0 || pos >= inst.Length {
 		return volume.Matrix{}
 	}
@@ -166,7 +173,7 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
 		ncs := ioc.GetPlaybackState()
 		if ncs != nil {
-			ncs.Pos.Pos = calcLoopedSamplePos(inst.LoopMode, ncs.Pos.Pos, inst.Length, inst.LoopBegin, inst.LoopEnd, ed.prevKeyOn)
+			ncs.Pos.Pos = calcLoopedSamplePos(inst.Loop, inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
 		}
 	}
 

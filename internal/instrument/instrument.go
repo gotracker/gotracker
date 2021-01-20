@@ -70,36 +70,6 @@ func (inst *Instrument) GetDefaultVolume() volume.Volume {
 	return inst.Volume
 }
 
-// IsLooped returns true if the instrument has the loop flag set
-func (inst *Instrument) IsLooped() bool {
-	switch si := inst.Inst.(type) {
-	case *PCM:
-		return si.LoopMode != LoopModeDisabled
-	default:
-	}
-	return false
-}
-
-// GetLoopBegin returns the loop start position
-func (inst *Instrument) GetLoopBegin() sampling.Pos {
-	switch si := inst.Inst.(type) {
-	case *PCM:
-		return sampling.Pos{Pos: si.LoopBegin}
-	default:
-	}
-	return sampling.Pos{}
-}
-
-// GetLoopEnd returns the loop end position
-func (inst *Instrument) GetLoopEnd() sampling.Pos {
-	switch si := inst.Inst.(type) {
-	case *PCM:
-		return sampling.Pos{Pos: si.LoopEnd}
-	default:
-	}
-	return sampling.Pos{}
-}
-
 // GetLength returns the length of the instrument
 func (inst *Instrument) GetLength() sampling.Pos {
 	switch si := inst.Inst.(type) {

@@ -18,6 +18,10 @@ const (
 	SampleDataFormat16BitLEUnsigned
 	// SampleDataFormat16BitLESigned is for signed, little-endian, 16-bit data
 	SampleDataFormat16BitLESigned
+	// SampleDataFormat16BitBEUnsigned is for unsigned, big-endian, 16-bit data
+	SampleDataFormat16BitBEUnsigned
+	// SampleDataFormat16BitBESigned is for signed, big-endian, 16-bit data
+	SampleDataFormat16BitBESigned
 )
 
 func getBytesPerSample(sdf SampleDataFormat) int {

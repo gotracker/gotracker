@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"gotracker/internal/format/it"
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
 	"gotracker/internal/format/xm"
@@ -30,4 +31,5 @@ func init() {
 	supportedFormats["s3m"] = s3m.S3M
 	supportedFormats["mod"] = mod.MOD
 	supportedFormats["xm"] = xm.XM
+	supportedFormats["it"] = it.IT
 }

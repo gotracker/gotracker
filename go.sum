@@ -4,8 +4,8 @@ github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL
 github.com/go-audio/audio v1.0.0/go.mod h1:6uAu0+H2lHkwdGsAY+j2wHPNPpPoeg5AaEFh9FlA+Zs=
 github.com/go-audio/riff v1.0.0/go.mod h1:l3cQwc85y79NQFCRB7TiPoNiaijp6q8Z0Uv38rVG498=
 github.com/go-audio/wav v1.0.0/go.mod h1:3yoReyQOsiARkvPl3ERCi8JFjihzG6WhjYpZCf5zAWE=
-github.com/gotracker/goaudiofile v1.0.10 h1:CgxH1NvedzrGDu3NeS+L94M13wDeORPC/uhmLNascKo=
-github.com/gotracker/goaudiofile v1.0.10/go.mod h1:uBhmICiUsS/CtpUF116m3GYY/yIP4WPnNVoUc9MZi+E=
+github.com/gotracker/goaudiofile v1.0.11 h1:TFlXLsepRuCQrNDb7p4AqdCZZSWKixspn9qDk0SdxcQ=
+github.com/gotracker/goaudiofile v1.0.11/go.mod h1:uBhmICiUsS/CtpUF116m3GYY/yIP4WPnNVoUc9MZi+E=
 github.com/gotracker/gomixing v1.0.7 h1:oClfOkmf3ej2Vm3I7swVb1G90BCnYhYvBZ6He9b7+VE=
 github.com/gotracker/gomixing v1.0.7/go.mod h1:orU2G///ovcRkt4bdNZMhOPvHW0vl5yebXaLKqQcHWw=
 github.com/gotracker/gomixing v1.0.8 h1:UwZazsS9GCmSNTzcRDExsEKWFUN6WJ3pMlO8h52p4cg=

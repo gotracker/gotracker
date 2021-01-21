@@ -3,6 +3,7 @@ package util
 import (
 	"math"
 
+	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
@@ -10,34 +11,34 @@ import (
 )
 
 const (
-	// DefaultC2Spd is the default C2SPD for XM samples
+	// DefaultC2Spd is the default C2SPD for IT samples
 	DefaultC2Spd = 8363
 
 	floatDefaultC2Spd = float32(DefaultC2Spd)
 	c2Period          = float32(1712)
 
-	// XMBaseClock is the base clock speed of xm files
-	XMBaseClock = floatDefaultC2Spd * c2Period
+	// ITBaseClock is the base clock speed of IT files
+	ITBaseClock = floatDefaultC2Spd * c2Period
 )
 
 var (
-	// DefaultVolume is the default volume value for most everything in xm format
-	DefaultVolume = VolumeFromXm(0x10 + 0x40)
+	// DefaultVolume is the default volume value for most everything in it format
+	DefaultVolume = VolumeFromIt(0x40)
 
 	// DefaultMixingVolume is the default mixing volume
 	DefaultMixingVolume = volume.Volume(0x30) / 0x80
 
 	// DefaultPanningLeft is the default panning value for left channels
-	DefaultPanningLeft = PanningFromXm(0x30)
+	DefaultPanningLeft = PanningFromIt(0x30)
 	// DefaultPanning is the default panning value for unconfigured channels
-	DefaultPanning = PanningFromXm(0x80)
+	DefaultPanning = PanningFromIt(0x80)
 	// DefaultPanningRight is the default panning value for right channels
-	DefaultPanningRight = PanningFromXm(0xC0)
+	DefaultPanningRight = PanningFromIt(0xC0)
 )
 
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
-// CalcSemitonePeriod calculates the semitone period for xm notes
+// CalcSemitonePeriod calculates the semitone period for it notes
 func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, linearFreqSlides bool) note.Period {
 	if linearFreqSlides {
 		nft := int(semi)*64 + int(ft)
@@ -78,50 +79,57 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlide
 	return note.C2SPD(period.GetFrequency())
 }
 
-// VolumeFromXm converts an xm volume to a player volume
-func VolumeFromXm(vol uint8) volume.Volume {
-	var v volume.Volume
-	switch {
-	case vol >= 0x10 && vol <= 0x50:
-		v = volume.Volume(vol-0x10) / 64.0
-	default:
-		v = volume.VolumeUseInstVol
-	}
-	return v
+// VolumeFromIt converts an it volume to a player volume
+func VolumeFromIt(vol itfile.Volume) volume.Volume {
+	return volume.Volume(vol.Value())
 }
 
-// VolumeToXm converts a player volume to an xm volume
-func VolumeToXm(v volume.Volume) uint8 {
+// VolumeFromVolPan converts an it volume-pan to a player volume
+func VolumeFromVolPan(vp uint8) volume.Volume {
+	switch {
+	case vp >= 0 && vp <= 64:
+		return volume.Volume(vp) / 64
+	default:
+		return volume.VolumeUseInstVol
+	}
+}
+
+// VolumeToIt converts a player volume to an it volume
+func VolumeToIt(v volume.Volume) itfile.Volume {
 	switch {
 	case v == volume.VolumeUseInstVol:
 		return 0
 	default:
-		return uint8(v*64.0) + 0x10
+		return itfile.Volume(v * 64.0)
 	}
 }
 
-// PanningFromXm returns a radian panning position from an xm panning value
-func PanningFromXm(pos uint8) panning.Position {
-	return panning.MakeStereoPosition(float32(pos), 0, 0xFF)
+// PanningFromIt returns a radian panning position from an it panning value
+func PanningFromIt(pos itfile.PanValue) panning.Position {
+	if pos.IsDisabled() {
+		return panning.CenterAhead
+	}
+	return panning.MakeStereoPosition(pos.Value(), 0, 1)
 }
 
-// PanningToXm returns the xm panning value for a radian panning position
-func PanningToXm(pan panning.Position) uint8 {
-	return uint8(panning.FromStereoPosition(pan, 0, 0xFF))
+// PanningToIt returns the it panning value for a radian panning position
+func PanningToIt(pan panning.Position) itfile.PanValue {
+	p := panning.FromStereoPosition(pan, 0, 1)
+	return itfile.PanValue(p * 64)
 }
 
-// NoteFromXmNote converts an xm file note into a player note
-func NoteFromXmNote(xn uint8) note.Note {
+// NoteFromItNote converts an it file note into a player note
+func NoteFromItNote(in itfile.Note) note.Note {
 	switch {
-	case xn == 97:
+	case in.IsNoteOff():
 		return note.ReleaseNote
-	case xn == 0:
-		return note.EmptyNote
-	case xn > 97: // invalid
+	case in.IsNoteCut():
+		return note.StopNote
+	case in.IsNoteFade(): // not really invalid, but...
 		return note.InvalidNote
 	}
 
-	an := uint8(xn - 1)
+	an := uint8(in)
 	s := note.Semitone(an)
 	return note.NewNote(s)
 }

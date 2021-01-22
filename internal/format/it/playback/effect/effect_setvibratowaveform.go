@@ -9,7 +9,7 @@ import (
 )
 
 // SetVibratoWaveform defines a set vibrato waveform effect
-type SetVibratoWaveform uint8 // 'E4x'
+type SetVibratoWaveform uint8 // 'S3x'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SetVibratoWaveform) Start(cs intf.Channel, p intf.Playback) {
@@ -23,5 +23,5 @@ func (e SetVibratoWaveform) Start(cs intf.Channel, p intf.Playback) {
 }
 
 func (e SetVibratoWaveform) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

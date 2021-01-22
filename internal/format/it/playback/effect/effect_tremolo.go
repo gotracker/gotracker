@@ -8,7 +8,7 @@ import (
 )
 
 // Tremolo defines a tremolo effect
-type Tremolo uint8 // '7'
+type Tremolo uint8 // 'R'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
@@ -18,14 +18,14 @@ func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e Tremolo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.Tremolo(uint8(e))
-	// NOTE: JBC - IT updates on tick 0, but MOD does not.
-	// Just have to eat this incompatibility, I guess...
-	x := xy >> 4
-	y := xy & 0x0f
-	doTremolo(cs, currentTick, x, y, 4)
+	x, y := mem.Tremolo(uint8(e))
+	// NOTE: JBC - IT dos not update on tick 0, but MOD does.
+	// Maybe need to add a flag for converted MOD backward compatibility?
+	if currentTick != 0 {
+		doTremolo(cs, currentTick, x, y, 4)
+	}
 }
 
 func (e Tremolo) String() string {
-	return fmt.Sprintf("7%0.2x", uint8(e))
+	return fmt.Sprintf("R%0.2x", uint8(e))
 }

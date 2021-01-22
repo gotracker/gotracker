@@ -7,32 +7,40 @@ import (
 
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
-	portaToNote         uint8
-	vibrato             uint8
-	vibratoSpeed        uint8
-	sampleOffset        uint8
-	tempoDecrease       uint8
-	tempoIncrease       uint8
-	portaDown           uint8
-	portaUp             uint8
-	tremolo             uint8
-	tremor              uint8
-	volumeSlide         uint8
-	globalVolumeSlide   uint8
-	finePortaUp         uint8
-	finePortaDown       uint8
-	fineVolumeSlideUp   uint8
-	fineVolumeSlideDown uint8
-	extraFinePortaUp    uint8
-	extraFinePortaDown  uint8
+	volumeSlide        uint8 `usage:"Dxy"`
+	portaDown          uint8 `usage:"Exx"`
+	portaUp            uint8 `usage:"Fxx"`
+	portaToNote        uint8 `usage:"Gxx"`
+	vibrato            uint8 `usage:"Hxy"`
+	tremor             uint8 `usage:"Ixy"`
+	arpeggio           uint8 `usage:"Jxy"`
+	channelVolumeSlide uint8 `usage:"Nxy"`
+	sampleOffset       uint8 `usage:"Oxx"`
+	panningSlide       uint8 `usage:"Pxy"`
+	retrigVolumeSlide  uint8 `usage:"Qxy"`
+	tremolo            uint8 `usage:"Rxy"`
+	tempoDecrease      uint8 `usage:"T0x"`
+	tempoIncrease      uint8 `usage:"T1x"`
+	globalVolumeSlide  uint8 `usage:"Wxy"`
+	panbrello          uint8 `usage:"Yxy"`
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
+	// OldEffectMode performs somewhat different operations for some effects:
+	// On:
+	//  - Vibrato does not operate on tick 0 and has double depth
+	//  - Sample Offset will ignore the command if it would exceed the length
+	// Off:
+	//  - Vibrato is updated every frame
+	//  - Sample Offset will set the offset to the end of the sample if it would exceed the length
+	OldEffectMode bool
 
-	tremorMem         formatutil.Tremor
-	vibratoOscillator oscillator.Oscillator
-	tremoloOscillator oscillator.Oscillator
-	patternLoop       formatutil.PatternLoop
+	tremorMem           formatutil.Tremor
+	vibratoOscillator   oscillator.Oscillator
+	tremoloOscillator   oscillator.Oscillator
+	panbrelloOscillator oscillator.Oscillator
+	patternLoop         formatutil.PatternLoop
+	HighOffset          int
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
@@ -45,34 +53,9 @@ func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
 	return input
 }
 
-// PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
-func (m *Memory) PortaToNote(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.portaToNote)
-}
-
-// Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Vibrato(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.vibrato)
-}
-
-// VibratoSpeed gets or sets the most recent non-zero value (or input) for Vibrato Speed
-func (m *Memory) VibratoSpeed(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.vibratoSpeed)
-}
-
-// SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
-func (m *Memory) SampleOffset(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.sampleOffset)
-}
-
-// TempoDecrease gets or sets the most recent non-zero value (or input) for Tempo Decrease
-func (m *Memory) TempoDecrease(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tempoDecrease)
-}
-
-// TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
-func (m *Memory) TempoIncrease(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tempoIncrease)
+// VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
+func (m *Memory) VolumeSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.volumeSlide)
 }
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
@@ -85,19 +68,63 @@ func (m *Memory) PortaUp(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.portaUp)
 }
 
-// Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
-func (m *Memory) Tremolo(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tremolo)
+// PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
+func (m *Memory) PortaToNote(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.portaToNote)
+}
+
+// Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
+func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.vibrato)
+	return xy >> 4, xy & 0x0f
 }
 
 // Tremor gets or sets the most recent non-zero value (or input) for Tremor
-func (m *Memory) Tremor(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tremor)
+func (m *Memory) Tremor(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.tremor)
+	return xy >> 4, xy & 0x0f
 }
 
-// VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
-func (m *Memory) VolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.volumeSlide)
+// Arpeggio gets or sets the most recent non-zero value (or input) for Arpeggio
+func (m *Memory) Arpeggio(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.arpeggio)
+}
+
+// ChannelVolumeSlide gets or sets the most recent non-zero value (or input) for Channel Volume Slide
+func (m *Memory) ChannelVolumeSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.channelVolumeSlide)
+}
+
+// SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
+func (m *Memory) SampleOffset(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.sampleOffset)
+}
+
+// PanningSlide gets or sets the most recent non-zero value (or input) for Panning Slide
+func (m *Memory) PanningSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.panningSlide)
+}
+
+// RetrigVolumeSlide gets or sets the most recent non-zero value (or input) for Retrigger+VolumeSlide
+func (m *Memory) RetrigVolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.retrigVolumeSlide)
+	return xy >> 4, xy & 0x0f
+}
+
+// Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
+func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.tremolo)
+	return xy >> 4, xy & 0x0f
+}
+
+// TempoDecrease gets or sets the most recent non-zero value (or input) for Tempo Decrease
+func (m *Memory) TempoDecrease(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.tempoDecrease)
+}
+
+// TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
+func (m *Memory) TempoIncrease(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.tempoIncrease)
 }
 
 // GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
@@ -105,34 +132,9 @@ func (m *Memory) GlobalVolumeSlide(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.globalVolumeSlide)
 }
 
-// FinePortaUp gets or sets the most recent non-zero value (or input) for Fine Portamento Up
-func (m *Memory) FinePortaUp(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.finePortaUp)
-}
-
-// FinePortaDown gets or sets the most recent non-zero value (or input) for Fine Portamento Down
-func (m *Memory) FinePortaDown(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.finePortaDown)
-}
-
-// FineVolumeSlideUp gets or sets the most recent non-zero value (or input) for Fine Volume Slide Up
-func (m *Memory) FineVolumeSlideUp(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.fineVolumeSlideUp)
-}
-
-// FineVolumeSlideDown gets or sets the most recent non-zero value (or input) for Fine Volume Slide Down
-func (m *Memory) FineVolumeSlideDown(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.fineVolumeSlideDown)
-}
-
-// ExtraFinePortaUp gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Up
-func (m *Memory) ExtraFinePortaUp(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.extraFinePortaUp)
-}
-
-// ExtraFinePortaDown gets or sets the most recent non-zero value (or input) for Extra Fine Portamento Down
-func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
-	return m.getEffectMemory(input&0x0F, &m.extraFinePortaDown)
+// Panbrello gets or sets the most recent non-zero value (or input) for Panbrello
+func (m *Memory) Panbrello(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.panbrello)
 }
 
 // TremorMem returns the Tremor object
@@ -150,9 +152,14 @@ func (m *Memory) TremoloOscillator() *oscillator.Oscillator {
 	return &m.tremoloOscillator
 }
 
+// PanbrelloOscillator returns the Panbrello oscillator object
+func (m *Memory) PanbrelloOscillator() *oscillator.Oscillator {
+	return &m.panbrelloOscillator
+}
+
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []*oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
+	for _, osc := range []*oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator(), m.PanbrelloOscillator()} {
 		osc.Reset()
 	}
 }

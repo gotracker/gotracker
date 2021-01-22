@@ -27,6 +27,7 @@ type Instrument interface {
 	SetFinetune(note.Finetune)
 	GetFinetune() note.Finetune
 	GetKind() note.InstrumentKind
+	GetLength() sampling.Pos
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPanning(NoteControl) panning.Position

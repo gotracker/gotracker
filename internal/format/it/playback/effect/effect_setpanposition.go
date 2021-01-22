@@ -10,17 +10,19 @@ import (
 )
 
 // SetPanPosition defines a set pan position effect
-type SetPanPosition uint8 // '8xx'
+type SetPanPosition uint8 // 'Xxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SetPanPosition) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
-	xx := itfile.PanValue(uint8(e))
+	x := uint8(e)
 
-	cs.SetPan(util.PanningFromIt(xx))
+	pan := itfile.PanValue(x)
+
+	cs.SetPan(util.PanningFromIt(pan))
 }
 
 func (e SetPanPosition) String() string {
-	return fmt.Sprintf("8%0.2x", uint8(e))
+	return fmt.Sprintf("X%0.2x", uint8(e))
 }

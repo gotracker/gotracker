@@ -3,11 +3,12 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
 // Arpeggio defines an arpeggio effect
-type Arpeggio uint8 // '0'
+type Arpeggio uint8 // 'J'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
@@ -18,16 +19,13 @@ func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
 
 // Tick is called on every tick
 func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-	xy := uint8(e)
-	if xy == 0 {
-		return
-	}
-
+	mem := cs.GetMemory().(*channel.Memory)
+	xy := mem.Arpeggio(uint8(e))
 	x := int8(xy >> 4)
 	y := int8(xy & 0x0f)
 	doArpeggio(cs, currentTick, x, y)
 }
 
 func (e Arpeggio) String() string {
-	return fmt.Sprintf("0%0.2x", uint8(e))
+	return fmt.Sprintf("J%0.2x", uint8(e))
 }

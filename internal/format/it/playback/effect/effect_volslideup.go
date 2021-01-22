@@ -7,24 +7,22 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// FineVolumeSlideUp defines a fine volume slide up effect
-type FineVolumeSlideUp uint8 // 'D'
+// VolumeSlideUp defines a volume slide up effect
+type VolumeSlideUp uint8 // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideUp) Start(cs intf.Channel, p intf.Playback) {
+func (e VolumeSlideUp) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 }
 
 // Tick is called on every tick
-func (e FineVolumeSlideUp) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e VolumeSlideUp) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
 	x := mem.VolumeSlide(uint8(e)) >> 4
 
-	if x != 0x0F && currentTick == 0 {
-		doVolSlide(cs, float32(x), 1.0)
-	}
+	doVolSlide(cs, float32(x), 1.0)
 }
 
-func (e FineVolumeSlideUp) String() string {
+func (e VolumeSlideUp) String() string {
 	return fmt.Sprintf("D%0.2x", uint8(e))
 }

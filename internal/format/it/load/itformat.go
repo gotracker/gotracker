@@ -265,6 +265,7 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 	}
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
+	oldEffectMode := f.Head.Flags.IsOldEffects()
 
 	song := layout.Song{
 		Head:              *h,
@@ -317,6 +318,7 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 			InitialPanning: util.PanningFromIt(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
 				LinearFreqSlides: linearFrequencySlides,
+				OldEffectMode:    oldEffectMode,
 			},
 		}
 

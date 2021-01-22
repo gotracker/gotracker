@@ -8,7 +8,7 @@ import (
 )
 
 // SetFinetune defines a mod-style set finetune effect
-type SetFinetune uint8 // 'E5x'
+type SetFinetune uint8 // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetFinetune) PreStart(cs intf.Channel, p intf.Playback) {
@@ -27,5 +27,5 @@ func (e SetFinetune) Start(cs intf.Channel, p intf.Playback) {
 }
 
 func (e SetFinetune) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

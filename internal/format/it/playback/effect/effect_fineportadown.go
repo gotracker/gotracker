@@ -8,7 +8,7 @@ import (
 )
 
 // FinePortaDown defines an fine portamento down effect
-type FinePortaDown uint8 // 'E2x'
+type FinePortaDown uint8 // 'EFx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e FinePortaDown) Start(cs intf.Channel, p intf.Playback) {
@@ -16,8 +16,7 @@ func (e FinePortaDown) Start(cs intf.Channel, p intf.Playback) {
 	cs.UnfreezePlayback()
 
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.FinePortaDown(uint8(e))
-	y := xy & 0x0F
+	y := mem.PortaDown(uint8(e)) & 0x0F
 
 	doPortaDown(cs, float32(y), 4, mem.LinearFreqSlides)
 }

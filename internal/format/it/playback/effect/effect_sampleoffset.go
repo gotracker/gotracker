@@ -10,16 +10,24 @@ import (
 )
 
 // SampleOffset defines a sample offset effect
-type SampleOffset uint8 // '9'
+type SampleOffset uint8 // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SampleOffset) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.SampleOffset(uint8(e))
-	cs.SetTargetPos(sampling.Pos{Pos: int(xx) * 0x100})
+
+	pos := sampling.Pos{Pos: mem.HighOffset + int(xx)*0x100}
+	if mem.OldEffectMode {
+		if inst := cs.GetInstrument(); inst != nil && inst.GetLength().Pos < pos.Pos {
+			cs.SetTargetPos(pos)
+		}
+	} else {
+		cs.SetTargetPos(pos)
+	}
 }
 
 func (e SampleOffset) String() string {
-	return fmt.Sprintf("9%0.2x", uint8(e))
+	return fmt.Sprintf("O%0.2x", uint8(e))
 }

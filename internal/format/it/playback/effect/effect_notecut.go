@@ -7,7 +7,7 @@ import (
 )
 
 // NoteCut defines a note cut effect
-type NoteCut uint8 // 'ECx'
+type NoteCut uint8 // 'SCx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e NoteCut) Start(cs intf.Channel, p intf.Playback) {
@@ -24,5 +24,5 @@ func (e NoteCut) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 }
 
 func (e NoteCut) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

@@ -8,7 +8,7 @@ import (
 )
 
 // ExtraFinePortaUp defines an extra-fine portamento up effect
-type ExtraFinePortaUp uint8 // 'X1x'
+type ExtraFinePortaUp uint8 // 'FEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
@@ -16,8 +16,7 @@ func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
 	cs.UnfreezePlayback()
 
 	mem := cs.GetMemory().(*channel.Memory)
-	xx := mem.ExtraFinePortaUp(uint8(e))
-	y := xx & 0x0F
+	y := mem.PortaUp(uint8(e)) & 0x0F
 
 	doPortaUp(cs, float32(y), 1, mem.LinearFreqSlides)
 }

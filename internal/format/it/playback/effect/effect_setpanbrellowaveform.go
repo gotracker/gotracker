@@ -8,20 +8,20 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// SetTremoloWaveform defines a set tremolo waveform effect
-type SetTremoloWaveform uint8 // 'S4x'
+// SetPanbrelloWaveform defines a set panbrello waveform effect
+type SetPanbrelloWaveform uint8 // 'S5x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetTremoloWaveform) Start(cs intf.Channel, p intf.Playback) {
+func (e SetPanbrelloWaveform) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
 
 	mem := cs.GetMemory().(*channel.Memory)
-	trem := mem.TremoloOscillator()
-	trem.Table = oscillator.WaveTableSelect(x)
+	panb := mem.PanbrelloOscillator()
+	panb.Table = oscillator.WaveTableSelect(x)
 }
 
-func (e SetTremoloWaveform) String() string {
+func (e SetPanbrelloWaveform) String() string {
 	return fmt.Sprintf("S%0.2x", uint8(e))
 }

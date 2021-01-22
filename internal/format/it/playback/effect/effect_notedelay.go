@@ -7,7 +7,7 @@ import (
 )
 
 // NoteDelay defines a note delay effect
-type NoteDelay uint8 // 'EDx'
+type NoteDelay uint8 // 'SDx'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e NoteDelay) PreStart(cs intf.Channel, p intf.Playback) {
@@ -20,5 +20,5 @@ func (e NoteDelay) Start(cs intf.Channel, p intf.Playback) {
 }
 
 func (e NoteDelay) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

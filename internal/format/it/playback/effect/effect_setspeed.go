@@ -8,7 +8,7 @@ import (
 )
 
 // SetSpeed defines a set speed effect
-type SetSpeed uint8 // 'F'
+type SetSpeed uint8 // 'A'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetSpeed) PreStart(cs intf.Channel, p intf.Playback) {
@@ -24,5 +24,5 @@ func (e SetSpeed) Start(cs intf.Channel, p intf.Playback) {
 }
 
 func (e SetSpeed) String() string {
-	return fmt.Sprintf("F%0.2x", uint8(e))
+	return fmt.Sprintf("A%0.2x", uint8(e))
 }

@@ -9,21 +9,20 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-// SetCoarsePanPosition defines a set pan position effect
-type SetCoarsePanPosition uint8 // 'E8x'
+// SetCoarsePanPosition defines a set coarse pan position effect
+type SetCoarsePanPosition uint8 // 'S8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SetCoarsePanPosition) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
-	xy := uint8(e)
-	y := xy & 0x0F
+	x := uint8(e) & 0xf
 
-	yp := itfile.PanValue(y << 4)
+	pan := itfile.PanValue(x << 4)
 
-	cs.SetPan(util.PanningFromIt(yp))
+	cs.SetPan(util.PanningFromIt(pan))
 }
 
 func (e SetCoarsePanPosition) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", uint8(e))
 }

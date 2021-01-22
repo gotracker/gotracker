@@ -5,11 +5,12 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 
+	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect
-type RetrigVolumeSlide uint8 // 'R'
+type RetrigVolumeSlide uint8 // 'Q'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e RetrigVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
@@ -18,8 +19,8 @@ func (e RetrigVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 
 // Tick is called on every tick
 func (e RetrigVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
-	x := uint8(e) >> 4
-	y := uint8(e) & 0x0F
+	mem := cs.GetMemory().(*channel.Memory)
+	x, y := mem.RetrigVolumeSlide(uint8(e))
 	if y == 0 {
 		return
 	}
@@ -64,5 +65,5 @@ func (e RetrigVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick in
 }
 
 func (e RetrigVolumeSlide) String() string {
-	return fmt.Sprintf("R%0.2x", uint8(e))
+	return fmt.Sprintf("Q%0.2x", uint8(e))
 }

@@ -290,6 +290,13 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 				}
 
 				addSamplesWithNoteMapToSong(&song, samples, noteMap, instNum)
+			case *itfile.IMPIInstrument:
+				samples, noteMap, err := convertITInstrumentToInstrument(ii, f.Samples[sampNum:], linearFrequencySlides)
+				if err != nil {
+					return nil, err
+				}
+
+				addSamplesWithNoteMapToSong(&song, samples, noteMap, instNum)
 			}
 		}
 	}

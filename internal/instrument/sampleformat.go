@@ -30,6 +30,8 @@ func getBytesPerSample(sdf SampleDataFormat) int {
 		return 1
 	case SampleDataFormat16BitLEUnsigned, SampleDataFormat16BitLESigned:
 		return 2
+	case SampleDataFormat16BitBEUnsigned, SampleDataFormat16BitBESigned:
+		return 2
 	}
 	panic("unhandled sample data format")
 }
@@ -49,6 +51,12 @@ func readSample(sdf SampleDataFormat, sample []uint8, pos int, channels int) vol
 			o[c] = volume.Volume(int16(s-32768)) / 32768.0
 		case SampleDataFormat16BitLESigned:
 			s := binary.LittleEndian.Uint16(sample[actualPos+c:])
+			o[c] = volume.Volume(int16(s)) / 32768.0
+		case SampleDataFormat16BitBEUnsigned:
+			s := binary.BigEndian.Uint16(sample[actualPos+c:])
+			o[c] = volume.Volume(int16(s-32768)) / 32768.0
+		case SampleDataFormat16BitBESigned:
+			s := binary.BigEndian.Uint16(sample[actualPos+c:])
 			o[c] = volume.Volume(int16(s)) / 32768.0
 		}
 		actualPos += bps

@@ -1,6 +1,8 @@
 package load
 
 import (
+	"math"
+
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
@@ -32,7 +34,42 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
-			VolumeFadeout: volume.Volume(1),
+			VolumeFadeout: volume.Volume(inst.Fadeout) / (64 * 512),
+			VolEnv: instrument.InstEnv{
+				Enabled:          (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
+				LoopEnabled:      (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0,
+				SustainEnabled:   (inst.Flags & itfile.IMPIOldFlagUseSustainVolumeLoop) != 0,
+				LoopStart:        int(inst.VolumeLoopStart),
+				LoopEnd:          int(inst.VolumeLoopEnd),
+				SustainLoopStart: int(inst.SustainLoopStart),
+				SustainLoopEnd:   int(inst.SustainLoopEnd),
+				Values:           make([]instrument.EnvPoint, 0),
+			},
+		}
+
+		for i := range inst.VolumeEnvelope {
+			out := instrument.EnvPoint{}
+			in1 := inst.VolumeEnvelope[i]
+			vol := volume.Volume(uint8(in1)) / 64
+			if vol > 1 {
+				vol = 1
+			}
+			out.Y = vol
+			ending := false
+			if i+1 >= len(inst.VolumeEnvelope) {
+				ending = true
+			} else {
+				in2 := inst.VolumeEnvelope[i+1]
+				if in2 == 0xFF {
+					ending = true
+				}
+			}
+			if !ending {
+				out.Ticks = 1
+			} else {
+				out.Ticks = math.MaxInt64
+			}
+			id.VolEnv.Values = append(id.VolEnv.Values, out)
 		}
 
 		if si.Header.Flags.IsLoopEnabled() {
@@ -118,7 +155,80 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
-			VolumeFadeout: volume.Volume(1),
+			VolumeFadeout: volume.Volume(inst.Fadeout) / (128 * 1024),
+			VolEnv: instrument.InstEnv{
+				Enabled:          (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
+				LoopEnabled:      (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
+				SustainEnabled:   (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
+				LoopStart:        int(inst.VolumeEnvelope.LoopBegin),
+				LoopEnd:          int(inst.VolumeEnvelope.LoopEnd),
+				SustainLoopStart: int(inst.VolumeEnvelope.SustainLoopBegin),
+				SustainLoopEnd:   int(inst.VolumeEnvelope.SustainLoopEnd),
+				Values:           make([]instrument.EnvPoint, int(inst.VolumeEnvelope.Count)),
+			},
+			PanEnv: instrument.InstEnv{
+				Enabled:          (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
+				LoopEnabled:      (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
+				SustainEnabled:   (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
+				LoopStart:        int(inst.PanningEnvelope.LoopBegin),
+				LoopEnd:          int(inst.PanningEnvelope.LoopEnd),
+				SustainLoopStart: int(inst.PanningEnvelope.SustainLoopBegin),
+				SustainLoopEnd:   int(inst.PanningEnvelope.SustainLoopEnd),
+				Values:           make([]instrument.EnvPoint, int(inst.PanningEnvelope.Count)),
+			},
+			PitchEnv: instrument.InstEnv{
+				Enabled:          (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
+				LoopEnabled:      (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
+				SustainEnabled:   (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
+				LoopStart:        int(inst.PitchEnvelope.LoopBegin),
+				LoopEnd:          int(inst.PitchEnvelope.LoopEnd),
+				SustainLoopStart: int(inst.PitchEnvelope.SustainLoopBegin),
+				SustainLoopEnd:   int(inst.PitchEnvelope.SustainLoopEnd),
+				Values:           make([]instrument.EnvPoint, int(inst.PitchEnvelope.Count)),
+			},
+		}
+
+		for i := range id.VolEnv.Values {
+			out := &id.VolEnv.Values[i]
+			in1 := inst.VolumeEnvelope.NodePoints[i]
+			vol := volume.Volume(uint8(in1.Y)) / 64
+			if vol > 1 {
+				// NOTE: there might be an incoming Y value == 0xFF, which really
+				// means "end of envelope" and should not mean "full volume",
+				// but we can cheat a little here and probably get away with it...
+				vol = 1
+			}
+			out.Y = vol
+			if i+1 < len(id.VolEnv.Values) {
+				in2 := inst.VolumeEnvelope.NodePoints[i+1]
+				out.Ticks = int(in2.Tick) - int(in1.Tick)
+			} else {
+				out.Ticks = math.MaxInt64
+			}
+		}
+
+		for i := range id.PanEnv.Values {
+			out := &id.PanEnv.Values[i]
+			in1 := inst.PanningEnvelope.NodePoints[i]
+			out.Y = util.PanningFromIt(itfile.PanValue(in1.Y))
+			if i+1 < len(id.PanEnv.Values) {
+				in2 := inst.PanningEnvelope.NodePoints[i+1]
+				out.Ticks = int(in2.Tick) - int(in1.Tick)
+			} else {
+				out.Ticks = math.MaxInt64
+			}
+		}
+
+		for i := range id.PitchEnv.Values {
+			out := &id.PitchEnv.Values[i]
+			in1 := inst.PitchEnvelope.NodePoints[i]
+			out.Y = note.PeriodDelta(in1.Y)
+			if i+1 < len(id.PitchEnv.Values) {
+				in2 := inst.PitchEnvelope.NodePoints[i+1]
+				out.Ticks = int(in2.Tick) - int(in1.Tick)
+			} else {
+				out.Ticks = math.MaxInt64
+			}
 		}
 
 		if si.Header.Flags.IsLoopEnabled() {

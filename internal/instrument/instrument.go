@@ -17,6 +17,7 @@ import (
 // DataIntf is the interface to implementation-specific functions on an instrument
 type DataIntf interface {
 	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
+	GetCurrentPeriodDelta(intf.NoteControl) note.PeriodDelta
 	GetCurrentPanning(intf.NoteControl) panning.Position
 	SetEnvelopePosition(intf.NoteControl, int)
 	Initialize(intf.NoteControl) error
@@ -130,6 +131,14 @@ func (inst *Instrument) GetSample(nc intf.NoteControl, pos sampling.Pos) volume.
 		return ii.GetSample(nc, pos)
 	}
 	return nil
+}
+
+// GetCurrentPeriodDelta returns the current pitch envelope value
+func (inst *Instrument) GetCurrentPeriodDelta(nc intf.NoteControl) note.PeriodDelta {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetCurrentPeriodDelta(nc)
+	}
+	return note.PeriodDelta(0)
 }
 
 // GetCurrentPanning returns the panning envelope position

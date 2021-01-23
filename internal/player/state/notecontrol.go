@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 )
 
 // NoteControl is an instance of the instrument on a particular output channel
@@ -29,6 +30,14 @@ func (nc *NoteControl) GetSample(pos sampling.Pos) volume.Matrix {
 		}
 	}
 	return nil
+}
+
+// GetCurrentPeriodDelta returns the current pitch envelope value
+func (nc *NoteControl) GetCurrentPeriodDelta() note.PeriodDelta {
+	if inst := nc.Instrument; inst != nil {
+		return inst.GetCurrentPeriodDelta(nc)
+	}
+	return note.PeriodDelta(0)
 }
 
 // GetCurrentPanning returns the panning envelope position

@@ -16,6 +16,7 @@ type NoteControl interface {
 	sampling.SampleStream
 
 	GetOutputChannel() *OutputChannel
+	GetCurrentPeriodDelta() note.PeriodDelta
 	GetCurrentPanning() panning.Position
 	Attack()
 	Release()

@@ -93,6 +93,11 @@ func (inst *OPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matri
 	return nil
 }
 
+// GetCurrentPeriodDelta returns the current pitch envelope value
+func (inst *OPL2) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
+	return note.PeriodDelta(0)
+}
+
 // GetCurrentPanning returns the panning envelope position
 func (inst *OPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	return panning.CenterAhead

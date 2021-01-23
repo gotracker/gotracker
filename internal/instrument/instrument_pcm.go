@@ -24,6 +24,7 @@ type PCM struct {
 	VolumeFadeout volume.Volume
 	VolEnv        InstEnv
 	PanEnv        InstEnv
+	PitchEnv      InstEnv
 }
 
 // GetSample returns the sample at position `pos` in the instrument
@@ -47,6 +48,16 @@ func (inst *PCM) IsLooped() bool {
 		return true
 	}
 	return inst.Loop.Mode != LoopModeDisabled
+}
+
+// GetCurrentPeriodDelta returns the current pitch envelope value
+func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
+	if !inst.PitchEnv.Enabled {
+		return note.PeriodDelta(0)
+	}
+
+	ed := ioc.GetData().(*envData)
+	return ed.pitchEnvValue
 }
 
 // GetCurrentPanning returns the panning envelope position
@@ -151,6 +162,11 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 		ed.panEnvTicksRemaining = 0
 		ed.updateEnv(&ed.panEnvPos, &ed.panEnvTicksRemaining, &inst.PanEnv, ed.updatePanEnv)
 	}
+	if inst.PitchEnv.Enabled {
+		ed.pitchEnvPos = 0
+		ed.pitchEnvTicksRemaining = 0
+		ed.updateEnv(&ed.pitchEnvPos, &ed.pitchEnvTicksRemaining, &inst.PitchEnv, ed.updatePitchEnv)
+	}
 }
 
 // Release sets the key on flag for the instrument
@@ -177,7 +193,7 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 		}
 	}
 
-	ed.advance(&inst.VolEnv, &inst.PanEnv)
+	ed.advance(&inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 
 	if !ed.keyOn && inst.VolEnv.Enabled {
 		ed.fadeoutVol -= inst.VolumeFadeout

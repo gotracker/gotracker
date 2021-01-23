@@ -50,6 +50,8 @@ func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, sample
 	nc.Update(duration)
 
 	// ... so grab the new value now.
+	periodDelta := nc.GetCurrentPeriodDelta()
+	ncs.Period = ncs.Period.Add(periodDelta)
 	period := ncs.Period
 
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))

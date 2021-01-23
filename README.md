@@ -16,6 +16,7 @@ Files from/of the following formats/trackers:
 * S3M - ScreamTracker 3
 * MOD - Protracker/Fasttracker/Startrekker (_internally up-converted to S3M_)
 * XM - Fasttracker II
+* IT - Impulse Tracker
 
 ## What systems does it work on?
 
@@ -88,7 +89,8 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `loader` | Attempting to load a corrupted tracker file may cause the deserializer to panic or go running off into the weeds indefinitely. |
 | `mod` | MOD file support is buggy, at best. |
 | `mod` `loader` | MOD files are up-converted to S3M internally and the S3M player uses NTSC-based lookup tables, so with a PAL-based MOD, the period values produced will end up being very slightly divergent from what is expected, as the S3M format converts note information to key-octave pairs, opting to look up the period information at time of need instead. |
-| `xm` | XM file support is in a somewhat nascent state. Don't expect your favorite song to play in it well. |
+| `xm` | XM file support is in a somewhat nascent state. Playback should work alright, but some things like Linear Frequency Slides are a little rough. |
+| `it` | IT file support is in a very nascent state. Don't expect your favorite song to play in it well - or at all. |
 | `s3m` `opl2` | Attempting to play an S3M file with Adlib/OPL2 instruments does not produce the expected output. The OPL2 code has something wrong with it - it sounds pretty bad, though steps have been taken to remedy its strange output. |
 | `mod` `s3m` | Amiga Paula/"LED" low-pass filter support is available, but the filter itself is a very lazy (and very over-optimized) Butterworth implementation. It will not produce the expected output. |
 | `s3m` | SoundBlaster low-pass filter support is available, but comes in the form of a reused Amiga Paula low-pass (3.2kHz) filter. It does not function on the final output data, but instead the separate pre-final output channels. Taking all that into account, the output will not match expectations, but will perform relatively ok. |

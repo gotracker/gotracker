@@ -143,21 +143,25 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 
 	if cs.TrackData.HasNote() {
 		cs.UseTargetPeriod = true
-		inst := cs.TrackData.GetInstrument()
+		inst := cs.TrackData.GetInstrument(cs.StoredSemitone)
+		n := cs.TrackData.GetNote()
 		if inst.IsEmpty() {
 			// use current
 			cs.SetTargetPos(sampling.Pos{})
 		} else if !m.song.IsValidInstrumentID(inst) {
 			cs.SetTargetInst(nil)
 		} else {
-			cs.SetTargetInst(m.song.GetInstrument(inst))
+			inst, str := m.song.GetInstrument(inst)
+			if str != note.UnchangedSemitone && !n.IsSpecial() {
+				n = note.NewNote(str)
+			}
+			cs.SetTargetInst(inst)
 			cs.SetTargetPos(sampling.Pos{})
 			if cs.GetTargetInst() != nil {
 				cs.WantVolCalc = true
 			}
 		}
 
-		n := cs.TrackData.GetNote()
 		if n == note.EmptyNote {
 			cs.WantNoteCalc = false
 			cs.DoRetriggerNote = cs.TrackData.HasInstrument()

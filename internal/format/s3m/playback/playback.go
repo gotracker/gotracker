@@ -12,6 +12,7 @@ import (
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
 
@@ -72,6 +73,7 @@ func NewManager(song *layout.Song) *Manager {
 			cs.SetPan(panning.CenterAhead)
 			cs.SetPanEnabled(false)
 		}
+		cs.SetStoredSemitone(note.UnchangedSemitone)
 		mem := &song.ChannelSettings[i].Memory
 		cs.SetMemory(mem)
 		if mem.LowPassFilterEnable {

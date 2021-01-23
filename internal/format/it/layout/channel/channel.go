@@ -47,9 +47,17 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument() intf.InstrumentID {
+func (d *Data) GetInstrument(stmem note.Semitone) intf.InstrumentID {
+	st := stmem
+	if d.HasNote() {
+		n := d.GetNote()
+		if !n.IsSpecial() {
+			st = n.Semitone()
+		}
+	}
 	return SampleID{
-		InstID: d.Instrument,
+		InstID:   d.Instrument,
+		Semitone: st,
 	}
 }
 

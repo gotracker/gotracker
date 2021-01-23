@@ -57,7 +57,7 @@ func (p *LinearPeriod) Lerp(t float64, rhs note.Period) note.Period {
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
 func (p *LinearPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
-	period := float64(ToAmigaPeriod(p.Finetune, DefaultC2Spd))
+	period := float64(ToAmigaPeriod(p.Finetune, p.C2Spd))
 	if period == 0 {
 		return 0
 	}

@@ -8,6 +8,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
 )
 
@@ -83,16 +84,16 @@ func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instID intf.InstrumentID) intf.Instrument {
+func (s *Song) GetInstrument(instID intf.InstrumentID) (intf.Instrument, note.Semitone) {
 	if instID.IsEmpty() {
-		return nil
+		return nil, note.UnchangedSemitone
 	}
 	switch id := instID.(type) {
 	case channel.S3MInstrumentID:
-		return &s.Instruments[int(id)-1]
+		return &s.Instruments[int(id)-1], note.UnchangedSemitone
 	}
 
-	return nil
+	return nil, note.UnchangedSemitone
 }
 
 // GetName returns the name of the song

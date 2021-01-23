@@ -82,19 +82,19 @@ func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instNum intf.InstrumentID) intf.Instrument {
+func (s *Song) GetInstrument(instNum intf.InstrumentID) (intf.Instrument, note.Semitone) {
 	if instNum.IsEmpty() {
-		return nil
+		return nil, note.UnchangedSemitone
 	}
 	switch id := instNum.(type) {
 	case channel.SampleID:
 		if nm, ok1 := s.InstrumentNoteMap[id.InstID]; ok1 {
 			if sm, ok2 := nm[id.Semitone]; ok2 {
-				return sm
+				return sm, note.UnchangedSemitone
 			}
 		}
 	}
-	return nil
+	return nil, note.UnchangedSemitone
 }
 
 // GetName returns the name of the song

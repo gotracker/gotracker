@@ -68,6 +68,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			},
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitSigned,
+			MixingVolume:  volume.Volume(1),
 			VolumeFadeout: volume.Volume(inst.VolumeFadeout) / 65536,
 			Panning:       util.PanningFromXm(si.Panning),
 			VolEnv: instrument.InstEnv{

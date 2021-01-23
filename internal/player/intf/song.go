@@ -1,5 +1,7 @@
 package intf
 
+import "gotracker/internal/player/note"
+
 // SongData is an interface to the song data
 type SongData interface {
 	GetOrderList() []PatternIdx
@@ -8,7 +10,7 @@ type SongData interface {
 	GetOutputChannel(int) int
 	NumInstruments() int
 	IsValidInstrumentID(InstrumentID) bool
-	GetInstrument(InstrumentID) Instrument
+	GetInstrument(InstrumentID) (Instrument, note.Semitone)
 	GetName() string
 }
 

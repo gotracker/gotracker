@@ -10,6 +10,7 @@ import (
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
 )
 
@@ -61,6 +62,7 @@ func NewManager(song *layout.Song) *Manager {
 		cs.SetPanEnabled(true)
 		cs.SetPan(ch.InitialPanning)
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
+		cs.SetStoredSemitone(note.UnchangedSemitone)
 	}
 
 	txn := m.pattern.StartTransaction()

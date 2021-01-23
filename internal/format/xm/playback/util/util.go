@@ -39,6 +39,9 @@ var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480,
 
 // CalcSemitonePeriod calculates the semitone period for xm notes
 func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, linearFreqSlides bool) note.Period {
+	if semi == note.UnchangedSemitone {
+		panic("how?")
+	}
 	if linearFreqSlides {
 		nft := int(semi)*64 + int(ft)
 		return &LinearPeriod{

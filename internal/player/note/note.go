@@ -52,6 +52,12 @@ type C2SPD uint16
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
+const (
+	// UnchangedSemitone is a special semitone that signifies to the player that
+	// the note is not remapped to another semitone value
+	UnchangedSemitone = Semitone(0xFF)
+)
+
 // NewSemitone creates a semitone from a key and octave
 func NewSemitone(k Key, o Octave) Semitone {
 	return Semitone(uint8(o)*12 + uint8(k))
@@ -234,6 +240,11 @@ func (n Note) IsEmpty() bool {
 // IsInvalid returns true if the note is invalid in any way
 func (n Note) IsInvalid() bool {
 	return n.special == noteSpecialInvalid
+}
+
+// IsSpecial returns true if the note is special in any way
+func (n Note) IsSpecial() bool {
+	return n.special != noteSpecialNone
 }
 
 func (n Note) String() string {

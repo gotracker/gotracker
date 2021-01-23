@@ -1,6 +1,10 @@
 package load
 
 import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"io"
 	"math"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
@@ -12,25 +16,18 @@ import (
 	"gotracker/internal/player/note"
 )
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
-	samples := make([]*instrument.Instrument, 0)
-	noteKeyboard := make(map[int][]note.Semitone)
-	for i := 0; i < int(inst.SampleCount); i++ {
-		si := &sampData[i]
+type convInst struct {
+	Inst *instrument.Instrument
+	NR   []noteRemap
+}
 
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
+	outInsts := make(map[int]*convInst)
+
+	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
+
+	for i, ci := range outInsts {
 		id := instrument.PCM{
-			Sample: si.Data,
-			Length: int(si.Header.Length),
-			Loop: instrument.LoopInfo{
-				Mode:  instrument.LoopModeDisabled,
-				Begin: int(si.Header.LoopBegin),
-				End:   int(si.Header.LoopEnd),
-			},
-			SustainLoop: instrument.LoopInfo{
-				Mode:  instrument.LoopModeDisabled,
-				Begin: int(si.Header.SustainLoopBegin),
-				End:   int(si.Header.SustainLoopEnd),
-			},
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
@@ -46,6 +43,13 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				Values:           make([]instrument.EnvPoint, 0),
 			},
 		}
+
+		ii := instrument.Instrument{
+			Inst: &id,
+		}
+
+		ci.Inst = &ii
+		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides)
 
 		for i := range inst.VolumeEnvelope {
 			out := instrument.EnvPoint{}
@@ -71,227 +75,104 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			}
 			id.VolEnv.Values = append(id.VolEnv.Values, out)
 		}
-
-		if si.Header.Flags.IsLoopEnabled() {
-			if si.Header.Flags.IsLoopPingPong() {
-				id.Loop.Mode = instrument.LoopModePingPong
-			} else {
-				id.Loop.Mode = instrument.LoopModeNormalType2
-			}
-		}
-
-		if si.Header.Flags.IsSustainLoopEnabled() {
-			if si.Header.Flags.IsSustainLoopPingPong() {
-				id.Loop.Mode = instrument.LoopModePingPong
-			} else {
-				id.Loop.Mode = instrument.LoopModeNormalType2
-			}
-		}
-
-		if si.Header.Flags.IsStereo() {
-			id.NumChannels = 2
-		}
-
-		is16Bit := si.Header.Flags.Is16Bit()
-		isSigned := si.Header.ConvertFlags.IsSignedSamples()
-		isBigEndian := si.Header.ConvertFlags.IsBigEndian()
-		id.Format = getSampleFormat(is16Bit, isSigned, isBigEndian)
-
-		ii := instrument.Instrument{
-			Filename: si.Header.GetFilename(),
-			Name:     si.Header.GetName(),
-			Inst:     &id,
-			C2Spd:    note.C2SPD(si.Header.C5Speed),
-			AutoVibrato: instrument.AutoVibrato{
-				Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
-				Sweep:             0,
-				WaveformSelection: si.Header.VibratoType,
-				Depth:             si.Header.VibratoDepth,
-				Rate:              si.Header.VibratoSpeed,
-			},
-			Volume: volume.Volume(si.Header.Volume.Value()),
-		}
-		if si.Header.VibratoSweep != 0 {
-			ii.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
-		}
-		if !si.Header.DefaultPan.IsDisabled() {
-			id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
-		}
-
-		samples = append(samples, &ii)
 	}
 
-	for _, ns := range inst.NoteSampleKeyboard {
-		s := int(ns.Sample)
-		if s == 0 {
-			continue
-		}
-		si := int(ns.Sample) - 1
-		noteKeyboard[si] = append(noteKeyboard[si], util.NoteFromItNote(ns.Note).Semitone())
-	}
-
-	return samples, noteKeyboard, nil
+	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
-	samples := make([]*instrument.Instrument, 0)
-	noteKeyboard := make(map[int][]note.Semitone)
-	for i := 0; i < int(inst.SampleCount); i++ {
-		si := &sampData[i]
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
+	outInsts := make(map[int]*convInst)
 
+	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
+
+	for i, ci := range outInsts {
 		id := instrument.PCM{
-			Sample: si.Data,
-			Length: int(si.Header.Length),
-			Loop: instrument.LoopInfo{
-				Mode:  instrument.LoopModeDisabled,
-				Begin: int(si.Header.LoopBegin),
-				End:   int(si.Header.LoopEnd),
-			},
-			SustainLoop: instrument.LoopInfo{
-				Mode:  instrument.LoopModeDisabled,
-				Begin: int(si.Header.SustainLoopBegin),
-				End:   int(si.Header.SustainLoopEnd),
-			},
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
 			VolumeFadeout: volume.Volume(inst.Fadeout) / (128 * 1024),
-			VolEnv: instrument.InstEnv{
-				Enabled:          (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
-				LoopEnabled:      (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
-				SustainEnabled:   (inst.VolumeEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
-				LoopStart:        int(inst.VolumeEnvelope.LoopBegin),
-				LoopEnd:          int(inst.VolumeEnvelope.LoopEnd),
-				SustainLoopStart: int(inst.VolumeEnvelope.SustainLoopBegin),
-				SustainLoopEnd:   int(inst.VolumeEnvelope.SustainLoopEnd),
-				Values:           make([]instrument.EnvPoint, int(inst.VolumeEnvelope.Count)),
-			},
-			PanEnv: instrument.InstEnv{
-				Enabled:          (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
-				LoopEnabled:      (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
-				SustainEnabled:   (inst.PanningEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
-				LoopStart:        int(inst.PanningEnvelope.LoopBegin),
-				LoopEnd:          int(inst.PanningEnvelope.LoopEnd),
-				SustainLoopStart: int(inst.PanningEnvelope.SustainLoopBegin),
-				SustainLoopEnd:   int(inst.PanningEnvelope.SustainLoopEnd),
-				Values:           make([]instrument.EnvPoint, int(inst.PanningEnvelope.Count)),
-			},
-			PitchEnv: instrument.InstEnv{
-				Enabled:          (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0,
-				LoopEnabled:      (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagLoopOn) != 0,
-				SustainEnabled:   (inst.PitchEnvelope.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0,
-				LoopStart:        int(inst.PitchEnvelope.LoopBegin),
-				LoopEnd:          int(inst.PitchEnvelope.LoopEnd),
-				SustainLoopStart: int(inst.PitchEnvelope.SustainLoopBegin),
-				SustainLoopEnd:   int(inst.PitchEnvelope.SustainLoopEnd),
-				Values:           make([]instrument.EnvPoint, int(inst.PitchEnvelope.Count)),
-			},
 		}
 
-		for i := range id.VolEnv.Values {
-			out := &id.VolEnv.Values[i]
-			in1 := inst.VolumeEnvelope.NodePoints[i]
-			vol := volume.Volume(uint8(in1.Y)) / 64
+		ii := instrument.Instrument{
+			Inst: &id,
+		}
+
+		mixVol := volume.Volume(inst.GlobalVolume.Value())
+
+		ci.Inst = &ii
+		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides)
+
+		convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, func(v int8) interface{} {
+			vol := volume.Volume(uint8(v)) / 64
 			if vol > 1 {
 				// NOTE: there might be an incoming Y value == 0xFF, which really
 				// means "end of envelope" and should not mean "full volume",
 				// but we can cheat a little here and probably get away with it...
 				vol = 1
 			}
-			out.Y = vol
-			if i+1 < len(id.VolEnv.Values) {
-				in2 := inst.VolumeEnvelope.NodePoints[i+1]
-				out.Ticks = int(in2.Tick) - int(in1.Tick)
-			} else {
-				out.Ticks = math.MaxInt64
-			}
-		}
+			return vol
+		})
 
-		for i := range id.PanEnv.Values {
-			out := &id.PanEnv.Values[i]
-			in1 := inst.PanningEnvelope.NodePoints[i]
-			out.Y = util.PanningFromIt(itfile.PanValue(in1.Y))
-			if i+1 < len(id.PanEnv.Values) {
-				in2 := inst.PanningEnvelope.NodePoints[i+1]
-				out.Ticks = int(in2.Tick) - int(in1.Tick)
-			} else {
-				out.Ticks = math.MaxInt64
-			}
-		}
+		convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, func(v int8) interface{} {
+			return panning.MakeStereoPosition(float32(v), -32, 32)
+		})
 
-		for i := range id.PitchEnv.Values {
-			out := &id.PitchEnv.Values[i]
-			in1 := inst.PitchEnvelope.NodePoints[i]
-			out.Y = note.PeriodDelta(in1.Y)
-			if i+1 < len(id.PitchEnv.Values) {
-				in2 := inst.PitchEnvelope.NodePoints[i+1]
-				out.Ticks = int(in2.Tick) - int(in1.Tick)
-			} else {
-				out.Ticks = math.MaxInt64
-			}
-		}
-
-		if si.Header.Flags.IsLoopEnabled() {
-			if si.Header.Flags.IsLoopPingPong() {
-				id.Loop.Mode = instrument.LoopModePingPong
-			} else {
-				id.Loop.Mode = instrument.LoopModeNormalType2
-			}
-		}
-
-		if si.Header.Flags.IsSustainLoopEnabled() {
-			if si.Header.Flags.IsSustainLoopPingPong() {
-				id.Loop.Mode = instrument.LoopModePingPong
-			} else {
-				id.Loop.Mode = instrument.LoopModeNormalType2
-			}
-		}
-
-		if si.Header.Flags.IsStereo() {
-			id.NumChannels = 2
-		}
-
-		is16Bit := si.Header.Flags.Is16Bit()
-		isSigned := si.Header.ConvertFlags.IsSignedSamples()
-		isBigEndian := si.Header.ConvertFlags.IsBigEndian()
-		id.Format = getSampleFormat(is16Bit, isSigned, isBigEndian)
-
-		ii := instrument.Instrument{
-			Filename: si.Header.GetFilename(),
-			Name:     si.Header.GetName(),
-			Inst:     &id,
-			C2Spd:    note.C2SPD(si.Header.C5Speed),
-			AutoVibrato: instrument.AutoVibrato{
-				Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
-				Sweep:             0,
-				WaveformSelection: si.Header.VibratoType,
-				Depth:             si.Header.VibratoDepth,
-				Rate:              si.Header.VibratoSpeed,
-			},
-			Volume: volume.Volume(si.Header.Volume.Value()),
-		}
-		if si.Header.VibratoSweep != 0 {
-			ii.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
-		}
-		if !si.Header.DefaultPan.IsDisabled() {
-			id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
-		}
-
-		samples = append(samples, &ii)
+		convertEnvelope(&id.PitchEnv, &inst.PitchEnvelope, func(v int8) interface{} {
+			return note.PeriodDelta(v)
+		})
 	}
 
-	for _, ns := range inst.NoteSampleKeyboard {
+	return outInsts, nil
+}
+
+func convertEnvelope(outEnv *instrument.InstEnv, inEnv *itfile.Envelope, convert func(int8) interface{}) error {
+	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
+	outEnv.LoopEnabled = (inEnv.Flags & itfile.EnvelopeFlagLoopOn) != 0
+	outEnv.SustainEnabled = (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0
+	outEnv.LoopStart = int(inEnv.LoopBegin)
+	outEnv.LoopEnd = int(inEnv.LoopEnd)
+	outEnv.SustainLoopStart = int(inEnv.SustainLoopBegin)
+	outEnv.SustainLoopEnd = int(inEnv.SustainLoopEnd)
+	outEnv.Values = make([]instrument.EnvPoint, int(inEnv.Count))
+	for i := range outEnv.Values {
+		out := &outEnv.Values[i]
+		in1 := inEnv.NodePoints[i]
+		out.Y = convert(in1.Y)
+		if i+1 < len(outEnv.Values) {
+			in2 := inEnv.NodePoints[i+1]
+			out.Ticks = int(in2.Tick) - int(in1.Tick)
+		} else {
+			out.Ticks = math.MaxInt64
+		}
+	}
+
+	return nil
+}
+
+func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSample) error {
+	for o, ns := range nsk {
 		s := int(ns.Sample)
 		if s == 0 {
 			continue
 		}
 		si := int(ns.Sample) - 1
+		if si < 0 {
+			continue
+		}
 		n := util.NoteFromItNote(ns.Note)
 		st := n.Semitone()
-		noteKeyboard[si] = append(noteKeyboard[si], st)
+		ci, ok := noteKeyboard[si]
+		if !ok {
+			ci = &convInst{}
+			noteKeyboard[si] = ci
+		}
+		ci.NR = append(ci.NR, noteRemap{
+			Orig:  note.Semitone(o),
+			Remap: st,
+		})
 	}
 
-	return samples, noteKeyboard, nil
+	return nil
 }
 
 func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) instrument.SampleDataFormat {
@@ -309,4 +190,348 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) instrument.S
 		return instrument.SampleDataFormat8BitSigned
 	}
 	return instrument.SampleDataFormat8BitUnsigned
+}
+
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool) error {
+	id.Length = int(si.Header.Length)
+	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
+	id.MixingVolume *= instVol
+	id.Loop = instrument.LoopInfo{
+		Mode:  instrument.LoopModeDisabled,
+		Begin: int(si.Header.LoopBegin),
+		End:   int(si.Header.LoopEnd),
+	}
+	id.SustainLoop = instrument.LoopInfo{
+		Mode:  instrument.LoopModeDisabled,
+		Begin: int(si.Header.SustainLoopBegin),
+		End:   int(si.Header.SustainLoopEnd),
+	}
+
+	if si.Header.Flags.IsLoopEnabled() {
+		if si.Header.Flags.IsLoopPingPong() {
+			id.Loop.Mode = instrument.LoopModePingPong
+		} else {
+			id.Loop.Mode = instrument.LoopModeNormalType2
+		}
+	}
+
+	if si.Header.Flags.IsSustainLoopEnabled() {
+		if si.Header.Flags.IsSustainLoopPingPong() {
+			id.Loop.Mode = instrument.LoopModePingPong
+		} else {
+			id.Loop.Mode = instrument.LoopModeNormalType2
+		}
+	}
+
+	if si.Header.Flags.IsStereo() {
+		id.NumChannels = 2
+	}
+
+	is16Bit := si.Header.Flags.Is16Bit()
+	isSigned := si.Header.ConvertFlags.IsSignedSamples()
+	isBigEndian := si.Header.ConvertFlags.IsBigEndian()
+	id.Format = getSampleFormat(is16Bit, isSigned, isBigEndian)
+
+	isDeltaSamples := si.Header.ConvertFlags.IsSampleDelta()
+	if si.Header.Flags.IsCompressed() {
+		if is16Bit {
+			id.Sample = uncompress16IT214(si.Data, isBigEndian)
+		} else {
+			id.Sample = uncompress8IT214(si.Data)
+		}
+		isDeltaSamples = true
+	} else {
+		id.Sample = si.Data
+	}
+
+	if isDeltaSamples {
+		deltaDecode(id.Sample, id.Format)
+	}
+
+	ii.Filename = si.Header.GetFilename()
+	ii.Name = si.Header.GetName()
+	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
+	ii.AutoVibrato = instrument.AutoVibrato{
+		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
+		Sweep:             0,
+		WaveformSelection: si.Header.VibratoType,
+		Depth:             si.Header.VibratoDepth,
+		Rate:              si.Header.VibratoSpeed,
+	}
+	ii.Volume = volume.Volume(si.Header.Volume.Value())
+
+	if si.Header.VibratoSweep != 0 {
+		ii.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
+	}
+	if !si.Header.DefaultPan.IsDisabled() {
+		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
+	}
+
+	return nil
+}
+
+func itReadbits(n int8, r io.ByteReader, bitnum *uint32, bitbuf *uint32) (uint32, error) {
+	var value uint32 = 0
+	var i uint32 = uint32(n)
+
+	// this could be better
+	for i > 0 {
+		i--
+		if *bitnum == 0 {
+			b, err := r.ReadByte()
+			if err != nil {
+				return value >> (32 - n), err
+			}
+			*bitbuf = uint32(b)
+			*bitnum = 8
+		}
+		value >>= 1
+		value |= (*bitbuf) << 31
+		(*bitbuf) >>= 1
+		(*bitnum)--
+	}
+	return value >> (32 - n), nil
+}
+
+// 8-bit sample uncompressor for IT 2.14+
+func uncompress8IT214(data []byte) []byte {
+	in := bytes.NewReader(data)
+	out := &bytes.Buffer{}
+
+	var (
+		blklen uint16 // length of compressed data block in samples
+		blkpos uint16 // position in block
+		width  uint8  // actual "bit width"
+		value  uint16 // value read from file to be processed
+		v      int8   // sample value
+
+		// state for itReadbits
+		bitbuf uint32
+		bitnum uint32
+	)
+
+	// now unpack data till the dest buffer is full
+	for in.Len() > 0 {
+		// read a new block of compressed data and reset variables
+		// block layout: word size, <size> bytes data
+		bitbuf = 0
+		bitnum = 0
+
+		blklen = uint16(math.Min(0x8000, float64(in.Len())))
+		blkpos = 0
+
+		width = 9 // start with width of 9 bits
+
+		var clen uint16
+		if err := binary.Read(in, binary.LittleEndian, &clen); err != nil {
+			panic(err)
+		}
+
+		// now uncompress the data block
+	blockLoop:
+		for blkpos < blklen {
+			if width > 9 {
+				// illegal width, abort
+				panic(fmt.Sprintf("Illegal bit width %d for 8-bit sample\n", width))
+			}
+			vv, err := itReadbits(int8(width), in, &bitnum, &bitbuf)
+			if err != nil {
+				break blockLoop
+			}
+			value = uint16(vv)
+
+			if width < 7 {
+				// method 1 (1-6 bits)
+				// check for "100..."
+				if value == 1<<(width-1) {
+					// yes!
+					vv, err := itReadbits(3, in, &bitnum, &bitbuf) // read new width
+					if err != nil {
+						break blockLoop
+					}
+					value = uint16(vv + 1)
+					if value < uint16(width) {
+						width = uint8(value)
+					} else {
+						width = uint8(value + 1)
+					}
+					continue blockLoop // ... next value
+				}
+			} else if width < 9 {
+				// method 2 (7-8 bits)
+				var border uint8 = (0xFF >> (9 - width)) - 4 // lower border for width chg
+				if value > uint16(border) && value <= (uint16(border)+8) {
+					value -= uint16(border) // convert width to 1-8
+					if value < uint16(width) {
+						width = uint8(value)
+					} else {
+						width = uint8(value + 1)
+					}
+					continue blockLoop // ... next value
+				}
+			} else {
+				// method 3 (9 bits)
+				// bit 8 set?
+				if (value & 0x100) != 0 {
+					width = uint8((value + 1) & 0xff) // new width...
+					continue blockLoop                // ... next value
+				}
+			}
+
+			// now expand value to signed byte
+			if width < 8 {
+				var shift uint8 = 8 - width
+				v = int8(value << shift)
+				v >>= shift
+			} else {
+				v = int8(value)
+			}
+
+			if err := out.WriteByte(byte(v)); err != nil {
+				panic(err)
+			}
+			blkpos++
+		}
+	}
+	return out.Bytes()
+}
+
+// 16-bit sample uncompressor for IT 2.14+
+func uncompress16IT214(data []byte, isBigEndian bool) []byte {
+	in := bytes.NewReader(data)
+	out := &bytes.Buffer{}
+
+	var (
+		blklen uint16 // length of compressed data block in samples
+		blkpos uint16 // position in block
+		width  uint8  // actual "bit width"
+		value  uint32 // value read from file to be processed
+		v      int16  // sample value
+		order  binary.ByteOrder
+
+		// state for itReadbits
+		bitbuf uint32
+		bitnum uint32
+	)
+
+	if isBigEndian {
+		order = binary.BigEndian
+	} else {
+		order = binary.LittleEndian
+	}
+
+	// now unpack data till the dest buffer is full
+	for in.Len() > 0 {
+		// read a new block of compressed data and reset variables
+		// block layout: word size, <size> bytes data
+		bitbuf = 0
+		bitnum = 0
+
+		blklen = uint16(math.Min(0x4000, float64(in.Len())))
+		blkpos = 0
+
+		width = 17 // start with width of 17 bits
+
+		var clen uint16
+		if err := binary.Read(in, binary.LittleEndian, &clen); err != nil {
+			panic(err)
+		}
+
+		// now uncompress the data block
+	blockLoop:
+		for blkpos < blklen {
+			if width > 17 {
+				// illegal width, abort
+				panic(fmt.Sprintf("Illegal bit width %d for 16-bit sample\n", width))
+			}
+			vv, err := itReadbits(int8(width), in, &bitnum, &bitbuf)
+			if err != nil {
+				break blockLoop
+			}
+			value = vv
+
+			if width < 7 {
+				// method 1 (1-6 bits)
+				// check for "100..."
+				if value == 1<<(width-1) {
+					// yes!
+					vv, err := itReadbits(4, in, &bitnum, &bitbuf) // read new width
+					if err != nil {
+						break blockLoop
+					}
+					value = vv + 1
+					if value < uint32(width) {
+						width = uint8(value)
+					} else {
+						width = uint8(value + 1)
+					}
+					continue blockLoop // ... next value
+				}
+			} else if width < 17 {
+				// method 2 (7-16 bits)
+				var border uint16 = (0xFFFF >> (17 - width)) - 8 // lower border for width chg
+				if value > uint32(border) && value <= uint32(border+16) {
+					value -= uint32(border) // convert width to 1-16
+					if value < uint32(width) {
+						width = uint8(value)
+					} else {
+						width = uint8(value + 1)
+					}
+					continue blockLoop // ... next value
+				}
+			} else {
+				// method 3 (9 bits)
+				// bit 8 set?
+				if (value & 0x10000) != 0 {
+					width = uint8((value + 1) & 0xff) // new width...
+					continue blockLoop                // ... next value
+				}
+			}
+
+			// now expand value to signed byte
+			if width < 8 {
+				var shift uint8 = 16 - width
+				v = int16(value << shift)
+				v >>= shift
+			} else {
+				v = int16(value)
+			}
+
+			if err := binary.Write(out, order, v); err != nil {
+				panic(err)
+			}
+			blkpos++
+		}
+	}
+	return out.Bytes()
+}
+
+func deltaDecode(data []byte, format instrument.SampleDataFormat) {
+	switch format {
+	case instrument.SampleDataFormat8BitSigned, instrument.SampleDataFormat8BitUnsigned:
+		deltaDecode8(data)
+	case instrument.SampleDataFormat16BitLESigned, instrument.SampleDataFormat16BitLEUnsigned:
+		deltaDecode16(data, binary.LittleEndian)
+	case instrument.SampleDataFormat16BitBESigned, instrument.SampleDataFormat16BitBEUnsigned:
+		deltaDecode16(data, binary.BigEndian)
+	}
+}
+
+func deltaDecode8(data []byte) {
+	old := int8(0)
+	for i, s := range data {
+		new := int8(s) + old
+		data[i] = uint8(new)
+		old = new
+	}
+}
+
+func deltaDecode16(data []byte, order binary.ByteOrder) {
+	old := int16(0)
+	for i := 0; i < len(data); i += 2 {
+		s := order.Uint16(data[i:])
+		new := int16(s) + old
+		order.PutUint16(data[i:], uint16(new))
+		old = new
+	}
 }

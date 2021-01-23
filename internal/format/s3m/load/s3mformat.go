@@ -71,9 +71,10 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			Begin: int(si.LoopBegin.Lo),
 			End:   int(si.LoopEnd.Lo),
 		},
-		NumChannels: 1,
-		Format:      instrument.SampleDataFormat8BitUnsigned,
-		Panning:     panning.CenterAhead,
+		NumChannels:  1,
+		Format:       instrument.SampleDataFormat8BitUnsigned,
+		Panning:      panning.CenterAhead,
+		MixingVolume: volume.Volume(1),
 	}
 	if signedSamples {
 		idata.Format = instrument.SampleDataFormat8BitSigned

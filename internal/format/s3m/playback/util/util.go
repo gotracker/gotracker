@@ -34,6 +34,9 @@ var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480,
 
 // CalcSemitonePeriod calculates the semitone period for S3M notes
 func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD) note.Period {
+	if semi == note.UnchangedSemitone {
+		panic("how?")
+	}
 	key := int(semi.Key())
 	octave := int(semi.Octave())
 

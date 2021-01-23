@@ -21,6 +21,7 @@ type PCM struct {
 	NumChannels   int
 	Format        SampleDataFormat
 	Panning       panning.Position
+	MixingVolume  volume.Volume
 	VolumeFadeout volume.Volume
 	VolEnv        InstEnv
 	PanEnv        InstEnv
@@ -37,7 +38,7 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 	dry := inst.getSampleDry(pos, ed.keyOn)
 	envVol := inst.getVolEnv(ed, pos)
 	chVol := ncs.Volume
-	postVol := envVol * chVol
+	postVol := envVol * chVol * inst.MixingVolume
 	wet := postVol.Apply(dry...)
 	return wet
 }

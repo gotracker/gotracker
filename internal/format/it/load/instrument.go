@@ -248,6 +248,38 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		deltaDecode(id.Sample, id.Format)
 	}
 
+	bps := 1
+	if is16Bit {
+		bps = 2
+	}
+
+	if len(id.Sample) < int(si.Header.Length+1)*bps*id.NumChannels {
+		var value interface{}
+		var order binary.ByteOrder = binary.LittleEndian
+		if is16Bit {
+			if isSigned {
+				value = int16(0)
+			} else {
+				value = uint16(0x8000)
+			}
+			if isBigEndian {
+				order = binary.BigEndian
+			}
+		} else {
+			if isSigned {
+				value = int8(0)
+			} else {
+				value = uint8(0x80)
+			}
+		}
+
+		buf := bytes.NewBuffer(id.Sample)
+		for buf.Len() < int(si.Header.Length+1)*bps*id.NumChannels {
+			binary.Write(buf, order, value)
+		}
+		id.Sample = buf.Bytes()
+	}
+
 	ii.Filename = si.Header.GetFilename()
 	ii.Name = si.Header.GetName()
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed)

@@ -41,22 +41,24 @@ func readSample(sdf SampleDataFormat, sample []uint8, pos int, channels int) vol
 	bps := getBytesPerSample(sdf)
 	actualPos := pos * channels * bps
 	for c := 0; c < channels; c++ {
+		cp := c * bps
+		ap := actualPos + cp
 		switch sdf {
 		case SampleDataFormat8BitUnsigned:
-			o[c] = volume.Volume(int8(sample[actualPos+c]-128)) / 128.0
+			o[c] = volume.Volume(int8(sample[ap]-128)) / 128.0
 		case SampleDataFormat8BitSigned:
-			o[c] = volume.Volume(int8(sample[actualPos+c])) / 128.0
+			o[c] = volume.Volume(int8(sample[ap])) / 128.0
 		case SampleDataFormat16BitLEUnsigned:
-			s := binary.LittleEndian.Uint16(sample[actualPos+c:])
+			s := binary.LittleEndian.Uint16(sample[ap:])
 			o[c] = volume.Volume(int16(s-32768)) / 32768.0
 		case SampleDataFormat16BitLESigned:
-			s := binary.LittleEndian.Uint16(sample[actualPos+c:])
+			s := binary.LittleEndian.Uint16(sample[ap:])
 			o[c] = volume.Volume(int16(s)) / 32768.0
 		case SampleDataFormat16BitBEUnsigned:
-			s := binary.BigEndian.Uint16(sample[actualPos+c:])
+			s := binary.BigEndian.Uint16(sample[ap:])
 			o[c] = volume.Volume(int16(s-32768)) / 32768.0
 		case SampleDataFormat16BitBESigned:
-			s := binary.BigEndian.Uint16(sample[actualPos+c:])
+			s := binary.BigEndian.Uint16(sample[ap:])
 			o[c] = volume.Volume(int16(s)) / 32768.0
 		}
 		actualPos += bps

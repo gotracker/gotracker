@@ -18,7 +18,7 @@ func (e SetCoarsePanPosition) Start(cs intf.Channel, p intf.Playback) {
 
 	x := uint8(e) & 0xf
 
-	pan := itfile.PanValue(x << 4)
+	pan := itfile.PanValue(x << 2)
 
 	cs.SetPan(util.PanningFromIt(pan))
 }

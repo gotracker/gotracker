@@ -13,9 +13,9 @@ func volPanEffectFactory(mi intf.Memory, v uint8) intf.Effect {
 	case v >= 0x4b && v <= 0x54: // fine volume slide down
 		return FineVolumeSlideDown(v - 0x4b)
 	case v >= 0x55 && v <= 0x5e: // volume slide up
-		//return VolumeSlideUp(v - 0x55)
+		return VolumeSlideUp(v - 0x55)
 	case v >= 0x5f && v <= 0x68: // volume slide down
-		//return VolumeSlideDown(v - 0x5f)
+		return VolumeSlideDown(v - 0x5f)
 	case v >= 0x69 && v <= 0x72: // portamento down
 		return PortaDown(v - 0x69)
 	case v >= 0x73 && v <= 0x7c: // portamento up

@@ -32,10 +32,7 @@ func xmChannelRender(cdata render.ChannelData) string {
 
 		if data.HasInstrument() {
 			if inst := data.Instrument; inst != 0 {
-				i = fmt.Sprintf("%X", inst)
-				for len(i) < 2 {
-					i = " " + i
-				}
+				i = fmt.Sprintf("%0.2X", inst)
 			}
 		}
 

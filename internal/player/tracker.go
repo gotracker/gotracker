@@ -86,9 +86,10 @@ func (t *Tracker) GetOutputChannel(ch int, pb intf.Playback) *intf.OutputChannel
 	oc, ok := t.outputChannels[ch]
 	if !ok {
 		oc = &intf.OutputChannel{
-			ChannelNum: ch,
-			Filter:     nil,
-			Playback:   pb,
+			ChannelNum:    ch,
+			Filter:        nil,
+			Playback:      pb,
+			ChannelVolume: volume.Volume(1),
 		}
 		t.outputChannels[ch] = oc
 	}

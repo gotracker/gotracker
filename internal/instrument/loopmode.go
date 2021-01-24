@@ -38,11 +38,11 @@ func calcLoopedSamplePos(loop LoopInfo, sustain LoopInfo, pos int, length int, k
 		case LoopModeDisabled:
 			// fallthrough to non-sustain
 		case LoopModeNormalType1:
-			return calcLoopedSamplePosMode1(pos, length, sustain.Begin, sustain.End, true)
+			return calcLoopedSamplePosMode1(pos, length, sustain.Begin, sustain.End)
 		case LoopModeNormalType2:
-			return calcLoopedSamplePosMode2(pos, length, sustain.Begin, sustain.End, true)
+			return calcLoopedSamplePosMode2(pos, length, sustain.Begin, sustain.End)
 		case LoopModePingPong:
-			return calcLoopedSamplePosPingPong(pos, length, sustain.Begin, sustain.End, true)
+			return calcLoopedSamplePosPingPong(pos, length, sustain.Begin, sustain.End)
 		default:
 			panic("unhandled loop mode!")
 		}
@@ -52,11 +52,11 @@ func calcLoopedSamplePos(loop LoopInfo, sustain LoopInfo, pos int, length int, k
 	case LoopModeDisabled:
 		return calcSamplePosLoopDisabled(pos, length)
 	case LoopModeNormalType1:
-		return calcLoopedSamplePosMode1(pos, length, loop.Begin, loop.End, keyOn)
+		return calcLoopedSamplePosMode1(pos, length, loop.Begin, loop.End)
 	case LoopModeNormalType2:
-		return calcLoopedSamplePosMode2(pos, length, loop.Begin, loop.End, keyOn)
+		return calcLoopedSamplePosMode2(pos, length, loop.Begin, loop.End)
 	case LoopModePingPong:
-		return calcLoopedSamplePosPingPong(pos, length, loop.Begin, loop.End, keyOn)
+		return calcLoopedSamplePosPingPong(pos, length, loop.Begin, loop.End)
 	default:
 		panic("unhandled loop mode!")
 	}
@@ -74,7 +74,7 @@ func calcSamplePosLoopDisabled(pos int, length int) int {
 	}
 }
 
-func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int, keyOn bool) int {
+func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int) int {
 	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
@@ -86,7 +86,7 @@ func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int, k
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 || !keyOn {
+	if loopLen <= 0 {
 		return length
 	}
 
@@ -94,7 +94,7 @@ func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int, k
 	return loopBegin + loopedPos
 }
 
-func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int, keyOn bool) int {
+func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int) int {
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
@@ -106,7 +106,7 @@ func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int, k
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 || !keyOn {
+	if loopLen <= 0 {
 		if pos < length {
 			return pos
 		}
@@ -118,7 +118,7 @@ func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int, k
 	return loopBegin + loopedPos
 }
 
-func calcLoopedSamplePosPingPong(pos int, length int, loopBegin int, loopEnd int, keyOn bool) int {
+func calcLoopedSamplePosPingPong(pos int, length int, loopBegin int, loopEnd int) int {
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>----<loopEnd|------------| <= only if looped and on playthrough 2+, part that loops plays and ping-pongs
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
@@ -130,7 +130,7 @@ func calcLoopedSamplePosPingPong(pos int, length int, loopBegin int, loopEnd int
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 || !keyOn {
+	if loopLen <= 0 {
 		if pos < length {
 			return pos
 		}

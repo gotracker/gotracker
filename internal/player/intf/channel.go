@@ -67,5 +67,10 @@ type Channel interface {
 	GetOutputChannel() *OutputChannel
 	SetVolumeActive(bool)
 	SetGlobalVolume(volume.Volume)
+	SetChannelVolume(volume.Volume)
+	GetChannelVolume() volume.Volume
 	SetEnvelopePosition(int)
+	TransitionActiveToPastState()
+	SetNewNoteAction(note.NewNoteAction)
+	GetNewNoteAction() note.NewNoteAction
 }

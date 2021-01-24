@@ -34,6 +34,8 @@ type Memory struct {
 	//  - Vibrato is updated every frame
 	//  - Sample Offset will set the offset to the end of the sample if it would exceed the length
 	OldEffectMode bool
+	// EFGLinkMode will make effects Exx, Fxx, and Gxx share the same memory
+	EFGLinkMode bool
 
 	tremorMem           formatutil.Tremor
 	vibratoOscillator   oscillator.Oscillator
@@ -60,11 +62,17 @@ func (m *Memory) VolumeSlide(input uint8) uint8 {
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
 func (m *Memory) PortaDown(input uint8) uint8 {
+	if m.EFGLinkMode {
+		return m.getEffectMemory(input, &m.portaToNote)
+	}
 	return m.getEffectMemory(input, &m.portaDown)
 }
 
 // PortaUp gets or sets the most recent non-zero value (or input) for Portamento Up
 func (m *Memory) PortaUp(input uint8) uint8 {
+	if m.EFGLinkMode {
+		return m.getEffectMemory(input, &m.portaToNote)
+	}
 	return m.getEffectMemory(input, &m.portaUp)
 }
 
@@ -91,8 +99,9 @@ func (m *Memory) Arpeggio(input uint8) uint8 {
 }
 
 // ChannelVolumeSlide gets or sets the most recent non-zero value (or input) for Channel Volume Slide
-func (m *Memory) ChannelVolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.channelVolumeSlide)
+func (m *Memory) ChannelVolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.channelVolumeSlide)
+	return xy >> 4, xy & 0x0f
 }
 
 // SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset

@@ -23,9 +23,12 @@ type DataIntf interface {
 	Initialize(intf.NoteControl) error
 	Attack(intf.NoteControl)
 	Release(intf.NoteControl)
+	Fadeout(intf.NoteControl)
 	GetKeyOn(intf.NoteControl) bool
 	Update(intf.NoteControl, time.Duration)
 	GetKind() note.InstrumentKind
+	CloneData(intf.NoteControl) interface{}
+	IsVolumeEnvelopeEnabled() bool
 }
 
 // AutoVibrato is the setting and memory for the auto-vibrato system
@@ -45,9 +48,11 @@ type Instrument struct {
 	ID                 intf.InstrumentID
 	C2Spd              note.C2SPD
 	Volume             volume.Volume
+	ChannelVolume      volume.Volume
 	RelativeNoteNumber int8
 	Finetune           note.Finetune
 	AutoVibrato        AutoVibrato
+	NewNoteAction      note.NewNoteAction
 }
 
 // IsInvalid always returns false (valid)
@@ -163,6 +168,13 @@ func (inst *Instrument) Release(nc intf.NoteControl) {
 	}
 }
 
+// Fadeout sets the instrument to fading-out mode
+func (inst *Instrument) Fadeout(nc intf.NoteControl) {
+	if ii := inst.Inst; ii != nil {
+		ii.Fadeout(nc)
+	}
+}
+
 // GetKeyOn returns the key-on flag state for the instrument
 func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
 	if ii := inst.Inst; ii != nil {
@@ -198,4 +210,25 @@ func (inst *Instrument) SetEnvelopePosition(nc intf.NoteControl, ticks int) {
 	if ii := inst.Inst; ii != nil {
 		ii.SetEnvelopePosition(nc, ticks)
 	}
+}
+
+// GetNewNoteAction returns the NewNoteAction associated to the instrument
+func (inst *Instrument) GetNewNoteAction() note.NewNoteAction {
+	return inst.NewNoteAction
+}
+
+// CloneData clones the data associated to the note-control interface
+func (inst *Instrument) CloneData(nc intf.NoteControl) interface{} {
+	if ii := inst.Inst; ii != nil {
+		return ii.CloneData(nc)
+	}
+	return nil
+}
+
+// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
+func (inst *Instrument) IsVolumeEnvelopeEnabled() bool {
+	if ii := inst.Inst; ii != nil {
+		return ii.IsVolumeEnvelopeEnabled()
+	}
+	return false
 }

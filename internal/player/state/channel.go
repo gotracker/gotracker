@@ -16,8 +16,6 @@ type commandFunc func(int, *ChannelState, int, bool)
 
 // ChannelState is the state of a single channel
 type ChannelState struct {
-	intf.Channel
-
 	activeState activeState
 	targetState intf.PlaybackState
 	prevState   activeState
@@ -40,6 +38,8 @@ type ChannelState struct {
 	UseTargetPeriod   bool
 	volumeActive      bool
 	PanEnabled        bool
+	NewNoteAction     note.NewNoteAction
+	pastNote          activeState
 
 	Output *intf.OutputChannel
 }
@@ -64,7 +64,25 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 		return nil, nil
 	}
 
-	return cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+	mixData, err := cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+	if err != nil {
+		return mixData, err
+	}
+	if cs.pastNote.NoteControl != nil && cs.pastNote.Period != nil {
+		ps, err2 := cs.pastNote.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+		if err == nil && err2 != nil {
+			err = err2
+		}
+		if ps.Data != nil {
+			if mixData == nil || mixData.Data == nil {
+				mixData = ps
+			} else {
+				centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
+				mixData.Data.Add(0, ps.Data, centerPan)
+			}
+		}
+	}
+	return mixData, err
 }
 
 // ResetStates resets the channel's internal states
@@ -302,7 +320,17 @@ func (cs *ChannelState) GetOutputChannel() *intf.OutputChannel {
 
 // SetGlobalVolume sets the last-known global volume on the channel
 func (cs *ChannelState) SetGlobalVolume(gv volume.Volume) {
-	cs.Output.PreMixVolume = gv
+	cs.Output.GlobalVolume = gv
+}
+
+// SetChannelVolume sets the channel volume on the channel
+func (cs *ChannelState) SetChannelVolume(cv volume.Volume) {
+	cs.Output.ChannelVolume = cv
+}
+
+// GetChannelVolume gets the channel volume on the channel
+func (cs *ChannelState) GetChannelVolume() volume.Volume {
+	return cs.Output.ChannelVolume
 }
 
 // SetEnvelopePosition sets the envelope position for the active instrument
@@ -310,4 +338,35 @@ func (cs *ChannelState) SetEnvelopePosition(ticks int) {
 	if nc := cs.GetNoteControl(); nc != nil {
 		nc.SetEnvelopePosition(ticks)
 	}
+}
+
+// TransitionActiveToPastState will transition the current active state to the 'past' state
+// and will activate the specified New-Note Action on it
+func (cs *ChannelState) TransitionActiveToPastState() {
+	cs.pastNote = cs.activeState.Clone()
+	switch cs.NewNoteAction {
+	case note.NewNoteActionNoteCut:
+		cs.pastNote.Period = nil
+		cs.pastNote.NoteControl = nil
+	case note.NewNoteActionContinue:
+		// nothing
+	case note.NewNoteActionNoteOff:
+		if nc := cs.pastNote.NoteControl; nc != nil {
+			nc.Release()
+		}
+	case note.NewNoteActionFadeout:
+		if nc := cs.pastNote.NoteControl; nc != nil {
+			nc.Fadeout()
+		}
+	}
+}
+
+// SetNewNoteAction sets the New-Note Action on the channel
+func (cs *ChannelState) SetNewNoteAction(nna note.NewNoteAction) {
+	cs.NewNoteAction = nna
+}
+
+// GetNewNoteAction gets the New-Note Action on the channel
+func (cs *ChannelState) GetNewNoteAction() note.NewNoteAction {
+	return cs.NewNoteAction
 }

@@ -34,7 +34,7 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 	if ncs == nil {
 		panic("no playback state on note-control interface")
 	}
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	dry := inst.getSampleDry(pos, ed.keyOn)
 	envVol := inst.getVolEnv(ed, pos)
 	chVol := ncs.Volume
@@ -57,7 +57,7 @@ func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 		return note.PeriodDelta(0)
 	}
 
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	return ed.pitchEnvValue
 }
 
@@ -68,7 +68,7 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 		return x
 	}
 
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	y := ed.panEnvValue
 
 	// panning envelope value `y` modifies instrument panning value `x`
@@ -100,14 +100,14 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 
 // SetEnvelopePosition sets the envelope position for the note-control
 func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	ed.setEnvelopePosition(ticks, &ed.volEnvPos, &ed.volEnvTicksRemaining, &inst.VolEnv, ed.updateVolEnv)
 	if inst.VolEnv.SustainEnabled {
 		ed.setEnvelopePosition(ticks, &ed.panEnvPos, &ed.panEnvTicksRemaining, &inst.PanEnv, ed.updatePanEnv)
 	}
 }
 
-func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {
+func (inst *PCM) getVolEnv(ed *pcmState, pos sampling.Pos) volume.Volume {
 	if !inst.VolEnv.Enabled {
 		return volume.Volume(1.0)
 	}
@@ -117,8 +117,12 @@ func (inst *PCM) getVolEnv(ed *envData, pos sampling.Pos) volume.Volume {
 }
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
+	if inst.Length == 16 && pos.Pos == 16 && !keyOn {
+		a := 0
+		a++
+	}
 	v0 := inst.getConvertedSample(pos.Pos, keyOn)
-	if len(v0) == 0 && inst.IsLooped() {
+	if len(v0) == 0 && ((keyOn && inst.SustainLoop.Mode != LoopModeDisabled) || inst.Loop.Mode != LoopModeDisabled) {
 		v01 := inst.getConvertedSample(pos.Pos, keyOn)
 		panic(v01)
 	}
@@ -142,14 +146,14 @@ func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
 
 // Initialize completes the setup of this instrument
 func (inst *PCM) Initialize(ioc intf.NoteControl) error {
-	envData := newEnvData()
-	ioc.SetData(envData)
+	pcmState := newPcmState()
+	ioc.SetData(pcmState)
 	return nil
 }
 
 // Attack sets the key on flag for the instrument
 func (inst *PCM) Attack(ioc intf.NoteControl) {
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	ed.fadeoutVol = volume.Volume(1.0)
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = true
@@ -172,20 +176,26 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 
 // Release sets the key on flag for the instrument
 func (inst *PCM) Release(ioc intf.NoteControl) {
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = false
 }
 
+// Fadeout sets the instrument to fading-out mode
+func (inst *PCM) Fadeout(ioc intf.NoteControl) {
+	ed := ioc.GetData().(*pcmState)
+	ed.fadingOut = true
+}
+
 // GetKeyOn gets the key on flag for the instrument
 func (inst *PCM) GetKeyOn(ioc intf.NoteControl) bool {
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 	return ed.keyOn
 }
 
 // Update advances time by the amount specified by `tickDuration`
 func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
-	ed := ioc.GetData().(*envData)
+	ed := ioc.GetData().(*pcmState)
 
 	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
 		ncs := ioc.GetPlaybackState()
@@ -196,7 +206,7 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 
 	ed.advance(&inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 
-	if !ed.keyOn && inst.VolEnv.Enabled {
+	if ed.fadingOut {
 		ed.fadeoutVol -= inst.VolumeFadeout
 		if ed.fadeoutVol < 0 {
 			ed.fadeoutVol = 0
@@ -204,7 +214,18 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	}
 }
 
+// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
+func (inst *PCM) IsVolumeEnvelopeEnabled() bool {
+	return inst.VolEnv.Enabled
+}
+
 // GetKind returns the kind of the instrument
 func (inst *PCM) GetKind() note.InstrumentKind {
 	return note.InstrumentKindPCM
+}
+
+// CloneData clones the data associated to the note-control interface
+func (inst *PCM) CloneData(ioc intf.NoteControl) interface{} {
+	ed := *ioc.GetData().(*pcmState)
+	return &ed
 }

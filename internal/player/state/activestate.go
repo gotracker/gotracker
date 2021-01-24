@@ -27,6 +27,16 @@ func (a *activeState) Reset() {
 	a.PeriodDelta = 0
 }
 
+// Clone clones the active state so that various interfaces do not collide
+func (a *activeState) Clone() activeState {
+	var c activeState = *a
+	if a.NoteControl != nil {
+		c.NoteControl = a.NoteControl.Clone()
+	}
+
+	return c
+}
+
 // Render renders an active channel's sample data for a the provided number of samples
 func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
 	if a.Period == nil {

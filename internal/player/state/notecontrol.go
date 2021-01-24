@@ -21,6 +21,16 @@ type NoteControl struct {
 	Output *intf.OutputChannel
 }
 
+// Clone clones the current note-control interface so that it doesn't collide with the existing one
+func (nc *NoteControl) Clone() intf.NoteControl {
+	c := *nc
+	if inst := c.Instrument; inst != nil {
+		c.Data = inst.CloneData(&c)
+	}
+
+	return &c
+}
+
 // GetSample returns the sample at position `pos` in the instrument
 func (nc *NoteControl) GetSample(pos sampling.Pos) volume.Matrix {
 	if inst := nc.Instrument; inst != nil {
@@ -73,6 +83,13 @@ func (nc *NoteControl) Release() {
 	}
 }
 
+// Fadeout sets the instrument to fading-out mode
+func (nc *NoteControl) Fadeout() {
+	if inst := nc.Instrument; inst != nil {
+		inst.Fadeout(nc)
+	}
+}
+
 // GetKeyOn gets the key on flag for the instrument
 func (nc *NoteControl) GetKeyOn() bool {
 	if inst := nc.Instrument; inst != nil {
@@ -106,4 +123,12 @@ func (nc *NoteControl) GetPlaybackState() *intf.PlaybackState {
 // GetAutoVibratoState returns the current, mutable auto-vibrato state
 func (nc *NoteControl) GetAutoVibratoState() *intf.AutoVibratoState {
 	return &nc.AutoVibratoState
+}
+
+// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
+func (nc *NoteControl) IsVolumeEnvelopeEnabled() bool {
+	if inst := nc.Instrument; inst != nil {
+		return inst.IsVolumeEnvelopeEnabled()
+	}
+	return false
 }

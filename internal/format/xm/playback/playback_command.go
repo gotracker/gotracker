@@ -54,6 +54,9 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		if cs.UseTargetPeriod {
 			if nc := cs.GetNoteControl(); nc != nil {
 				nc.Release()
+				if nc.IsVolumeEnvelopeEnabled() {
+					nc.Fadeout()
+				}
 			}
 			cs.SetPeriod(targetPeriod)
 			cs.PortaTargetPeriod = targetPeriod
@@ -73,6 +76,9 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()
+			if nc.IsVolumeEnvelopeEnabled() {
+				nc.Fadeout()
+			}
 			cs.SetPeriod(nil)
 		} else if stop {
 			cs.SetInstrument(nil)

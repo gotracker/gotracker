@@ -25,6 +25,7 @@ type ChannelSetting struct {
 	Enabled          bool
 	OutputChannelNum int
 	InitialVolume    volume.Volume
+	ChannelVolume    volume.Volume
 	InitialPanning   panning.Position
 	Memory           channel.Memory
 }

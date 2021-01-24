@@ -97,9 +97,9 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 	case 'L': // Porta+Volume Slide
 		return NewPortaVolumeSlide(mem, cd.Effect, cd.EffectParameter)
 	case 'M': // Set Channel Volume
-		//return SetChannelVolume(cd.EffectParameter)
+		return SetChannelVolume(cd.EffectParameter)
 	case 'N': // Channel Volume Slide
-		//return ChannelVolumeSlide(cd.EffectParameter)
+		return ChannelVolumeSlide(cd.EffectParameter)
 	case 'O': // Sample Offset
 		return SampleOffset(cd.EffectParameter)
 	case 'P': // Panning Slide
@@ -117,7 +117,7 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 	case 'V': // Global Volume
 		return SetGlobalVolume(cd.EffectParameter)
 	case 'W': // Global Volume Slide
-		//return GlobalVolumeSlide(cd.EffectParameter)
+		return GlobalVolumeSlide(cd.EffectParameter)
 	case 'X': // Set Pan Position
 		return SetPanPosition(cd.EffectParameter)
 	case 'Y': // Panbrello

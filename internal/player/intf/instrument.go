@@ -28,13 +28,17 @@ type Instrument interface {
 	GetFinetune() note.Finetune
 	GetKind() note.InstrumentKind
 	GetLength() sampling.Pos
+	GetNewNoteAction() note.NewNoteAction
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPeriodDelta(NoteControl) note.PeriodDelta
 	GetCurrentPanning(NoteControl) panning.Position
 	Attack(NoteControl)
 	Release(NoteControl)
+	Fadeout(NoteControl)
 	GetKeyOn(NoteControl) bool
 	Update(NoteControl, time.Duration)
 	SetEnvelopePosition(NoteControl, int)
+	CloneData(NoteControl) interface{}
+	IsVolumeEnvelopeEnabled() bool
 }

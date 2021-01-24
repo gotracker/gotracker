@@ -15,11 +15,13 @@ import (
 type NoteControl interface {
 	sampling.SampleStream
 
+	Clone() NoteControl
 	GetOutputChannel() *OutputChannel
 	GetCurrentPeriodDelta() note.PeriodDelta
 	GetCurrentPanning() panning.Position
 	Attack()
 	Release()
+	Fadeout()
 	GetKeyOn() bool
 	Update(time.Duration)
 	SetFilter(Filter)
@@ -28,6 +30,7 @@ type NoteControl interface {
 	SetEnvelopePosition(int)
 	GetPlaybackState() *PlaybackState
 	GetAutoVibratoState() *AutoVibratoState
+	IsVolumeEnvelopeEnabled() bool
 }
 
 // PlaybackState is the information needed to make an instrument play

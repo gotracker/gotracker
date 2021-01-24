@@ -125,6 +125,11 @@ func (inst *OPL2) Release(ioc intf.NoteControl) {
 	inst.setKeyOn(ioc, false)
 }
 
+// Fadeout sets the instrument to fading-out mode
+func (inst *OPL2) Fadeout(ioc intf.NoteControl) {
+	// not available in OPL2
+}
+
 func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
 	ym := ioc.GetData().(*ym3812)
 	ch := ym.chip
@@ -345,4 +350,15 @@ func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 // GetKind returns the kind of the instrument
 func (inst *OPL2) GetKind() note.InstrumentKind {
 	return note.InstrumentKindOPL2
+}
+
+// CloneData clones the data associated to the note-control interface
+func (inst *OPL2) CloneData(ioc intf.NoteControl) interface{} {
+	ym := ioc.GetData().(*ym3812)
+	return &ym
+}
+
+// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
+func (inst *OPL2) IsVolumeEnvelopeEnabled() bool {
+	return false
 }

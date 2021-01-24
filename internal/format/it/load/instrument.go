@@ -48,6 +48,19 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			Inst: &id,
 		}
 
+		switch inst.NewNoteAction {
+		case itfile.NewNoteActionCut:
+			ii.NewNoteAction = note.NewNoteActionNoteCut
+		case itfile.NewNoteActionContinue:
+			ii.NewNoteAction = note.NewNoteActionContinue
+		case itfile.NewNoteActionOff:
+			ii.NewNoteAction = note.NewNoteActionNoteOff
+		case itfile.NewNoteActionFade:
+			ii.NewNoteAction = note.NewNoteActionFadeout
+		default:
+			ii.NewNoteAction = note.NewNoteActionNoteCut
+		}
+
 		ci.Inst = &ii
 		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides)
 
@@ -95,6 +108,19 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 		ii := instrument.Instrument{
 			Inst: &id,
+		}
+
+		switch inst.NewNoteAction {
+		case itfile.NewNoteActionCut:
+			ii.NewNoteAction = note.NewNoteActionNoteCut
+		case itfile.NewNoteActionContinue:
+			ii.NewNoteAction = note.NewNoteActionContinue
+		case itfile.NewNoteActionOff:
+			ii.NewNoteAction = note.NewNoteActionNoteOff
+		case itfile.NewNoteActionFade:
+			ii.NewNoteAction = note.NewNoteActionFadeout
+		default:
+			ii.NewNoteAction = note.NewNoteActionNoteCut
 		}
 
 		mixVol := volume.Volume(inst.GlobalVolume.Value())

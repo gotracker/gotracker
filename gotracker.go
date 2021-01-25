@@ -12,6 +12,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format"
+	itEffect "gotracker/internal/format/it/playback/effect"
 	s3mEffect "gotracker/internal/format/s3m/playback/effect"
 	xmEffect "gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/output"
@@ -127,6 +128,12 @@ func main() {
 			var name string
 			switch t := e.(type) {
 			case *xmEffect.VolEff:
+				for _, eff := range t.Effects {
+					typ := reflect.TypeOf(eff)
+					name = typ.Name()
+					effectMap[name]++
+				}
+			case *itEffect.VolEff:
 				for _, eff := range t.Effects {
 					typ := reflect.TypeOf(eff)
 					name = typ.Name()

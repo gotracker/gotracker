@@ -56,8 +56,9 @@ func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
 }
 
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
-func (m *Memory) VolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.volumeSlide)
+func (m *Memory) VolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.volumeSlide)
+	return xy >> 4, xy & 0x0f
 }
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down

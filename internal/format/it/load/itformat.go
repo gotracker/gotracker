@@ -168,10 +168,11 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
-			Enabled:        true,
-			InitialVolume:  volume.Volume(1),
-			ChannelVolume:  volume.Volume(f.Head.ChannelVol[chNum].Value()),
-			InitialPanning: util.PanningFromIt(f.Head.ChannelPan[chNum]),
+			OutputChannelNum: chNum,
+			Enabled:          true,
+			InitialVolume:    volume.Volume(1),
+			ChannelVolume:    volume.Volume(f.Head.ChannelVol[chNum].Value()),
+			InitialPanning:   util.PanningFromIt(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
 				LinearFreqSlides: linearFrequencySlides,
 				OldEffectMode:    oldEffectMode,

@@ -86,8 +86,10 @@ func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int) i
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 {
+	if loopLen < 0 {
 		return length
+	} else if loopLen == 0 {
+		return loopBegin
 	}
 
 	loopedPos := (pos - length) % loopLen
@@ -106,11 +108,13 @@ func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int) i
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 {
+	if loopLen < 0 {
 		if pos < length {
 			return pos
 		}
 		return length
+	} else if loopLen == 0 {
+		return loopBegin
 	}
 
 	dist := pos - loopEnd
@@ -130,11 +134,13 @@ func calcLoopedSamplePosPingPong(pos int, length int, loopBegin int, loopEnd int
 	}
 
 	loopLen := loopEnd - loopBegin
-	if loopLen <= 0 {
+	if loopLen < 0 {
 		if pos < length {
 			return pos
 		}
 		return length
+	} else if loopLen == 0 {
+		return loopBegin
 	}
 
 	dist := pos - loopEnd

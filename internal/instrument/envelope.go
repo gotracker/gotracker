@@ -25,36 +25,42 @@ type InstEnv struct {
 	Values           []EnvPoint
 }
 
+type envState struct {
+	Pos            int
+	TicksRemaining int
+	Value          interface{}
+}
+
 type pcmState struct {
-	fadeoutVol             volume.Volume
-	keyOn                  bool
-	fadingOut              bool
-	volEnvPos              int
-	volEnvTicksRemaining   int
-	volEnvValue            volume.Volume
-	panEnvPos              int
-	panEnvTicksRemaining   int
-	panEnvValue            panning.Position
-	pitchEnvPos            int
-	pitchEnvTicksRemaining int
-	pitchEnvValue          note.PeriodDelta
-	prevKeyOn              bool
+	fadeoutVol    volume.Volume
+	keyOn         bool
+	fadingOut     bool
+	volEnvState   envState
+	panEnvState   envState
+	pitchEnvState envState
+	prevKeyOn     bool
 }
 
 func newPcmState() *pcmState {
 	ed := pcmState{
-		fadeoutVol:    volume.Volume(1.0),
-		volEnvValue:   volume.Volume(1.0),
-		panEnvValue:   panning.CenterAhead,
-		pitchEnvValue: 0,
+		fadeoutVol: volume.Volume(1.0),
+		volEnvState: envState{
+			Value: volume.Volume(1.0),
+		},
+		panEnvState: envState{
+			Value: panning.CenterAhead,
+		},
+		pitchEnvState: envState{
+			Value: note.PeriodDelta(0),
+		},
 	}
 	return &ed
 }
 
 func (ed *pcmState) advance(volEnv *InstEnv, panEnv *InstEnv, pitchEnv *InstEnv) {
-	ed.advanceEnv(&ed.volEnvPos, &ed.volEnvTicksRemaining, volEnv, ed.updateVolEnv)
-	ed.advanceEnv(&ed.panEnvPos, &ed.panEnvTicksRemaining, panEnv, ed.updatePanEnv)
-	ed.advanceEnv(&ed.pitchEnvPos, &ed.pitchEnvTicksRemaining, pitchEnv, ed.updatePitchEnv)
+	ed.advanceEnv(&ed.volEnvState, volEnv, ed.updateVolEnv)
+	ed.advanceEnv(&ed.panEnvState, panEnv, ed.updatePanEnv)
+	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, ed.updatePitchEnv)
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
@@ -66,7 +72,7 @@ func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(volume.Volume)
 	}
-	ed.volEnvValue = a + volume.Volume(t)*(b-a)
+	ed.volEnvState.Value = a + volume.Volume(t)*(b-a)
 }
 
 func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
@@ -78,8 +84,10 @@ func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(panning.Position)
 	}
-	ed.panEnvValue.Angle = a.Angle + t*(b.Angle-a.Angle)
-	ed.panEnvValue.Distance = a.Distance + t*(b.Distance-a.Distance)
+	ed.panEnvState.Value = panning.Position{
+		Angle:    a.Angle + t*(b.Angle-a.Angle),
+		Distance: a.Distance + t*(b.Distance-a.Distance),
+	}
 }
 
 func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
@@ -91,26 +99,26 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(note.PeriodDelta)
 	}
-	ed.pitchEnvValue = a + note.PeriodDelta(t)*(b-a)
+	ed.pitchEnvState.Value = a + note.PeriodDelta(t)*(b-a)
 }
 
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})
 
-func (ed *pcmState) advanceEnv(pos *int, rem *int, env *InstEnv, update envUpdateFunc) {
+func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, update envUpdateFunc) {
 	if env.Enabled {
-		*rem--
-		if *rem <= 0 {
-			*pos++
-			cur, p := ed.getEnv(*pos, env)
-			*pos = p
-			*rem = cur.Ticks
+		state.TicksRemaining--
+		if state.TicksRemaining <= 0 {
+			state.Pos++
+			cur, p := ed.getEnv(state.Pos, env)
+			state.Pos = p
+			state.TicksRemaining = cur.Ticks
 			update(0, cur.Y, cur.Y)
 		} else {
-			cur, _ := ed.getEnv(*pos, env)
-			next, _ := ed.getEnv(*pos+1, env)
+			cur, _ := ed.getEnv(state.Pos, env)
+			next, _ := ed.getEnv(state.Pos+1, env)
 			t := float32(0)
 			if cur.Ticks > 0 {
-				t = float32(*rem) / float32(cur.Ticks)
+				t = float32(state.TicksRemaining) / float32(cur.Ticks)
 			}
 			t = 1.0 - t
 			update(t, cur.Y, next.Y)
@@ -119,33 +127,26 @@ func (ed *pcmState) advanceEnv(pos *int, rem *int, env *InstEnv, update envUpdat
 }
 
 func (ed *pcmState) calcEnvPos(env *InstEnv, pos int) int {
-	if env.SustainEnabled && ed.keyOn && pos >= env.SustainLoopEnd {
-		loopLen := env.SustainLoopEnd - env.SustainLoopStart
-		for pos >= env.SustainLoopEnd && loopLen > 0 {
-			pos = env.SustainLoopStart + ((pos - env.SustainLoopEnd) % loopLen)
-		}
-	}
-	if env.LoopEnabled && pos >= env.LoopEnd {
-		loopLen := env.LoopEnd - env.LoopStart
-		if pos >= env.LoopEnd && loopLen > 0 {
-			pos = env.LoopStart + ((pos - env.LoopEnd) % loopLen)
-		}
-	}
 	nPoints := len(env.Values)
+	if env.SustainEnabled && ed.keyOn {
+		pos = calcLoopedSamplePosMode2(pos, nPoints, env.SustainLoopStart, env.SustainLoopEnd)
+	} else if env.LoopEnabled {
+		pos = calcLoopedSamplePosMode2(pos, nPoints, env.LoopStart, env.LoopEnd)
+	}
 	if pos >= nPoints {
 		pos = nPoints - 1
 	}
 	return pos
 }
 
-func (ed *pcmState) updateEnv(pos *int, rem *int, env *InstEnv, update envUpdateFunc) {
+func (ed *pcmState) updateEnv(state *envState, env *InstEnv, update envUpdateFunc) {
 	if !env.Enabled {
 		// not active, don't do anything
 		return
 	}
-	cur, p := ed.getEnv(*pos, env)
-	*pos = p
-	*rem = cur.Ticks
+	cur, p := ed.getEnv(state.Pos, env)
+	state.Pos = p
+	state.TicksRemaining = cur.Ticks
 	update(0, cur.Y, cur.Y)
 }
 
@@ -160,18 +161,18 @@ func (ed *pcmState) getEnv(pos int, env *InstEnv) (EnvPoint, int) {
 	return cur, pos
 }
 
-func (ed *pcmState) setEnvelopePosition(ticks int, pos *int, rem *int, env *InstEnv, update envUpdateFunc) {
-	*pos = 0
-	*rem = 0
+func (ed *pcmState) setEnvelopePosition(ticks int, state *envState, env *InstEnv, update envUpdateFunc) {
+	state.Pos = 0
+	state.TicksRemaining = 0
 	for ticks > 0 {
-		ed.updateEnv(pos, rem, env, update)
-		if ticks >= *rem {
-			ticks -= *rem
-			*rem = 0
+		ed.updateEnv(state, env, update)
+		if ticks >= state.TicksRemaining {
+			ticks -= state.TicksRemaining
+			state.TicksRemaining = 0
 		} else {
-			*rem -= ticks
+			state.TicksRemaining -= ticks
 			ticks = 0
 		}
 	}
-	ed.updateEnv(pos, rem, env, update)
+	ed.updateEnv(state, env, update)
 }

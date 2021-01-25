@@ -18,7 +18,7 @@ func (e FineVolumeSlideDown) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e FineVolumeSlideDown) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	y := mem.VolumeSlide(uint8(e)) & 0x0F
+	_, y := mem.VolumeSlide(uint8(e))
 
 	if y != 0x0F && currentTick == 0 {
 		doVolSlide(cs, -float32(y), 1.0)

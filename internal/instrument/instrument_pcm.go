@@ -58,7 +58,7 @@ func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 	}
 
 	ed := ioc.GetData().(*pcmState)
-	return ed.pitchEnvValue
+	return ed.pitchEnvState.Value.(note.PeriodDelta)
 }
 
 // GetCurrentPanning returns the panning envelope position
@@ -69,7 +69,7 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	}
 
 	ed := ioc.GetData().(*pcmState)
-	y := ed.panEnvValue
+	y := ed.panEnvState.Value.(panning.Position)
 
 	// panning envelope value `y` modifies instrument panning value `x`
 	// such that `x` is primary component and `y` is secondary
@@ -101,9 +101,9 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 // SetEnvelopePosition sets the envelope position for the note-control
 func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 	ed := ioc.GetData().(*pcmState)
-	ed.setEnvelopePosition(ticks, &ed.volEnvPos, &ed.volEnvTicksRemaining, &inst.VolEnv, ed.updateVolEnv)
+	ed.setEnvelopePosition(ticks, &ed.volEnvState, &inst.VolEnv, ed.updateVolEnv)
 	if inst.VolEnv.SustainEnabled {
-		ed.setEnvelopePosition(ticks, &ed.panEnvPos, &ed.panEnvTicksRemaining, &inst.PanEnv, ed.updatePanEnv)
+		ed.setEnvelopePosition(ticks, &ed.panEnvState, &inst.PanEnv, ed.updatePanEnv)
 	}
 }
 
@@ -113,7 +113,7 @@ func (inst *PCM) getVolEnv(ed *pcmState, pos sampling.Pos) volume.Volume {
 	}
 
 	fadeVol := ed.fadeoutVol
-	return fadeVol * ed.volEnvValue
+	return fadeVol * ed.volEnvState.Value.(volume.Volume)
 }
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
@@ -158,19 +158,19 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = true
 	if inst.VolEnv.Enabled {
-		ed.volEnvPos = 0
-		ed.volEnvTicksRemaining = 0
-		ed.updateEnv(&ed.volEnvPos, &ed.volEnvTicksRemaining, &inst.VolEnv, ed.updateVolEnv)
+		ed.volEnvState.Pos = 0
+		ed.volEnvState.TicksRemaining = 0
+		ed.updateEnv(&ed.volEnvState, &inst.VolEnv, ed.updateVolEnv)
 	}
 	if inst.PanEnv.Enabled {
-		ed.panEnvPos = 0
-		ed.panEnvTicksRemaining = 0
-		ed.updateEnv(&ed.panEnvPos, &ed.panEnvTicksRemaining, &inst.PanEnv, ed.updatePanEnv)
+		ed.panEnvState.Pos = 0
+		ed.panEnvState.TicksRemaining = 0
+		ed.updateEnv(&ed.panEnvState, &inst.PanEnv, ed.updatePanEnv)
 	}
 	if inst.PitchEnv.Enabled {
-		ed.pitchEnvPos = 0
-		ed.pitchEnvTicksRemaining = 0
-		ed.updateEnv(&ed.pitchEnvPos, &ed.pitchEnvTicksRemaining, &inst.PitchEnv, ed.updatePitchEnv)
+		ed.pitchEnvState.Pos = 0
+		ed.pitchEnvState.TicksRemaining = 0
+		ed.updateEnv(&ed.pitchEnvState, &inst.PitchEnv, ed.updatePitchEnv)
 	}
 }
 

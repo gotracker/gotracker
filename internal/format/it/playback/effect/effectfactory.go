@@ -192,18 +192,16 @@ func specialNoteEffects(cd *channel.Data) intf.Effect {
 }
 
 func volumeSlideFactory(mem *channel.Memory, cd uint8, ce uint8) intf.Effect {
-	xy := mem.VolumeSlide(uint8(ce))
-	x := uint8(xy >> 4)
-	y := uint8(xy & 0x0F)
+	x, y := mem.VolumeSlide(uint8(ce))
 	switch {
 	case x == 0:
-		return VolumeSlideDown(xy)
+		return VolumeSlideDown(ce)
 	case y == 0:
-		return VolumeSlideUp(xy)
+		return VolumeSlideUp(ce)
 	case x == 0x0f:
-		return FineVolumeSlideDown(xy)
+		return FineVolumeSlideDown(ce)
 	case y == 0x0f:
-		return FineVolumeSlideUp(xy)
+		return FineVolumeSlideUp(ce)
 	}
 	// There is a chance that a volume slide command is set with an invalid
 	// value or is 00, in which case the memory might have the invalid value,

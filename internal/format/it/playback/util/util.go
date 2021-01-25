@@ -46,7 +46,9 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 	if linearFreqSlides {
 		nft := int(semi)*64 + int(ft)
 		return &LinearPeriod{
-			Finetune: note.Finetune(nft),
+			// NOTE: not sure why the magic downshift a whole octave,
+			// but it makes all the calculations work, so here we are.
+			Finetune: note.Finetune(nft) - 768,
 			C2Spd:    c2spd,
 		}
 	}
@@ -145,7 +147,8 @@ func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD, linearFreqS
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
 func ToAmigaPeriod(finetunes note.Finetune, c2spd note.C2SPD) AmigaPeriod {
-	linFreq := float64(c2spd) * math.Pow(2, float64(finetunes)/768) / (DefaultC2Spd * 4)
+	pow := math.Pow(2, float64(finetunes)/768)
+	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
 
 	period := AmigaPeriod(float64(semitonePeriodTable[0]) / linFreq)
 	return period
@@ -157,7 +160,7 @@ func ToLinearPeriod(p note.Period) *LinearPeriod {
 	case *LinearPeriod:
 		return pp
 	case *AmigaPeriod:
-		linFreq := float64(semitonePeriodTable[0]) * 4 / float64(*pp)
+		linFreq := float64(semitonePeriodTable[0]) / float64(*pp)
 
 		fts := note.Finetune(768 * math.Log2(linFreq))
 

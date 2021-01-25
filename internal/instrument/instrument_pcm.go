@@ -157,6 +157,7 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 	ed.fadeoutVol = volume.Volume(1.0)
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = true
+	ed.fadingOut = false
 	if inst.VolEnv.Enabled {
 		ed.volEnvState.Pos = 0
 		ed.volEnvState.TicksRemaining = 0

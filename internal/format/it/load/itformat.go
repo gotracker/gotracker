@@ -27,7 +27,12 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
 		GlobalVolume: volume.Volume(fh.GlobalVolume.Value()),
-		MixingVolume: volume.Volume(fh.MixingVolume.Value()),
+	}
+	switch {
+	case fh.TrackerCompatVersion < 0x200:
+		head.MixingVolume = volume.Volume(fh.MixingVolume.Value())
+	case fh.TrackerCompatVersion >= 0x200:
+		head.MixingVolume = volume.Volume(fh.MixingVolume) / 255
 	}
 	return &head, nil
 }

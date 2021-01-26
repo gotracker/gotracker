@@ -19,7 +19,7 @@ func (e SetVibratoWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	mem := cs.GetMemory().(*channel.Memory)
 	vib := mem.VibratoOscillator()
-	vib.Table = oscillator.WaveTableSelect(x)
+	vib.SetWaveform(oscillator.WaveTableSelect(x))
 }
 
 func (e SetVibratoWaveform) String() string {

@@ -23,6 +23,7 @@ type Memory struct {
 	tempoIncrease      uint8 `usage:"T1x"`
 	globalVolumeSlide  uint8 `usage:"Wxy"`
 	panbrello          uint8 `usage:"Yxy"`
+	volChanVolumeSlide uint8 `usage:"vDxy"`
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
@@ -45,6 +46,13 @@ type Memory struct {
 	HighOffset          int
 }
 
+// ResetOscillators resets the oscillators to defaults
+func (m *Memory) ResetOscillators() {
+	m.vibratoOscillator = oscillator.NewImpulseTrackerOscillator(4)
+	m.tremoloOscillator = oscillator.NewImpulseTrackerOscillator(4)
+	m.panbrelloOscillator = oscillator.NewImpulseTrackerOscillator(1)
+}
+
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
 	if input == 0 {
 		return *reg
@@ -59,6 +67,11 @@ func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
 func (m *Memory) VolumeSlide(input uint8) (uint8, uint8) {
 	xy := m.getEffectMemory(input, &m.volumeSlide)
 	return xy >> 4, xy & 0x0f
+}
+
+// VolChanVolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide (from the volume channel)
+func (m *Memory) VolChanVolumeSlide(input uint8) uint8 {
+	return m.getEffectMemory(input, &m.volChanVolumeSlide)
 }
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
@@ -153,23 +166,23 @@ func (m *Memory) TremorMem() *formatutil.Tremor {
 }
 
 // VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() *oscillator.Oscillator {
-	return &m.vibratoOscillator
+func (m *Memory) VibratoOscillator() oscillator.Oscillator {
+	return m.vibratoOscillator
 }
 
 // TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() *oscillator.Oscillator {
-	return &m.tremoloOscillator
+func (m *Memory) TremoloOscillator() oscillator.Oscillator {
+	return m.tremoloOscillator
 }
 
 // PanbrelloOscillator returns the Panbrello oscillator object
-func (m *Memory) PanbrelloOscillator() *oscillator.Oscillator {
-	return &m.panbrelloOscillator
+func (m *Memory) PanbrelloOscillator() oscillator.Oscillator {
+	return m.panbrelloOscillator
 }
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []*oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator(), m.PanbrelloOscillator()} {
+	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator(), m.PanbrelloOscillator()} {
 		osc.Reset()
 	}
 }

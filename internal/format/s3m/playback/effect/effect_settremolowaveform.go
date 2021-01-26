@@ -19,7 +19,7 @@ func (e SetTremoloWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	mem := cs.GetMemory().(*channel.Memory)
 	trem := mem.TremoloOscillator()
-	trem.Table = oscillator.WaveTableSelect(x)
+	trem.SetWaveform(oscillator.WaveTableSelect(x))
 }
 
 func (e SetTremoloWaveform) String() string {

@@ -28,3 +28,20 @@ func (e FineVolumeSlideUp) Tick(cs intf.Channel, p intf.Playback, currentTick in
 func (e FineVolumeSlideUp) String() string {
 	return fmt.Sprintf("D%0.2x", uint8(e))
 }
+
+//====================================================
+
+// VolChanFineVolumeSlideUp defines a fine volume slide up effect (from the volume channel)
+type VolChanFineVolumeSlideUp uint8 // 'd'
+
+// Start triggers on the first tick, but before the Tick() function is called
+func (e VolChanFineVolumeSlideUp) Start(cs intf.Channel, p intf.Playback) {
+	mem := cs.GetMemory().(*channel.Memory)
+	x := mem.VolChanVolumeSlide(uint8(e))
+
+	doVolSlide(cs, float32(x), 1.0)
+}
+
+func (e VolChanFineVolumeSlideUp) String() string {
+	return fmt.Sprintf("d%xF", uint8(e))
+}

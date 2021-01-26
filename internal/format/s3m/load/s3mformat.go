@@ -306,6 +306,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 			},
 		}
 
+		cs.Memory.ResetOscillators()
+
 		pf := f.Panning[chNum]
 		if pf.IsValid() {
 			cs.InitialPanning = util.PanningFromS3M(pf.Value())

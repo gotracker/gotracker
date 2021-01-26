@@ -13,6 +13,7 @@ import (
 
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/note"
 )
 
@@ -315,6 +316,9 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		WaveformSelection: si.Header.VibratoType,
 		Depth:             si.Header.VibratoDepth,
 		Rate:              si.Header.VibratoSpeed,
+		Factory: func() oscillator.Oscillator {
+			return oscillator.NewImpulseTrackerOscillator(1)
+		},
 	}
 	ii.Volume = volume.Volume(si.Header.Volume.Value())
 

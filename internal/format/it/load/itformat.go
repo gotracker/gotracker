@@ -185,6 +185,8 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 			},
 		}
 
+		cs.Memory.ResetOscillators()
+
 		channels[chNum] = cs
 	}
 

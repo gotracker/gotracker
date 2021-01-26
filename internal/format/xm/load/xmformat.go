@@ -12,6 +12,7 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/instrument"
+	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
@@ -53,6 +54,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				WaveformSelection: inst.VibratoType,
 				Depth:             inst.VibratoDepth,
 				Rate:              inst.VibratoRate,
+				Factory:           oscillator.NewProtrackerOscillator,
 			},
 		}
 
@@ -296,6 +298,8 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 				LinearFreqSlides: linearFrequencySlides,
 			},
 		}
+
+		cs.Memory.ResetOscillators()
 
 		channels[chNum] = cs
 	}

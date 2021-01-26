@@ -59,6 +59,8 @@ type AutoVibratoState struct {
 
 // Reset sets the auto-vibrato state to defaults
 func (av *AutoVibratoState) Reset() {
-	av.Osc.Reset()
+	if av.Osc != nil {
+		av.Osc.Reset()
+	}
 	av.Ticks = 0
 }

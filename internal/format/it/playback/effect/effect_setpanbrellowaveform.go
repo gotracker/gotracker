@@ -19,7 +19,7 @@ func (e SetPanbrelloWaveform) Start(cs intf.Channel, p intf.Playback) {
 
 	mem := cs.GetMemory().(*channel.Memory)
 	panb := mem.PanbrelloOscillator()
-	panb.Table = oscillator.WaveTableSelect(x)
+	panb.SetWaveform(oscillator.WaveTableSelect(x))
 }
 
 func (e SetPanbrelloWaveform) String() string {

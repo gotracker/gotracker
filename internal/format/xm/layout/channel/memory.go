@@ -35,6 +35,12 @@ type Memory struct {
 	patternLoop       formatutil.PatternLoop
 }
 
+// ResetOscillators resets the oscillators to defaults
+func (m *Memory) ResetOscillators() {
+	m.vibratoOscillator = oscillator.NewProtrackerOscillator()
+	m.tremoloOscillator = oscillator.NewProtrackerOscillator()
+}
+
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
 	if input == 0 {
 		return *reg
@@ -141,18 +147,18 @@ func (m *Memory) TremorMem() *formatutil.Tremor {
 }
 
 // VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() *oscillator.Oscillator {
-	return &m.vibratoOscillator
+func (m *Memory) VibratoOscillator() oscillator.Oscillator {
+	return m.vibratoOscillator
 }
 
 // TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() *oscillator.Oscillator {
-	return &m.tremoloOscillator
+func (m *Memory) TremoloOscillator() oscillator.Oscillator {
+	return m.tremoloOscillator
 }
 
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []*oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
+	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
 		osc.Reset()
 	}
 }

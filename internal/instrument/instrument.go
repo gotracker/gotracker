@@ -38,6 +38,7 @@ type AutoVibrato struct {
 	WaveformSelection uint8
 	Depth             uint8
 	Rate              uint8
+	Factory           func() oscillator.Oscillator
 }
 
 // Instrument is the mildly-decoded instrument/sample header
@@ -107,6 +108,9 @@ func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteCo
 
 	if inst.Inst != nil {
 		inst.Inst.Initialize(&ioc)
+		if inst.AutoVibrato.Enabled {
+			ioc.AutoVibratoState.Osc = inst.AutoVibrato.Factory()
+		}
 	}
 
 	return &ioc
@@ -187,8 +191,8 @@ func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
 func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) {
 	if ii := inst.Inst; ii != nil {
 		if inst.AutoVibrato.Enabled {
-			if ncav := nc.GetAutoVibratoState(); ncav != nil {
-				ncav.Osc.Table = oscillator.WaveTableSelect(inst.AutoVibrato.WaveformSelection)
+			if ncav := nc.GetAutoVibratoState(); ncav != nil && ncav.Osc != nil {
+				ncav.Osc.SetWaveform(oscillator.WaveTableSelect(inst.AutoVibrato.WaveformSelection))
 				ncav.Osc.Advance(int(inst.AutoVibrato.Rate))
 				ncav.Ticks++
 				d := float32(inst.AutoVibrato.Depth) / 64

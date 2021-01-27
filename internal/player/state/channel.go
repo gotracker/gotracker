@@ -64,17 +64,23 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 		return nil, nil
 	}
 
-	mixData, err := cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
-	if mixData == nil {
-		cs.activeState.NoteControl = nil
+	var (
+		mixData *mixing.Data
+		err     error
+	)
+	if cs.activeState.Enabled {
+		mixData, err = cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+		if mixData == nil {
+			cs.activeState.Enabled = false
+		}
 	}
 	if err != nil {
 		return mixData, err
 	}
-	if cs.pastNote.NoteControl != nil && cs.pastNote.Period != nil {
+	if cs.pastNote.Enabled && cs.pastNote.NoteControl != nil && cs.pastNote.Period != nil {
 		ps, err2 := cs.pastNote.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
 		if ps == nil {
-			cs.pastNote.NoteControl = nil
+			cs.pastNote.Enabled = false
 		}
 		if err == nil && err2 != nil {
 			err = err2
@@ -194,6 +200,7 @@ func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 		}
 	}
 	if inst != nil {
+		cs.activeState.Enabled = true
 		if inst == cs.prevState.Instrument {
 			cs.activeState.NoteControl = cs.prevState.NoteControl
 		} else {

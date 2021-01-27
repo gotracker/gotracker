@@ -294,12 +294,13 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		deltaDecode(id.Sample, id.Format)
 	}
 
-	bps := 1
+	bytesPerFrame := 2
+
 	if is16Bit {
-		bps = 2
+		bytesPerFrame *= 2
 	}
 
-	if len(id.Sample) < int(si.Header.Length+1)*bps*id.NumChannels {
+	if len(id.Sample) < int(si.Header.Length+1)*bytesPerFrame {
 		var value interface{}
 		var order binary.ByteOrder = binary.LittleEndian
 		if is16Bit {
@@ -320,7 +321,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		}
 
 		buf := bytes.NewBuffer(id.Sample)
-		for buf.Len() < int(si.Header.Length+1)*bps*id.NumChannels {
+		for buf.Len() < int(si.Header.Length+1)*bytesPerFrame {
 			binary.Write(buf, order, value)
 		}
 		id.Sample = buf.Bytes()
@@ -328,7 +329,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Filename = si.Header.GetFilename()
 	ii.Name = si.Header.GetName()
-	ii.C2Spd = note.C2SPD(si.Header.C5Speed / uint32(bps*id.NumChannels))
+	ii.C2Spd = note.C2SPD(si.Header.C5Speed / uint32(bytesPerFrame))
 	ii.AutoVibrato = instrument.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,

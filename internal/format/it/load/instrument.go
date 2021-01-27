@@ -31,11 +31,13 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 	for i, ci := range outInsts {
 		id := instrument.PCM{
-			NumChannels:   1,
-			Format:        instrument.SampleDataFormat8BitUnsigned,
-			Panning:       panning.CenterAhead,
-			FadeoutMode:   instrument.FadeoutModeAlwaysActive,
-			VolumeFadeout: volume.Volume(inst.Fadeout) / 512,
+			NumChannels: 1,
+			Format:      instrument.SampleDataFormat8BitUnsigned,
+			Panning:     panning.CenterAhead,
+			FadeOut: instrument.FadeoutSettings{
+				Mode:   instrument.FadeoutModeAlwaysActive,
+				Amount: volume.Volume(inst.Fadeout) / 512,
+			},
 			VolEnv: instrument.InstEnv{
 				Enabled:          (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
 				LoopEnabled:      (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0,
@@ -111,11 +113,13 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 	for i, ci := range outInsts {
 		id := instrument.PCM{
-			NumChannels:   1,
-			Format:        instrument.SampleDataFormat8BitUnsigned,
-			Panning:       panning.CenterAhead,
-			FadeoutMode:   instrument.FadeoutModeAlwaysActive,
-			VolumeFadeout: volume.Volume(inst.Fadeout) / 1024,
+			NumChannels: 1,
+			Format:      instrument.SampleDataFormat8BitUnsigned,
+			Panning:     panning.CenterAhead,
+			FadeOut: instrument.FadeoutSettings{
+				Mode:   instrument.FadeoutModeAlwaysActive,
+				Amount: volume.Volume(inst.Fadeout) / 1024,
+			},
 		}
 
 		ii := instrument.Instrument{
@@ -324,7 +328,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Filename = si.Header.GetFilename()
 	ii.Name = si.Header.GetName()
-	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
+	ii.C2Spd = note.C2SPD(si.Header.C5Speed / uint32(bps*id.NumChannels))
 	ii.AutoVibrato = instrument.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,

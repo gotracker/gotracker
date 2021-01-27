@@ -15,6 +15,7 @@ import (
 type activeState struct {
 	intf.PlaybackState
 	VoiceActive bool
+	Enabled     bool
 	NoteControl intf.NoteControl
 	PeriodDelta note.PeriodDelta
 }
@@ -23,6 +24,7 @@ type activeState struct {
 func (a *activeState) Reset() {
 	a.PlaybackState.Reset()
 	a.VoiceActive = true
+	a.Enabled = true
 	a.NoteControl = nil
 	a.PeriodDelta = 0
 }

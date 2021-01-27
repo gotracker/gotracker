@@ -12,31 +12,38 @@ import (
 	"gotracker/internal/player/note"
 )
 
-// FadeoutMode is the mode used to process fadeout
+// FadeoutMode is the mode used to process fade-out
 type FadeoutMode uint8
 
 const (
-	// FadeoutModeAlwaysActive is for when the fadeout is always available to be used (IT-style)
-	FadeoutModeAlwaysActive = FadeoutMode(iota)
-	// FadeoutModeOnlyIfVolEnvActive is for when the fadeout only functions when VolEnv is enabled (XM-style)
+	// FadeoutModeDisabled is for when the fade-out is disabled (S3M/MOD)
+	FadeoutModeDisabled = FadeoutMode(iota)
+	// FadeoutModeAlwaysActive is for when the fade-out is always available to be used (IT-style)
+	FadeoutModeAlwaysActive
+	// FadeoutModeOnlyIfVolEnvActive is for when the fade-out only functions when VolEnv is enabled (XM-style)
 	FadeoutModeOnlyIfVolEnvActive
 )
 
+// FadeoutSettings is the settings for fade-out
+type FadeoutSettings struct {
+	Mode   FadeoutMode
+	Amount volume.Volume
+}
+
 // PCM is a PCM-data instrument
 type PCM struct {
-	Sample        []uint8
-	Length        int
-	Loop          LoopInfo
-	SustainLoop   LoopInfo
-	NumChannels   int
-	Format        SampleDataFormat
-	Panning       panning.Position
-	MixingVolume  volume.Volume
-	FadeoutMode   FadeoutMode
-	VolumeFadeout volume.Volume
-	VolEnv        InstEnv
-	PanEnv        InstEnv
-	PitchEnv      InstEnv
+	Sample       []uint8
+	Length       int
+	Loop         LoopInfo
+	SustainLoop  LoopInfo
+	NumChannels  int
+	Format       SampleDataFormat
+	Panning      panning.Position
+	MixingVolume volume.Volume
+	FadeOut      FadeoutSettings
+	VolEnv       InstEnv
+	PanEnv       InstEnv
+	PitchEnv     InstEnv
 }
 
 // GetSample returns the sample at position `pos` in the instrument
@@ -123,7 +130,12 @@ func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 }
 
 func (inst *PCM) getVolEnv(ed *pcmState) volume.Volume {
-	switch inst.FadeoutMode {
+	switch inst.FadeOut.Mode {
+	case FadeoutModeDisabled:
+		if !inst.VolEnv.Enabled {
+			return volume.Volume(1)
+		}
+		return ed.volEnvValue
 	case FadeoutModeAlwaysActive:
 		if !inst.VolEnv.Enabled {
 			return ed.fadeoutVol
@@ -202,8 +214,12 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 	ed.keyOn = false
 }
 
-// Fadeout sets the instrument to fading-out mode
+// Fadeout sets the instrument to fading-out mode (if able)
 func (inst *PCM) Fadeout(ioc intf.NoteControl) {
+	if inst.FadeOut.Mode == FadeoutModeDisabled {
+		return
+	}
+
 	ed := ioc.GetData().(*pcmState)
 	ed.fadingOut = true
 }
@@ -227,8 +243,8 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 
 	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 
-	if ed.fadingOut {
-		ed.fadeoutVol -= inst.VolumeFadeout
+	if ed.fadingOut && inst.FadeOut.Mode != FadeoutModeDisabled {
+		ed.fadeoutVol -= inst.FadeOut.Amount
 		if ed.fadeoutVol < 0 {
 			ed.fadeoutVol = 0
 		}
@@ -253,6 +269,9 @@ func (inst *PCM) CloneData(ioc intf.NoteControl) interface{} {
 
 // IsDone returns true if the instrument has stopped
 func (inst *PCM) IsDone(ioc intf.NoteControl) bool {
+	if inst.FadeOut.Mode == FadeoutModeDisabled {
+		return false
+	}
 	ed := ioc.GetData().(*pcmState)
 	return ed.fadeoutVol <= 0
 }

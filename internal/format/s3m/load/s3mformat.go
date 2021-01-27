@@ -71,12 +71,14 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			Begin: int(si.LoopBegin.Lo),
 			End:   int(si.LoopEnd.Lo),
 		},
-		NumChannels:   1,
-		Format:        instrument.SampleDataFormat8BitUnsigned,
-		Panning:       panning.CenterAhead,
-		MixingVolume:  volume.Volume(1),
-		FadeoutMode:   instrument.FadeoutModeOnlyIfVolEnvActive,
-		VolumeFadeout: volume.Volume(0),
+		NumChannels:  1,
+		Format:       instrument.SampleDataFormat8BitUnsigned,
+		Panning:      panning.CenterAhead,
+		MixingVolume: volume.Volume(1),
+		FadeOut: instrument.FadeoutSettings{
+			Mode:   instrument.FadeoutModeDisabled,
+			Amount: volume.Volume(0),
+		},
 	}
 	if signedSamples {
 		idata.Format = instrument.SampleDataFormat8BitSigned

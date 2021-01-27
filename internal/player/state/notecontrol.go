@@ -132,3 +132,11 @@ func (nc *NoteControl) IsVolumeEnvelopeEnabled() bool {
 	}
 	return false
 }
+
+// IsDone returns true if the instrument has stopped
+func (nc *NoteControl) IsDone() bool {
+	if inst := nc.Instrument; inst != nil {
+		return inst.IsDone(nc)
+	}
+	return false
+}

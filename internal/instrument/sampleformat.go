@@ -1,6 +1,7 @@
 package instrument
 
 import (
+	"bytes"
 	"encoding/binary"
 
 	"github.com/gotracker/gomixing/volume"
@@ -40,28 +41,34 @@ func readSample(sdf SampleDataFormat, sample []uint8, pos int, channels int) vol
 	o := make(volume.Matrix, channels)
 	bps := getBytesPerSample(sdf)
 	actualPos := pos * channels * bps
+	r := bytes.NewReader(sample[actualPos:])
 	for c := 0; c < channels; c++ {
-		cp := c * bps
-		ap := actualPos + cp
 		switch sdf {
 		case SampleDataFormat8BitUnsigned:
-			o[c] = volume.Volume(int8(sample[ap]-128)) / 128.0
+			var s uint8
+			_ = binary.Read(r, binary.LittleEndian, &s) // ignore error for now
+			o[c] = volume.Volume(int8(s-128)) / 128.0
 		case SampleDataFormat8BitSigned:
-			o[c] = volume.Volume(int8(sample[ap])) / 128.0
+			var s int8
+			_ = binary.Read(r, binary.LittleEndian, &s) // ignore error for now
+			o[c] = volume.Volume(s) / 128.0
 		case SampleDataFormat16BitLEUnsigned:
-			s := binary.LittleEndian.Uint16(sample[ap:])
+			var s uint16
+			_ = binary.Read(r, binary.LittleEndian, &s) // ignore error for now
 			o[c] = volume.Volume(int16(s-32768)) / 32768.0
 		case SampleDataFormat16BitLESigned:
-			s := binary.LittleEndian.Uint16(sample[ap:])
-			o[c] = volume.Volume(int16(s)) / 32768.0
+			var s int16
+			_ = binary.Read(r, binary.LittleEndian, &s) // ignore error for now
+			o[c] = volume.Volume(s) / 32768.0
 		case SampleDataFormat16BitBEUnsigned:
-			s := binary.BigEndian.Uint16(sample[ap:])
+			var s uint16
+			_ = binary.Read(r, binary.BigEndian, &s) // ignore error for now
 			o[c] = volume.Volume(int16(s-32768)) / 32768.0
 		case SampleDataFormat16BitBESigned:
-			s := binary.BigEndian.Uint16(sample[ap:])
-			o[c] = volume.Volume(int16(s)) / 32768.0
+			var s int16
+			_ = binary.Read(r, binary.BigEndian, &s) // ignore error for now
+			o[c] = volume.Volume(s) / 32768.0
 		}
-		actualPos += bps
 	}
 	return o
 }

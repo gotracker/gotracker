@@ -11,9 +11,11 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
 	"gotracker/internal/oscillator"
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
 
@@ -32,7 +34,8 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
-			VolumeFadeout: volume.Volume(inst.Fadeout) / (64 * 512),
+			FadeoutMode:   instrument.FadeoutModeAlwaysActive,
+			VolumeFadeout: volume.Volume(inst.Fadeout) / 512,
 			VolEnv: instrument.InstEnv{
 				Enabled:          (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
 				LoopEnabled:      (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0,
@@ -99,16 +102,25 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
 
+	var channelFilterFactory func(sampleRate float32) intf.Filter
+	if inst.InitialFilterResonance != 0 {
+		channelFilterFactory = func(sampleRate float32) intf.Filter {
+			return filter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
+		}
+	}
+
 	for i, ci := range outInsts {
 		id := instrument.PCM{
 			NumChannels:   1,
 			Format:        instrument.SampleDataFormat8BitUnsigned,
 			Panning:       panning.CenterAhead,
-			VolumeFadeout: volume.Volume(inst.Fadeout) / (128 * 1024),
+			FadeoutMode:   instrument.FadeoutModeAlwaysActive,
+			VolumeFadeout: volume.Volume(inst.Fadeout) / 1024,
 		}
 
 		ii := instrument.Instrument{
-			Inst: &id,
+			Inst:                 &id,
+			ChannelFilterFactory: channelFilterFactory,
 		}
 
 		switch inst.NewNoteAction {
@@ -139,6 +151,9 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			}
 			return vol
 		})
+		id.VolEnv.OnFinished = func(ioc intf.NoteControl) {
+			ioc.Fadeout()
+		}
 
 		convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, func(v int8) interface{} {
 			return panning.MakeStereoPosition(float32(v), -32, 32)

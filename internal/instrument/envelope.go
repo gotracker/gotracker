@@ -1,6 +1,7 @@
 package instrument
 
 import (
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 
 	"github.com/gotracker/gomixing/panning"
@@ -23,12 +24,12 @@ type InstEnv struct {
 	SustainLoopStart int
 	SustainLoopEnd   int
 	Values           []EnvPoint
+	OnFinished       func(intf.NoteControl)
 }
 
 type envState struct {
 	Pos            int
 	TicksRemaining int
-	Value          interface{}
 }
 
 type pcmState struct {
@@ -36,31 +37,28 @@ type pcmState struct {
 	keyOn         bool
 	fadingOut     bool
 	volEnvState   envState
+	volEnvValue   volume.Volume
 	panEnvState   envState
+	panEnvValue   panning.Position
 	pitchEnvState envState
+	pitchEnvValue note.PeriodDelta
 	prevKeyOn     bool
 }
 
 func newPcmState() *pcmState {
 	ed := pcmState{
-		fadeoutVol: volume.Volume(1.0),
-		volEnvState: envState{
-			Value: volume.Volume(1.0),
-		},
-		panEnvState: envState{
-			Value: panning.CenterAhead,
-		},
-		pitchEnvState: envState{
-			Value: note.PeriodDelta(0),
-		},
+		fadeoutVol:    volume.Volume(1.0),
+		volEnvValue:   volume.Volume(1.0),
+		panEnvValue:   panning.CenterAhead,
+		pitchEnvValue: note.PeriodDelta(0),
 	}
 	return &ed
 }
 
-func (ed *pcmState) advance(volEnv *InstEnv, panEnv *InstEnv, pitchEnv *InstEnv) {
-	ed.advanceEnv(&ed.volEnvState, volEnv, ed.updateVolEnv)
-	ed.advanceEnv(&ed.panEnvState, panEnv, ed.updatePanEnv)
-	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, ed.updatePitchEnv)
+func (ed *pcmState) advance(nc intf.NoteControl, volEnv *InstEnv, panEnv *InstEnv, pitchEnv *InstEnv) {
+	ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv)
+	ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv)
+	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, nc, ed.updatePitchEnv)
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
@@ -72,7 +70,7 @@ func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(volume.Volume)
 	}
-	ed.volEnvState.Value = a + volume.Volume(t)*(b-a)
+	ed.volEnvValue = a + volume.Volume(t)*(b-a)
 }
 
 func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
@@ -84,7 +82,7 @@ func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(panning.Position)
 	}
-	ed.panEnvState.Value = panning.Position{
+	ed.panEnvValue = panning.Position{
 		Angle:    a.Angle + t*(b.Angle-a.Angle),
 		Distance: a.Distance + t*(b.Distance-a.Distance),
 	}
@@ -99,12 +97,12 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(note.PeriodDelta)
 	}
-	ed.pitchEnvState.Value = a + note.PeriodDelta(t)*(b-a)
+	ed.pitchEnvValue = a + note.PeriodDelta(t)*(b-a)
 }
 
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})
 
-func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, update envUpdateFunc) {
+func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc) {
 	if env.Enabled {
 		state.TicksRemaining--
 		if state.TicksRemaining <= 0 {
@@ -113,6 +111,12 @@ func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, update envUpdateFu
 			state.Pos = p
 			state.TicksRemaining = cur.Ticks
 			update(0, cur.Y, cur.Y)
+			looping := env.LoopEnabled || (env.SustainEnabled && ed.keyOn)
+			if env.OnFinished != nil && !looping {
+				if state.Pos >= len(env.Values)-1 {
+					env.OnFinished(nc)
+				}
+			}
 		} else {
 			cur, _ := ed.getEnv(state.Pos, env)
 			next, _ := ed.getEnv(state.Pos+1, env)

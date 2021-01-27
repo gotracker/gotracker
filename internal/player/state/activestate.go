@@ -44,9 +44,10 @@ func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, sample
 	}
 
 	nc := a.NoteControl
-	if nc == nil {
+	if nc == nil || nc.IsDone() {
 		return nil, nil
 	}
+
 	ncs := nc.GetPlaybackState()
 	if ncs == nil {
 		return nil, nil

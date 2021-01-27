@@ -40,22 +40,24 @@ func volPortaUp(v uint8) intf.Effect {
 func volPortaToNote(v uint8) intf.Effect {
 	switch v {
 	case 0:
-		return PortaToNote(0x01)
+		return PortaToNote(0x00)
 	case 1:
-		return PortaToNote(0x04)
+		return PortaToNote(0x01)
 	case 2:
-		return PortaToNote(0x08)
+		return PortaToNote(0x04)
 	case 3:
-		return PortaToNote(0x10)
+		return PortaToNote(0x08)
 	case 4:
-		return PortaToNote(0x20)
+		return PortaToNote(0x10)
 	case 5:
-		return PortaToNote(0x40)
+		return PortaToNote(0x20)
 	case 6:
-		return PortaToNote(0x60)
+		return PortaToNote(0x40)
 	case 7:
-		return PortaToNote(0x80)
+		return PortaToNote(0x60)
 	case 8:
+		return PortaToNote(0x80)
+	case 9:
 		return PortaToNote(0xFF)
 	}
 	// impossible, but hey...

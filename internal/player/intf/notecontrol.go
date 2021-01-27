@@ -31,6 +31,7 @@ type NoteControl interface {
 	GetPlaybackState() *PlaybackState
 	GetAutoVibratoState() *AutoVibratoState
 	IsVolumeEnvelopeEnabled() bool
+	IsDone() bool
 }
 
 // PlaybackState is the information needed to make an instrument play

@@ -12,6 +12,16 @@ import (
 	"gotracker/internal/player/note"
 )
 
+// FadeoutMode is the mode used to process fadeout
+type FadeoutMode uint8
+
+const (
+	// FadeoutModeAlwaysActive is for when the fadeout is always available to be used (IT-style)
+	FadeoutModeAlwaysActive = FadeoutMode(iota)
+	// FadeoutModeOnlyIfVolEnvActive is for when the fadeout only functions when VolEnv is enabled (XM-style)
+	FadeoutModeOnlyIfVolEnvActive
+)
+
 // PCM is a PCM-data instrument
 type PCM struct {
 	Sample        []uint8
@@ -22,6 +32,7 @@ type PCM struct {
 	Format        SampleDataFormat
 	Panning       panning.Position
 	MixingVolume  volume.Volume
+	FadeoutMode   FadeoutMode
 	VolumeFadeout volume.Volume
 	VolEnv        InstEnv
 	PanEnv        InstEnv
@@ -35,8 +46,12 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 		panic("no playback state on note-control interface")
 	}
 	ed := ioc.GetData().(*pcmState)
+	envVol := inst.getVolEnv(ed)
+	if envVol <= 0 {
+		return volume.Matrix{}
+	}
+
 	dry := inst.getSampleDry(pos, ed.keyOn)
-	envVol := inst.getVolEnv(ed, pos)
 	chVol := ncs.Volume
 	postVol := envVol * chVol * inst.MixingVolume
 	wet := postVol.Apply(dry...)
@@ -58,7 +73,7 @@ func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 	}
 
 	ed := ioc.GetData().(*pcmState)
-	return ed.pitchEnvState.Value.(note.PeriodDelta)
+	return ed.pitchEnvValue
 }
 
 // GetCurrentPanning returns the panning envelope position
@@ -69,7 +84,7 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	}
 
 	ed := ioc.GetData().(*pcmState)
-	y := ed.panEnvState.Value.(panning.Position)
+	y := ed.panEnvValue
 
 	// panning envelope value `y` modifies instrument panning value `x`
 	// such that `x` is primary component and `y` is secondary
@@ -107,20 +122,25 @@ func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 	}
 }
 
-func (inst *PCM) getVolEnv(ed *pcmState, pos sampling.Pos) volume.Volume {
-	if !inst.VolEnv.Enabled {
-		return volume.Volume(1.0)
+func (inst *PCM) getVolEnv(ed *pcmState) volume.Volume {
+	switch inst.FadeoutMode {
+	case FadeoutModeAlwaysActive:
+		if !inst.VolEnv.Enabled {
+			return ed.fadeoutVol
+		}
+	case FadeoutModeOnlyIfVolEnvActive:
+		if !inst.VolEnv.Enabled {
+			return volume.Volume(1)
+		}
+	default:
+		panic("unhandled method")
 	}
 
 	fadeVol := ed.fadeoutVol
-	return fadeVol * ed.volEnvState.Value.(volume.Volume)
+	return fadeVol * ed.volEnvValue
 }
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
-	if inst.Length == 16 && pos.Pos == 16 && !keyOn {
-		a := 0
-		a++
-	}
 	v0 := inst.getConvertedSample(pos.Pos, keyOn)
 	if len(v0) == 0 && ((keyOn && inst.SustainLoop.Mode != LoopModeDisabled) || inst.Loop.Mode != LoopModeDisabled) {
 		v01 := inst.getConvertedSample(pos.Pos, keyOn)
@@ -205,7 +225,7 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 		}
 	}
 
-	ed.advance(&inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
+	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 
 	if ed.fadingOut {
 		ed.fadeoutVol -= inst.VolumeFadeout
@@ -229,4 +249,10 @@ func (inst *PCM) GetKind() note.InstrumentKind {
 func (inst *PCM) CloneData(ioc intf.NoteControl) interface{} {
 	ed := *ioc.GetData().(*pcmState)
 	return &ed
+}
+
+// IsDone returns true if the instrument has stopped
+func (inst *PCM) IsDone(ioc intf.NoteControl) bool {
+	ed := ioc.GetData().(*pcmState)
+	return ed.fadeoutVol <= 0
 }

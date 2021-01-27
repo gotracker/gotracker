@@ -29,6 +29,7 @@ type DataIntf interface {
 	GetKind() note.InstrumentKind
 	CloneData(intf.NoteControl) interface{}
 	IsVolumeEnvelopeEnabled() bool
+	IsDone(intf.NoteControl) bool
 }
 
 // AutoVibrato is the setting and memory for the auto-vibrato system
@@ -43,17 +44,18 @@ type AutoVibrato struct {
 
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
-	Filename           string
-	Name               string
-	Inst               DataIntf
-	ID                 intf.InstrumentID
-	C2Spd              note.C2SPD
-	Volume             volume.Volume
-	ChannelVolume      volume.Volume
-	RelativeNoteNumber int8
-	Finetune           note.Finetune
-	AutoVibrato        AutoVibrato
-	NewNoteAction      note.NewNoteAction
+	Filename             string
+	Name                 string
+	Inst                 DataIntf
+	ID                   intf.InstrumentID
+	C2Spd                note.C2SPD
+	Volume               volume.Volume
+	ChannelVolume        volume.Volume
+	RelativeNoteNumber   int8
+	Finetune             note.Finetune
+	AutoVibrato          AutoVibrato
+	NewNoteAction        note.NewNoteAction
+	ChannelFilterFactory func(float32) intf.Filter
 }
 
 // IsInvalid always returns false (valid)
@@ -111,6 +113,10 @@ func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteCo
 		if inst.AutoVibrato.Enabled {
 			ioc.AutoVibratoState.Osc = inst.AutoVibrato.Factory()
 		}
+	}
+
+	if inst.ChannelFilterFactory != nil {
+		oc.Filter = inst.ChannelFilterFactory(oc.Playback.GetSampleRate())
 	}
 
 	return &ioc
@@ -233,6 +239,14 @@ func (inst *Instrument) CloneData(nc intf.NoteControl) interface{} {
 func (inst *Instrument) IsVolumeEnvelopeEnabled() bool {
 	if ii := inst.Inst; ii != nil {
 		return ii.IsVolumeEnvelopeEnabled()
+	}
+	return false
+}
+
+// IsDone returns true if the instrument has stopped
+func (inst *Instrument) IsDone(nc intf.NoteControl) bool {
+	if ii := inst.Inst; ii != nil {
+		return ii.IsDone(nc)
 	}
 	return false
 }

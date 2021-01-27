@@ -31,4 +31,5 @@ type Playback interface {
 	IgnoreUnknownEffect() bool
 
 	SetupSampler(int, int, int) error
+	GetSampleRate() float32
 }

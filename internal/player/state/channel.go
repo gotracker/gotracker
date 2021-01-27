@@ -65,15 +65,21 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 	}
 
 	mixData, err := cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+	if mixData == nil {
+		cs.activeState.NoteControl = nil
+	}
 	if err != nil {
 		return mixData, err
 	}
 	if cs.pastNote.NoteControl != nil && cs.pastNote.Period != nil {
 		ps, err2 := cs.pastNote.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+		if ps == nil {
+			cs.pastNote.NoteControl = nil
+		}
 		if err == nil && err2 != nil {
 			err = err2
 		}
-		if ps.Data != nil {
+		if ps != nil && ps.Data != nil {
 			if mixData == nil || mixData.Data == nil {
 				mixData = ps
 			} else {

@@ -96,6 +96,11 @@ func (t *Tracker) GetOutputChannel(ch int, pb intf.Playback) *intf.OutputChannel
 	return oc
 }
 
+// GetSampleRate returns the sample rate of the sampler
+func (t *Tracker) GetSampleRate() float32 {
+	return float32(t.GetSampler().SampleRate)
+}
+
 func (t *Tracker) renderTick() (*device.PremixData, error) {
 	if err := DoTick(t.Tickable); err != nil {
 		return nil, err

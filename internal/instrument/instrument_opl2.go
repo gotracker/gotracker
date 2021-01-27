@@ -362,3 +362,8 @@ func (inst *OPL2) CloneData(ioc intf.NoteControl) interface{} {
 func (inst *OPL2) IsVolumeEnvelopeEnabled() bool {
 	return false
 }
+
+// IsDone returns true if the instrument has stopped
+func (inst *OPL2) IsDone(ioc intf.NoteControl) bool {
+	return false
+}

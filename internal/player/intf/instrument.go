@@ -41,4 +41,5 @@ type Instrument interface {
 	SetEnvelopePosition(NoteControl, int)
 	CloneData(NoteControl) interface{}
 	IsVolumeEnvelopeEnabled() bool
+	IsDone(NoteControl) bool
 }

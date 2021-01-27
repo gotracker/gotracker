@@ -34,32 +34,31 @@ type LoopInfo struct {
 func calcLoopedSamplePos(loop LoopInfo, sustain LoopInfo, pos int, length int, keyOn bool) int {
 	if keyOn {
 		// sustain loop
-		switch sustain.Mode {
-		case LoopModeDisabled:
-			// fallthrough to non-sustain
-		case LoopModeNormalType1:
-			return calcLoopedSamplePosMode1(pos, length, sustain.Begin, sustain.End)
-		case LoopModeNormalType2:
-			return calcLoopedSamplePosMode2(pos, length, sustain.Begin, sustain.End)
-		case LoopModePingPong:
-			return calcLoopedSamplePosPingPong(pos, length, sustain.Begin, sustain.End)
-		default:
-			panic("unhandled loop mode!")
+		if enabled, newPos := calcLoopedPos(sustain, pos, length); enabled {
+			return newPos
 		}
 	}
 	// non-sustain loop
+	if enabled, newPos := calcLoopedPos(loop, pos, length); enabled {
+		return newPos
+	}
+	return calcSamplePosLoopDisabled(pos, length)
+}
+
+func calcLoopedPos(loop LoopInfo, pos int, length int) (bool, int) {
 	switch loop.Mode {
 	case LoopModeDisabled:
-		return calcSamplePosLoopDisabled(pos, length)
+		// nothing
 	case LoopModeNormalType1:
-		return calcLoopedSamplePosMode1(pos, length, loop.Begin, loop.End)
+		return true, calcLoopedSamplePosMode1(pos, length, loop.Begin, loop.End)
 	case LoopModeNormalType2:
-		return calcLoopedSamplePosMode2(pos, length, loop.Begin, loop.End)
+		return true, calcLoopedSamplePosMode2(pos, length, loop.Begin, loop.End)
 	case LoopModePingPong:
-		return calcLoopedSamplePosPingPong(pos, length, loop.Begin, loop.End)
+		return true, calcLoopedSamplePosPingPong(pos, length, loop.Begin, loop.End)
 	default:
 		panic("unhandled loop mode!")
 	}
+	return false, 0
 }
 
 func calcSamplePosLoopDisabled(pos int, length int) int {

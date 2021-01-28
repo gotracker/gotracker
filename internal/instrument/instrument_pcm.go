@@ -169,7 +169,7 @@ func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 }
 
 func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
-	pos = calcLoopedSamplePos(inst.Loop, inst.SustainLoop, pos, inst.Length, keyOn)
+	pos, _ = calcLoopPos(inst.Loop, inst.SustainLoop, pos, inst.Length, keyOn)
 	if pos < 0 || pos >= inst.Length {
 		return volume.Matrix{}
 	}
@@ -200,6 +200,13 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 	ed := ioc.GetData().(*pcmState)
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = false
+
+	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
+		if ncs := ioc.GetPlaybackState(); ncs != nil {
+			p, _ := calcLoopPos(inst.Loop, inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
+			ncs.Pos.Pos = p
+		}
+	}
 }
 
 // Fadeout sets the instrument to fading-out mode (if able)
@@ -221,13 +228,6 @@ func (inst *PCM) GetKeyOn(ioc intf.NoteControl) bool {
 // Update advances time by the amount specified by `tickDuration`
 func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ed := ioc.GetData().(*pcmState)
-
-	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
-		ncs := ioc.GetPlaybackState()
-		if ncs != nil {
-			ncs.Pos.Pos = calcLoopedSamplePos(inst.Loop, inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
-		}
-	}
 
 	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 

@@ -184,6 +184,7 @@ func convertEnvelope(outEnv *instrument.InstEnv, inEnv *itfile.Envelope, convert
 	outEnv.SustainLoopStart = int(inEnv.SustainLoopBegin)
 	outEnv.SustainLoopEnd = int(inEnv.SustainLoopEnd)
 	outEnv.Values = make([]instrument.EnvPoint, int(inEnv.Count))
+	var oldY0 interface{}
 	for i := range outEnv.Values {
 		out := &outEnv.Values[i]
 		in1 := inEnv.NodePoints[i]
@@ -194,8 +195,13 @@ func convertEnvelope(outEnv *instrument.InstEnv, inEnv *itfile.Envelope, convert
 			out.Y1 = convert(in2.Y)
 		} else {
 			out.Length = math.MaxInt64
-			out.Y1 = convert(0)
+			if oldY0 != nil {
+				out.Y1 = oldY0
+			} else {
+				out.Y1 = convert(0)
+			}
 		}
+		oldY0 = out.Y0
 	}
 
 	return nil

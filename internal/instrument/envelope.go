@@ -31,31 +31,116 @@ type InstEnv struct {
 type envState struct {
 	position int
 	length   int
-	Stopped  bool
+	stopped  bool
+	env      *InstEnv
 }
 
-func (e *envState) Reset() {
-	e.position = -1
-	e.length = 0
-	e.Stopped = false
+func (e *envState) Stopped() bool {
+	return e.stopped
 }
 
-func (e *envState) Advance() bool {
-	e.length--
-	return e.length <= 0
+func (e *envState) Stop() {
+	e.stopped = true
 }
 
-func (e *envState) Pos() int {
-	p := e.position
-	if e.length <= 0 {
-		p++
+func (e *envState) Reset(env *InstEnv) {
+	e.env = env
+	if !e.env.Enabled {
+		e.stopped = true
+		return
 	}
-	return p
+
+	e.position = 0
+	pos, _ := e.calcLoopedPos(true)
+	if pos < len(e.env.Values) {
+		e.length = e.env.Values[pos].Length
+	}
 }
 
-func (e *envState) SetPos(newPos int, length int) {
-	e.position = newPos
-	e.length = length
+func (e *envState) calcLoopedPos(keyOn bool) (int, bool) {
+	nPoints := len(e.env.Values)
+	var (
+		pos    int
+		looped bool
+	)
+	if e.env.SustainEnabled && keyOn {
+		pos, _ = calcLoopPosMode2(e.position, nPoints, e.env.SustainLoopStart, e.env.SustainLoopEnd)
+		looped = true
+	} else if e.env.LoopEnabled {
+		pos, _ = calcLoopPosMode2(e.position, nPoints, e.env.LoopStart, e.env.LoopEnd)
+		looped = true
+	} else {
+		pos = e.position
+		looped = false
+	}
+	return pos, looped
+}
+
+func (e *envState) GetCurrentValue(keyOn bool) (*EnvPoint, float32) {
+	if e.stopped {
+		return nil, 0
+	}
+
+	pos, looped := e.calcLoopedPos(keyOn)
+	if pos >= len(e.env.Values) {
+		return nil, 0
+	}
+
+	cur := &e.env.Values[pos]
+	t := float32(0)
+	if cur.Length > 0 {
+		l := float32(e.length)
+		if looped {
+			if e.env.SustainEnabled && keyOn && calcLoopLen(e.env.SustainLoopStart, e.env.SustainLoopEnd) == 0 {
+				l = 0
+			} else {
+				l = float32(e.length)
+			}
+		}
+		t = 1 - (l / float32(cur.Length))
+	}
+	switch {
+	case t < 0:
+		t = 0
+	case t > 1:
+		t = 1
+	}
+	return cur, t
+}
+
+func (e *envState) Advance(keyOn bool, prevKeyOn bool) bool {
+	if e.stopped {
+		return false
+	}
+
+	if e.env.SustainEnabled && keyOn {
+		if calcLoopLen(e.env.SustainLoopStart, e.env.SustainLoopEnd) == 0 {
+			return false
+		}
+	} else if e.env.LoopEnabled {
+		if calcLoopLen(e.env.LoopStart, e.env.LoopEnd) == 0 {
+			return false
+		}
+	}
+
+	e.length--
+	if e.length > 0 {
+		return false
+	}
+	if keyOn != prevKeyOn && prevKeyOn {
+		p, _ := e.calcLoopedPos(prevKeyOn)
+		e.position = p
+	}
+
+	e.position++
+	pos, _ := e.calcLoopedPos(keyOn)
+	if pos >= len(e.env.Values) {
+		e.stopped = true
+		return true
+	}
+
+	e.length = e.env.Values[pos].Length
+	return false
 }
 
 type pcmState struct {
@@ -88,6 +173,12 @@ func (ed *pcmState) advance(nc intf.NoteControl, volEnv *InstEnv, panEnv *InstEn
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
+	switch {
+	case t < 0:
+		t = 0
+	case t > 1:
+		t = 1
+	}
 	a := volume.Volume(1)
 	b := volume.Volume(0)
 	if y0 != nil {
@@ -96,7 +187,14 @@ func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
 	if y1 != nil {
 		b = y1.(volume.Volume)
 	}
-	ed.volEnvValue = a + volume.Volume(t)*(b-a)
+	v := a + volume.Volume(t)*(b-a)
+	switch {
+	case v < 0:
+		v = 0
+	case v > 1:
+		v = 1
+	}
+	ed.volEnvValue = v
 }
 
 func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
@@ -129,67 +227,28 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})
 
 func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc, runTick bool) {
-	if !env.Enabled || state.Stopped {
+	if state.Stopped() {
 		return
 	}
 
-	var updateState bool
-
-	if runTick {
-		updateState = state.Advance()
-	}
+	cur, t := state.GetCurrentValue(ed.keyOn)
 
 	var finishing bool
-	cur, p := ed.getEnv(state.Pos(), env)
-	if updateState {
-		state.SetPos(p, cur.Length)
-		looping := env.LoopEnabled || (env.SustainEnabled && ed.keyOn)
-		if env.OnFinished != nil && !looping {
-			if state.position >= len(env.Values)-1 {
-				finishing = true
-			}
-		}
+	if runTick {
+		finishing = state.Advance(ed.keyOn, ed.prevKeyOn)
 	}
 
-	t := float32(0)
-	if cur.Length > 0 {
-		t = float32(state.length) / float32(cur.Length)
+	if cur != nil {
+		update(t, cur.Y0, cur.Y1)
 	}
-	t = 1.0 - t
-	update(t, cur.Y0, cur.Y1)
 
 	if finishing {
 		env.OnFinished(nc)
-		state.Stopped = true
 	}
-}
-
-func (ed *pcmState) calcEnvPos(env *InstEnv, pos int) int {
-	nPoints := len(env.Values)
-	if env.SustainEnabled && ed.keyOn {
-		pos = calcLoopedSamplePosMode2(pos, nPoints, env.SustainLoopStart, env.SustainLoopEnd)
-	} else if env.LoopEnabled {
-		pos = calcLoopedSamplePosMode2(pos, nPoints, env.LoopStart, env.LoopEnd)
-	}
-	if pos >= nPoints {
-		pos = nPoints - 1
-	}
-	return pos
-}
-
-func (ed *pcmState) getEnv(pos int, env *InstEnv) (EnvPoint, int) {
-	pos = ed.calcEnvPos(env, pos)
-	nPoints := len(env.Values)
-	if pos < 0 || pos >= nPoints {
-		return EnvPoint{}, 0
-	}
-
-	cur := env.Values[pos]
-	return cur, pos
 }
 
 func (ed *pcmState) setEnvelopePosition(ticks int, state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc) {
-	state.Reset()
+	state.Reset(env)
 	for ticks >= 0 {
 		ed.advanceEnv(state, env, nc, update, true)
 		ticks--

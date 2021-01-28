@@ -123,9 +123,9 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 // SetEnvelopePosition sets the envelope position for the note-control
 func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 	ed := ioc.GetData().(*pcmState)
-	ed.setEnvelopePosition(ticks, &ed.volEnvState, &inst.VolEnv, ed.updateVolEnv)
+	ed.setEnvelopePosition(ticks, &ed.volEnvState, &inst.VolEnv, ioc, ed.updateVolEnv)
 	if inst.VolEnv.SustainEnabled {
-		ed.setEnvelopePosition(ticks, &ed.panEnvState, &inst.PanEnv, ed.updatePanEnv)
+		ed.setEnvelopePosition(ticks, &ed.panEnvState, &inst.PanEnv, ioc, ed.updatePanEnv)
 	}
 }
 
@@ -190,21 +190,9 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 	ed.prevKeyOn = ed.keyOn
 	ed.keyOn = true
 	ed.fadingOut = false
-	if inst.VolEnv.Enabled {
-		ed.volEnvState.Pos = 0
-		ed.volEnvState.TicksRemaining = 0
-		ed.updateEnv(&ed.volEnvState, &inst.VolEnv, ed.updateVolEnv)
-	}
-	if inst.PanEnv.Enabled {
-		ed.panEnvState.Pos = 0
-		ed.panEnvState.TicksRemaining = 0
-		ed.updateEnv(&ed.panEnvState, &inst.PanEnv, ed.updatePanEnv)
-	}
-	if inst.PitchEnv.Enabled {
-		ed.pitchEnvState.Pos = 0
-		ed.pitchEnvState.TicksRemaining = 0
-		ed.updateEnv(&ed.pitchEnvState, &inst.PitchEnv, ed.updatePitchEnv)
-	}
+	ed.setEnvelopePosition(0, &ed.volEnvState, &inst.VolEnv, ioc, ed.updateVolEnv)
+	ed.setEnvelopePosition(0, &ed.panEnvState, &inst.PanEnv, ioc, ed.updatePanEnv)
+	ed.setEnvelopePosition(0, &ed.pitchEnvState, &inst.PitchEnv, ioc, ed.updatePitchEnv)
 }
 
 // Release sets the key on flag for the instrument
@@ -243,10 +231,19 @@ func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 
 	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
 
-	if ed.fadingOut && inst.FadeOut.Mode != FadeoutModeDisabled {
-		ed.fadeoutVol -= inst.FadeOut.Amount
-		if ed.fadeoutVol < 0 {
-			ed.fadeoutVol = 0
+	if ed.fadingOut {
+		performFade := false
+		switch inst.FadeOut.Mode {
+		case FadeoutModeDisabled:
+			// nothing
+		case FadeoutModeOnlyIfVolEnvActive, FadeoutModeAlwaysActive:
+			performFade = true
+		}
+		if performFade {
+			ed.fadeoutVol -= inst.FadeOut.Amount
+			if ed.fadeoutVol < 0 {
+				ed.fadeoutVol = 0
+			}
 		}
 	}
 }

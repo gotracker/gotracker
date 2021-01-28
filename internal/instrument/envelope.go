@@ -10,8 +10,9 @@ import (
 
 // EnvPoint is a point for the envelope
 type EnvPoint struct {
-	Ticks int
-	Y     interface{}
+	Length int
+	Y0     interface{}
+	Y1     interface{}
 }
 
 // InstEnv is an envelope for instruments
@@ -28,8 +29,33 @@ type InstEnv struct {
 }
 
 type envState struct {
-	Pos            int
-	TicksRemaining int
+	position int
+	length   int
+	Stopped  bool
+}
+
+func (e *envState) Reset() {
+	e.position = -1
+	e.length = 0
+	e.Stopped = false
+}
+
+func (e *envState) Advance() bool {
+	e.length--
+	return e.length <= 0
+}
+
+func (e *envState) Pos() int {
+	p := e.position
+	if e.length <= 0 {
+		p++
+	}
+	return p
+}
+
+func (e *envState) SetPos(newPos int, length int) {
+	e.position = newPos
+	e.length = length
 }
 
 type pcmState struct {
@@ -56,9 +82,9 @@ func newPcmState() *pcmState {
 }
 
 func (ed *pcmState) advance(nc intf.NoteControl, volEnv *InstEnv, panEnv *InstEnv, pitchEnv *InstEnv) {
-	ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv)
-	ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv)
-	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, nc, ed.updatePitchEnv)
+	ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv, true)
+	ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv, true)
+	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, nc, ed.updatePitchEnv, true)
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
@@ -102,31 +128,39 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})
 
-func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc) {
-	if env.Enabled {
-		state.TicksRemaining--
-		if state.TicksRemaining <= 0 {
-			state.Pos++
-			cur, p := ed.getEnv(state.Pos, env)
-			state.Pos = p
-			state.TicksRemaining = cur.Ticks
-			update(0, cur.Y, cur.Y)
-			looping := env.LoopEnabled || (env.SustainEnabled && ed.keyOn)
-			if env.OnFinished != nil && !looping {
-				if state.Pos >= len(env.Values)-1 {
-					env.OnFinished(nc)
-				}
+func (ed *pcmState) advanceEnv(state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc, runTick bool) {
+	if !env.Enabled || state.Stopped {
+		return
+	}
+
+	var updateState bool
+
+	if runTick {
+		updateState = state.Advance()
+	}
+
+	var finishing bool
+	cur, p := ed.getEnv(state.Pos(), env)
+	if updateState {
+		state.SetPos(p, cur.Length)
+		looping := env.LoopEnabled || (env.SustainEnabled && ed.keyOn)
+		if env.OnFinished != nil && !looping {
+			if state.position >= len(env.Values)-1 {
+				finishing = true
 			}
-		} else {
-			cur, _ := ed.getEnv(state.Pos, env)
-			next, _ := ed.getEnv(state.Pos+1, env)
-			t := float32(0)
-			if cur.Ticks > 0 {
-				t = float32(state.TicksRemaining) / float32(cur.Ticks)
-			}
-			t = 1.0 - t
-			update(t, cur.Y, next.Y)
 		}
+	}
+
+	t := float32(0)
+	if cur.Length > 0 {
+		t = float32(state.length) / float32(cur.Length)
+	}
+	t = 1.0 - t
+	update(t, cur.Y0, cur.Y1)
+
+	if finishing {
+		env.OnFinished(nc)
+		state.Stopped = true
 	}
 }
 
@@ -143,17 +177,6 @@ func (ed *pcmState) calcEnvPos(env *InstEnv, pos int) int {
 	return pos
 }
 
-func (ed *pcmState) updateEnv(state *envState, env *InstEnv, update envUpdateFunc) {
-	if !env.Enabled {
-		// not active, don't do anything
-		return
-	}
-	cur, p := ed.getEnv(state.Pos, env)
-	state.Pos = p
-	state.TicksRemaining = cur.Ticks
-	update(0, cur.Y, cur.Y)
-}
-
 func (ed *pcmState) getEnv(pos int, env *InstEnv) (EnvPoint, int) {
 	pos = ed.calcEnvPos(env, pos)
 	nPoints := len(env.Values)
@@ -165,18 +188,10 @@ func (ed *pcmState) getEnv(pos int, env *InstEnv) (EnvPoint, int) {
 	return cur, pos
 }
 
-func (ed *pcmState) setEnvelopePosition(ticks int, state *envState, env *InstEnv, update envUpdateFunc) {
-	state.Pos = 0
-	state.TicksRemaining = 0
-	for ticks > 0 {
-		ed.updateEnv(state, env, update)
-		if ticks >= state.TicksRemaining {
-			ticks -= state.TicksRemaining
-			state.TicksRemaining = 0
-		} else {
-			state.TicksRemaining -= ticks
-			ticks = 0
-		}
+func (ed *pcmState) setEnvelopePosition(ticks int, state *envState, env *InstEnv, nc intf.NoteControl, update envUpdateFunc) {
+	state.Reset()
+	for ticks >= 0 {
+		ed.advanceEnv(state, env, nc, update, true)
+		ticks--
 	}
-	ed.updateEnv(state, env, update)
 }

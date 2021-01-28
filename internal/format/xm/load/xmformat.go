@@ -108,15 +108,20 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			ii.VolEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
+				y1 := uint8(inst.VolEnv[i].Y)
 				x2 := x1
+				y2 := y1
 				if i+1 < len(ii.VolEnv.Values) {
 					x2 = int(inst.VolEnv[i+1].X)
+					y2 = uint8(inst.VolEnv[i+1].Y)
 				} else {
 					x2 = math.MaxInt64
+					y2 = 0
 				}
 				ii.VolEnv.Values[i] = instrument.EnvPoint{
-					Ticks: x2 - x1,
-					Y:     volume.Volume(uint8(inst.VolEnv[i].Y)) / 64,
+					Length: x2 - x1,
+					Y0:     volume.Volume(y1) / 64,
+					Y1:     volume.Volume(y2) / 64,
 				}
 			}
 		}
@@ -125,19 +130,24 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			ii.PanEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
-				x2 := x1
-				if i+1 < len(ii.PanEnv.Values) {
-					x2 = int(inst.PanEnv[i+1].X)
-				} else {
-					x2 = math.MaxInt64
-				}
 				// XM stores pan envelope values in 0..64
 				// So we have to do some gymnastics to remap the values
 				panEnv01 := float64(uint8(inst.PanEnv[i].Y)) / 64
-				panEnvVal := uint8(panEnv01 * 255)
+				y1 := uint8(panEnv01 * 255)
+				x2 := x1
+				y2 := y1
+				if i+1 < len(ii.PanEnv.Values) {
+					x2 = int(inst.PanEnv[i+1].X)
+					panEnv01 = float64(uint8(inst.PanEnv[i+1].Y)) / 64
+					y2 = uint8(panEnv01 * 255)
+				} else {
+					x2 = math.MaxInt64
+					// leave y2 unchanged
+				}
 				ii.PanEnv.Values[i] = instrument.EnvPoint{
-					Ticks: x2 - x1,
-					Y:     util.PanningFromXm(panEnvVal),
+					Length: x2 - x1,
+					Y0:     util.PanningFromXm(y1),
+					Y1:     util.PanningFromXm(y2),
 				}
 			}
 		}

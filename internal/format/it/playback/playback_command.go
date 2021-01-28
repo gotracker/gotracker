@@ -46,6 +46,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	targetPeriod := cs.GetTargetPeriod()
 	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
+			cs.TransitionActiveToPastState()
 			cs.SetInstrument(targetInst)
 			keyOn = true
 		} else {

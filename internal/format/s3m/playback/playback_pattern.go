@@ -183,6 +183,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			cs.StoredSemitone = n.Semitone()
 			cs.TargetSemitone = cs.StoredSemitone
 			cs.WantNoteCalc = true
+			cs.DoRetriggerNote = true
 		}
 	} else {
 		cs.WantNoteCalc = false

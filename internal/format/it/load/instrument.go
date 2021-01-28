@@ -77,20 +77,24 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			if vol > 1 {
 				vol = 1
 			}
-			out.Y = vol
+			out.Y0 = vol
 			ending := false
 			if i+1 >= len(inst.VolumeEnvelope) {
 				ending = true
+				out.Y1 = volume.Volume(0)
 			} else {
 				in2 := inst.VolumeEnvelope[i+1]
 				if in2 == 0xFF {
 					ending = true
+					out.Y1 = volume.Volume(0)
+				} else {
+					out.Y1 = volume.Volume(uint8(in2)) / 64
 				}
 			}
 			if !ending {
-				out.Ticks = 1
+				out.Length = 1
 			} else {
-				out.Ticks = math.MaxInt64
+				out.Length = math.MaxInt64
 			}
 			id.VolEnv.Values = append(id.VolEnv.Values, out)
 		}
@@ -183,12 +187,14 @@ func convertEnvelope(outEnv *instrument.InstEnv, inEnv *itfile.Envelope, convert
 	for i := range outEnv.Values {
 		out := &outEnv.Values[i]
 		in1 := inEnv.NodePoints[i]
-		out.Y = convert(in1.Y)
+		out.Y0 = convert(in1.Y)
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
-			out.Ticks = int(in2.Tick) - int(in1.Tick)
+			out.Length = int(in2.Tick) - int(in1.Tick)
+			out.Y1 = convert(in2.Y)
 		} else {
-			out.Ticks = math.MaxInt64
+			out.Length = math.MaxInt64
+			out.Y1 = convert(0)
 		}
 	}
 

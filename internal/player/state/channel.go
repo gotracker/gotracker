@@ -48,7 +48,7 @@ type ChannelState struct {
 func (cs *ChannelState) AdvanceRow() {
 	cs.prevState = cs.activeState
 	cs.targetState = cs.activeState.PlaybackState
-	cs.DoRetriggerNote = true
+	cs.DoRetriggerNote = false
 	cs.NotePlayTick = 0
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
@@ -356,11 +356,10 @@ func (cs *ChannelState) SetEnvelopePosition(ticks int) {
 // TransitionActiveToPastState will transition the current active state to the 'past' state
 // and will activate the specified New-Note Action on it
 func (cs *ChannelState) TransitionActiveToPastState() {
-	cs.pastNote = cs.activeState.Clone()
+	//cs.pastNote = cs.activeState.Clone()
 	switch cs.NewNoteAction {
 	case note.NewNoteActionNoteCut:
-		cs.pastNote.Period = nil
-		cs.pastNote.NoteControl = nil
+		cs.pastNote.Enabled = false
 	case note.NewNoteActionContinue:
 		// nothing
 	case note.NewNoteActionNoteOff:
@@ -369,6 +368,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		}
 	case note.NewNoteActionFadeout:
 		if nc := cs.pastNote.NoteControl; nc != nil {
+			nc.Release()
 			nc.Fadeout()
 		}
 	}

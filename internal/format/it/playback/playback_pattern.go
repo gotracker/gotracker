@@ -145,7 +145,6 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 		cs.UseTargetPeriod = true
 		instID := cs.TrackData.GetInstrument(cs.StoredSemitone)
 		n := cs.TrackData.GetNote()
-		cs.TransitionActiveToPastState()
 		if instID.IsEmpty() {
 			// use current
 			cs.SetTargetPos(sampling.Pos{})
@@ -184,6 +183,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			cs.StoredSemitone = n.Semitone()
 			cs.TargetSemitone = cs.StoredSemitone
 			cs.WantNoteCalc = true
+			cs.DoRetriggerNote = true
 		}
 		if inst := cs.GetInstrument(); inst != nil {
 			cs.SetNewNoteAction(inst.GetNewNoteAction())

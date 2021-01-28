@@ -31,123 +31,132 @@ type LoopInfo struct {
 	End   int
 }
 
-func calcLoopedSamplePos(loop LoopInfo, sustain LoopInfo, pos int, length int, keyOn bool) int {
+func calcLoopPos(loop LoopInfo, sustain LoopInfo, pos int, length int, keyOn bool) (int, bool) {
 	if keyOn {
 		// sustain loop
-		if enabled, newPos := calcLoopedPos(sustain, pos, length); enabled {
-			return newPos
+		if enabled, newPos, looped := internalCalcLoopPos(sustain, pos, length); enabled {
+			return newPos, looped
 		}
 	}
 	// non-sustain loop
-	if enabled, newPos := calcLoopedPos(loop, pos, length); enabled {
-		return newPos
+	if enabled, newPos, looped := internalCalcLoopPos(loop, pos, length); enabled {
+		return newPos, looped
 	}
-	return calcSamplePosLoopDisabled(pos, length)
+	return calcLoopPosDisabled(pos, length)
 }
 
-func calcLoopedPos(loop LoopInfo, pos int, length int) (bool, int) {
+func internalCalcLoopPos(loop LoopInfo, pos int, length int) (bool, int, bool) {
 	switch loop.Mode {
 	case LoopModeDisabled:
 		// nothing
 	case LoopModeNormalType1:
-		return true, calcLoopedSamplePosMode1(pos, length, loop.Begin, loop.End)
+		newPos, looped := calcLoopPosMode1(pos, length, loop.Begin, loop.End)
+		return true, newPos, looped
 	case LoopModeNormalType2:
-		return true, calcLoopedSamplePosMode2(pos, length, loop.Begin, loop.End)
+		newPos, looped := calcLoopPosMode2(pos, length, loop.Begin, loop.End)
+		return true, newPos, looped
 	case LoopModePingPong:
-		return true, calcLoopedSamplePosPingPong(pos, length, loop.Begin, loop.End)
+		newPos, looped := calcLoopPosPingPong(pos, length, loop.Begin, loop.End)
+		return true, newPos, looped
 	default:
 		panic("unhandled loop mode!")
 	}
-	return false, 0
+	return false, pos, false
 }
 
-func calcSamplePosLoopDisabled(pos int, length int) int {
+func calcLoopPosDisabled(pos int, length int) (int, bool) {
 	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
 	switch {
 	case pos < 0:
-		return 0
+		return 0, false
 	case pos < length:
-		return pos
+		return pos, false
 	default:
-		return length
+		return length, false
 	}
 }
 
-func calcLoopedSamplePosMode1(pos int, length int, loopBegin int, loopEnd int) int {
+// simple helper to consolidate loop length calculations
+// (yeah, it could just be the math in place, but whatever)
+func calcLoopLen(loopBegin int, loopEnd int) int {
+	return loopEnd - loopBegin
+}
+
+func calcLoopPosMode1(pos int, length int, loopBegin int, loopEnd int) (int, bool) {
 	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 	switch {
 	case pos < 0:
-		return 0
+		return 0, false
 	case pos < length:
-		return pos
+		return pos, false
 	}
 
-	loopLen := loopEnd - loopBegin
+	loopLen := calcLoopLen(loopBegin, loopEnd)
 	if loopLen < 0 {
-		return length
+		return length, false
 	} else if loopLen == 0 {
-		return loopBegin
+		return loopBegin, true
 	}
 
 	loopedPos := (pos - length) % loopLen
-	return loopBegin + loopedPos
+	return loopBegin + loopedPos, true
 }
 
-func calcLoopedSamplePosMode2(pos int, length int, loopBegin int, loopEnd int) int {
+func calcLoopPosMode2(pos int, length int, loopBegin int, loopEnd int) (int, bool) {
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 	if pos < 0 {
-		return 0
+		return 0, false
 	}
 	if pos < loopEnd {
-		return pos
+		return pos, false
 	}
 
-	loopLen := loopEnd - loopBegin
+	loopLen := calcLoopLen(loopBegin, loopEnd)
 	if loopLen < 0 {
 		if pos < length {
-			return pos
+			return pos, false
 		}
-		return length
+		return length, false
 	} else if loopLen == 0 {
-		return loopBegin
+		return loopBegin, true
 	}
 
 	dist := pos - loopEnd
 	loopedPos := dist % loopLen
-	return loopBegin + loopedPos
+	return loopBegin + loopedPos, true
 }
 
-func calcLoopedSamplePosPingPong(pos int, length int, loopBegin int, loopEnd int) int {
+func calcLoopPosPingPong(pos int, length int, loopBegin int, loopEnd int) (int, bool) {
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>----<loopEnd|------------| <= only if looped and on playthrough 2+, part that loops plays and ping-pongs
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 	if pos < 0 {
-		return 0
+		return 0, false
 	}
 	if pos < loopEnd {
-		return pos
+		return pos, false
 	}
 
-	loopLen := loopEnd - loopBegin
+	loopLen := calcLoopLen(loopBegin, loopEnd)
 	if loopLen < 0 {
 		if pos < length {
-			return pos
+			return pos, false
 		}
-		return length
+		return length, false
 	} else if loopLen == 0 {
-		return loopBegin
+		return loopBegin, true
 	}
 
 	dist := pos - loopEnd
 	loopedPos := dist % loopLen
 	if times := int(dist / loopLen); (times & 1) == 0 {
 		// even loops are reversed
-		return loopEnd - loopedPos - 1
+		return loopEnd - loopedPos - 1, true
 	}
 	// odd loops are forward... or normal loop
-	return loopBegin + loopedPos
+	return loopBegin + loopedPos, true
 }

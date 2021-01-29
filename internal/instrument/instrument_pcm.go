@@ -79,7 +79,7 @@ func (inst *PCM) IsLooped() bool {
 // GetCurrentPeriodDelta returns the current pitch envelope value
 func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 	ed := ioc.GetData().(*pcmState)
-	if !(inst.PitchFiltEnv.Enabled || ed.pitchFiltEnabled) {
+	if !(inst.PitchFiltEnv.Enabled && ed.pitchFiltEnvEnabled) {
 		return note.PeriodDelta(0)
 	}
 
@@ -89,7 +89,7 @@ func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 // GetCurrentFilterEnvValue returns the current filter envelope value
 func (inst *PCM) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
 	ed := ioc.GetData().(*pcmState)
-	if !(inst.PitchFiltEnv.Enabled || ed.pitchFiltEnabled) {
+	if !(inst.PitchFiltEnv.Enabled && ed.pitchFiltEnvEnabled) {
 		return 1
 	}
 
@@ -100,7 +100,7 @@ func (inst *PCM) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
 func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	x := inst.Panning
 	ed := ioc.GetData().(*pcmState)
-	if !(inst.PanEnv.Enabled || ed.panEnvEnabled) {
+	if !(inst.PanEnv.Enabled && ed.panEnvEnabled) {
 		return x
 	}
 
@@ -145,16 +145,16 @@ func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 func (inst *PCM) getVolEnv(ed *pcmState) volume.Volume {
 	switch inst.FadeOut.Mode {
 	case FadeoutModeDisabled:
-		if !(inst.VolEnv.Enabled || ed.volEnvEnabled) {
+		if !(inst.VolEnv.Enabled && ed.volEnvEnabled) {
 			return volume.Volume(1)
 		}
 		return ed.volEnvValue
 	case FadeoutModeAlwaysActive:
-		if !(inst.VolEnv.Enabled || ed.volEnvEnabled) {
+		if !(inst.VolEnv.Enabled && ed.volEnvEnabled) {
 			return ed.fadeoutVol
 		}
 	case FadeoutModeOnlyIfVolEnvActive:
-		if !(inst.VolEnv.Enabled || ed.volEnvEnabled) {
+		if !(inst.VolEnv.Enabled && ed.volEnvEnabled) {
 			return volume.Volume(1)
 		}
 	default:
@@ -193,6 +193,9 @@ func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
 func (inst *PCM) Initialize(ioc intf.NoteControl) error {
 	pcmState := newPcmState()
 	pcmState.pitchFiltEnvMode = inst.PitchFiltMode
+	pcmState.volEnvEnabled = inst.VolEnv.Enabled
+	pcmState.panEnvEnabled = inst.PanEnv.Enabled
+	pcmState.pitchFiltEnvEnabled = inst.PitchFiltEnv.Enabled
 	ioc.SetData(pcmState)
 	return nil
 }
@@ -306,5 +309,5 @@ func (inst *PCM) SetPanningEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (inst *PCM) SetPitchEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
 	ed := ioc.GetData().(*pcmState)
-	ed.pitchFiltEnabled = enabled
+	ed.pitchFiltEnvEnabled = enabled
 }

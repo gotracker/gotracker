@@ -13,10 +13,13 @@ type pcmState struct {
 	fadeoutVol        volume.Volume
 	keyOn             bool
 	fadingOut         bool
+	volEnvEnabled     bool
 	volEnvState       envelope.State
 	volEnvValue       volume.Volume
+	panEnvEnabled     bool
 	panEnvState       envelope.State
 	panEnvValue       panning.Position
+	pitchFiltEnabled  bool
 	pitchFiltEnvState envelope.State
 	pitchFiltEnvMode  bool
 	pitchEnvValue     note.PeriodDelta

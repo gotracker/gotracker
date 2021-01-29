@@ -33,6 +33,9 @@ type NoteControl interface {
 	GetAutoVibratoState() *AutoVibratoState
 	IsVolumeEnvelopeEnabled() bool
 	IsDone() bool
+	SetVolumeEnvelopeEnable(bool)
+	SetPanningEnvelopeEnable(bool)
+	SetPitchEnvelopeEnable(bool)
 }
 
 // PlaybackState is the information needed to make an instrument play

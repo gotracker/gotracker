@@ -43,4 +43,7 @@ type Instrument interface {
 	CloneData(NoteControl) interface{}
 	IsVolumeEnvelopeEnabled() bool
 	IsDone(NoteControl) bool
+	SetVolumeEnvelopeEnable(NoteControl, bool)
+	SetPanningEnvelopeEnable(NoteControl, bool)
+	SetPitchEnvelopeEnable(NoteControl, bool)
 }

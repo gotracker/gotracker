@@ -150,9 +150,7 @@ func specialEffect(cd *channel.Data) intf.Effect {
 	case 0x8: // Set Coarse Pan Position
 		return SetCoarsePanPosition(cd.EffectParameter)
 	case 0x9: // Sound Control
-		if cd.EffectParameter&0xF == 1 {
-			return nil // TODO: SoundControl
-		}
+		return soundControlEffect(cd)
 	case 0xA: // High Offset
 		return HighOffset(cd.EffectParameter)
 	case 0xB: // Pattern Loop
@@ -187,11 +185,17 @@ func specialNoteEffects(cd *channel.Data) intf.Effect {
 	case 0x6: // New Note Action: Note Fade
 		return NewNoteActionNoteFade(cd.EffectParameter)
 	case 0x7: // Volume Envelope Off
+		return VolumeEnvelopeOff(cd.EffectParameter)
 	case 0x8: // Volume Envelope On
+		return VolumeEnvelopeOn(cd.EffectParameter)
 	case 0x9: // Panning Envelope Off
+		return PanningEnvelopeOff(cd.EffectParameter)
 	case 0xA: // Panning Envelope On
+		return PanningEnvelopeOn(cd.EffectParameter)
 	case 0xB: // Pitch Envelope Off
+		return PitchEnvelopeOff(cd.EffectParameter)
 	case 0xC: // Pitch Envelope On
+		return PitchEnvelopeOn(cd.EffectParameter)
 	case 0xD, 0xE, 0xF: // unused
 		return nil
 	}
@@ -215,4 +219,22 @@ func volumeSlideFactory(mem *channel.Memory, cd uint8, ce uint8) intf.Effect {
 	// so we need to handle it by deferring to using a no-op instead of a
 	// VolumeSlideDown
 	return nil
+}
+
+func soundControlEffect(cd *channel.Data) intf.Effect {
+	switch cd.EffectParameter & 0xF {
+	case 0x0: // Surround Off
+	case 0x1: // Surround On
+		// only S91 is supported directly by IT
+		return nil // TODO: SurroundOn
+	case 0x8: // Reverb Off
+	case 0x9: // Reverb On
+	case 0xA: // Center Surround
+	case 0xB: // Quad Surround
+	case 0xC: // Global Filters
+	case 0xD: // Local Filters
+	case 0xE: // Play Forward
+	case 0xF: // Play Backward
+	}
+	return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 }

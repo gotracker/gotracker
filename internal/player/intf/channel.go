@@ -74,4 +74,7 @@ type Channel interface {
 	SetNewNoteAction(note.Action)
 	GetNewNoteAction() note.Action
 	DoPastNoteEffect(action note.Action)
+	SetVolumeEnvelopeEnable(bool)
+	SetPanningEnvelopeEnable(bool)
+	SetPitchEnvelopeEnable(bool)
 }

@@ -14,6 +14,7 @@ import (
 	"gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
+	"gotracker/internal/loop"
 	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -254,30 +255,30 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	id.Length = int(si.Header.Length)
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
 	id.MixingVolume *= instVol
-	id.Loop = instrument.LoopInfo{
-		Mode:  instrument.LoopModeDisabled,
+	id.Loop = loop.Loop{
+		Mode:  loop.ModeDisabled,
 		Begin: int(si.Header.LoopBegin),
 		End:   int(si.Header.LoopEnd),
 	}
-	id.SustainLoop = instrument.LoopInfo{
-		Mode:  instrument.LoopModeDisabled,
+	id.SustainLoop = loop.Loop{
+		Mode:  loop.ModeDisabled,
 		Begin: int(si.Header.SustainLoopBegin),
 		End:   int(si.Header.SustainLoopEnd),
 	}
 
 	if si.Header.Flags.IsLoopEnabled() {
 		if si.Header.Flags.IsLoopPingPong() {
-			id.Loop.Mode = instrument.LoopModePingPong
+			id.Loop.Mode = loop.ModePingPong
 		} else {
-			id.Loop.Mode = instrument.LoopModeNormalType2
+			id.Loop.Mode = loop.ModeNormal
 		}
 	}
 
 	if si.Header.Flags.IsSustainLoopEnabled() {
 		if si.Header.Flags.IsSustainLoopPingPong() {
-			id.Loop.Mode = instrument.LoopModePingPong
+			id.Loop.Mode = loop.ModePingPong
 		} else {
-			id.Loop.Mode = instrument.LoopModeNormalType2
+			id.Loop.Mode = loop.ModeNormal
 		}
 	}
 

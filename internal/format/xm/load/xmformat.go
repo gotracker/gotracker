@@ -12,6 +12,7 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/instrument"
+	"gotracker/internal/loop"
 	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -60,10 +61,10 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 
 		ii := instrument.PCM{
 			Length: int(si.Length),
-			Loop: instrument.LoopInfo{
-				Mode: instrument.LoopModeDisabled,
+			Loop: loop.Loop{
+				Mode: loop.ModeDisabled,
 			},
-			SustainLoop: instrument.LoopInfo{
+			SustainLoop: loop.Loop{
 				Mode:  xmLoopModeToLoopMode(si.Flags.LoopMode()),
 				Begin: int(si.LoopStart),
 				End:   int(si.LoopStart + si.LoopLength),
@@ -186,16 +187,16 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 	return instruments, noteMap, nil
 }
 
-func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) instrument.LoopMode {
+func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) loop.Mode {
 	switch mode {
 	case xmfile.SampleLoopModeDisabled:
-		return instrument.LoopModeDisabled
+		return loop.ModeDisabled
 	case xmfile.SampleLoopModeEnabled:
-		return instrument.LoopModeNormalType2
+		return loop.ModeNormal
 	case xmfile.SampleLoopModePingPong:
-		return instrument.LoopModePingPong
+		return loop.ModePingPong
 	default:
-		return instrument.LoopModeDisabled
+		return loop.ModeDisabled
 	}
 }
 

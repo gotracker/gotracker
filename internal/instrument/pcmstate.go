@@ -89,10 +89,10 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 	a := note.PeriodDelta(0)
 	b := note.PeriodDelta(0)
 	if y0 != nil {
-		a = note.PeriodDelta(y0.(float32) * 128)
+		a = note.PeriodDelta(int8(uint8(y0.(float32) * 128)))
 	}
 	if y1 != nil {
-		b = note.PeriodDelta(y1.(float32) * 128)
+		a = note.PeriodDelta(int8(uint8(y1.(float32) * 128)))
 	}
 	ed.pitchEnvValue = a + note.PeriodDelta(t)*(b-a)
 }
@@ -107,7 +107,8 @@ func (ed *pcmState) updateFiltEnv(t float32, y0, y1 interface{}) {
 		b = y1.(float32)
 	}
 	lerp := t * (b - a)
-	ed.filtEnvValue = a + lerp
+	v := a + lerp
+	ed.filtEnvValue = v / 255
 }
 
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})

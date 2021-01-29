@@ -358,7 +358,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Filename = si.Header.GetFilename()
 	ii.Name = si.Header.GetName()
-	ii.C2Spd = note.C2SPD(si.Header.C5Speed / uint32(bytesPerFrame))
+	ii.C2Spd = note.C2SPD(si.Header.C5Speed) / note.C2SPD(bytesPerFrame)
 	ii.AutoVibrato = instrument.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,

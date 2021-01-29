@@ -14,6 +14,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/instrument"
+	"gotracker/internal/loop"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
@@ -63,11 +64,11 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 
 	idata := instrument.PCM{
 		Length: int(si.Length.Lo),
-		Loop: instrument.LoopInfo{
-			Mode: instrument.LoopModeDisabled,
+		Loop: loop.Loop{
+			Mode: loop.ModeDisabled,
 		},
-		SustainLoop: instrument.LoopInfo{
-			Mode:  instrument.LoopModeDisabled,
+		SustainLoop: loop.Loop{
+			Mode:  loop.ModeDisabled,
 			Begin: int(si.LoopBegin.Lo),
 			End:   int(si.LoopEnd.Lo),
 		},
@@ -84,7 +85,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		idata.Format = instrument.SampleDataFormat8BitSigned
 	}
 	if si.Flags.IsLooped() {
-		idata.SustainLoop.Mode = instrument.LoopModeNormalType1
+		idata.SustainLoop.Mode = loop.ModeNormal
 	}
 	if si.Flags.IsStereo() {
 		idata.NumChannels = 2

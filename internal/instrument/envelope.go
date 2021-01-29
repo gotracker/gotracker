@@ -1,6 +1,7 @@
 package instrument
 
 import (
+	"gotracker/internal/loop"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 
@@ -32,6 +33,8 @@ type envState struct {
 	position int
 	length   int
 	stopped  bool
+	loop     loop.Loop
+	sustain  loop.Loop
 	env      *InstEnv
 }
 
@@ -50,6 +53,20 @@ func (e *envState) Reset(env *InstEnv) {
 		return
 	}
 
+	e.loop.Mode = loop.ModeDisabled
+	if e.env.LoopEnabled {
+		e.loop.Mode = loop.ModeNormal
+		e.loop.Begin = e.env.LoopStart
+		e.loop.End = e.env.LoopEnd
+	}
+
+	e.sustain.Mode = loop.ModeDisabled
+	if e.env.SustainEnabled {
+		e.sustain.Mode = loop.ModeNormal
+		e.loop.Begin = e.env.SustainLoopStart
+		e.loop.End = e.env.SustainLoopEnd
+	}
+
 	e.position = 0
 	pos, _ := e.calcLoopedPos(true)
 	if pos < len(e.env.Values) {
@@ -59,19 +76,10 @@ func (e *envState) Reset(env *InstEnv) {
 
 func (e *envState) calcLoopedPos(keyOn bool) (int, bool) {
 	nPoints := len(e.env.Values)
-	var (
-		pos    int
-		looped bool
-	)
-	if e.env.SustainEnabled && keyOn {
-		pos, _ = calcLoopPosMode2(e.position, nPoints, e.env.SustainLoopStart, e.env.SustainLoopEnd)
+	var looped bool
+	pos, _ := loop.CalcLoopPos(&e.loop, &e.sustain, e.position, nPoints, keyOn)
+	if (keyOn && e.sustain.Enabled()) || e.loop.Enabled() {
 		looped = true
-	} else if e.env.LoopEnabled {
-		pos, _ = calcLoopPosMode2(e.position, nPoints, e.env.LoopStart, e.env.LoopEnd)
-		looped = true
-	} else {
-		pos = e.position
-		looped = false
 	}
 	return pos, looped
 }
@@ -91,7 +99,7 @@ func (e *envState) GetCurrentValue(keyOn bool) (*EnvPoint, float32) {
 	if cur.Length > 0 {
 		l := float32(e.length)
 		if looped {
-			if e.env.SustainEnabled && keyOn && calcLoopLen(e.env.SustainLoopStart, e.env.SustainLoopEnd) == 0 {
+			if e.sustain.Enabled() && keyOn && e.sustain.Length() == 0 {
 				l = 0
 			} else {
 				l = float32(e.length)
@@ -113,12 +121,12 @@ func (e *envState) Advance(keyOn bool, prevKeyOn bool) bool {
 		return false
 	}
 
-	if e.env.SustainEnabled && keyOn {
-		if calcLoopLen(e.env.SustainLoopStart, e.env.SustainLoopEnd) == 0 {
+	if e.sustain.Enabled() && keyOn {
+		if e.sustain.Length() == 0 {
 			return false
 		}
-	} else if e.env.LoopEnabled {
-		if calcLoopLen(e.env.LoopStart, e.env.LoopEnd) == 0 {
+	} else if e.loop.Enabled() {
+		if e.loop.Length() == 0 {
 			return false
 		}
 	}

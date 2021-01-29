@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/loop"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -34,8 +35,8 @@ type FadeoutSettings struct {
 type PCM struct {
 	Sample       []uint8
 	Length       int
-	Loop         LoopInfo
-	SustainLoop  LoopInfo
+	Loop         loop.Loop
+	SustainLoop  loop.Loop
 	NumChannels  int
 	Format       SampleDataFormat
 	Panning      panning.Position
@@ -67,10 +68,10 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 
 // IsLooped returns true if the instrument is looping
 func (inst *PCM) IsLooped() bool {
-	if inst.SustainLoop.Mode != LoopModeDisabled {
+	if inst.SustainLoop.Mode != loop.ModeDisabled {
 		return true
 	}
-	return inst.Loop.Mode != LoopModeDisabled
+	return inst.Loop.Mode != loop.ModeDisabled
 }
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
@@ -154,7 +155,7 @@ func (inst *PCM) getVolEnv(ed *pcmState) volume.Volume {
 
 func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 	v0 := inst.getConvertedSample(pos.Pos, keyOn)
-	if len(v0) == 0 && ((keyOn && inst.SustainLoop.Mode != LoopModeDisabled) || inst.Loop.Mode != LoopModeDisabled) {
+	if len(v0) == 0 && ((keyOn && inst.SustainLoop.Enabled()) || inst.Loop.Enabled()) {
 		v01 := inst.getConvertedSample(pos.Pos, keyOn)
 		panic(v01)
 	}
@@ -169,7 +170,7 @@ func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 }
 
 func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
-	pos, _ = calcLoopPos(inst.Loop, inst.SustainLoop, pos, inst.Length, keyOn)
+	pos, _ = loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, pos, inst.Length, keyOn)
 	if pos < 0 || pos >= inst.Length {
 		return volume.Matrix{}
 	}
@@ -203,7 +204,7 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 
 	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
 		if ncs := ioc.GetPlaybackState(); ncs != nil {
-			p, _ := calcLoopPos(inst.Loop, inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
+			p, _ := loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
 			ncs.Pos.Pos = p
 		}
 	}

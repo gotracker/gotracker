@@ -7,16 +7,19 @@ const (
 	// ModeDisabled is for disabled looping
 	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
 	ModeDisabled = Mode(iota)
+
 	// ModeLegacy is for legacy looping: (old MOD players)
 	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 	ModeLegacy
+
 	// ModeNormal is for normal looping: (S3M/XM/IT)
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
 	//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 	ModeNormal
+
 	// ModePingPong is for ping-pong looping:
 	//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
 	//  |-------------|loopBegin>----<loopEnd|------------| <= only if looped and on playthrough 2+, part that loops plays and ping-pongs

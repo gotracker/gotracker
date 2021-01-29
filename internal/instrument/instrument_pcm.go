@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/envelope"
 	"gotracker/internal/loop"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -42,9 +43,9 @@ type PCM struct {
 	Panning      panning.Position
 	MixingVolume volume.Volume
 	FadeOut      FadeoutSettings
-	VolEnv       InstEnv
-	PanEnv       InstEnv
-	PitchEnv     InstEnv
+	VolEnv       envelope.Envelope
+	PanEnv       envelope.Envelope
+	PitchEnv     envelope.Envelope
 }
 
 // GetSample returns the sample at position `pos` in the instrument
@@ -125,7 +126,7 @@ func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 func (inst *PCM) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
 	ed := ioc.GetData().(*pcmState)
 	ed.setEnvelopePosition(ticks, &ed.volEnvState, &inst.VolEnv, ioc, ed.updateVolEnv)
-	if inst.VolEnv.SustainEnabled {
+	if inst.VolEnv.Sustain.Enabled() {
 		ed.setEnvelopePosition(ticks, &ed.panEnvState, &inst.PanEnv, ioc, ed.updatePanEnv)
 	}
 }

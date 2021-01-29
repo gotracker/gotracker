@@ -1,9 +1,7 @@
 package load
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
@@ -32,39 +30,15 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 	case fh.TrackerCompatVersion < 0x200:
 		head.MixingVolume = volume.Volume(fh.MixingVolume.Value())
 	case fh.TrackerCompatVersion >= 0x200:
-		head.MixingVolume = volume.Volume(fh.MixingVolume) / 255
+		head.MixingVolume = volume.Volume(fh.MixingVolume) / 128
 	}
 	return &head, nil
-}
-
-func dumpBytes(data []byte, s int) {
-	r := bytes.NewReader(data)
-	i := 0
-	fmt.Printf("%0.4X  ", i+s)
-	for {
-		b, err := r.ReadByte()
-		if err != nil {
-			break
-		}
-		fmt.Printf("%0.2X", b)
-		i++
-		if i&15 == 0 {
-			fmt.Printf("\n%0.4X  ", i+s)
-		} else {
-			fmt.Printf(" ")
-		}
-	}
-	if i%15 != 0 {
-		fmt.Println()
-	}
 }
 
 func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern, int, error) {
 	pat := &pattern.Pattern{
 		Orig: pkt,
 	}
-
-	//dumpBytes(pkt.Data, 0)
 
 	channelMem := make([]itfile.ChannelData, channels)
 	maxCh := uint8(0)
@@ -79,7 +53,6 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern,
 			if err != nil {
 				return nil, 0, err
 			}
-			//dumpBytes(pkt.Data[pos:pos+sz], pos)
 			pos += sz
 			if chn == nil {
 				break channelLoop

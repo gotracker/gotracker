@@ -32,10 +32,10 @@ func internalCalcLoopPos(loop *Loop, pos int, length int) (bool, int, bool) {
 	case ModeDisabled:
 		// nothing
 	case ModeLegacy:
-		newPos, looped := calcLoopPosMode1(pos, length, loop.Begin, loop.End)
+		newPos, looped := calcLoopPosLegacy(pos, length, loop.Begin, loop.End)
 		return true, newPos, looped
 	case ModeNormal:
-		newPos, looped := calcLoopPosMode2(pos, length, loop.Begin, loop.End)
+		newPos, looped := calcLoopPosNormal(pos, length, loop.Begin, loop.End)
 		return true, newPos, looped
 	case ModePingPong:
 		newPos, looped := calcLoopPosPingPong(pos, length, loop.Begin, loop.End)

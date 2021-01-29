@@ -7,6 +7,7 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/envelope"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
@@ -77,36 +78,43 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
 			Panning: util.PanningFromXm(si.Panning),
-			VolEnv: instrument.InstEnv{
-				Enabled:          (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
-				LoopEnabled:      (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
-				SustainEnabled:   (inst.VolFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
-				LoopStart:        int(inst.VolLoopStartPoint),
-				LoopEnd:          int(inst.VolLoopEndPoint),
-				SustainLoopStart: int(inst.VolSustainPoint),
-				SustainLoopEnd:   int(inst.VolSustainPoint) + 1,
+			VolEnv: envelope.Envelope{
+				Enabled: (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
+				Loop: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.VolLoopStartPoint),
+					End:   int(inst.VolLoopEndPoint),
+				},
+				Sustain: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.VolSustainPoint),
+					End:   int(inst.VolSustainPoint),
+				},
 			},
-			PanEnv: instrument.InstEnv{
-				Enabled:          (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
-				LoopEnabled:      (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0,
-				SustainEnabled:   (inst.PanFlags & xmfile.EnvelopeFlagSustainEnabled) != 0,
-				LoopStart:        int(inst.PanLoopStartPoint),
-				LoopEnd:          int(inst.PanLoopEndPoint),
-				SustainLoopStart: int(inst.PanSustainPoint),
-				SustainLoopEnd:   int(inst.PanSustainPoint) + 1,
+			PanEnv: envelope.Envelope{
+				Enabled: (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
+				Loop: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.PanLoopStartPoint),
+					End:   int(inst.PanLoopEndPoint),
+				},
+				Sustain: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.PanSustainPoint),
+					End:   int(inst.PanSustainPoint),
+				},
 			},
 		}
 
-		if ii.VolEnv.LoopEnabled && ii.VolEnv.LoopStart > ii.VolEnv.LoopEnd {
-			ii.VolEnv.LoopEnabled = false
-		}
+		if ii.VolEnv.Enabled && ii.VolEnv.Loop.Length() >= 0 {
+			if enabled := (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
+				ii.VolEnv.Loop.Mode = loop.ModeNormal
+			}
+			if enabled := (inst.VolFlags & xmfile.EnvelopeFlagSustainEnabled) != 0; enabled {
+				ii.VolEnv.Sustain.Mode = loop.ModeNormal
+			}
 
-		if ii.PanEnv.LoopEnabled && ii.PanEnv.LoopStart > ii.PanEnv.LoopEnd {
-			ii.PanEnv.LoopEnabled = false
-		}
-
-		if ii.VolEnv.Enabled {
-			ii.VolEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
+			ii.VolEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
@@ -119,7 +127,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					x2 = math.MaxInt64
 					y2 = 0
 				}
-				ii.VolEnv.Values[i] = instrument.EnvPoint{
+				ii.VolEnv.Values[i] = envelope.EnvPoint{
 					Length: x2 - x1,
 					Y0:     volume.Volume(y1) / 64,
 					Y1:     volume.Volume(y2) / 64,
@@ -127,8 +135,15 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			}
 		}
 
-		if ii.PanEnv.Enabled {
-			ii.PanEnv.Values = make([]instrument.EnvPoint, int(inst.VolPoints))
+		if ii.PanEnv.Enabled && ii.PanEnv.Loop.Length() >= 0 {
+			if enabled := (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
+				ii.PanEnv.Loop.Mode = loop.ModeNormal
+			}
+			if enabled := (inst.PanFlags & xmfile.EnvelopeFlagSustainEnabled) != 0; enabled {
+				ii.PanEnv.Sustain.Mode = loop.ModeNormal
+			}
+
+			ii.PanEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
@@ -145,7 +160,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					x2 = math.MaxInt64
 					// leave y2 unchanged
 				}
-				ii.PanEnv.Values[i] = instrument.EnvPoint{
+				ii.PanEnv.Values[i] = envelope.EnvPoint{
 					Length: x2 - x1,
 					Y0:     util.PanningFromXm(y1),
 					Y1:     util.PanningFromXm(y2),

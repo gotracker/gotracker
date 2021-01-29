@@ -11,6 +11,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/envelope"
 	"gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
@@ -39,15 +40,19 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				Mode:   instrument.FadeoutModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
 			},
-			VolEnv: instrument.InstEnv{
-				Enabled:          (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
-				LoopEnabled:      (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0,
-				SustainEnabled:   (inst.Flags & itfile.IMPIOldFlagUseSustainVolumeLoop) != 0,
-				LoopStart:        int(inst.VolumeLoopStart),
-				LoopEnd:          int(inst.VolumeLoopEnd),
-				SustainLoopStart: int(inst.SustainLoopStart),
-				SustainLoopEnd:   int(inst.SustainLoopEnd),
-				Values:           make([]instrument.EnvPoint, 0),
+			VolEnv: envelope.Envelope{
+				Enabled: (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
+				Loop: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.VolumeLoopStart),
+					End:   int(inst.VolumeLoopEnd),
+				},
+				Sustain: loop.Loop{
+					Mode:  loop.ModeDisabled,
+					Begin: int(inst.SustainLoopStart),
+					End:   int(inst.SustainLoopEnd),
+				},
+				Values: make([]envelope.EnvPoint, 0),
 			},
 		}
 
@@ -71,33 +76,42 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		ci.Inst = &ii
 		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides)
 
-		for i := range inst.VolumeEnvelope {
-			out := instrument.EnvPoint{}
-			in1 := inst.VolumeEnvelope[i]
-			vol := volume.Volume(uint8(in1)) / 64
-			if vol > 1 {
-				vol = 1
+		if id.VolEnv.Enabled && id.VolEnv.Loop.Length() >= 0 {
+			if enabled := (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0; enabled {
+				id.VolEnv.Loop.Mode = loop.ModeNormal
 			}
-			out.Y0 = vol
-			ending := false
-			if i+1 >= len(inst.VolumeEnvelope) {
-				ending = true
-				out.Y1 = volume.Volume(0)
-			} else {
-				in2 := inst.VolumeEnvelope[i+1]
-				if in2 == 0xFF {
+			if enabled := (inst.Flags & itfile.IMPIOldFlagUseSustainVolumeLoop) != 0; enabled {
+				id.VolEnv.Sustain.Mode = loop.ModeNormal
+			}
+
+			for i := range inst.VolumeEnvelope {
+				out := envelope.EnvPoint{}
+				in1 := inst.VolumeEnvelope[i]
+				vol := volume.Volume(uint8(in1)) / 64
+				if vol > 1 {
+					vol = 1
+				}
+				out.Y0 = vol
+				ending := false
+				if i+1 >= len(inst.VolumeEnvelope) {
 					ending = true
 					out.Y1 = volume.Volume(0)
 				} else {
-					out.Y1 = volume.Volume(uint8(in2)) / 64
+					in2 := inst.VolumeEnvelope[i+1]
+					if in2 == 0xFF {
+						ending = true
+						out.Y1 = volume.Volume(0)
+					} else {
+						out.Y1 = volume.Volume(uint8(in2)) / 64
+					}
 				}
+				if !ending {
+					out.Length = 1
+				} else {
+					out.Length = math.MaxInt64
+				}
+				id.VolEnv.Values = append(id.VolEnv.Values, out)
 			}
-			if !ending {
-				out.Length = 1
-			} else {
-				out.Length = math.MaxInt64
-			}
-			id.VolEnv.Values = append(id.VolEnv.Values, out)
 		}
 	}
 
@@ -176,15 +190,29 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	return outInsts, nil
 }
 
-func convertEnvelope(outEnv *instrument.InstEnv, inEnv *itfile.Envelope, convert func(int8) interface{}) error {
+func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert func(int8) interface{}) error {
 	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
-	outEnv.LoopEnabled = (inEnv.Flags & itfile.EnvelopeFlagLoopOn) != 0
-	outEnv.SustainEnabled = (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0
-	outEnv.LoopStart = int(inEnv.LoopBegin)
-	outEnv.LoopEnd = int(inEnv.LoopEnd)
-	outEnv.SustainLoopStart = int(inEnv.SustainLoopBegin)
-	outEnv.SustainLoopEnd = int(inEnv.SustainLoopEnd)
-	outEnv.Values = make([]instrument.EnvPoint, int(inEnv.Count))
+	if !outEnv.Enabled {
+		return nil
+	}
+
+	outEnv.Loop = loop.Loop{
+		Mode:  loop.ModeDisabled,
+		Begin: int(inEnv.LoopBegin),
+		End:   int(inEnv.LoopEnd),
+	}
+	if enabled := (inEnv.Flags & itfile.EnvelopeFlagLoopOn) != 0; enabled {
+		outEnv.Loop.Mode = loop.ModeNormal
+	}
+	outEnv.Sustain = loop.Loop{
+		Mode:  loop.ModeDisabled,
+		Begin: int(inEnv.SustainLoopBegin),
+		End:   int(inEnv.SustainLoopEnd),
+	}
+	if enabled := (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0; enabled {
+		outEnv.Sustain.Mode = loop.ModeNormal
+	}
+	outEnv.Values = make([]envelope.EnvPoint, int(inEnv.Count))
 	var oldY0 interface{}
 	for i := range outEnv.Values {
 		out := &outEnv.Values[i]

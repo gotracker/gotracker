@@ -10,16 +10,18 @@ import (
 )
 
 type pcmState struct {
-	fadeoutVol    volume.Volume
-	keyOn         bool
-	fadingOut     bool
-	volEnvState   envelope.State
-	volEnvValue   volume.Volume
-	panEnvState   envelope.State
-	panEnvValue   panning.Position
-	pitchEnvState envelope.State
-	pitchEnvValue note.PeriodDelta
-	prevKeyOn     bool
+	fadeoutVol        volume.Volume
+	keyOn             bool
+	fadingOut         bool
+	volEnvState       envelope.State
+	volEnvValue       volume.Volume
+	panEnvState       envelope.State
+	panEnvValue       panning.Position
+	pitchFiltEnvState envelope.State
+	pitchFiltEnvMode  bool
+	pitchEnvValue     note.PeriodDelta
+	filtEnvValue      float32
+	prevKeyOn         bool
 }
 
 func newPcmState() *pcmState {
@@ -28,6 +30,7 @@ func newPcmState() *pcmState {
 		volEnvValue:   volume.Volume(1.0),
 		panEnvValue:   panning.CenterAhead,
 		pitchEnvValue: note.PeriodDelta(0),
+		filtEnvValue:  1,
 	}
 	return &ed
 }
@@ -35,7 +38,11 @@ func newPcmState() *pcmState {
 func (ed *pcmState) advance(nc intf.NoteControl, volEnv *envelope.Envelope, panEnv *envelope.Envelope, pitchEnv *envelope.Envelope) {
 	ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv, true)
 	ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv, true)
-	ed.advanceEnv(&ed.pitchEnvState, pitchEnv, nc, ed.updatePitchEnv, true)
+	var pitchFiltEnvFunc envUpdateFunc = ed.updatePitchEnv
+	if ed.pitchFiltEnvMode {
+		pitchFiltEnvFunc = ed.updateFiltEnv
+	}
+	ed.advanceEnv(&ed.pitchFiltEnvState, pitchEnv, nc, pitchFiltEnvFunc, true)
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
@@ -82,12 +89,25 @@ func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
 	a := note.PeriodDelta(0)
 	b := note.PeriodDelta(0)
 	if y0 != nil {
-		a = y0.(note.PeriodDelta)
+		a = note.PeriodDelta(y0.(float32) * 128)
 	}
 	if y1 != nil {
-		b = y1.(note.PeriodDelta)
+		b = note.PeriodDelta(y1.(float32) * 128)
 	}
 	ed.pitchEnvValue = a + note.PeriodDelta(t)*(b-a)
+}
+
+func (ed *pcmState) updateFiltEnv(t float32, y0, y1 interface{}) {
+	a := float32(0)
+	b := float32(0)
+	if y0 != nil {
+		a = y0.(float32)
+	}
+	if y1 != nil {
+		b = y1.(float32)
+	}
+	lerp := t * (b - a)
+	ed.filtEnvValue = a + lerp
 }
 
 type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})

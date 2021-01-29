@@ -18,6 +18,7 @@ type NoteControl interface {
 	Clone() NoteControl
 	GetOutputChannel() *OutputChannel
 	GetCurrentPeriodDelta() note.PeriodDelta
+	GetCurrentFilterEnvValue() float32
 	GetCurrentPanning() panning.Position
 	Attack()
 	Release()

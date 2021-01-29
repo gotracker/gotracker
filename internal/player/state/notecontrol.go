@@ -50,6 +50,14 @@ func (nc *NoteControl) GetCurrentPeriodDelta() note.PeriodDelta {
 	return note.PeriodDelta(0)
 }
 
+// GetCurrentFilterEnvValue returns the current filter envelope value
+func (nc *NoteControl) GetCurrentFilterEnvValue() float32 {
+	if inst := nc.Instrument; inst != nil {
+		return inst.GetCurrentFilterEnvValue(nc)
+	}
+	return 1
+}
+
 // GetCurrentPanning returns the panning envelope position
 func (nc *NoteControl) GetCurrentPanning() panning.Position {
 	if inst := nc.Instrument; inst != nil {

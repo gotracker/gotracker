@@ -98,6 +98,11 @@ func (inst *OPL2) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
 	return note.PeriodDelta(0)
 }
 
+// GetCurrentFilterEnvValue returns the current filter envelope value
+func (inst *OPL2) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
+	return 1
+}
+
 // GetCurrentPanning returns the panning envelope position
 func (inst *OPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
 	return panning.CenterAhead

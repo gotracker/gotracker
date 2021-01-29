@@ -34,18 +34,19 @@ type FadeoutSettings struct {
 
 // PCM is a PCM-data instrument
 type PCM struct {
-	Sample       []uint8
-	Length       int
-	Loop         loop.Loop
-	SustainLoop  loop.Loop
-	NumChannels  int
-	Format       SampleDataFormat
-	Panning      panning.Position
-	MixingVolume volume.Volume
-	FadeOut      FadeoutSettings
-	VolEnv       envelope.Envelope
-	PanEnv       envelope.Envelope
-	PitchEnv     envelope.Envelope
+	Sample        []uint8
+	Length        int
+	Loop          loop.Loop
+	SustainLoop   loop.Loop
+	NumChannels   int
+	Format        SampleDataFormat
+	Panning       panning.Position
+	MixingVolume  volume.Volume
+	FadeOut       FadeoutSettings
+	VolEnv        envelope.Envelope
+	PanEnv        envelope.Envelope
+	PitchFiltMode bool              // true = filter, false = pitch
+	PitchFiltEnv  envelope.Envelope // this is either pitch or filter
 }
 
 // GetSample returns the sample at position `pos` in the instrument
@@ -77,12 +78,22 @@ func (inst *PCM) IsLooped() bool {
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
 func (inst *PCM) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
-	if !inst.PitchEnv.Enabled {
+	if !inst.PitchFiltEnv.Enabled {
 		return note.PeriodDelta(0)
 	}
 
 	ed := ioc.GetData().(*pcmState)
 	return ed.pitchEnvValue
+}
+
+// GetCurrentFilterEnvValue returns the current filter envelope value
+func (inst *PCM) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
+	if !inst.PitchFiltEnv.Enabled {
+		return 1
+	}
+
+	ed := ioc.GetData().(*pcmState)
+	return ed.filtEnvValue
 }
 
 // GetCurrentPanning returns the panning envelope position
@@ -181,6 +192,7 @@ func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
 // Initialize completes the setup of this instrument
 func (inst *PCM) Initialize(ioc intf.NoteControl) error {
 	pcmState := newPcmState()
+	pcmState.pitchFiltEnvMode = inst.PitchFiltMode
 	ioc.SetData(pcmState)
 	return nil
 }
@@ -194,7 +206,11 @@ func (inst *PCM) Attack(ioc intf.NoteControl) {
 	ed.fadingOut = false
 	ed.setEnvelopePosition(0, &ed.volEnvState, &inst.VolEnv, ioc, ed.updateVolEnv)
 	ed.setEnvelopePosition(0, &ed.panEnvState, &inst.PanEnv, ioc, ed.updatePanEnv)
-	ed.setEnvelopePosition(0, &ed.pitchEnvState, &inst.PitchEnv, ioc, ed.updatePitchEnv)
+	var pitchFiltEnvFunc envUpdateFunc = ed.updatePitchEnv
+	if ed.pitchFiltEnvMode {
+		pitchFiltEnvFunc = ed.updateFiltEnv
+	}
+	ed.setEnvelopePosition(0, &ed.pitchFiltEnvState, &inst.PitchFiltEnv, ioc, pitchFiltEnvFunc)
 }
 
 // Release sets the key on flag for the instrument
@@ -231,7 +247,7 @@ func (inst *PCM) GetKeyOn(ioc intf.NoteControl) bool {
 func (inst *PCM) Update(ioc intf.NoteControl, tickDuration time.Duration) {
 	ed := ioc.GetData().(*pcmState)
 
-	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchEnv)
+	ed.advance(ioc, &inst.VolEnv, &inst.PanEnv, &inst.PitchFiltEnv)
 
 	if ed.fadingOut {
 		performFade := false

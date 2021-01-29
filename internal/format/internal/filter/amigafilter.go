@@ -55,3 +55,7 @@ func (f *AmigaLPF) Filter(dry volume.Matrix) volume.Matrix {
 	}
 	return wet
 }
+
+// UpdateEnv updates the filter with the value from the filter envelope
+func (f *AmigaLPF) UpdateEnv(v float32) {
+}

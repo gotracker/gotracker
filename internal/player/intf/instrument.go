@@ -32,6 +32,7 @@ type Instrument interface {
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPeriodDelta(NoteControl) note.PeriodDelta
+	GetCurrentFilterEnvValue(NoteControl) float32
 	GetCurrentPanning(NoteControl) panning.Position
 	Attack(NoteControl)
 	Release(NoteControl)

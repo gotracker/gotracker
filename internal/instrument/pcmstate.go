@@ -97,7 +97,7 @@ func (ed *pcmState) advanceEnv(state *envelope.State, env *envelope.Envelope, nc
 		return
 	}
 
-	cur, t := state.GetCurrentValue(ed.keyOn)
+	cur, next, t := state.GetCurrentValue(ed.keyOn)
 
 	var finishing bool
 	if runTick {
@@ -105,7 +105,7 @@ func (ed *pcmState) advanceEnv(state *envelope.State, env *envelope.Envelope, nc
 	}
 
 	if cur != nil {
-		update(t, cur.Y0, cur.Y1)
+		update(t, cur.Y0, next.Y0)
 	}
 
 	if finishing {

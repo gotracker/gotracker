@@ -71,6 +71,7 @@ type Channel interface {
 	GetChannelVolume() volume.Volume
 	SetEnvelopePosition(int)
 	TransitionActiveToPastState()
-	SetNewNoteAction(note.NewNoteAction)
-	GetNewNoteAction() note.NewNoteAction
+	SetNewNoteAction(note.Action)
+	GetNewNoteAction() note.Action
+	DoPastNoteEffect(action note.Action)
 }

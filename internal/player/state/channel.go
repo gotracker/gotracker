@@ -95,9 +95,9 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 					mixData.Data.Add(0, ps.Data, centerPan)
 				}
 			}
-		}
-		if pn.Enabled {
-			uNotes = append(uNotes, pn)
+			if pn.Enabled {
+				uNotes = append(uNotes, pn)
+			}
 		}
 	}
 	cs.pastNote = uNotes

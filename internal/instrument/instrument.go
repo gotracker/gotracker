@@ -31,6 +31,9 @@ type DataIntf interface {
 	CloneData(intf.NoteControl) interface{}
 	IsVolumeEnvelopeEnabled() bool
 	IsDone(intf.NoteControl) bool
+	SetVolumeEnvelopeEnable(intf.NoteControl, bool)
+	SetPanningEnvelopeEnable(intf.NoteControl, bool)
+	SetPitchEnvelopeEnable(intf.NoteControl, bool)
 }
 
 // AutoVibrato is the setting and memory for the auto-vibrato system
@@ -261,4 +264,25 @@ func (inst *Instrument) IsDone(nc intf.NoteControl) bool {
 		return ii.IsDone(nc)
 	}
 	return false
+}
+
+// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
+func (inst *Instrument) SetVolumeEnvelopeEnable(nc intf.NoteControl, enabled bool) {
+	if ii := inst.Inst; ii != nil {
+		ii.SetVolumeEnvelopeEnable(nc, enabled)
+	}
+}
+
+// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
+func (inst *Instrument) SetPanningEnvelopeEnable(nc intf.NoteControl, enabled bool) {
+	if ii := inst.Inst; ii != nil {
+		ii.SetPanningEnvelopeEnable(nc, enabled)
+	}
+}
+
+// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
+func (inst *Instrument) SetPitchEnvelopeEnable(nc intf.NoteControl, enabled bool) {
+	if ii := inst.Inst; ii != nil {
+		ii.SetPitchEnvelopeEnable(nc, enabled)
+	}
 }

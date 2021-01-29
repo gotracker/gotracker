@@ -148,3 +148,24 @@ func (nc *NoteControl) IsDone() bool {
 	}
 	return false
 }
+
+// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
+func (nc *NoteControl) SetVolumeEnvelopeEnable(enabled bool) {
+	if inst := nc.Instrument; inst != nil {
+		inst.SetVolumeEnvelopeEnable(nc, enabled)
+	}
+}
+
+// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
+func (nc *NoteControl) SetPanningEnvelopeEnable(enabled bool) {
+	if inst := nc.Instrument; inst != nil {
+		inst.SetPanningEnvelopeEnable(nc, enabled)
+	}
+}
+
+// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
+func (nc *NoteControl) SetPitchEnvelopeEnable(enabled bool) {
+	if inst := nc.Instrument; inst != nil {
+		inst.SetPitchEnvelopeEnable(nc, enabled)
+	}
+}

@@ -423,3 +423,24 @@ func (cs *ChannelState) SetNewNoteAction(nna note.Action) {
 func (cs *ChannelState) GetNewNoteAction() note.Action {
 	return cs.NewNoteAction
 }
+
+// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
+func (cs *ChannelState) SetVolumeEnvelopeEnable(enabled bool) {
+	if nc := cs.activeState.NoteControl; nc != nil {
+		nc.SetVolumeEnvelopeEnable(enabled)
+	}
+}
+
+// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
+func (cs *ChannelState) SetPanningEnvelopeEnable(enabled bool) {
+	if nc := cs.activeState.NoteControl; nc != nil {
+		nc.SetPanningEnvelopeEnable(enabled)
+	}
+}
+
+// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
+func (cs *ChannelState) SetPitchEnvelopeEnable(enabled bool) {
+	if nc := cs.activeState.NoteControl; nc != nil {
+		nc.SetPitchEnvelopeEnable(enabled)
+	}
+}

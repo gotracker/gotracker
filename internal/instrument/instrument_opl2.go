@@ -372,3 +372,15 @@ func (inst *OPL2) IsVolumeEnvelopeEnabled() bool {
 func (inst *OPL2) IsDone(ioc intf.NoteControl) bool {
 	return false
 }
+
+// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
+func (inst *OPL2) SetVolumeEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
+}
+
+// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
+func (inst *OPL2) SetPanningEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
+}
+
+// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
+func (inst *OPL2) SetPitchEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
+}

@@ -180,7 +180,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
 		convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, func(v int8) interface{} {
-			return float32(v) / 128
+			return float32(uint8(v))
 		})
 	}
 

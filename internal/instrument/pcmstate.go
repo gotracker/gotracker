@@ -10,21 +10,21 @@ import (
 )
 
 type pcmState struct {
-	fadeoutVol        volume.Volume
-	keyOn             bool
-	fadingOut         bool
-	volEnvEnabled     bool
-	volEnvState       envelope.State
-	volEnvValue       volume.Volume
-	panEnvEnabled     bool
-	panEnvState       envelope.State
-	panEnvValue       panning.Position
-	pitchFiltEnabled  bool
-	pitchFiltEnvState envelope.State
-	pitchFiltEnvMode  bool
-	pitchEnvValue     note.PeriodDelta
-	filtEnvValue      float32
-	prevKeyOn         bool
+	fadeoutVol          volume.Volume
+	keyOn               bool
+	fadingOut           bool
+	volEnvEnabled       bool
+	volEnvState         envelope.State
+	volEnvValue         volume.Volume
+	panEnvEnabled       bool
+	panEnvState         envelope.State
+	panEnvValue         panning.Position
+	pitchFiltEnvEnabled bool
+	pitchFiltEnvState   envelope.State
+	pitchFiltEnvMode    bool
+	pitchEnvValue       note.PeriodDelta
+	filtEnvValue        float32
+	prevKeyOn           bool
 }
 
 func newPcmState() *pcmState {
@@ -39,13 +39,19 @@ func newPcmState() *pcmState {
 }
 
 func (ed *pcmState) advance(nc intf.NoteControl, volEnv *envelope.Envelope, panEnv *envelope.Envelope, pitchEnv *envelope.Envelope) {
-	ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv, true)
-	ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv, true)
-	var pitchFiltEnvFunc envUpdateFunc = ed.updatePitchEnv
-	if ed.pitchFiltEnvMode {
-		pitchFiltEnvFunc = ed.updateFiltEnv
+	if ed.volEnvEnabled {
+		ed.advanceEnv(&ed.volEnvState, volEnv, nc, ed.updateVolEnv, true)
 	}
-	ed.advanceEnv(&ed.pitchFiltEnvState, pitchEnv, nc, pitchFiltEnvFunc, true)
+	if ed.panEnvEnabled {
+		ed.advanceEnv(&ed.panEnvState, panEnv, nc, ed.updatePanEnv, true)
+	}
+	if ed.pitchFiltEnvEnabled {
+		var pitchFiltEnvFunc envUpdateFunc = ed.updatePitchEnv
+		if ed.pitchFiltEnvMode {
+			pitchFiltEnvFunc = ed.updateFiltEnv
+		}
+		ed.advanceEnv(&ed.pitchFiltEnvState, pitchEnv, nc, pitchFiltEnvFunc, true)
+	}
 }
 
 func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {

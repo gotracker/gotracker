@@ -173,12 +173,19 @@ func specialEffect(cd *channel.Data) intf.Effect {
 func specialNoteEffects(cd *channel.Data) intf.Effect {
 	switch cd.EffectParameter & 0xf {
 	case 0x0: // Past Note Cut
+		return PastNoteCut(cd.EffectParameter)
 	case 0x1: // Past Note Off
+		return PastNoteOff(cd.EffectParameter)
 	case 0x2: // Past Note Fade
+		return PastNoteFade(cd.EffectParameter)
 	case 0x3: // New Note Action: Note Cut
+		return NewNoteActionNoteCut(cd.EffectParameter)
 	case 0x4: // New Note Action: Note Continue
+		return NewNoteActionNoteContinue(cd.EffectParameter)
 	case 0x5: // New Note Action: Note Off
+		return NewNoteActionNoteOff(cd.EffectParameter)
 	case 0x6: // New Note Action: Note Fade
+		return NewNoteActionNoteFade(cd.EffectParameter)
 	case 0x7: // Volume Envelope Off
 	case 0x8: // Volume Envelope On
 	case 0x9: // Panning Envelope Off

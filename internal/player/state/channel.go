@@ -38,7 +38,7 @@ type ChannelState struct {
 	UseTargetPeriod   bool
 	volumeActive      bool
 	PanEnabled        bool
-	NewNoteAction     note.NewNoteAction
+	NewNoteAction     note.Action
 	pastNote          []*activeState
 
 	Output *intf.OutputChannel
@@ -367,7 +367,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 	cs.activeState.Instrument = nil
 	cs.activeState.Period = nil
 
-	if cs.NewNoteAction == note.NewNoteActionNoteCut {
+	if cs.NewNoteAction == note.ActionNoteCut {
 		return
 	}
 
@@ -376,13 +376,13 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 	switch cs.NewNoteAction {
 	//case note.NewNoteActionNoteCut:
 	//	pn.Enabled = false
-	case note.NewNoteActionContinue:
+	case note.ActionContinue:
 		// nothing
-	case note.NewNoteActionNoteOff:
+	case note.ActionNoteOff:
 		if nc := pn.NoteControl; nc != nil {
 			nc.Release()
 		}
-	case note.NewNoteActionFadeout:
+	case note.ActionFadeout:
 		if nc := pn.NoteControl; nc != nil {
 			nc.Release()
 			nc.Fadeout()
@@ -391,12 +391,35 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 	cs.pastNote = append(cs.pastNote, &pn)
 }
 
+// DoPastNoteEffect performs an action on all past-note playbacks associated with the channel
+func (cs *ChannelState) DoPastNoteEffect(action note.Action) {
+	switch action {
+	case note.ActionNoteCut:
+		cs.pastNote = nil
+	case note.ActionContinue:
+		// nothing
+	case note.ActionNoteOff:
+		for _, pn := range cs.pastNote {
+			if nc := pn.NoteControl; nc != nil {
+				nc.Release()
+			}
+		}
+	case note.ActionFadeout:
+		for _, pn := range cs.pastNote {
+			if nc := pn.NoteControl; nc != nil {
+				nc.Release()
+				nc.Fadeout()
+			}
+		}
+	}
+}
+
 // SetNewNoteAction sets the New-Note Action on the channel
-func (cs *ChannelState) SetNewNoteAction(nna note.NewNoteAction) {
+func (cs *ChannelState) SetNewNoteAction(nna note.Action) {
 	cs.NewNoteAction = nna
 }
 
 // GetNewNoteAction gets the New-Note Action on the channel
-func (cs *ChannelState) GetNewNoteAction() note.NewNoteAction {
+func (cs *ChannelState) GetNewNoteAction() note.Action {
 	return cs.NewNoteAction
 }

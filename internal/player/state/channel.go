@@ -39,7 +39,7 @@ type ChannelState struct {
 	volumeActive      bool
 	PanEnabled        bool
 	NewNoteAction     note.NewNoteAction
-	pastNote          activeState
+	pastNote          []*activeState
 
 	Output *intf.OutputChannel
 }
@@ -77,23 +77,30 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 	if err != nil {
 		return mixData, err
 	}
-	if cs.pastNote.Enabled && cs.pastNote.NoteControl != nil && cs.pastNote.Period != nil {
-		ps, err2 := cs.pastNote.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
-		if ps == nil {
-			cs.pastNote.Enabled = false
-		}
-		if err == nil && err2 != nil {
-			err = err2
-		}
-		if ps != nil && ps.Data != nil {
-			if mixData == nil || mixData.Data == nil {
-				mixData = ps
-			} else {
-				centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
-				mixData.Data.Add(0, ps.Data, centerPan)
+	var uNotes []*activeState
+	for _, pn := range cs.pastNote {
+		if pn.Enabled && pn.NoteControl != nil && pn.Period != nil {
+			ps, err2 := pn.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+			if ps == nil {
+				pn.Enabled = false
+			}
+			if err == nil && err2 != nil {
+				err = err2
+			}
+			if ps != nil && ps.Data != nil {
+				if mixData == nil || mixData.Data == nil {
+					mixData = ps
+				} else {
+					centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
+					mixData.Data.Add(0, ps.Data, centerPan)
+				}
 			}
 		}
+		if pn.Enabled {
+			uNotes = append(uNotes, pn)
+		}
 	}
+	cs.pastNote = uNotes
 	return mixData, err
 }
 
@@ -356,22 +363,32 @@ func (cs *ChannelState) SetEnvelopePosition(ticks int) {
 // TransitionActiveToPastState will transition the current active state to the 'past' state
 // and will activate the specified New-Note Action on it
 func (cs *ChannelState) TransitionActiveToPastState() {
-	//cs.pastNote = cs.activeState.Clone()
+	cs.activeState.NoteControl = nil
+	cs.activeState.Instrument = nil
+	cs.activeState.Period = nil
+
+	if cs.NewNoteAction == note.NewNoteActionNoteCut {
+		return
+	}
+
+	pn := cs.activeState.Clone()
+
 	switch cs.NewNoteAction {
-	case note.NewNoteActionNoteCut:
-		cs.pastNote.Enabled = false
+	//case note.NewNoteActionNoteCut:
+	//	pn.Enabled = false
 	case note.NewNoteActionContinue:
 		// nothing
 	case note.NewNoteActionNoteOff:
-		if nc := cs.pastNote.NoteControl; nc != nil {
+		if nc := pn.NoteControl; nc != nil {
 			nc.Release()
 		}
 	case note.NewNoteActionFadeout:
-		if nc := cs.pastNote.NoteControl; nc != nil {
+		if nc := pn.NoteControl; nc != nil {
 			nc.Release()
 			nc.Fadeout()
 		}
 	}
+	cs.pastNote = append(cs.pastNote, &pn)
 }
 
 // SetNewNoteAction sets the New-Note Action on the channel

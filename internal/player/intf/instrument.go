@@ -28,7 +28,7 @@ type Instrument interface {
 	GetFinetune() note.Finetune
 	GetKind() note.InstrumentKind
 	GetLength() sampling.Pos
-	GetNewNoteAction() note.NewNoteAction
+	GetNewNoteAction() note.Action
 
 	GetSample(NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPeriodDelta(NoteControl) note.PeriodDelta

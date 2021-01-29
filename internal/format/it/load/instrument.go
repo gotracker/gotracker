@@ -62,15 +62,15 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 		switch inst.NewNoteAction {
 		case itfile.NewNoteActionCut:
-			ii.NewNoteAction = note.NewNoteActionNoteCut
+			ii.NewNoteAction = note.ActionNoteCut
 		case itfile.NewNoteActionContinue:
-			ii.NewNoteAction = note.NewNoteActionContinue
+			ii.NewNoteAction = note.ActionContinue
 		case itfile.NewNoteActionOff:
-			ii.NewNoteAction = note.NewNoteActionNoteOff
+			ii.NewNoteAction = note.ActionNoteOff
 		case itfile.NewNoteActionFade:
-			ii.NewNoteAction = note.NewNoteActionFadeout
+			ii.NewNoteAction = note.ActionFadeout
 		default:
-			ii.NewNoteAction = note.NewNoteActionNoteCut
+			ii.NewNoteAction = note.ActionNoteCut
 		}
 
 		ci.Inst = &ii
@@ -144,15 +144,15 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 		switch inst.NewNoteAction {
 		case itfile.NewNoteActionCut:
-			ii.NewNoteAction = note.NewNoteActionNoteCut
+			ii.NewNoteAction = note.ActionNoteCut
 		case itfile.NewNoteActionContinue:
-			ii.NewNoteAction = note.NewNoteActionContinue
+			ii.NewNoteAction = note.ActionContinue
 		case itfile.NewNoteActionOff:
-			ii.NewNoteAction = note.NewNoteActionNoteOff
+			ii.NewNoteAction = note.ActionNoteOff
 		case itfile.NewNoteActionFade:
-			ii.NewNoteAction = note.NewNoteActionFadeout
+			ii.NewNoteAction = note.ActionFadeout
 		default:
-			ii.NewNoteAction = note.NewNoteActionNoteCut
+			ii.NewNoteAction = note.ActionNoteCut
 		}
 
 		mixVol := volume.Volume(inst.GlobalVolume.Value())

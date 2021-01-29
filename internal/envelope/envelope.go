@@ -31,34 +31,40 @@ func (e *State) Reset(env *Envelope) {
 	}
 
 	e.position = 0
-	pos, _ := e.calcLoopedPos(true)
+	pos, _, _ := e.calcLoopedPos(true)
 	if pos < len(e.env.Values) {
 		e.length = e.env.Values[pos].Length
 	}
 }
 
-func (e *State) calcLoopedPos(keyOn bool) (int, bool) {
+func (e *State) calcLoopedPos(keyOn bool) (int, int, bool) {
 	nPoints := len(e.env.Values)
 	var looped bool
-	pos, _ := loop.CalcLoopPos(&e.env.Loop, &e.env.Sustain, e.position, nPoints, keyOn)
+	cur, _ := loop.CalcLoopPos(&e.env.Loop, &e.env.Sustain, e.position, nPoints, keyOn)
+	next, _ := loop.CalcLoopPos(&e.env.Loop, &e.env.Sustain, e.position+1, nPoints, keyOn)
 	if (keyOn && e.env.Sustain.Enabled()) || e.env.Loop.Enabled() {
 		looped = true
 	}
-	return pos, looped
+	return cur, next, looped
 }
 
 // GetCurrentValue returns the current value
-func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, float32) {
+func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, *EnvPoint, float32) {
 	if e.stopped {
-		return nil, 0
+		return nil, nil, 0
 	}
 
-	pos, looped := e.calcLoopedPos(keyOn)
+	pos, npos, looped := e.calcLoopedPos(keyOn)
 	if pos >= len(e.env.Values) {
-		return nil, 0
+		return nil, nil, 0
+	}
+
+	if npos >= len(e.env.Values) {
+		npos = pos
 	}
 
 	cur := &e.env.Values[pos]
+	next := &e.env.Values[npos]
 	t := float32(0)
 	if cur.Length > 0 {
 		l := float32(e.length)
@@ -77,7 +83,7 @@ func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, float32) {
 	case t > 1:
 		t = 1
 	}
-	return cur, t
+	return cur, next, t
 }
 
 // Advance advances the state by 1 tick
@@ -101,12 +107,12 @@ func (e *State) Advance(keyOn bool, prevKeyOn bool) bool {
 		return false
 	}
 	if keyOn != prevKeyOn && prevKeyOn {
-		p, _ := e.calcLoopedPos(prevKeyOn)
+		p, _, _ := e.calcLoopedPos(prevKeyOn)
 		e.position = p
 	}
 
 	e.position++
-	pos, _ := e.calcLoopedPos(keyOn)
+	pos, _, _ := e.calcLoopedPos(keyOn)
 	if pos >= len(e.env.Values) {
 		e.stopped = true
 		return true

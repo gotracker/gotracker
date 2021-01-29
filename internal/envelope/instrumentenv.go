@@ -9,7 +9,7 @@ import (
 type EnvPoint struct {
 	Length int
 	Y0     interface{}
-	Y1     interface{}
+	//Y1     interface{}
 }
 
 // Envelope is an envelope for instruments

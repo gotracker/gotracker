@@ -54,7 +54,7 @@ type Instrument struct {
 	RelativeNoteNumber   int8
 	Finetune             note.Finetune
 	AutoVibrato          AutoVibrato
-	NewNoteAction        note.NewNoteAction
+	NewNoteAction        note.Action
 	ChannelFilterFactory func(float32) intf.Filter
 }
 
@@ -223,7 +223,7 @@ func (inst *Instrument) SetEnvelopePosition(nc intf.NoteControl, ticks int) {
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
-func (inst *Instrument) GetNewNoteAction() note.NewNoteAction {
+func (inst *Instrument) GetNewNoteAction() note.Action {
 	return inst.NewNoteAction
 }
 

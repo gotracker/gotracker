@@ -15,44 +15,29 @@ type channelData struct {
 }
 
 var (
-	rfFreqParamMult         float64 = 128.0 / (24.0 * 256.0)
+	rfFreqParamMult         float64 = 128.0 / 24.0
 	rfPeriodResonanceFactor float64 = 2.0 * math.Pi / float64(util.C5Period)
 )
 
 // ResonantFilter is a modified 2-pole resonant filter
 type ResonantFilter struct {
-	channels []channelData
-	a0       volume.Volume
-	b0       volume.Volume
-	b1       volume.Volume
+	channels   []channelData
+	a0         volume.Volume
+	b0         volume.Volume
+	b1         volume.Volume
+	resonance  float64
+	mixingRate float64
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
 func NewResonantFilter(cutoff uint8, resonance uint8, mixingRate float32) intf.Filter {
-	rf := ResonantFilter{}
-
-	freq := 110.0 * math.Pow(2.0, float64(cutoff)*rfFreqParamMult+0.25)
-	f2 := float64(mixingRate) / 2.0
-	if freq > f2 {
-		freq = f2
+	rf := &ResonantFilter{
+		resonance:  float64(resonance),
+		mixingRate: float64(mixingRate),
 	}
-	r := f2 / (math.Pi * freq)
 
-	resoFactor := 1.0 - rfPeriodResonanceFactor*float64(resonance)
-	d := resoFactor*r + resoFactor - 1.0
-	e := r * r
-
-	de1 := 1.0 + d + e
-
-	fg := 1.0 / de1
-	fb0 := (d + e + e) / de1
-	fb1 := -e / de1
-
-	rf.a0 = volume.Volume(fg)
-	rf.b0 = volume.Volume(fb0)
-	rf.b1 = volume.Volume(fb1)
-
-	return &rf
+	rf.UpdateEnv(float32(cutoff) / 128)
+	return rf
 }
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result
@@ -71,4 +56,28 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 		wet[i] = yn
 	}
 	return wet
+}
+
+// UpdateEnv updates the filter with the value from the filter envelope
+func (f *ResonantFilter) UpdateEnv(cutoff float32) {
+	freq := 110.0 * math.Pow(2.0, float64(cutoff)*rfFreqParamMult+0.25)
+	f2 := float64(f.mixingRate) / 2.0
+	if freq > f2 {
+		freq = f2
+	}
+	r := f2 / (math.Pi * freq)
+
+	resoFactor := 1.0 - rfPeriodResonanceFactor*f.resonance
+	d := resoFactor*r + resoFactor - 1.0
+	e := r * r
+
+	de1 := 1.0 + d + e
+
+	fg := 1.0 / de1
+	fb0 := (d + e + e) / de1
+	fb1 := -e / de1
+
+	f.a0 = volume.Volume(fg)
+	f.b0 = volume.Volume(fb0)
+	f.b1 = volume.Volume(fb1)
 }

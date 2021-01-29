@@ -18,6 +18,7 @@ import (
 type DataIntf interface {
 	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
 	GetCurrentPeriodDelta(intf.NoteControl) note.PeriodDelta
+	GetCurrentFilterEnvValue(ioc intf.NoteControl) float32
 	GetCurrentPanning(intf.NoteControl) panning.Position
 	SetEnvelopePosition(intf.NoteControl, int)
 	Initialize(intf.NoteControl) error
@@ -156,6 +157,14 @@ func (inst *Instrument) GetCurrentPeriodDelta(nc intf.NoteControl) note.PeriodDe
 	return note.PeriodDelta(0)
 }
 
+// GetCurrentFilterEnvValue returns the current filter envelope value
+func (inst *Instrument) GetCurrentFilterEnvValue(nc intf.NoteControl) float32 {
+	if ii := inst.Inst; ii != nil {
+		return ii.GetCurrentFilterEnvValue(nc)
+	}
+	return 1
+}
+
 // GetCurrentPanning returns the panning envelope position
 func (inst *Instrument) GetCurrentPanning(nc intf.NoteControl) panning.Position {
 	if ii := inst.Inst; ii != nil {
@@ -212,6 +221,9 @@ func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) 
 			}
 		}
 		ii.Update(nc, tickDuration)
+		if oc := nc.GetOutputChannel(); oc != nil && oc.Filter != nil {
+			oc.Filter.UpdateEnv(ii.GetCurrentFilterEnvValue(nc))
+		}
 	}
 }
 

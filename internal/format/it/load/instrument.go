@@ -178,8 +178,9 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			return panning.MakeStereoPosition(float32(v), -32, 32)
 		})
 
-		convertEnvelope(&id.PitchEnv, &inst.PitchEnvelope, func(v int8) interface{} {
-			return note.PeriodDelta(v)
+		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
+		convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, func(v int8) interface{} {
+			return float32(v) / 128
 		})
 	}
 

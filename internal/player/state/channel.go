@@ -16,9 +16,9 @@ type commandFunc func(int, *ChannelState, int, bool)
 
 // ChannelState is the state of a single channel
 type ChannelState struct {
-	activeState activeState
+	activeState ActiveState
 	targetState intf.PlaybackState
-	prevState   activeState
+	prevState   ActiveState
 
 	ActiveEffect intf.Effect
 
@@ -39,7 +39,7 @@ type ChannelState struct {
 	volumeActive      bool
 	PanEnabled        bool
 	NewNoteAction     note.Action
-	pastNote          []*activeState
+	pastNote          []*ActiveState
 
 	Output *intf.OutputChannel
 }
@@ -64,46 +64,18 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 		return nil, nil
 	}
 
-	var (
-		mixData *mixing.Data
-		err     error
-	)
-	if cs.activeState.Enabled {
-		mixData, err = cs.activeState.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
-		if mixData == nil {
-			cs.activeState.Enabled = false
-		}
-	}
-	if err != nil {
-		return mixData, err
-	}
-	var uNotes []*activeState
-	for _, pn := range cs.pastNote {
-		if !pn.Enabled || pn.NoteControl == nil || pn.Period == nil {
-			continue
-		}
+	activeStates := []*ActiveState{&cs.activeState}
+	activeStates = append(activeStates, cs.pastNote...)
+	mixData, participatingStates := RenderStatesTogether(activeStates, mix, panmixer, samplerSpeed, tickSamples, tickDuration)
 
-		ps, err2 := pn.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
-		if ps == nil {
-			pn.Enabled = false
-		}
-		if err == nil && err2 != nil {
-			err = err2
-		}
-		if ps != nil && ps.Data != nil {
-			if mixData == nil || mixData.Data == nil {
-				mixData = ps
-			} else {
-				centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
-				mixData.Data.Add(0, ps.Data, centerPan)
-			}
-		}
-		if pn.Enabled {
+	var uNotes []*ActiveState
+	for _, pn := range participatingStates {
+		if pn != &cs.activeState {
 			uNotes = append(uNotes, pn)
 		}
 	}
 	cs.pastNote = uNotes
-	return mixData, err
+	return mixData, nil
 }
 
 // ResetStates resets the channel's internal states

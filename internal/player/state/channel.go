@@ -79,25 +79,23 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 	}
 	var uNotes []*activeState
 	for _, pn := range cs.pastNote {
-		if pn.Enabled {
-			if pn.NoteControl != nil && pn.Period != nil {
-				ps, err2 := pn.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
-				if ps == nil {
-					pn.Enabled = false
-				}
-				if err == nil && err2 != nil {
-					err = err2
-				}
-				if ps != nil && ps.Data != nil {
-					if mixData == nil || mixData.Data == nil {
-						mixData = ps
-					} else {
-						centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
-						mixData.Data.Add(0, ps.Data, centerPan)
-					}
-				}
+		if !pn.Enabled || pn.NoteControl == nil || pn.Period == nil {
+			continue
+		}
+
+		ps, err2 := pn.Render(mix, panmixer, samplerSpeed, tickSamples, tickDuration)
+		if ps == nil {
+			pn.Enabled = false
+		}
+		if err == nil && err2 != nil {
+			err = err2
+		}
+		if ps != nil && ps.Data != nil {
+			if mixData == nil || mixData.Data == nil {
+				mixData = ps
 			} else {
-				pn.Enabled = false
+				centerPan := ps.Volume.Apply(panmixer.GetMixingMatrix(panning.CenterAhead)...)
+				mixData.Data.Add(0, ps.Data, centerPan)
 			}
 		}
 		if pn.Enabled {

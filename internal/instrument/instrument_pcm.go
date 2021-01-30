@@ -1,7 +1,6 @@
 package instrument
 
 import (
-	"math"
 	"time"
 
 	"github.com/gotracker/gomixing/panning"
@@ -10,6 +9,7 @@ import (
 
 	"gotracker/internal/envelope"
 	"gotracker/internal/loop"
+	panutil "gotracker/internal/pan"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -98,38 +98,13 @@ func (inst *PCM) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
 
 // GetCurrentPanning returns the panning envelope position
 func (inst *PCM) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
-	x := inst.Panning
+	p0 := inst.Panning
 	ed := ioc.GetData().(*pcmState)
 	if !(inst.PanEnv.Enabled && ed.panEnvEnabled) {
-		return x
+		return p0
 	}
 
-	y := ed.panEnvValue
-
-	// panning envelope value `y` modifies instrument panning value `x`
-	// such that `x` is primary component and `y` is secondary
-	// TODO: JBC - move this calculation function into gomixing lib
-
-	xa := float64(x.Angle)
-	ya := float64(y.Angle)
-
-	const p2 = math.Pi / 2
-	const p4 = math.Pi / 4
-	const p8 = math.Pi / 8
-	fa := xa + (ya-p8)*(p4-math.Abs(xa-p4))/p8
-	if fa > p2 {
-		fa = p2
-	} else if fa < 0 {
-		fa = 0
-	}
-
-	fd := math.Sqrt(float64(x.Distance * y.Distance))
-
-	finalPan := panning.Position{
-		Angle:    float32(fa),
-		Distance: float32(fd),
-	}
-
+	finalPan := panutil.CalculateCombinedPanning(p0, ed.panEnvValue)
 	return finalPan
 }
 

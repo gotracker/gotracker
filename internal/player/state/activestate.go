@@ -4,15 +4,17 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	panutil "gotracker/internal/pan"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
 
-// activeState is the active state of a channel
-type activeState struct {
+// ActiveState is the active state of a channel
+type ActiveState struct {
 	intf.PlaybackState
 	VoiceActive bool
 	Enabled     bool
@@ -21,7 +23,7 @@ type activeState struct {
 }
 
 // Reset sets the active state to defaults
-func (a *activeState) Reset() {
+func (a *ActiveState) Reset() {
 	a.PlaybackState.Reset()
 	a.VoiceActive = true
 	a.Enabled = true
@@ -30,8 +32,8 @@ func (a *activeState) Reset() {
 }
 
 // Clone clones the active state so that various interfaces do not collide
-func (a *activeState) Clone() activeState {
-	var c activeState = *a
+func (a *ActiveState) Clone() ActiveState {
+	var c ActiveState = *a
 	if a.NoteControl != nil {
 		c.NoteControl = a.NoteControl.Clone()
 	}
@@ -39,60 +41,79 @@ func (a *activeState) Clone() activeState {
 	return c
 }
 
-// Render renders an active channel's sample data for a the provided number of samples
-func (a *activeState) Render(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, error) {
-	if a.Period == nil {
-		return nil, nil
-	}
+// RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
+func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, []*ActiveState) {
+	data := mix.NewMixBuffer(samples)
+	var firstPan *panning.Position
 
-	nc := a.NoteControl
-	if nc == nil || nc.IsDone() {
-		return nil, nil
-	}
-
-	ncs := nc.GetPlaybackState()
-	if ncs == nil {
-		return nil, nil
-	}
-
-	*ncs = a.PlaybackState
-
-	ncs.Period = ncs.Period.Add(a.PeriodDelta)
-
-	// the period might be updated by the auto-vibrato system, here
-	nc.Update(duration)
-
-	// ... so grab the new value now.
-	periodDelta := nc.GetCurrentPeriodDelta()
-	ncs.Period = ncs.Period.Add(periodDelta)
-	period := ncs.Period
-
-	samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
-
-	panning := nc.GetCurrentPanning()
-	volMatrix := panmixer.GetMixingMatrix(panning)
-
-	// make a stand-alone data buffer for this channel for this tick
-	var data mixing.MixBuffer
-	if a.VoiceActive {
-		data = mix.NewMixBuffer(samples)
-		mixData := mixing.SampleMixIn{
-			Sample:    sampling.NewSampler(nc, ncs.Pos, samplerAdd),
-			StaticVol: volume.Volume(1.0),
-			VolMatrix: volMatrix,
-			MixPos:    0,
-			MixLen:    samples,
+	participatingStates := []*ActiveState{}
+	for _, a := range states {
+		if !a.Enabled || a.Period == nil {
+			continue
 		}
-		data.MixInSample(mixData)
+
+		nc := a.NoteControl
+		if nc == nil || nc.IsDone() {
+			continue
+		}
+
+		ncs := nc.GetPlaybackState()
+		if ncs == nil {
+			continue
+		}
+
+		// Commit the playback settings to the note-control
+		*ncs = a.PlaybackState
+
+		if firstPan == nil {
+			firstPan = &ncs.Pan
+		}
+
+		ncs.Period = ncs.Period.Add(a.PeriodDelta)
+
+		// the period might be updated by the auto-vibrato system, here
+		nc.Update(duration)
+
+		// ... so grab the new value now.
+		periodDelta := nc.GetCurrentPeriodDelta()
+		ncs.Period = ncs.Period.Add(periodDelta)
+		period := ncs.Period
+
+		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
+
+		panDiff := panutil.GetPanningDifference(*firstPan, nc.GetCurrentPanning())
+		panDiff.Distance = firstPan.Distance
+		panning := panutil.CalculateCombinedPanning(panning.CenterAhead, panDiff)
+		volMatrix := panmixer.GetMixingMatrix(panning)
+
+		// make a stand-alone data buffer for this channel for this tick
+		if a.VoiceActive {
+			mixData := mixing.SampleMixIn{
+				Sample:    sampling.NewSampler(nc, ncs.Pos, samplerAdd),
+				StaticVol: volume.Volume(1.0),
+				VolMatrix: volMatrix,
+				MixPos:    0,
+				MixLen:    samples,
+			}
+			data.MixInSample(mixData)
+		}
+
+		a.Pos = ncs.Pos
+		a.Pos.Add(samplerAdd * float32(samples))
+
+		participatingStates = append(participatingStates, a)
 	}
 
-	a.Pos = ncs.Pos
-	a.Pos.Add(samplerAdd * float32(samples))
+	if firstPan == nil {
+		return nil, nil
+	}
 
-	return &mixing.Data{
+	mixData := mixing.Data{
 		Data:       data,
-		Pan:        ncs.Pan,
+		Pan:        *firstPan,
 		Volume:     volume.Volume(1.0),
 		SamplesLen: samples,
-	}, nil
+	}
+
+	return &mixData, participatingStates
 }

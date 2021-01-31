@@ -7,8 +7,8 @@ var (
 	ZeroVector3 = Vector3{0, 0, 0}
 	// OneVector3 is a 3-dimensional vector with components equal to 1
 	OneVector3 = Vector3{1, 1, 1}
-	// LeftVector3 is a 3-dimensional vector that is 1 in the X direction and 0 in other directions
-	LeftVector3 = Vector3{1, 0, 0}
+	// RightVector3 is a 3-dimensional vector that is 1 in the X direction and 0 in other directions
+	RightVector3 = Vector3{1, 0, 0}
 	// UpVector3 is a 3-dimensional vector that is 1 in the Y direction and 0 in other directions
 	UpVector3 = Vector3{0, 1, 0}
 	// ForwardVector3 is a 3-dimensional vector that is 1 in the Z direction and 0 in other directions

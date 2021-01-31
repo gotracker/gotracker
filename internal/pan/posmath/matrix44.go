@@ -3,7 +3,7 @@ package posmath
 var (
 	// IdentityMatrix44 is the identity 4x4 matrix
 	IdentityMatrix44 = Matrix44{
-		LeftVector4,
+		RightVector4,
 		UpVector4,
 		ForwardVector4,
 		WVector4,

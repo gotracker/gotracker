@@ -40,6 +40,18 @@ func NewNote(s Semitone) Note {
 	}
 }
 
+// CoalesceNoteSemitone will coalesce a note and an included semitone value
+// the intention is that a special note (note-off, fade-out, etc.) will take precedence
+// over the semitone passed in, but if the semitone asks to override a normal note's
+// semitone value, it will.
+func CoalesceNoteSemitone(n Note, s Semitone) Note {
+	if s == UnchangedSemitone || n.IsSpecial() {
+		return n
+	}
+
+	return NewNote(s)
+}
+
 // Key returns the key component of the note
 func (n Note) Key() Key {
 	return n.semitone.Key()

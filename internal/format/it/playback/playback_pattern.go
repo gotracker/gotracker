@@ -155,9 +155,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			cs.SetTargetInst(nil)
 		} else {
 			inst, str := m.song.GetInstrument(instID)
-			if str != note.UnchangedSemitone && !n.IsSpecial() {
-				n = note.NewNote(str)
-			}
+			n = note.CoalesceNoteSemitone(n, str)
 			cs.SetTargetInst(inst)
 			cs.SetTargetPos(sampling.Pos{})
 			if cs.GetTargetInst() != nil {

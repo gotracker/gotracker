@@ -192,6 +192,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 		willTrigger = false
 	}
 
+	cs.UseTargetPeriod = willTrigger
 	cs.SetNotePlayTick(willTrigger, m.rowRenderState.currentTick)
 
 	if cs.TrackData.HasVolume() {

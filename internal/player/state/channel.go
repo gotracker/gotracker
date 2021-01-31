@@ -264,7 +264,6 @@ func (cs *ChannelState) SetPos(pos sampling.Pos) {
 
 // SetNotePlayTick sets the tick on which the note will retrigger
 func (cs *ChannelState) SetNotePlayTick(enabled bool, tick int) {
-	cs.UseTargetPeriod = enabled
 	if !enabled {
 		cs.Trigger = nil
 		return
@@ -306,6 +305,8 @@ func (cs *ChannelState) GetPan() panning.Position {
 // SetTargetSemitone sets the target semitone for the channel
 func (cs *ChannelState) SetTargetSemitone(st note.Semitone) {
 	cs.TargetSemitone = st
+	cs.WantNoteCalc = true
+	cs.UseTargetPeriod = true
 }
 
 // SetStoredSemitone sets the stored semitone for the channel

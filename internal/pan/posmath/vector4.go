@@ -7,8 +7,8 @@ var (
 	ZeroVector4 = Vector4{0, 0, 0, 0}
 	// OneVector4 is a 4-dimensional vector with components equal to 1
 	OneVector4 = Vector4{1, 1, 1, 1}
-	// LeftVector4 is a 4-dimensional vector that is 1 in the X direction and 0 in other directions
-	LeftVector4 = Vector4{1, 0, 0, 0}
+	// RightVector4 is a 4-dimensional vector that is 1 in the X direction and 0 in other directions
+	RightVector4 = Vector4{1, 0, 0, 0}
 	// UpVector4 is a 4-dimensional vector that is 1 in the Y direction and 0 in other directions
 	UpVector4 = Vector4{0, 1, 0, 0}
 	// ForwardVector4 is a 4-dimensional vector that is 1 in the Z direction and 0 in other directions

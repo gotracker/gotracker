@@ -10,6 +10,8 @@ const (
 	pi2 = math.Pi / 2
 	pi4 = math.Pi / 4
 	pi8 = math.Pi / 8
+
+	twopi = math.Pi * 2
 )
 
 // CalculateCombinedPanning calculates a panning value where `p1` modifies
@@ -36,14 +38,15 @@ func CalculateCombinedPanning(p0, p1 panning.Position) panning.Position {
 
 // GetPanningDifference calculates the difference of `p0` - `p1`
 func GetPanningDifference(p0, p1 panning.Position) panning.Position {
+	ia := float64(panning.CenterAhead.Angle)
 	p0a := float64(p0.Angle)
 	p1a := float64(p1.Angle)
 
-	fa := math.Mod(p0a-p1a, pi2)
+	fa := math.Mod(ia+p1a-p0a, twopi)
 	for fa < 0 {
-		fa += pi2
+		fa += twopi
 	}
-	fd := p0.Distance - p1.Distance
+	fd := panning.CenterAhead.Distance + p1.Distance - p0.Distance
 
 	return panning.Position{
 		Angle:    float32(fa),

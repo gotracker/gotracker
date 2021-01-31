@@ -81,8 +81,8 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 
 		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
 
-		panDiff := panutil.GetPanningDifference(*firstPan, nc.GetCurrentPanning())
-		panDiff.Distance = firstPan.Distance
+		panOrig := nc.GetCurrentPanning()
+		panDiff := panutil.GetPanningDifference(*firstPan, panOrig)
 		panning := panutil.CalculateCombinedPanning(panning.CenterAhead, panDiff)
 		volMatrix := panmixer.GetMixingMatrix(panning)
 

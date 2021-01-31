@@ -56,13 +56,12 @@ type Channel interface {
 	SetTargetPos(sampling.Pos)
 	GetPos() sampling.Pos
 	SetPos(sampling.Pos)
-	SetNotePlayTick(int)
+	SetNotePlayTick(bool, int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPanEnabled(bool)
 	GetPan() panning.Position
 	SetPan(panning.Position)
-	SetDoRetriggerNote(bool)
 	SetOutputChannel(*OutputChannel)
 	GetOutputChannel() *OutputChannel
 	SetVolumeActive(bool)

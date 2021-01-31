@@ -17,7 +17,7 @@ func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
 	cs.UnfreezePlayback()
 	if cmd, ok := cs.GetData().(*channel.Data); ok && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
-		cs.SetDoRetriggerNote(false)
+		cs.SetNotePlayTick(false, 0)
 	}
 }
 

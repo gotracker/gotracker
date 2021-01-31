@@ -42,7 +42,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	keyOn := false
 	stop := false
 	targetPeriod := cs.GetTargetPeriod()
-	if cs.DoRetriggerNote && targetPeriod != nil && currentTick == cs.NotePlayTick {
+	if targetPeriod != nil && cs.WillTriggerOn(currentTick) {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true

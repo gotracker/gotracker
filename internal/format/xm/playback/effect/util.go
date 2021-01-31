@@ -131,8 +131,7 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSem
 	}
 	cs.SetTargetSemitone(arpSemitoneTarget)
 	cs.SetTargetPos(cs.GetPos())
-	cs.SetNotePlayTick(currentTick)
-	cs.SetDoRetriggerNote(true)
+	cs.SetNotePlayTick(true, currentTick)
 }
 
 var (

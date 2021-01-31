@@ -14,6 +14,11 @@ import (
 
 type commandFunc func(int, *ChannelState, int, bool)
 
+// NoteTriggerDetails is for when a note needs to be played
+type NoteTriggerDetails struct {
+	Tick int
+}
+
 // ChannelState is the state of a single channel
 type ChannelState struct {
 	activeState ActiveState
@@ -25,9 +30,8 @@ type ChannelState struct {
 	TargetSemitone note.Semitone // from pattern, modified
 
 	StoredSemitone    note.Semitone // from pattern, unmodified, current note
-	DoRetriggerNote   bool
 	PortaTargetPeriod note.Period
-	NotePlayTick      int
+	Trigger           *NoteTriggerDetails
 	RetriggerCount    uint8
 	Memory            intf.Memory
 	TrackData         intf.ChannelData
@@ -44,12 +48,20 @@ type ChannelState struct {
 	Output *intf.OutputChannel
 }
 
+// WillTriggerOn returns true if a note will trigger on the tick specified
+func (cs *ChannelState) WillTriggerOn(tick int) bool {
+	if cs.Trigger == nil {
+		return false
+	}
+
+	return cs.Trigger.Tick == tick
+}
+
 // AdvanceRow will update the current state to make room for the next row's state data
 func (cs *ChannelState) AdvanceRow() {
 	cs.prevState = cs.activeState
 	cs.targetState = cs.activeState.PlaybackState
-	cs.DoRetriggerNote = false
-	cs.NotePlayTick = 0
+	cs.Trigger = nil
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
 
@@ -251,8 +263,17 @@ func (cs *ChannelState) SetPos(pos sampling.Pos) {
 }
 
 // SetNotePlayTick sets the tick on which the note will retrigger
-func (cs *ChannelState) SetNotePlayTick(tick int) {
-	cs.NotePlayTick = tick
+func (cs *ChannelState) SetNotePlayTick(enabled bool, tick int) {
+	cs.UseTargetPeriod = enabled
+	if !enabled {
+		cs.Trigger = nil
+		return
+	}
+
+	if cs.Trigger == nil {
+		cs.Trigger = &NoteTriggerDetails{}
+	}
+	cs.Trigger.Tick = tick
 }
 
 // GetRetriggerCount returns the current count of the retrigger counter
@@ -280,16 +301,6 @@ func (cs *ChannelState) SetPan(pan panning.Position) {
 // GetPan gets the active panning value of the channel
 func (cs *ChannelState) GetPan() panning.Position {
 	return cs.activeState.Pan
-}
-
-// SetDoRetriggerNote sets the enablement flag for DoRetriggerNote
-// this gets reset on every row
-func (cs *ChannelState) SetDoRetriggerNote(enabled bool) {
-	cs.DoRetriggerNote = enabled
-	cs.UseTargetPeriod = enabled
-	if enabled {
-		cs.WantNoteCalc = true
-	}
 }
 
 // SetTargetSemitone sets the target semitone for the channel

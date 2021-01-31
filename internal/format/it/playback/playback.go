@@ -91,7 +91,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.ResetStates()
 
 		cs.PortaTargetPeriod = nil
-		cs.NotePlayTick = 0
+		cs.Trigger = nil
 		cs.RetriggerCount = 0
 		cs.TrackData = nil
 		ocNum := m.song.GetOutputChannel(ch)

@@ -12,7 +12,8 @@ type SetGlobalVolume uint8 // 'G'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel, p intf.Playback) {
-	p.SetGlobalVolume(util.VolumeFromXm(uint8(0x10 + e)))
+	v := util.VolumeXM(e)
+	p.SetGlobalVolume(v.Volume())
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

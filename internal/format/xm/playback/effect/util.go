@@ -10,36 +10,30 @@ import (
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
 	av := cs.GetActiveVolume()
-	v := util.VolumeToXm(av)
-	if v >= 0x10 && v <= 0x50 {
-		vol := int16((float32(v-0x10) + delta) * multiplier)
-		if vol >= 0x40 {
-			vol = 0x40
-		}
-		if vol < 0x00 {
-			vol = 0x00
-		}
-		v = uint8(vol) + 0x10
+	v := util.ToVolumeXM(av)
+	vol := int16((float32(v) + delta) * multiplier)
+	if vol >= 0x40 {
+		vol = 0x40
 	}
-	nv := util.VolumeFromXm(v)
-	cs.SetActiveVolume(nv)
+	if vol < 0x00 {
+		vol = 0x00
+	}
+	v = util.VolumeXM(uint8(vol))
+	cs.SetActiveVolume(v.Volume())
 }
 
 func doGlobalVolSlide(p intf.Playback, delta float32, multiplier float32) {
 	gv := p.GetGlobalVolume()
-	v := util.VolumeToXm(gv)
-	if v >= 0x10 && v <= 0x50 {
-		vol := int16((float32(v-0x10) + delta) * multiplier)
-		if vol >= 0x40 {
-			vol = 0x40
-		}
-		if vol < 0x00 {
-			vol = 0x00
-		}
-		v = uint8(vol) + 0x10
+	v := util.ToVolumeXM(gv)
+	vol := int16((float32(v) + delta) * multiplier)
+	if vol >= 0x40 {
+		vol = 0x40
 	}
-	ngv := util.VolumeFromXm(v)
-	p.SetGlobalVolume(ngv)
+	if vol < 0x00 {
+		vol = 0x00
+	}
+	v = util.VolumeXM(uint8(vol))
+	p.SetGlobalVolume(v.Volume())
 }
 
 func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
@@ -135,7 +129,7 @@ func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSem
 }
 
 var (
-	volSlideTwoThirdsTable = [...]uint8{
+	volSlideTwoThirdsTable = [...]util.VolumeXM{
 		0, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9,
 		10, 10, 11, 11, 12, 13, 13, 14, 15, 15, 16, 16, 17, 18, 18, 19,
 		20, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 26, 27, 28, 28, 29,
@@ -144,20 +138,17 @@ var (
 )
 
 func doVolSlideTwoThirds(cs intf.Channel) {
-	vol := util.VolumeToXm(cs.GetActiveVolume())
-	if vol >= 0x10 && vol <= 0x50 {
-		vol -= 0x10
-		if vol >= 64 {
-			vol = 63
-		}
-
-		v := volSlideTwoThirdsTable[vol]
-		if v >= 0x40 {
-			v = 0x40
-		}
-
-		cs.SetActiveVolume(util.VolumeFromXm(0x10 + v))
+	vol := util.ToVolumeXM(cs.GetActiveVolume())
+	if vol >= 64 {
+		vol = 63
 	}
+
+	v := volSlideTwoThirdsTable[vol]
+	if v >= 0x40 {
+		v = 0x40
+	}
+
+	cs.SetActiveVolume(v.Volume())
 }
 
 func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) {

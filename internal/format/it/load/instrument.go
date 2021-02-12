@@ -90,7 +90,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				if vol > 1 {
 					vol = 1
 				}
-				out.Y0 = vol
+				out.Y = vol
 				ending := false
 				if i+1 >= len(inst.VolumeEnvelope) {
 					ending = true
@@ -210,7 +210,7 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert 
 	for i := range outEnv.Values {
 		out := &outEnv.Values[i]
 		in1 := inEnv.NodePoints[i]
-		out.Y0 = convert(in1.Y)
+		out.Y = convert(in1.Y)
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
 			out.Length = int(in2.Tick) - int(in1.Tick)

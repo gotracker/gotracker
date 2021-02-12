@@ -128,7 +128,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				}
 				ii.VolEnv.Values[i] = envelope.EnvPoint{
 					Length: x2 - x1,
-					Y0:     volume.Volume(y1) / 64,
+					Y:      volume.Volume(y1) / 64,
 				}
 			}
 		}
@@ -156,7 +156,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				}
 				ii.PanEnv.Values[i] = envelope.EnvPoint{
 					Length: x2 - x1,
-					Y0:     util.PanningFromXm(y1),
+					Y:      util.PanningFromXm(y1),
 				}
 			}
 		}

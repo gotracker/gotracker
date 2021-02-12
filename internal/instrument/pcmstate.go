@@ -135,7 +135,7 @@ func (ed *pcmState) advanceEnv(state *envelope.State, env *envelope.Envelope, nc
 	}
 
 	if cur != nil {
-		update(t, cur.Y0, next.Y0)
+		update(t, cur.Y, next.Y)
 	}
 
 	if finishing && env.OnFinished != nil {

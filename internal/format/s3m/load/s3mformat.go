@@ -67,15 +67,14 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 	numChannels := 1
 	format := pcm.SampleDataFormat8BitUnsigned
 
+	sustainMode := loop.ModeDisabled
+	sustainSettings := loop.Settings{
+		Begin: int(si.LoopBegin.Lo),
+		End:   int(si.LoopEnd.Lo),
+	}
+
 	idata := instrument.PCM{
-		Loop: loop.Loop{
-			Mode: loop.ModeDisabled,
-		},
-		SustainLoop: loop.Loop{
-			Mode:  loop.ModeDisabled,
-			Begin: int(si.LoopBegin.Lo),
-			End:   int(si.LoopEnd.Lo),
-		},
+		Loop:         &loop.Disabled{},
 		Panning:      panning.CenterAhead,
 		MixingVolume: volume.Volume(1),
 		FadeOut: instrument.FadeoutSettings{
@@ -87,7 +86,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		format = pcm.SampleDataFormat8BitSigned
 	}
 	if si.Flags.IsLooped() {
-		idata.SustainLoop.Mode = loop.ModeNormal
+		sustainMode = loop.ModeNormal
 	}
 	if si.Flags.IsStereo() {
 		numChannels = 2
@@ -99,6 +98,8 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			format = pcm.SampleDataFormat16BitLEUnsigned
 		}
 	}
+
+	idata.SustainLoop = loop.NewLoop(sustainMode, sustainSettings)
 
 	idata.Sample = pcm.NewSample(scrs.Sample, instLen, numChannels, format)
 

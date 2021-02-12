@@ -40,8 +40,8 @@ func (e *State) Reset(env *Envelope) {
 func (e *State) calcLoopedPos(keyOn bool) (int, int, bool) {
 	nPoints := len(e.env.Values)
 	var looped bool
-	cur, _ := loop.CalcLoopPos(&e.env.Loop, &e.env.Sustain, e.position, nPoints, keyOn)
-	next, _ := loop.CalcLoopPos(&e.env.Loop, &e.env.Sustain, e.position+1, nPoints, keyOn)
+	cur, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.position, nPoints, keyOn)
+	next, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.position+1, nPoints, keyOn)
 	if (keyOn && e.env.Sustain.Enabled()) || e.env.Loop.Enabled() {
 		looped = true
 	}

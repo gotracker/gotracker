@@ -65,15 +65,36 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		numChannels := 1
 		format := pcm.SampleDataFormat8BitSigned
 
+		sustainMode := xmLoopModeToLoopMode(si.Flags.LoopMode())
+		sustainSettings := loop.Settings{
+			Begin: int(si.LoopStart),
+			End:   int(si.LoopStart + si.LoopLength),
+		}
+
+		volEnvLoopMode := loop.ModeDisabled
+		volEnvLoopSettings := loop.Settings{
+			Begin: int(inst.VolLoopStartPoint),
+			End:   int(inst.VolLoopEndPoint),
+		}
+		volEnvSustainMode := loop.ModeDisabled
+		volEnvSustainSettings := loop.Settings{
+			Begin: int(inst.VolSustainPoint),
+			End:   int(inst.VolSustainPoint),
+		}
+
+		panEnvLoopMode := loop.ModeDisabled
+		panEnvLoopSettings := loop.Settings{
+			Begin: int(inst.PanLoopStartPoint),
+			End:   int(inst.PanLoopEndPoint),
+		}
+		panEnvSustainMode := loop.ModeDisabled
+		panEnvSustainSettings := loop.Settings{
+			Begin: int(inst.PanSustainPoint),
+			End:   int(inst.PanSustainPoint),
+		}
+
 		ii := instrument.PCM{
-			Loop: loop.Loop{
-				Mode: loop.ModeDisabled,
-			},
-			SustainLoop: loop.Loop{
-				Mode:  xmLoopModeToLoopMode(si.Flags.LoopMode()),
-				Begin: int(si.LoopStart),
-				End:   int(si.LoopStart + si.LoopLength),
-			},
+			Loop:         &loop.Disabled{},
 			MixingVolume: volume.Volume(1),
 			FadeOut: instrument.FadeoutSettings{
 				Mode:   instrument.FadeoutModeOnlyIfVolEnvActive,
@@ -82,38 +103,18 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			Panning: util.PanningFromXm(si.Panning),
 			VolEnv: envelope.Envelope{
 				Enabled: (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
-				Loop: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.VolLoopStartPoint),
-					End:   int(inst.VolLoopEndPoint),
-				},
-				Sustain: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.VolSustainPoint),
-					End:   int(inst.VolSustainPoint),
-				},
 			},
 			PanEnv: envelope.Envelope{
 				Enabled: (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
-				Loop: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.PanLoopStartPoint),
-					End:   int(inst.PanLoopEndPoint),
-				},
-				Sustain: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.PanSustainPoint),
-					End:   int(inst.PanSustainPoint),
-				},
 			},
 		}
 
 		if ii.VolEnv.Enabled && ii.VolEnv.Loop.Length() >= 0 {
 			if enabled := (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
-				ii.VolEnv.Loop.Mode = loop.ModeNormal
+				volEnvLoopMode = loop.ModeNormal
 			}
 			if enabled := (inst.VolFlags & xmfile.EnvelopeFlagSustainEnabled) != 0; enabled {
-				ii.VolEnv.Sustain.Mode = loop.ModeNormal
+				volEnvSustainMode = loop.ModeNormal
 			}
 
 			ii.VolEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
@@ -135,10 +136,10 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 
 		if ii.PanEnv.Enabled && ii.PanEnv.Loop.Length() >= 0 {
 			if enabled := (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
-				ii.PanEnv.Loop.Mode = loop.ModeNormal
+				panEnvLoopMode = loop.ModeNormal
 			}
 			if enabled := (inst.PanFlags & xmfile.EnvelopeFlagSustainEnabled) != 0; enabled {
-				ii.PanEnv.Sustain.Mode = loop.ModeNormal
+				panEnvSustainMode = loop.ModeNormal
 			}
 
 			ii.PanEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
@@ -176,8 +177,14 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			stride *= 2
 		}
 		instLen /= stride
-		ii.SustainLoop.Begin /= stride
-		ii.SustainLoop.End /= stride
+		sustainSettings.Begin /= stride
+		sustainSettings.End /= stride
+
+		ii.SustainLoop = loop.NewLoop(sustainMode, sustainSettings)
+		ii.VolEnv.Loop = loop.NewLoop(volEnvLoopMode, volEnvLoopSettings)
+		ii.VolEnv.Sustain = loop.NewLoop(volEnvSustainMode, volEnvSustainSettings)
+		ii.PanEnv.Loop = loop.NewLoop(panEnvLoopMode, panEnvLoopSettings)
+		ii.PanEnv.Sustain = loop.NewLoop(panEnvSustainMode, panEnvSustainSettings)
 
 		ii.Sample = pcm.NewSample(si.SampleData, instLen, numChannels, format)
 

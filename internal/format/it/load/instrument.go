@@ -33,6 +33,17 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
 
 	for i, ci := range outInsts {
+		volEnvLoopMode := loop.ModeDisabled
+		volEnvLoopSettings := loop.Settings{
+			Begin: int(inst.VolumeLoopStart),
+			End:   int(inst.VolumeLoopEnd),
+		}
+		volEnvSustainMode := loop.ModeDisabled
+		volEnvSustainSettings := loop.Settings{
+			Begin: int(inst.SustainLoopStart),
+			End:   int(inst.SustainLoopEnd),
+		}
+
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
 			FadeOut: instrument.FadeoutSettings{
@@ -41,17 +52,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			},
 			VolEnv: envelope.Envelope{
 				Enabled: (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
-				Loop: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.VolumeLoopStart),
-					End:   int(inst.VolumeLoopEnd),
-				},
-				Sustain: loop.Loop{
-					Mode:  loop.ModeDisabled,
-					Begin: int(inst.SustainLoopStart),
-					End:   int(inst.SustainLoopEnd),
-				},
-				Values: make([]envelope.EnvPoint, 0),
+				Values:  make([]envelope.EnvPoint, 0),
 			},
 		}
 
@@ -77,10 +78,10 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 		if id.VolEnv.Enabled && id.VolEnv.Loop.Length() >= 0 {
 			if enabled := (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0; enabled {
-				id.VolEnv.Loop.Mode = loop.ModeNormal
+				volEnvLoopMode = loop.ModeNormal
 			}
 			if enabled := (inst.Flags & itfile.IMPIOldFlagUseSustainVolumeLoop) != 0; enabled {
-				id.VolEnv.Sustain.Mode = loop.ModeNormal
+				volEnvSustainMode = loop.ModeNormal
 			}
 
 			for i := range inst.VolumeEnvelope {
@@ -107,6 +108,9 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				}
 				id.VolEnv.Values = append(id.VolEnv.Values, out)
 			}
+
+			id.VolEnv.Loop = loop.NewLoop(volEnvLoopMode, volEnvLoopSettings)
+			id.VolEnv.Sustain = loop.NewLoop(volEnvSustainMode, volEnvSustainSettings)
 		}
 	}
 
@@ -190,21 +194,21 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert 
 		return nil
 	}
 
-	outEnv.Loop = loop.Loop{
-		Mode:  loop.ModeDisabled,
+	envLoopMode := loop.ModeDisabled
+	envLoopSettings := loop.Settings{
 		Begin: int(inEnv.LoopBegin),
 		End:   int(inEnv.LoopEnd),
 	}
 	if enabled := (inEnv.Flags & itfile.EnvelopeFlagLoopOn) != 0; enabled {
-		outEnv.Loop.Mode = loop.ModeNormal
+		envLoopMode = loop.ModeNormal
 	}
-	outEnv.Sustain = loop.Loop{
-		Mode:  loop.ModeDisabled,
+	envSustainMode := loop.ModeDisabled
+	envSustainSettings := loop.Settings{
 		Begin: int(inEnv.SustainLoopBegin),
 		End:   int(inEnv.SustainLoopEnd),
 	}
 	if enabled := (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0; enabled {
-		outEnv.Sustain.Mode = loop.ModeNormal
+		envSustainMode = loop.ModeNormal
 	}
 	outEnv.Values = make([]envelope.EnvPoint, int(inEnv.Count))
 	for i := range outEnv.Values {
@@ -218,6 +222,9 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert 
 			out.Length = math.MaxInt64
 		}
 	}
+
+	outEnv.Loop = loop.NewLoop(envLoopMode, envLoopSettings)
+	outEnv.Sustain = loop.NewLoop(envSustainMode, envSustainSettings)
 
 	return nil
 }
@@ -272,32 +279,35 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
 	id.MixingVolume *= instVol
-	id.Loop = loop.Loop{
-		Mode:  loop.ModeDisabled,
+	loopMode := loop.ModeDisabled
+	loopSettings := loop.Settings{
 		Begin: int(si.Header.LoopBegin),
 		End:   int(si.Header.LoopEnd),
 	}
-	id.SustainLoop = loop.Loop{
-		Mode:  loop.ModeDisabled,
+	sustainMode := loop.ModeDisabled
+	sustainSettings := loop.Settings{
 		Begin: int(si.Header.SustainLoopBegin),
 		End:   int(si.Header.SustainLoopEnd),
 	}
 
 	if si.Header.Flags.IsLoopEnabled() {
 		if si.Header.Flags.IsLoopPingPong() {
-			id.Loop.Mode = loop.ModePingPong
+			loopMode = loop.ModePingPong
 		} else {
-			id.Loop.Mode = loop.ModeNormal
+			loopMode = loop.ModeNormal
 		}
 	}
 
 	if si.Header.Flags.IsSustainLoopEnabled() {
 		if si.Header.Flags.IsSustainLoopPingPong() {
-			id.Loop.Mode = loop.ModePingPong
+			sustainMode = loop.ModePingPong
 		} else {
-			id.Loop.Mode = loop.ModeNormal
+			sustainMode = loop.ModeNormal
 		}
 	}
+
+	id.Loop = loop.NewLoop(loopMode, loopSettings)
+	id.SustainLoop = loop.NewLoop(sustainMode, sustainSettings)
 
 	if si.Header.Flags.IsStereo() {
 		numChannels = 2

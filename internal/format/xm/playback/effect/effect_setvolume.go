@@ -14,9 +14,9 @@ type SetVolume uint8 // 'C'
 func (e SetVolume) Start(cs intf.Channel, p intf.Playback) {
 	cs.ResetRetriggerCount()
 
-	xx := uint8(e)
+	xx := util.VolumeXM(e)
 
-	cs.SetActiveVolume(util.VolumeFromXm(0x10 + xx))
+	cs.SetActiveVolume(xx.Volume())
 }
 
 func (e SetVolume) String() string {

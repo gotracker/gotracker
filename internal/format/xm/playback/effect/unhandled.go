@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
 )
 
@@ -32,7 +33,7 @@ func (e UnhandledCommand) String() string {
 
 // UnhandledVolCommand is an unhandled volume command
 type UnhandledVolCommand struct {
-	Vol uint8
+	Vol util.VolEffect
 }
 
 // PreStart triggers when the effect enters onto the channel state

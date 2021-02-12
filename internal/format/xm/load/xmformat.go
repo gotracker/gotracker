@@ -41,7 +41,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 	var instruments []*instrument.Instrument
 
 	for _, si := range inst.Samples {
-		v := si.Volume
+		v := util.VolumeXM(si.Volume)
 		if v >= 0x40 {
 			v = 0x40
 		}
@@ -49,7 +49,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			Filename:           si.GetName(),
 			Name:               inst.GetName(),
 			C2Spd:              note.C2SPD(0), // uses si.Finetune, below
-			Volume:             util.VolumeFromXm(0x10 + v),
+			Volume:             v.Volume(),
 			RelativeNoteNumber: si.RelativeNoteNumber,
 			AutoVibrato: instrument.AutoVibrato{
 				Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
@@ -231,7 +231,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
 				What:            chn.Flags,
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
-				Volume:          chn.Volume,
+				Volume:          util.VolEffect(chn.Volume),
 				Effect:          chn.Effect,
 				EffectParameter: chn.EffectParameter,
 			}

@@ -27,7 +27,7 @@ type Data struct {
 	What            xmfile.ChannelFlags
 	Note            uint8
 	Instrument      uint8
-	Volume          uint8
+	Volume          util.VolEffect
 	Effect          uint8
 	EffectParameter uint8
 }
@@ -68,13 +68,12 @@ func (d *Data) HasVolume() bool {
 		return false
 	}
 
-	v := d.Volume
-	return v == 0x00 || v >= 0x10 && v <= 0x50
+	return d.Volume.IsVolume()
 }
 
 // GetVolume returns the volume for the channel
 func (d *Data) GetVolume() volume.Volume {
-	return util.VolumeFromXm(d.Volume)
+	return d.Volume.Volume()
 }
 
 // HasEffect returns true if there exists a effect on the channel
@@ -84,7 +83,7 @@ func (d *Data) HasEffect() bool {
 	}
 
 	if d.What.HasVolume() {
-		return d.Volume >= 0x60
+		return !d.Volume.IsVolume()
 	}
 
 	return false

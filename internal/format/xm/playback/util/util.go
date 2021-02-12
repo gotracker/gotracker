@@ -81,25 +81,54 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlide
 	return note.C2SPD(period.GetFrequency())
 }
 
-// VolumeFromXm converts an xm volume to a player volume
-func VolumeFromXm(vol uint8) volume.Volume {
-	var v volume.Volume
-	switch {
-	case vol >= 0x10 && vol <= 0x50:
-		v = volume.Volume(vol-0x10) / 64.0
-	default:
-		v = volume.VolumeUseInstVol
+// VolumeXM is a helpful converter from the XM range of 0-64 into a volume
+type VolumeXM uint8
+
+const cVolumeXMCoeff = volume.Volume(1) / 0x40
+
+// Volume returns the volume from the internal format
+func (v VolumeXM) Volume() volume.Volume {
+	return volume.Volume(v) * cVolumeXMCoeff
+}
+
+// ToVolumeXM returns the VolumeXM representation of a volume
+func ToVolumeXM(v volume.Volume) VolumeXM {
+	return VolumeXM(v * 0x40)
+}
+
+// VolEffect holds the data related to volume and effects from the volume data channel
+type VolEffect uint8
+
+// IsVolume returns true if the VolEffect describes a volume value
+func (v VolEffect) IsVolume() bool {
+	return v == 0x00 || v >= 0x10 && v <= 0x50
+}
+
+// Volume returns the value from the volume portion of the range
+func (v VolEffect) Volume() volume.Volume {
+	if v == 0x00 {
+		return volume.VolumeUseInstVol
 	}
-	return v
+	return VolumeXM(v - 0x10).Volume()
+}
+
+// VolumeFromXm converts an xm volume to a player volume
+func VolumeFromXm(vol VolEffect) volume.Volume {
+	if vol.IsVolume() {
+		return vol.Volume()
+	}
+	panic("unexpected conversion of non-volume value")
 }
 
 // VolumeToXm converts a player volume to an xm volume
-func VolumeToXm(v volume.Volume) uint8 {
+func VolumeToXm(v volume.Volume) VolEffect {
 	switch {
 	case v == volume.VolumeUseInstVol:
 		return 0
+	case v >= 0 && v <= 1:
+		return VolEffect(v*0x40) + 0x10
 	default:
-		return uint8(v*64.0) + 0x10
+		panic("volume out of range for conversion")
 	}
 }
 

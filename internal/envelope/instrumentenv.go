@@ -8,8 +8,7 @@ import (
 // EnvPoint is a point for the envelope
 type EnvPoint struct {
 	Length int
-	Y0     interface{}
-	//Y1     interface{}
+	Y      interface{}
 }
 
 // Envelope is an envelope for instruments

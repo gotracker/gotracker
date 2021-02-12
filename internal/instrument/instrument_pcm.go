@@ -68,10 +68,7 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 
 // IsLooped returns true if the instrument is looping
 func (inst *PCM) IsLooped() bool {
-	if inst.SustainLoop.Mode != loop.ModeDisabled {
-		return true
-	}
-	return inst.Loop.Mode != loop.ModeDisabled
+	return inst.SustainLoop.Enabled() || inst.Loop.Enabled()
 }
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
@@ -159,7 +156,7 @@ func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
 		return volume.Matrix{}
 	}
 	sl := inst.Sample.Length()
-	pos, _ = loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, pos, sl, keyOn)
+	pos, _ = loop.CalcLoopPos(inst.Loop, inst.SustainLoop, pos, sl, keyOn)
 	if pos < 0 || pos >= sl {
 		return volume.Matrix{}
 	}
@@ -206,7 +203,7 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 
 	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
 		if ncs := ioc.GetPlaybackState(); ncs != nil {
-			p, _ := loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, ncs.Pos.Pos, inst.Sample.Length(), ed.prevKeyOn)
+			p, _ := loop.CalcLoopPos(inst.Loop, inst.SustainLoop, ncs.Pos.Pos, inst.Sample.Length(), ed.prevKeyOn)
 			ncs.Pos.Pos = p
 		}
 	}

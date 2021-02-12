@@ -27,39 +27,30 @@ const (
 	ModePingPong
 )
 
-func internalCalcLoopPos(loop *Loop, pos int, length int) (bool, int, bool) {
-	switch loop.Mode {
-	case ModeDisabled:
-		// nothing
-	case ModeLegacy:
-		newPos, looped := calcLoopPosLegacy(pos, length, loop.Begin, loop.End)
-		return true, newPos, looped
-	case ModeNormal:
-		newPos, looped := calcLoopPosNormal(pos, length, loop.Begin, loop.End)
-		return true, newPos, looped
-	case ModePingPong:
-		newPos, looped := calcLoopPosPingPong(pos, length, loop.Begin, loop.End)
-		return true, newPos, looped
-	default:
-		panic("unhandled loop mode!")
-	}
-	return false, pos, false
-}
-
-func calcLoopPosDisabled(pos int, length int) (int, bool) {
-	//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
-	switch {
-	case pos < 0:
-		return 0, false
-	case pos < length:
-		return pos, false
-	default:
-		return length, false
-	}
-}
-
 // simple helper to consolidate loop length calculations
 // (yeah, it could just be the math in place, but whatever)
 func calcLoopLen(loopBegin int, loopEnd int) int {
 	return loopEnd - loopBegin
+}
+
+// NewLoop creates a loop based on the specified mode and settings
+func NewLoop(mode Mode, settings Settings) Loop {
+	switch mode {
+	case ModeDisabled:
+		return &Disabled{}
+	case ModeLegacy:
+		return &Legacy{
+			Settings: settings,
+		}
+	case ModeNormal:
+		return &Normal{
+			Settings: settings,
+		}
+	case ModePingPong:
+		return &PingPong{
+			Settings: settings,
+		}
+	default:
+		panic("unhandled loop mode")
+	}
 }

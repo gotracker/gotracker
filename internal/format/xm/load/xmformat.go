@@ -15,6 +15,7 @@ import (
 	"gotracker/internal/instrument"
 	"gotracker/internal/loop"
 	"gotracker/internal/oscillator"
+	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
@@ -60,8 +61,11 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			},
 		}
 
+		instLen := int(si.Length)
+		numChannels := 1
+		format := pcm.SampleDataFormat8BitSigned
+
 		ii := instrument.PCM{
-			Length: int(si.Length),
 			Loop: loop.Loop{
 				Mode: loop.ModeDisabled,
 			},
@@ -70,8 +74,6 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Begin: int(si.LoopStart),
 				End:   int(si.LoopStart + si.LoopLength),
 			},
-			NumChannels:  1,
-			Format:       instrument.SampleDataFormat8BitSigned,
 			MixingVolume: volume.Volume(1),
 			FadeOut: instrument.FadeoutSettings{
 				Mode:   instrument.FadeoutModeOnlyIfVolEnvActive,
@@ -166,18 +168,18 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			sample.C2Spd = note.C2SPD(util.DefaultC2Spd)
 		}
 		if si.Flags.IsStereo() {
-			ii.NumChannels = 2
+			numChannels = 2
 		}
-		stride := ii.NumChannels
+		stride := numChannels
 		if si.Flags.Is16Bit() {
-			ii.Format = instrument.SampleDataFormat16BitLESigned
+			format = pcm.SampleDataFormat16BitLESigned
 			stride *= 2
 		}
-		ii.Length /= stride
+		instLen /= stride
 		ii.SustainLoop.Begin /= stride
 		ii.SustainLoop.End /= stride
 
-		ii.Sample = si.SampleData
+		ii.Sample = pcm.NewSample(si.SampleData, instLen, numChannels, format)
 
 		sample.Inst = &ii
 		instruments = append(instruments, &sample)

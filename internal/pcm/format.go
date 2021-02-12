@@ -1,4 +1,4 @@
-package instrument
+package pcm
 
 import (
 	"bytes"
@@ -37,7 +37,7 @@ func getBytesPerSample(sdf SampleDataFormat) int {
 	panic("unhandled sample data format")
 }
 
-func readSample(sdf SampleDataFormat, sample []uint8, pos int, channels int) volume.Matrix {
+func readSample(sdf SampleDataFormat, sample []byte, pos int, channels int) volume.Matrix {
 	o := make(volume.Matrix, channels)
 	bps := getBytesPerSample(sdf)
 	actualPos := pos * channels * bps

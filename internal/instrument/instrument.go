@@ -89,7 +89,7 @@ func (inst *Instrument) GetLength() sampling.Pos {
 	case *OPL2:
 		return sampling.Pos{Pos: math.MaxInt64, Frac: 0}
 	case *PCM:
-		return sampling.Pos{Pos: si.Length}
+		return sampling.Pos{Pos: si.Sample.Length()}
 	default:
 	}
 	return sampling.Pos{}

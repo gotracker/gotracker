@@ -1,6 +1,9 @@
 package pcm
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"io"
+)
 
 // Sample is the interface to a sample
 type Sample interface {
@@ -18,6 +21,8 @@ type SampleData struct {
 	byteOrder binary.ByteOrder
 	channels  int
 	data      []byte
+
+	reader io.Reader
 }
 
 // Channels returns the channel count from the sample data

@@ -2,8 +2,7 @@ package pcm
 
 import (
 	"bytes"
-	"encoding/binary"
-	"errors"
+	"io"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -13,33 +12,25 @@ type SampleReader interface {
 	Read() (volume.Matrix, error)
 }
 
-func readSingleChannelSample(s *SampleData, pos int, out interface{}) error {
-	if pos >= len(s.data) {
-		return errors.New("index out of range")
-	}
-
-	buf := bytes.NewReader(s.data[pos:])
-	if err := binary.Read(buf, s.byteOrder, out); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SampleData) readData(converter SampleConverter) (volume.Matrix, error) {
 	bps := converter.Size()
-	actualPos := s.pos * s.channels * bps
+	actualPos := int64(s.pos * s.channels * bps)
 	if actualPos < 0 {
 		actualPos = 0
 	}
+	if s.reader == nil {
+		s.reader = bytes.NewReader(s.data)
+	}
+	s.reader.Seek(actualPos, io.SeekStart)
+
 	out := make(volume.Matrix, s.channels)
 	for c := range out {
-		err := readSingleChannelSample(s, actualPos, converter)
-		if err != nil {
+		if err := converter.Read(s.reader, s.byteOrder); err != nil {
 			return nil, err
 		}
 
 		out[c] = converter.Volume()
-		actualPos += bps
+		actualPos += int64(bps)
 	}
 
 	s.pos++

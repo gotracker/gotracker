@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"reflect"
 	"sort"
 	"time"
@@ -30,6 +32,7 @@ var (
 	canLoop                bool
 	effectCoverage         bool
 	panicOnUnhandledEffect bool
+	profiler               bool
 )
 
 func main() {
@@ -45,6 +48,7 @@ func main() {
 	flag.StringVar(&outputSettings.Filepath, "f", "output.wav", "output filepath")
 	flag.BoolVar(&effectCoverage, "E", false, "gather and display effect coverage data")
 	flag.BoolVar(&panicOnUnhandledEffect, "P", false, "panic when an unhandled effect is encountered")
+	flag.BoolVar(&profiler, "p", false, "enable profiler (and supporting http server)")
 
 	flag.Parse()
 
@@ -167,6 +171,12 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 		return
+	}
+
+	if profiler {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 
 	if err := p.Play(playback); err != nil {

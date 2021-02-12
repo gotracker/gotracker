@@ -1,6 +1,9 @@
 package pcm
 
 import (
+	"encoding/binary"
+	"io"
+
 	"github.com/gotracker/gomixing/volume"
 )
 
@@ -22,6 +25,16 @@ func (s Sample16BitSigned) Size() int {
 	return cSample16BitBytes
 }
 
+// Read reads a value from the reader provided in the byte order provided
+func (s *Sample16BitSigned) Read(r io.Reader, b binary.ByteOrder) error {
+	var in [2]byte
+	if _, err := r.Read(in[:]); err != nil {
+		return err
+	}
+	*s = Sample16BitSigned(b.Uint16(in[:]))
+	return nil
+}
+
 // Sample16BitUnsigned is an unsigned 8-bit sample
 type Sample16BitUnsigned uint16
 
@@ -33,6 +46,16 @@ func (s Sample16BitUnsigned) Volume() volume.Volume {
 // Size returns the size of the sample in bytes
 func (s Sample16BitUnsigned) Size() int {
 	return cSample16BitBytes
+}
+
+// Read reads a value from the reader provided in the byte order provided
+func (s *Sample16BitUnsigned) Read(r io.Reader, b binary.ByteOrder) error {
+	var in [2]byte
+	if _, err := r.Read(in[:]); err != nil {
+		return err
+	}
+	*s = Sample16BitUnsigned(b.Uint16(in[:]))
+	return nil
 }
 
 // SampleReader16BitUnsigned is an unsigned 8-bit PCM sample reader

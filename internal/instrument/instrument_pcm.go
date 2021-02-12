@@ -10,6 +10,7 @@ import (
 	"gotracker/internal/envelope"
 	"gotracker/internal/loop"
 	panutil "gotracker/internal/pan"
+	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -34,12 +35,9 @@ type FadeoutSettings struct {
 
 // PCM is a PCM-data instrument
 type PCM struct {
-	Sample        []uint8
-	Length        int
+	Sample        pcm.Sample
 	Loop          loop.Loop
 	SustainLoop   loop.Loop
-	NumChannels   int
-	Format        SampleDataFormat
 	Panning       panning.Position
 	MixingVolume  volume.Volume
 	FadeOut       FadeoutSettings
@@ -157,11 +155,20 @@ func (inst *PCM) getSampleDry(pos sampling.Pos, keyOn bool) volume.Matrix {
 }
 
 func (inst *PCM) getConvertedSample(pos int, keyOn bool) volume.Matrix {
-	pos, _ = loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, pos, inst.Length, keyOn)
-	if pos < 0 || pos >= inst.Length {
+	if inst.Sample == nil {
 		return volume.Matrix{}
 	}
-	return readSample(inst.Format, inst.Sample, pos, inst.NumChannels)
+	sl := inst.Sample.Length()
+	pos, _ = loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, pos, sl, keyOn)
+	if pos < 0 || pos >= sl {
+		return volume.Matrix{}
+	}
+	inst.Sample.Seek(pos)
+	data, err := inst.Sample.Read()
+	if err != nil {
+		return volume.Matrix{}
+	}
+	return data
 }
 
 // Initialize completes the setup of this instrument
@@ -199,7 +206,7 @@ func (inst *PCM) Release(ioc intf.NoteControl) {
 
 	if ed.prevKeyOn != ed.keyOn && ed.prevKeyOn {
 		if ncs := ioc.GetPlaybackState(); ncs != nil {
-			p, _ := loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, ncs.Pos.Pos, inst.Length, ed.prevKeyOn)
+			p, _ := loop.CalcLoopPos(&inst.Loop, &inst.SustainLoop, ncs.Pos.Pos, inst.Sample.Length(), ed.prevKeyOn)
 			ncs.Pos.Pos = p
 		}
 	}

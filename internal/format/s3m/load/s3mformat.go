@@ -15,6 +15,7 @@ import (
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/instrument"
 	"gotracker/internal/loop"
+	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
@@ -62,8 +63,11 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		sample.C2Spd = note.C2SPD(s3mfile.DefaultC2Spd)
 	}
 
+	instLen := int(si.Length.Lo)
+	numChannels := 1
+	format := pcm.SampleDataFormat8BitUnsigned
+
 	idata := instrument.PCM{
-		Length: int(si.Length.Lo),
 		Loop: loop.Loop{
 			Mode: loop.ModeDisabled,
 		},
@@ -72,8 +76,6 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			Begin: int(si.LoopBegin.Lo),
 			End:   int(si.LoopEnd.Lo),
 		},
-		NumChannels:  1,
-		Format:       instrument.SampleDataFormat8BitUnsigned,
 		Panning:      panning.CenterAhead,
 		MixingVolume: volume.Volume(1),
 		FadeOut: instrument.FadeoutSettings{
@@ -82,23 +84,25 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		},
 	}
 	if signedSamples {
-		idata.Format = instrument.SampleDataFormat8BitSigned
+		format = pcm.SampleDataFormat8BitSigned
 	}
 	if si.Flags.IsLooped() {
 		idata.SustainLoop.Mode = loop.ModeNormal
 	}
 	if si.Flags.IsStereo() {
-		idata.NumChannels = 2
+		numChannels = 2
 	}
 	if si.Flags.Is16BitSample() {
 		if signedSamples {
-			idata.Format = instrument.SampleDataFormat16BitLESigned
+			format = pcm.SampleDataFormat16BitLESigned
 		} else {
-			idata.Format = instrument.SampleDataFormat16BitLEUnsigned
+			format = pcm.SampleDataFormat16BitLEUnsigned
 		}
 	}
 
-	idata.Sample = scrs.Sample
+	idata.Sample = pcm.NewSample(scrs.Sample, instLen, numChannels, format)
+
+	//idata.Sample = scrs.Sample
 
 	sample.Inst = &idata
 	return &sample, nil

@@ -17,6 +17,7 @@ import (
 	"gotracker/internal/instrument"
 	"gotracker/internal/loop"
 	"gotracker/internal/oscillator"
+	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -33,9 +34,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 	for i, ci := range outInsts {
 		id := instrument.PCM{
-			NumChannels: 1,
-			Format:      instrument.SampleDataFormat8BitUnsigned,
-			Panning:     panning.CenterAhead,
+			Panning: panning.CenterAhead,
 			FadeOut: instrument.FadeoutSettings{
 				Mode:   instrument.FadeoutModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
@@ -128,9 +127,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 	for i, ci := range outInsts {
 		id := instrument.PCM{
-			NumChannels: 1,
-			Format:      instrument.SampleDataFormat8BitUnsigned,
-			Panning:     panning.CenterAhead,
+			Panning: panning.CenterAhead,
 			FadeOut: instrument.FadeoutSettings{
 				Mode:   instrument.FadeoutModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
@@ -251,25 +248,28 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 	return nil
 }
 
-func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) instrument.SampleDataFormat {
+func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDataFormat {
 	if is16Bit {
 		if isSigned {
 			if isBigEndian {
-				return instrument.SampleDataFormat16BitBESigned
+				return pcm.SampleDataFormat16BitBESigned
 			}
-			return instrument.SampleDataFormat16BitLESigned
+			return pcm.SampleDataFormat16BitLESigned
 		} else if isBigEndian {
-			return instrument.SampleDataFormat16BitLEUnsigned
+			return pcm.SampleDataFormat16BitLEUnsigned
 		}
-		return instrument.SampleDataFormat16BitLEUnsigned
+		return pcm.SampleDataFormat16BitLEUnsigned
 	} else if isSigned {
-		return instrument.SampleDataFormat8BitSigned
+		return pcm.SampleDataFormat8BitSigned
 	}
-	return instrument.SampleDataFormat8BitUnsigned
+	return pcm.SampleDataFormat8BitUnsigned
 }
 
 func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool) error {
-	id.Length = int(si.Header.Length)
+	instLen := int(si.Header.Length)
+	numChannels := 1
+	format := pcm.SampleDataFormat8BitUnsigned
+
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
 	id.MixingVolume *= instVol
 	id.Loop = loop.Loop{
@@ -300,28 +300,29 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	}
 
 	if si.Header.Flags.IsStereo() {
-		id.NumChannels = 2
+		numChannels = 2
 	}
 
 	is16Bit := si.Header.Flags.Is16Bit()
 	isSigned := si.Header.ConvertFlags.IsSignedSamples()
 	isBigEndian := si.Header.ConvertFlags.IsBigEndian()
-	id.Format = getSampleFormat(is16Bit, isSigned, isBigEndian)
+	format = getSampleFormat(is16Bit, isSigned, isBigEndian)
 
 	isDeltaSamples := si.Header.ConvertFlags.IsSampleDelta()
+	var data []byte
 	if si.Header.Flags.IsCompressed() {
 		if is16Bit {
-			id.Sample = uncompress16IT214(si.Data, isBigEndian)
+			data = uncompress16IT214(si.Data, isBigEndian)
 		} else {
-			id.Sample = uncompress8IT214(si.Data)
+			data = uncompress8IT214(si.Data)
 		}
 		isDeltaSamples = true
 	} else {
-		id.Sample = si.Data
+		data = si.Data
 	}
 
 	if isDeltaSamples {
-		deltaDecode(id.Sample, id.Format)
+		deltaDecode(data, format)
 	}
 
 	bytesPerFrame := 2
@@ -330,7 +331,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		bytesPerFrame *= 2
 	}
 
-	if len(id.Sample) < int(si.Header.Length+1)*bytesPerFrame {
+	if len(data) < int(si.Header.Length+1)*bytesPerFrame {
 		var value interface{}
 		var order binary.ByteOrder = binary.LittleEndian
 		if is16Bit {
@@ -350,12 +351,14 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 			}
 		}
 
-		buf := bytes.NewBuffer(id.Sample)
+		buf := bytes.NewBuffer(data)
 		for buf.Len() < int(si.Header.Length+1)*bytesPerFrame {
 			binary.Write(buf, order, value)
 		}
-		id.Sample = buf.Bytes()
+		data = buf.Bytes()
 	}
+
+	id.Sample = pcm.NewSample(data, instLen, numChannels, format)
 
 	ii.Filename = si.Header.GetFilename()
 	ii.Name = si.Header.GetName()
@@ -618,13 +621,13 @@ func uncompress16IT214(data []byte, isBigEndian bool) []byte {
 	return out.Bytes()
 }
 
-func deltaDecode(data []byte, format instrument.SampleDataFormat) {
+func deltaDecode(data []byte, format pcm.SampleDataFormat) {
 	switch format {
-	case instrument.SampleDataFormat8BitSigned, instrument.SampleDataFormat8BitUnsigned:
+	case pcm.SampleDataFormat8BitSigned, pcm.SampleDataFormat8BitUnsigned:
 		deltaDecode8(data)
-	case instrument.SampleDataFormat16BitLESigned, instrument.SampleDataFormat16BitLEUnsigned:
+	case pcm.SampleDataFormat16BitLESigned, pcm.SampleDataFormat16BitLEUnsigned:
 		deltaDecode16(data, binary.LittleEndian)
-	case instrument.SampleDataFormat16BitBESigned, instrument.SampleDataFormat16BitBEUnsigned:
+	case pcm.SampleDataFormat16BitBESigned, pcm.SampleDataFormat16BitBEUnsigned:
 		deltaDecode16(data, binary.BigEndian)
 	}
 }

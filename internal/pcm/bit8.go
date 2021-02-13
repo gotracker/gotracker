@@ -1,7 +1,6 @@
 package pcm
 
 import (
-	"encoding/binary"
 	"io"
 
 	"github.com/gotracker/gomixing/volume"
@@ -26,12 +25,15 @@ func (s Sample8BitSigned) Size() int {
 }
 
 // ReadAt reads a value from the reader provided in the byte order provided
-func (s *Sample8BitSigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
-	var in [1]byte
-	if _, err := r.ReadAt(in[:], ofs); err != nil {
-		return err
+func (s *Sample8BitSigned) ReadAt(d *SampleData, ofs int64) error {
+	if len(d.data) <= int(ofs) {
+		return io.EOF
 	}
-	*s = Sample8BitSigned(in[0])
+	if ofs < 0 {
+		ofs = 0
+	}
+
+	*s = Sample8BitSigned(d.data[ofs])
 	return nil
 }
 
@@ -49,12 +51,15 @@ func (s Sample8BitUnsigned) Size() int {
 }
 
 // ReadAt reads a value from the reader provided in the byte order provided
-func (s *Sample8BitUnsigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
-	var in [1]byte
-	if _, err := r.ReadAt(in[:], ofs); err != nil {
-		return err
+func (s *Sample8BitUnsigned) ReadAt(d *SampleData, ofs int64) error {
+	if len(d.data) <= int(ofs) {
+		return io.EOF
 	}
-	*s = Sample8BitUnsigned(in[0])
+	if ofs < 0 {
+		ofs = 0
+	}
+
+	*s = Sample8BitUnsigned(d.data[ofs])
 	return nil
 }
 

@@ -25,10 +25,10 @@ func (s Sample8BitSigned) Size() int {
 	return cSample8BitBytes
 }
 
-// Read reads a value from the reader provided in the byte order provided
-func (s *Sample8BitSigned) Read(r io.Reader, b binary.ByteOrder) error {
+// ReadAt reads a value from the reader provided in the byte order provided
+func (s *Sample8BitSigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
 	var in [1]byte
-	if _, err := r.Read(in[:]); err != nil {
+	if _, err := r.ReadAt(in[:], ofs); err != nil {
 		return err
 	}
 	*s = Sample8BitSigned(in[0])
@@ -48,10 +48,10 @@ func (s Sample8BitUnsigned) Size() int {
 	return cSample8BitBytes
 }
 
-// Read reads a value from the reader provided in the byte order provided
-func (s *Sample8BitUnsigned) Read(r io.Reader, b binary.ByteOrder) error {
+// ReadAt reads a value from the reader provided in the byte order provided
+func (s *Sample8BitUnsigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
 	var in [1]byte
-	if _, err := r.Read(in[:]); err != nil {
+	if _, err := r.ReadAt(in[:], ofs); err != nil {
 		return err
 	}
 	*s = Sample8BitUnsigned(in[0])

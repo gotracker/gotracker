@@ -33,7 +33,7 @@ func (e *State) Reset(env *Envelope) {
 	e.position = 0
 	pos, _, _ := e.calcLoopedPos(true)
 	if pos < len(e.env.Values) {
-		e.length = e.env.Values[pos].Length
+		e.length = e.env.Values[pos].Length()
 	}
 }
 
@@ -49,7 +49,7 @@ func (e *State) calcLoopedPos(keyOn bool) (int, int, bool) {
 }
 
 // GetCurrentValue returns the current value
-func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, *EnvPoint, float32) {
+func (e *State) GetCurrentValue(keyOn bool) (EnvPoint, EnvPoint, float32) {
 	if e.stopped {
 		return nil, nil, 0
 	}
@@ -63,10 +63,11 @@ func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, *EnvPoint, float32) {
 		npos = pos
 	}
 
-	cur := &e.env.Values[pos]
-	next := &e.env.Values[npos]
+	cur := e.env.Values[pos]
+	next := e.env.Values[npos]
 	t := float32(0)
-	if cur.Length > 0 {
+	tl := cur.Length()
+	if tl > 0 {
 		l := float32(e.length)
 		if looped {
 			if e.env.Sustain.Enabled() && keyOn && e.env.Sustain.Length() == 0 {
@@ -75,7 +76,7 @@ func (e *State) GetCurrentValue(keyOn bool) (*EnvPoint, *EnvPoint, float32) {
 				l = float32(e.length)
 			}
 		}
-		t = 1 - (l / float32(cur.Length))
+		t = 1 - (l / float32(tl))
 	}
 	switch {
 	case t < 0:
@@ -118,6 +119,6 @@ func (e *State) Advance(keyOn bool, prevKeyOn bool) bool {
 		return true
 	}
 
-	e.length = e.env.Values[pos].Length
+	e.length = e.env.Values[pos].Length()
 	return false
 }

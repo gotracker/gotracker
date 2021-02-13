@@ -127,9 +127,9 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.VolEnv.Values[i] = envelope.EnvPoint{
-					Length: x2 - x1,
-					Y:      volume.Volume(y1) / 64,
+				ii.VolEnv.Values[i] = &envelope.VolumePoint{
+					Ticks: x2 - x1,
+					Y:     util.VolumeXM(y1).Volume(),
 				}
 			}
 		}
@@ -155,9 +155,9 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.PanEnv.Values[i] = envelope.EnvPoint{
-					Length: x2 - x1,
-					Y:      util.PanningFromXm(y1),
+				ii.PanEnv.Values[i] = &envelope.PanPoint{
+					Ticks: x2 - x1,
+					Y:     util.PanningFromXm(y1),
 				}
 			}
 		}

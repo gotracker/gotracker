@@ -11,5 +11,5 @@ import (
 type SampleConverter interface {
 	Volume() volume.Volume
 	Size() int
-	Read(r io.Reader, b binary.ByteOrder) error
+	ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error
 }

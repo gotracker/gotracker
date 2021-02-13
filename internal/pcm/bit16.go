@@ -25,10 +25,10 @@ func (s Sample16BitSigned) Size() int {
 	return cSample16BitBytes
 }
 
-// Read reads a value from the reader provided in the byte order provided
-func (s *Sample16BitSigned) Read(r io.Reader, b binary.ByteOrder) error {
+// ReadAt reads a value from the reader provided in the byte order provided
+func (s *Sample16BitSigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
 	var in [2]byte
-	if _, err := r.Read(in[:]); err != nil {
+	if _, err := r.ReadAt(in[:], ofs); err != nil {
 		return err
 	}
 	*s = Sample16BitSigned(b.Uint16(in[:]))
@@ -48,10 +48,10 @@ func (s Sample16BitUnsigned) Size() int {
 	return cSample16BitBytes
 }
 
-// Read reads a value from the reader provided in the byte order provided
-func (s *Sample16BitUnsigned) Read(r io.Reader, b binary.ByteOrder) error {
+// ReadAt reads a value from the reader provided in the byte order provided
+func (s *Sample16BitUnsigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
 	var in [2]byte
-	if _, err := r.Read(in[:]); err != nil {
+	if _, err := r.ReadAt(in[:], ofs); err != nil {
 		return err
 	}
 	*s = Sample16BitUnsigned(b.Uint16(in[:]))

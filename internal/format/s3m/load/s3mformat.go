@@ -44,20 +44,24 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 
 func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*instrument.Instrument, error) {
 	sample := instrument.Instrument{
-		Filename: scrs.Head.GetFilename(),
-		Name:     si.GetSampleName(),
-		C2Spd:    note.C2SPD(si.C2Spd.Lo),
-		Volume:   util.VolumeFromS3M(si.Volume),
+		Static: instrument.StaticValues{
+			Filename: scrs.Head.GetFilename(),
+			Name:     si.GetSampleName(),
+			Volume:   util.VolumeFromS3M(si.Volume),
+		},
+		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
 	return &sample, nil
 }
 
 func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool) (*instrument.Instrument, error) {
 	sample := instrument.Instrument{
-		Filename: scrs.Head.GetFilename(),
-		Name:     si.GetSampleName(),
-		C2Spd:    note.C2SPD(si.C2Spd.Lo),
-		Volume:   util.VolumeFromS3M(si.Volume),
+		Static: instrument.StaticValues{
+			Filename: scrs.Head.GetFilename(),
+			Name:     si.GetSampleName(),
+			Volume:   util.VolumeFromS3M(si.Volume),
+		},
+		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
 	if sample.C2Spd == 0 {
 		sample.C2Spd = note.C2SPD(s3mfile.DefaultC2Spd)
@@ -111,10 +115,12 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 
 func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*instrument.Instrument, error) {
 	inst := instrument.Instrument{
-		Filename: scrs.Head.GetFilename(),
-		Name:     si.GetSampleName(),
-		C2Spd:    note.C2SPD(si.C2Spd.Lo),
-		Volume:   util.VolumeFromS3M(si.Volume),
+		Static: instrument.StaticValues{
+			Filename: scrs.Head.GetFilename(),
+			Name:     si.GetSampleName(),
+			Volume:   util.VolumeFromS3M(si.Volume),
+		},
+		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
 
 	idata := instrument.OPL2{
@@ -284,7 +290,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 		if sample == nil {
 			continue
 		}
-		sample.ID = channel.S3MInstrumentID(uint8(instNum + 1))
+		sample.Static.ID = channel.S3MInstrumentID(uint8(instNum + 1))
 		song.Instruments[instNum] = *sample
 	}
 

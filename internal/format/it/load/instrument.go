@@ -140,8 +140,10 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		}
 
 		ii := instrument.Instrument{
-			Inst:                 &id,
-			ChannelFilterFactory: channelFilterFactory,
+			Static: instrument.StaticValues{
+				ChannelFilterFactory: channelFilterFactory,
+			},
+			Inst: &id,
 		}
 
 		switch inst.NewNoteAction {
@@ -377,10 +379,10 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	id.Sample = pcm.NewSample(data, instLen, numChannels, format)
 
-	ii.Filename = si.Header.GetFilename()
-	ii.Name = si.Header.GetName()
+	ii.Static.Filename = si.Header.GetFilename()
+	ii.Static.Name = si.Header.GetName()
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed) / note.C2SPD(bytesPerFrame)
-	ii.AutoVibrato = instrument.AutoVibrato{
+	ii.Static.AutoVibrato = instrument.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,
 		WaveformSelection: si.Header.VibratoType,
@@ -390,10 +392,10 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 			return oscillator.NewImpulseTrackerOscillator(1)
 		},
 	}
-	ii.Volume = volume.Volume(si.Header.Volume.Value())
+	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
 
 	if si.Header.VibratoSweep != 0 {
-		ii.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
+		ii.Static.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
 	}
 	if !si.Header.DefaultPan.IsDisabled() {
 		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)

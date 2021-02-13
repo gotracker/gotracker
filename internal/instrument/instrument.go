@@ -46,20 +46,32 @@ type AutoVibrato struct {
 	Factory           func() oscillator.Oscillator
 }
 
-// Instrument is the mildly-decoded instrument/sample header
-type Instrument struct {
+// Generate creates an AutoVibrato waveform oscillator and configures it with the inital values
+func (a *AutoVibrato) Generate() oscillator.Oscillator {
+	o := a.Factory()
+	o.SetWaveform(oscillator.WaveTableSelect(a.WaveformSelection))
+	return o
+}
+
+// StaticValues are the static values associated with an instrument
+type StaticValues struct {
 	Filename             string
 	Name                 string
-	Inst                 DataIntf
 	ID                   intf.InstrumentID
-	C2Spd                note.C2SPD
 	Volume               volume.Volume
 	ChannelVolume        volume.Volume
 	RelativeNoteNumber   int8
-	Finetune             note.Finetune
 	AutoVibrato          AutoVibrato
-	NewNoteAction        note.Action
 	ChannelFilterFactory func(float32) intf.Filter
+}
+
+// Instrument is the mildly-decoded instrument/sample header
+type Instrument struct {
+	Static        StaticValues
+	Inst          DataIntf
+	C2Spd         note.C2SPD
+	Finetune      note.Finetune
+	NewNoteAction note.Action
 }
 
 // IsInvalid always returns false (valid)
@@ -80,7 +92,7 @@ func (inst *Instrument) SetC2Spd(c2spd note.C2SPD) {
 
 // GetDefaultVolume returns the default volume value for the instrument
 func (inst *Instrument) GetDefaultVolume() volume.Volume {
-	return inst.Volume
+	return inst.Static.Volume
 }
 
 // GetLength returns the length of the instrument
@@ -114,13 +126,13 @@ func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteCo
 
 	if inst.Inst != nil {
 		inst.Inst.Initialize(&ioc)
-		if inst.AutoVibrato.Enabled {
-			ioc.AutoVibratoState.Osc = inst.AutoVibrato.Factory()
+		if inst.Static.AutoVibrato.Enabled {
+			ioc.AutoVibratoState.Osc = inst.Static.AutoVibrato.Generate()
 		}
 	}
 
-	if inst.ChannelFilterFactory != nil {
-		oc.Filter = inst.ChannelFilterFactory(oc.Playback.GetSampleRate())
+	if inst.Static.ChannelFilterFactory != nil {
+		oc.Filter = inst.Static.ChannelFilterFactory(oc.Playback.GetSampleRate())
 	}
 
 	return &ioc
@@ -128,12 +140,12 @@ func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteCo
 
 // GetID returns the instrument number (1-based)
 func (inst *Instrument) GetID() intf.InstrumentID {
-	return inst.ID
+	return inst.Static.ID
 }
 
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at
 func (inst *Instrument) GetSemitoneShift() int8 {
-	return inst.RelativeNoteNumber
+	return inst.Static.RelativeNoteNumber
 }
 
 // GetKind returns the kind of the instrument
@@ -208,14 +220,13 @@ func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
 // Update updates the instrument
 func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) {
 	if ii := inst.Inst; ii != nil {
-		if inst.AutoVibrato.Enabled {
+		if inst.Static.AutoVibrato.Enabled {
 			if ncav := nc.GetAutoVibratoState(); ncav != nil && ncav.Osc != nil {
-				ncav.Osc.SetWaveform(oscillator.WaveTableSelect(inst.AutoVibrato.WaveformSelection))
-				ncav.Osc.Advance(int(inst.AutoVibrato.Rate))
+				ncav.Osc.Advance(int(inst.Static.AutoVibrato.Rate))
 				ncav.Ticks++
-				d := float32(inst.AutoVibrato.Depth) / 64
-				if inst.AutoVibrato.Sweep > 0 && ncav.Ticks < int(inst.AutoVibrato.Sweep) {
-					d *= float32(ncav.Ticks) / float32(inst.AutoVibrato.Sweep)
+				d := float32(inst.Static.AutoVibrato.Depth) / 64
+				if inst.Static.AutoVibrato.Sweep > 0 && ncav.Ticks < int(inst.Static.AutoVibrato.Sweep) {
+					d *= float32(ncav.Ticks) / float32(inst.Static.AutoVibrato.Sweep)
 				}
 				if ncs := nc.GetPlaybackState(); ncs != nil {
 					pd := note.PeriodDelta(ncav.Osc.GetWave(d))

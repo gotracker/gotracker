@@ -46,19 +46,21 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			v = 0x40
 		}
 		sample := instrument.Instrument{
-			Filename:           si.GetName(),
-			Name:               inst.GetName(),
-			C2Spd:              note.C2SPD(0), // uses si.Finetune, below
-			Volume:             v.Volume(),
-			RelativeNoteNumber: si.RelativeNoteNumber,
-			AutoVibrato: instrument.AutoVibrato{
-				Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
-				Sweep:             inst.VibratoSweep, // NOTE: for IT support, this needs to be calculated as (Depth * 256 / VibratoSweep) ticks
-				WaveformSelection: inst.VibratoType,
-				Depth:             inst.VibratoDepth,
-				Rate:              inst.VibratoRate,
-				Factory:           oscillator.NewProtrackerOscillator,
+			Static: instrument.StaticValues{
+				Filename:           si.GetName(),
+				Name:               inst.GetName(),
+				Volume:             v.Volume(),
+				RelativeNoteNumber: si.RelativeNoteNumber,
+				AutoVibrato: instrument.AutoVibrato{
+					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
+					Sweep:             inst.VibratoSweep, // NOTE: for IT support, this needs to be calculated as (Depth * 256 / VibratoSweep) ticks
+					WaveformSelection: inst.VibratoType,
+					Depth:             inst.VibratoDepth,
+					Rate:              inst.VibratoRate,
+					Factory:           oscillator.NewProtrackerOscillator,
+				},
 			},
+			C2Spd: note.C2SPD(0), // uses si.Finetune, below
 		}
 
 		instLen := int(si.Length)
@@ -284,12 +286,12 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 			id := channel.SampleID{
 				InstID: uint8(instNum + 1),
 			}
-			sample.ID = id
+			sample.Static.ID = id
 			song.Instruments[id.InstID] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
-			id, ok := sample.ID.(channel.SampleID)
+			id, ok := sample.Static.ID.(channel.SampleID)
 			if !ok {
 				continue
 			}

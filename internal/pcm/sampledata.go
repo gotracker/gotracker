@@ -22,7 +22,7 @@ type SampleData struct {
 	channels  int
 	data      []byte
 
-	reader io.Reader
+	reader io.ReadSeeker
 }
 
 // Channels returns the channel count from the sample data

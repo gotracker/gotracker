@@ -6,9 +6,10 @@ import (
 )
 
 // EnvPoint is a point for the envelope
-type EnvPoint struct {
-	Length int
-	Y      interface{}
+type EnvPoint interface {
+	Length() int
+	Value(out interface{})
+	Init(ticks int, value interface{})
 }
 
 // Envelope is an envelope for instruments

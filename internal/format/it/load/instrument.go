@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"reflect"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
@@ -85,7 +86,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			}
 
 			for i := range inst.VolumeEnvelope {
-				out := envelope.EnvPoint{}
+				out := envelope.VolumePoint{}
 				in1 := inst.VolumeEnvelope[i]
 				vol := volume.Volume(uint8(in1)) / 64
 				if vol > 1 {
@@ -102,11 +103,11 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 					}
 				}
 				if !ending {
-					out.Length = 1
+					out.Ticks = 1
 				} else {
-					out.Length = math.MaxInt64
+					out.Ticks = math.MaxInt64
 				}
-				id.VolEnv.Values = append(id.VolEnv.Values, out)
+				id.VolEnv.Values = append(id.VolEnv.Values, &out)
 			}
 
 			id.VolEnv.Loop = loop.NewLoop(volEnvLoopMode, volEnvLoopSettings)
@@ -161,7 +162,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		ci.Inst = &ii
 		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides)
 
-		convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, func(v int8) interface{} {
+		var volEnv envelope.VolumePoint
+		convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), func(v int8) interface{} {
 			vol := volume.Volume(uint8(v)) / 64
 			if vol > 1 {
 				// NOTE: there might be an incoming Y value == 0xFF, which really
@@ -175,12 +177,14 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			ioc.Fadeout()
 		}
 
-		convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, func(v int8) interface{} {
+		var panEnv envelope.PanPoint
+		convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), func(v int8) interface{} {
 			return panning.MakeStereoPosition(float32(v), -32, 32)
 		})
 
+		var pitchEnv envelope.PitchPoint
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
-		convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, func(v int8) interface{} {
+		convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), func(v int8) interface{} {
 			return float32(uint8(v))
 		})
 	}
@@ -188,7 +192,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	return outInsts, nil
 }
 
-func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert func(int8) interface{}) error {
+func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType reflect.Type, convert func(int8) interface{}) error {
 	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
 	if !outEnv.Enabled {
 		return nil
@@ -212,15 +216,18 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, convert 
 	}
 	outEnv.Values = make([]envelope.EnvPoint, int(inEnv.Count))
 	for i := range outEnv.Values {
-		out := &outEnv.Values[i]
 		in1 := inEnv.NodePoints[i]
-		out.Y = convert(in1.Y)
+		y := convert(in1.Y)
+		var ticks int
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
-			out.Length = int(in2.Tick) - int(in1.Tick)
+			ticks = int(in2.Tick) - int(in1.Tick)
 		} else {
-			out.Length = math.MaxInt64
+			ticks = math.MaxInt64
 		}
+		out := reflect.New(envType).Interface().(envelope.EnvPoint)
+		out.Init(ticks, y)
+		outEnv.Values[i] = out
 	}
 
 	outEnv.Loop = loop.NewLoop(envLoopMode, envLoopSettings)

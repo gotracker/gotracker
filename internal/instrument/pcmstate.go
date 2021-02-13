@@ -54,7 +54,7 @@ func (ed *pcmState) advance(nc intf.NoteControl, volEnv *envelope.Envelope, panE
 	}
 }
 
-func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
+func (ed *pcmState) updateVolEnv(t float32, y0, y1 envelope.EnvPoint) {
 	switch {
 	case t < 0:
 		t = 0
@@ -64,10 +64,10 @@ func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
 	a := volume.Volume(1)
 	b := volume.Volume(0)
 	if y0 != nil {
-		a = y0.(volume.Volume)
+		y0.Value(&a)
 	}
 	if y1 != nil {
-		b = y1.(volume.Volume)
+		y1.Value(&b)
 	}
 	v := a + volume.Volume(t)*(b-a)
 	switch {
@@ -79,14 +79,14 @@ func (ed *pcmState) updateVolEnv(t float32, y0, y1 interface{}) {
 	ed.volEnvValue = v
 }
 
-func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
+func (ed *pcmState) updatePanEnv(t float32, y0, y1 envelope.EnvPoint) {
 	a := panning.CenterAhead
 	b := panning.CenterAhead
 	if y0 != nil {
-		a = y0.(panning.Position)
+		y0.Value(&a)
 	}
 	if y1 != nil {
-		b = y1.(panning.Position)
+		y1.Value(&b)
 	}
 	ed.panEnvValue = panning.Position{
 		Angle:    a.Angle + t*(b.Angle-a.Angle),
@@ -94,33 +94,37 @@ func (ed *pcmState) updatePanEnv(t float32, y0, y1 interface{}) {
 	}
 }
 
-func (ed *pcmState) updatePitchEnv(t float32, y0, y1 interface{}) {
+func (ed *pcmState) updatePitchEnv(t float32, y0, y1 envelope.EnvPoint) {
 	a := note.PeriodDelta(0)
 	b := note.PeriodDelta(0)
 	if y0 != nil {
-		a = note.PeriodDelta(int8(uint8(y0.(float32) * 128)))
+		var av float32
+		y0.Value(&av)
+		a = note.PeriodDelta(int8(uint8(av * 128)))
 	}
 	if y1 != nil {
-		a = note.PeriodDelta(int8(uint8(y1.(float32) * 128)))
+		var bv float32
+		y1.Value(&bv)
+		b = note.PeriodDelta(int8(uint8(bv * 128)))
 	}
 	ed.pitchEnvValue = a + note.PeriodDelta(t)*(b-a)
 }
 
-func (ed *pcmState) updateFiltEnv(t float32, y0, y1 interface{}) {
+func (ed *pcmState) updateFiltEnv(t float32, y0, y1 envelope.EnvPoint) {
 	a := float32(0)
 	b := float32(0)
 	if y0 != nil {
-		a = y0.(float32)
+		y0.Value(&a)
 	}
 	if y1 != nil {
-		b = y1.(float32)
+		y1.Value(&b)
 	}
 	lerp := t * (b - a)
 	v := a + lerp
 	ed.filtEnvValue = v / 255
 }
 
-type envUpdateFunc func(t float32, y0 interface{}, y1 interface{})
+type envUpdateFunc func(t float32, y0 envelope.EnvPoint, y1 envelope.EnvPoint)
 
 func (ed *pcmState) advanceEnv(state *envelope.State, env *envelope.Envelope, nc intf.NoteControl, update envUpdateFunc, runTick bool) {
 	if state.Stopped() {
@@ -135,7 +139,7 @@ func (ed *pcmState) advanceEnv(state *envelope.State, env *envelope.Envelope, nc
 	}
 
 	if cur != nil {
-		update(t, cur.Y, next.Y)
+		update(t, cur, next)
 	}
 
 	if finishing && env.OnFinished != nil {

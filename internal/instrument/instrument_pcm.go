@@ -62,7 +62,7 @@ func (inst *PCM) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix
 	dry := inst.getSampleDry(pos, ed.keyOn)
 	chVol := ncs.Volume
 	postVol := envVol * chVol * inst.MixingVolume
-	wet := postVol.Apply(dry...)
+	wet := dry.ApplyInSitu(postVol)
 	return wet
 }
 

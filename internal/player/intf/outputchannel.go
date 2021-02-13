@@ -16,7 +16,7 @@ type OutputChannel struct {
 // ApplyFilter will apply the channel filter, if there is one.
 func (oc *OutputChannel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 	premix := oc.GetPremixVolume()
-	wet := premix.Apply(dry...)
+	wet := dry.ApplyInSitu(premix)
 	if oc.Filter != nil {
 		wet = oc.Filter.Filter(wet)
 		return wet

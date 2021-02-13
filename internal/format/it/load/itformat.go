@@ -180,10 +180,10 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	id := channel.SampleID{
 		InstID: uint8(instNum + 1),
 	}
-	sample.ID = id
+	sample.Static.ID = id
 	song.Instruments[id.InstID] = sample
 
-	id, ok := sample.ID.(channel.SampleID)
+	id, ok := sample.Static.ID.(channel.SampleID)
 	if !ok {
 		return
 	}

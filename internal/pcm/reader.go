@@ -1,8 +1,6 @@
 package pcm
 
 import (
-	"bytes"
-
 	"github.com/gotracker/gomixing/volume"
 )
 
@@ -17,13 +15,10 @@ func (s *SampleData) readData(converter SampleConverter) (volume.Matrix, error) 
 	if actualPos < 0 {
 		actualPos = 0
 	}
-	if s.reader == nil {
-		s.reader = bytes.NewReader(s.data)
-	}
 
 	out := make(volume.Matrix, s.channels)
 	for c := range out {
-		if err := converter.ReadAt(s.reader, actualPos, s.byteOrder); err != nil {
+		if err := converter.ReadAt(s, actualPos); err != nil {
 			return nil, err
 		}
 

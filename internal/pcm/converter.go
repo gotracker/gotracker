@@ -1,9 +1,6 @@
 package pcm
 
 import (
-	"encoding/binary"
-	"io"
-
 	"github.com/gotracker/gomixing/volume"
 )
 
@@ -11,5 +8,5 @@ import (
 type SampleConverter interface {
 	Volume() volume.Volume
 	Size() int
-	ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error
+	ReadAt(s *SampleData, ofs int64) error
 }

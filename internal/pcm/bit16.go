@@ -1,7 +1,6 @@
 package pcm
 
 import (
-	"encoding/binary"
 	"io"
 
 	"github.com/gotracker/gomixing/volume"
@@ -26,12 +25,15 @@ func (s Sample16BitSigned) Size() int {
 }
 
 // ReadAt reads a value from the reader provided in the byte order provided
-func (s *Sample16BitSigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
-	var in [2]byte
-	if _, err := r.ReadAt(in[:], ofs); err != nil {
-		return err
+func (s *Sample16BitSigned) ReadAt(d *SampleData, ofs int64) error {
+	if len(d.data) <= int(ofs)+1 {
+		return io.EOF
 	}
-	*s = Sample16BitSigned(b.Uint16(in[:]))
+	if ofs < 0 {
+		ofs = 0
+	}
+
+	*s = Sample16BitSigned(d.byteOrder.Uint16(d.data[ofs:]))
 	return nil
 }
 
@@ -49,12 +51,15 @@ func (s Sample16BitUnsigned) Size() int {
 }
 
 // ReadAt reads a value from the reader provided in the byte order provided
-func (s *Sample16BitUnsigned) ReadAt(r io.ReaderAt, ofs int64, b binary.ByteOrder) error {
-	var in [2]byte
-	if _, err := r.ReadAt(in[:], ofs); err != nil {
-		return err
+func (s *Sample16BitUnsigned) ReadAt(d *SampleData, ofs int64) error {
+	if len(d.data) <= int(ofs)+1 {
+		return io.EOF
 	}
-	*s = Sample16BitUnsigned(b.Uint16(in[:]))
+	if ofs < 0 {
+		ofs = 0
+	}
+
+	*s = Sample16BitUnsigned(d.byteOrder.Uint16(d.data[ofs:]))
 	return nil
 }
 

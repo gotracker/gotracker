@@ -22,6 +22,11 @@ func (e *State) Stop() {
 	e.stopped = true
 }
 
+// Envelope returns the envelope that the state is based on
+func (e *State) Envelope() *Envelope {
+	return e.env
+}
+
 // Reset resets the envelope
 func (e *State) Reset(env *Envelope) {
 	e.env = env

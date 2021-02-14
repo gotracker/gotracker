@@ -28,6 +28,9 @@ type PCM2 interface {
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration struct {
 	C2SPD                   note.C2SPD
+	InitialVolume           volume.Volume
+	InitialPan              panning.Position
+	InitialPeriod           note.Period
 	VolEnv                  *envelope.Envelope
 	PitchEnv                *envelope.Envelope
 	PanEnv                  *envelope.Envelope
@@ -64,9 +67,12 @@ func NewPCM2(config PCMConfiguration) Voice {
 		c2spd: config.C2SPD,
 	}
 
+	v.amp.SetVolume(config.InitialVolume)
 	v.amp.ResetFadeoutValue(config.FadeoutAmount)
+	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.ConfigureAutoVibrato(config.AutoVibrato, config.AutoVibratoRate, config.AutoVibratoDepth)
 	v.freq.ResetAutoVibrato(config.AutoVibratoSweep)
+	v.pan.SetPan(config.InitialPan)
 	v.volEnv.Reset(config.VolEnv)
 	v.pitchEnv.Reset(config.PitchEnv)
 

@@ -43,6 +43,8 @@ type OPLConfiguration struct {
 	Chip             render.OPL2Chip
 	Registers        OPL2Registers
 	C2SPD            note.C2SPD
+	InitialVolume    volume.Volume
+	InitialPeriod    note.Period
 	VolEnv           *envelope.Envelope
 	PitchEnv         *envelope.Envelope
 	FadeoutAmount    volume.Volume
@@ -74,7 +76,9 @@ func NewOPL2(config OPLConfiguration) Voice {
 		c2spd: config.C2SPD,
 	}
 
+	v.amp.SetVolume(config.InitialVolume)
 	v.amp.ResetFadeoutValue(config.FadeoutAmount)
+	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.ConfigureAutoVibrato(config.AutoVibrato, config.AutoVibratoRate, config.AutoVibratoDepth)
 	v.freq.ResetAutoVibrato(config.AutoVibratoSweep)
 	v.volEnv.Reset(config.VolEnv)

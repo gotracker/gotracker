@@ -5,4 +5,5 @@ type FilterEnveloper interface {
 	EnableFilterEnvelope(enabled bool)
 	IsFilterEnvelopeEnabled() bool
 	GetCurrentFilterEnvelope() float32
+	SetFilterEnvelopePosition(pos int)
 }

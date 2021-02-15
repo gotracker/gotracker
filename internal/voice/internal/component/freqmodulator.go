@@ -2,6 +2,7 @@ package component
 
 import (
 	"gotracker/internal/oscillator"
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -43,10 +44,10 @@ func (a *FreqModulator) SetAutoVibratoEnabled(enabled bool) {
 }
 
 // ConfigureAutoVibrato sets the AutoVibrato oscillator settings
-func (a *FreqModulator) ConfigureAutoVibrato(osc oscillator.Oscillator, rate int, depth float32) {
-	a.autoVibrato = osc
-	a.autoVibratoRate = rate
-	a.autoVibratoDepth = depth
+func (a *FreqModulator) ConfigureAutoVibrato(av voiceIntf.AutoVibrato) {
+	a.autoVibrato = av.Generate()
+	a.autoVibratoRate = int(av.Rate)
+	a.autoVibratoDepth = av.Depth
 }
 
 // ResetAutoVibrato resets the current AutoVibrato

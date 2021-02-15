@@ -9,4 +9,5 @@ type VolumeEnveloper interface {
 	EnableVolumeEnvelope(enabled bool)
 	IsVolumeEnvelopeEnabled() bool
 	GetCurrentVolumeEnvelope() volume.Volume
+	SetVolumeEnvelopePosition(pos int)
 }

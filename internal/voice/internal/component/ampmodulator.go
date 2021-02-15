@@ -7,14 +7,23 @@ import (
 // AmpModulator is an amplitude (volume) modulator
 type AmpModulator struct {
 	vol            volume.Volume
+	mixing         volume.Volume
 	fadeoutEnabled bool
 	fadeoutVol     volume.Volume
 	fadeoutAmt     volume.Volume
+	final          volume.Volume // = [fadeoutVol *] channel * mixing * vol
+}
+
+// Setup configures the initial settings of the modulator
+func (a *AmpModulator) Setup(mixing volume.Volume) {
+	a.mixing = mixing
+	a.updateFinal()
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
 func (a *AmpModulator) SetVolume(vol volume.Volume) {
 	a.vol = vol
+	a.updateFinal()
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
@@ -25,6 +34,7 @@ func (a AmpModulator) GetVolume() volume.Volume {
 // SetFadeoutEnabled sets the status of the fadeout enablement flag
 func (a *AmpModulator) SetFadeoutEnabled(enabled bool) {
 	a.fadeoutEnabled = enabled
+	a.updateFinal()
 }
 
 // ResetFadeoutValue resets the current fadeout value and optionally configures the amount of fadeout
@@ -33,6 +43,7 @@ func (a *AmpModulator) ResetFadeoutValue(amount ...volume.Volume) {
 	if len(amount) > 0 {
 		a.fadeoutAmt = amount[0]
 	}
+	a.updateFinal()
 }
 
 // IsFadeoutEnabled returns the status of the fadeout enablement flag
@@ -40,18 +51,19 @@ func (a AmpModulator) IsFadeoutEnabled() bool {
 	return a.fadeoutEnabled
 }
 
+// GetFadeoutVolume returns the value of the fadeout volume
+func (a AmpModulator) GetFadeoutVolume() volume.Volume {
+	return a.fadeoutVol
+}
+
 // GetFinalVolume returns the current volume (after fadeout calculation)
 func (a AmpModulator) GetFinalVolume() volume.Volume {
-	if a.fadeoutEnabled {
-		return a.fadeoutVol * a.vol
-	}
-
-	return a.vol
+	return a.final
 }
 
 // Advance advances the fadeout value by 1 tick
 func (a *AmpModulator) Advance() {
-	if !a.fadeoutEnabled {
+	if !a.fadeoutEnabled || a.fadeoutVol <= 0 {
 		return
 	}
 
@@ -61,5 +73,13 @@ func (a *AmpModulator) Advance() {
 		a.fadeoutVol = 0
 	case a.fadeoutVol > 1:
 		a.fadeoutVol = 1
+	}
+	a.updateFinal()
+}
+
+func (a *AmpModulator) updateFinal() {
+	a.final = a.mixing * a.vol
+	if a.fadeoutEnabled {
+		a.final *= a.fadeoutVol
 	}
 }

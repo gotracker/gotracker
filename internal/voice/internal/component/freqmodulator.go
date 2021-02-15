@@ -24,7 +24,7 @@ func (a *FreqModulator) SetPeriod(period note.Period) {
 }
 
 // GetPeriod returns the current period (before AutoVibrato and Delta calculation)
-func (a FreqModulator) GetPeriod() note.Period {
+func (a *FreqModulator) GetPeriod() note.Period {
 	return a.period
 }
 
@@ -34,7 +34,7 @@ func (a *FreqModulator) SetDelta(delta note.PeriodDelta) {
 }
 
 // GetDelta returns the current period delta (before AutoVibrato calculation)
-func (a FreqModulator) GetDelta() note.PeriodDelta {
+func (a *FreqModulator) GetDelta() note.PeriodDelta {
 	return a.delta
 }
 
@@ -64,12 +64,12 @@ func (a *FreqModulator) ResetAutoVibrato(sweep ...int) {
 }
 
 // IsAutoVibratoEnabled returns the status of the AutoVibrato enablement flag
-func (a FreqModulator) IsAutoVibratoEnabled() bool {
+func (a *FreqModulator) IsAutoVibratoEnabled() bool {
 	return a.autoVibratoEnabled
 }
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
-func (a FreqModulator) GetFinalPeriod() note.Period {
+func (a *FreqModulator) GetFinalPeriod() note.Period {
 	p := a.period.Add(a.delta)
 	if a.autoVibratoEnabled {
 		depth := a.autoVibratoDepth

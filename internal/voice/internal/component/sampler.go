@@ -30,7 +30,7 @@ func (s *Sampler) SetPos(pos sampling.Pos) {
 }
 
 // GetPos returns the current position of the sampler in the pcm data (and loops)
-func (s Sampler) GetPos() sampling.Pos {
+func (s *Sampler) GetPos() sampling.Pos {
 	return s.pos
 }
 
@@ -40,7 +40,7 @@ func (s *Sampler) SetKeyOn(on bool) {
 }
 
 // GetSample returns a multi-channel sample at the specified position
-func (s Sampler) GetSample(pos sampling.Pos) volume.Matrix {
+func (s *Sampler) GetSample(pos sampling.Pos) volume.Matrix {
 	v0 := s.getConvertedSample(pos.Pos)
 	if len(v0) == 0 && ((s.keyOn && s.sustainLoop.Enabled()) || s.wholeLoop.Enabled()) {
 		v01 := s.getConvertedSample(pos.Pos)
@@ -56,7 +56,7 @@ func (s Sampler) GetSample(pos sampling.Pos) volume.Matrix {
 	return v0
 }
 
-func (s Sampler) getConvertedSample(pos int) volume.Matrix {
+func (s *Sampler) getConvertedSample(pos int) volume.Matrix {
 	if s.sample == nil {
 		return volume.Matrix{}
 	}

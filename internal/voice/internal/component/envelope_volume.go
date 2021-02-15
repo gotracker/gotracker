@@ -28,12 +28,12 @@ func (e *VolumeEnvelope) SetEnabled(enabled bool) {
 }
 
 // IsEnabled returns the enabled flag for the envelope
-func (e VolumeEnvelope) IsEnabled() bool {
+func (e *VolumeEnvelope) IsEnabled() bool {
 	return e.enabled
 }
 
 // GetCurrentValue returns the current cached envelope value
-func (e VolumeEnvelope) GetCurrentValue() volume.Volume {
+func (e *VolumeEnvelope) GetCurrentValue() volume.Volume {
 	return e.vol
 }
 

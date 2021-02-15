@@ -26,12 +26,12 @@ func (e *FilterEnvelope) SetEnabled(enabled bool) {
 }
 
 // IsEnabled returns the enabled flag for the envelope
-func (e FilterEnvelope) IsEnabled() bool {
+func (e *FilterEnvelope) IsEnabled() bool {
 	return e.enabled
 }
 
 // GetCurrentValue returns the current cached envelope value
-func (e FilterEnvelope) GetCurrentValue() float32 {
+func (e *FilterEnvelope) GetCurrentValue() float32 {
 	return e.value
 }
 

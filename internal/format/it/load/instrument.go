@@ -20,6 +20,7 @@ import (
 	"gotracker/internal/oscillator"
 	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -47,8 +48,8 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
-			FadeOut: instrument.FadeoutSettings{
-				Mode:   instrument.FadeoutModeAlwaysActive,
+			FadeOut: intf.FadeoutSettings{
+				Mode:   intf.FadeoutModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
 			},
 			VolEnv: envelope.Envelope{
@@ -133,8 +134,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	for i, ci := range outInsts {
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
-			FadeOut: instrument.FadeoutSettings{
-				Mode:   instrument.FadeoutModeAlwaysActive,
+			FadeOut: intf.FadeoutSettings{
+				Mode:   intf.FadeoutModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
 			},
 		}
@@ -382,12 +383,12 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed) / note.C2SPD(bytesPerFrame)
-	ii.Static.AutoVibrato = instrument.AutoVibrato{
+	ii.Static.AutoVibrato = voiceIntf.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,
 		WaveformSelection: si.Header.VibratoType,
-		Depth:             si.Header.VibratoDepth,
-		Rate:              si.Header.VibratoSpeed,
+		Depth:             float32(si.Header.VibratoDepth) / 64,
+		Rate:              int(si.Header.VibratoSpeed),
 		Factory: func() oscillator.Oscillator {
 			return oscillator.NewImpulseTrackerOscillator(1)
 		},
@@ -395,7 +396,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
 
 	if si.Header.VibratoSweep != 0 {
-		ii.Static.AutoVibrato.Sweep = uint8(int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep))
+		ii.Static.AutoVibrato.Sweep = int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep)
 	}
 	if !si.Header.DefaultPan.IsDisabled() {
 		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)

@@ -30,7 +30,7 @@ func (e *State) Envelope() *Envelope {
 // Reset resets the envelope
 func (e *State) Reset(env *Envelope) {
 	e.env = env
-	if !e.env.Enabled {
+	if e.env == nil || !e.env.Enabled {
 		e.stopped = true
 		return
 	}

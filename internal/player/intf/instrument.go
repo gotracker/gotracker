@@ -1,12 +1,10 @@
 package intf
 
 import (
-	"time"
-
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -14,6 +12,12 @@ import (
 type InstrumentID interface {
 	IsEmpty() bool
 }
+
+// InstrumentDataIntf is the interface to implementation-specific functions on an instrument
+type InstrumentDataIntf interface{}
+
+// ChannelFilterFactory is a function type that builds a filter with an input parameter taking a value between 0 and 1
+type ChannelFilterFactory func(float32) Filter
 
 // Instrument is an interface for instrument/sample data
 type Instrument interface {
@@ -23,27 +27,12 @@ type Instrument interface {
 	GetDefaultVolume() volume.Volume
 	GetID() InstrumentID
 	GetSemitoneShift() int8
-	InstantiateOnChannel(*OutputChannel) NoteControl
 	SetFinetune(note.Finetune)
 	GetFinetune() note.Finetune
 	GetKind() note.InstrumentKind
 	GetLength() sampling.Pos
 	GetNewNoteAction() note.Action
-
-	GetSample(NoteControl, sampling.Pos) volume.Matrix
-	GetCurrentPeriodDelta(NoteControl) note.PeriodDelta
-	GetCurrentFilterEnvValue(NoteControl) float32
-	GetCurrentPanning(NoteControl) panning.Position
-	Attack(NoteControl)
-	Release(NoteControl)
-	Fadeout(NoteControl)
-	GetKeyOn(NoteControl) bool
-	Update(NoteControl, time.Duration)
-	SetEnvelopePosition(NoteControl, int)
-	CloneData(NoteControl) interface{}
-	IsVolumeEnvelopeEnabled() bool
-	IsDone(NoteControl) bool
-	SetVolumeEnvelopeEnable(NoteControl, bool)
-	SetPanningEnvelopeEnable(NoteControl, bool)
-	SetPitchEnvelopeEnable(NoteControl, bool)
+	GetData() InstrumentDataIntf
+	GetChannelFilterFactory() ChannelFilterFactory
+	GetAutoVibrato() voiceIntf.AutoVibrato
 }

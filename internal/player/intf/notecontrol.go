@@ -8,13 +8,12 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/oscillator"
+	"gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
 // NoteControl is an interface for an instrument on a particular output channel
 type NoteControl interface {
-	sampling.SampleStream
-
 	Clone() NoteControl
 	GetOutputChannel() *OutputChannel
 	GetCurrentPeriodDelta() note.PeriodDelta
@@ -25,12 +24,8 @@ type NoteControl interface {
 	Fadeout()
 	GetKeyOn() bool
 	Update(time.Duration)
-	SetFilter(Filter)
-	SetData(interface{})
-	GetData() interface{}
 	SetEnvelopePosition(int)
-	GetPlaybackState() *PlaybackState
-	GetAutoVibratoState() *AutoVibratoState
+	GetVoice() voice.Voice
 	IsVolumeEnvelopeEnabled() bool
 	IsDone() bool
 	SetVolumeEnvelopeEnable(bool)

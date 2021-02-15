@@ -2,56 +2,14 @@ package instrument
 
 import (
 	"math"
-	"time"
 
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
-	"gotracker/internal/player/state"
 )
-
-// DataIntf is the interface to implementation-specific functions on an instrument
-type DataIntf interface {
-	GetSample(intf.NoteControl, sampling.Pos) volume.Matrix
-	GetCurrentPeriodDelta(intf.NoteControl) note.PeriodDelta
-	GetCurrentFilterEnvValue(ioc intf.NoteControl) float32
-	GetCurrentPanning(intf.NoteControl) panning.Position
-	SetEnvelopePosition(intf.NoteControl, int)
-	Initialize(intf.NoteControl) error
-	Attack(intf.NoteControl)
-	Release(intf.NoteControl)
-	Fadeout(intf.NoteControl)
-	GetKeyOn(intf.NoteControl) bool
-	Update(intf.NoteControl, time.Duration)
-	GetKind() note.InstrumentKind
-	CloneData(intf.NoteControl) interface{}
-	IsVolumeEnvelopeEnabled() bool
-	IsDone(intf.NoteControl) bool
-	SetVolumeEnvelopeEnable(intf.NoteControl, bool)
-	SetPanningEnvelopeEnable(intf.NoteControl, bool)
-	SetPitchEnvelopeEnable(intf.NoteControl, bool)
-}
-
-// AutoVibrato is the setting and memory for the auto-vibrato system
-type AutoVibrato struct {
-	Enabled           bool
-	Sweep             uint8
-	WaveformSelection uint8
-	Depth             uint8
-	Rate              uint8
-	Factory           func() oscillator.Oscillator
-}
-
-// Generate creates an AutoVibrato waveform oscillator and configures it with the inital values
-func (a *AutoVibrato) Generate() oscillator.Oscillator {
-	o := a.Factory()
-	o.SetWaveform(oscillator.WaveTableSelect(a.WaveformSelection))
-	return o
-}
 
 // StaticValues are the static values associated with an instrument
 type StaticValues struct {
@@ -59,16 +17,15 @@ type StaticValues struct {
 	Name                 string
 	ID                   intf.InstrumentID
 	Volume               volume.Volume
-	ChannelVolume        volume.Volume
 	RelativeNoteNumber   int8
-	AutoVibrato          AutoVibrato
-	ChannelFilterFactory func(float32) intf.Filter
+	AutoVibrato          voiceIntf.AutoVibrato
+	ChannelFilterFactory intf.ChannelFilterFactory
 }
 
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
 	Static        StaticValues
-	Inst          DataIntf
+	Inst          intf.InstrumentDataIntf
 	C2Spd         note.C2SPD
 	Finetune      note.Finetune
 	NewNoteAction note.Action
@@ -117,27 +74,6 @@ func (inst *Instrument) GetFinetune() note.Finetune {
 	return inst.Finetune
 }
 
-// InstantiateOnChannel takes an instrument and loads it onto an output channel
-func (inst *Instrument) InstantiateOnChannel(oc *intf.OutputChannel) intf.NoteControl {
-	ioc := state.NoteControl{
-		Output: oc,
-	}
-	ioc.Instrument = inst
-
-	if inst.Inst != nil {
-		inst.Inst.Initialize(&ioc)
-		if inst.Static.AutoVibrato.Enabled {
-			ioc.AutoVibratoState.Osc = inst.Static.AutoVibrato.Generate()
-		}
-	}
-
-	if inst.Static.ChannelFilterFactory != nil {
-		oc.Filter = inst.Static.ChannelFilterFactory(oc.Playback.GetSampleRate())
-	}
-
-	return &ioc
-}
-
 // GetID returns the instrument number (1-based)
 func (inst *Instrument) GetID() intf.InstrumentID {
 	return inst.Static.ID
@@ -150,102 +86,13 @@ func (inst *Instrument) GetSemitoneShift() int8 {
 
 // GetKind returns the kind of the instrument
 func (inst *Instrument) GetKind() note.InstrumentKind {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetKind()
+	switch inst.Inst.(type) {
+	case *PCM:
+		return note.InstrumentKindPCM
+	case *OPL2:
+		return note.InstrumentKindOPL2
 	}
 	return note.InstrumentKindPCM
-}
-
-// GetSample returns a sample from the instrument at the specified position
-func (inst *Instrument) GetSample(nc intf.NoteControl, pos sampling.Pos) volume.Matrix {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetSample(nc, pos)
-	}
-	return nil
-}
-
-// GetCurrentPeriodDelta returns the current pitch envelope value
-func (inst *Instrument) GetCurrentPeriodDelta(nc intf.NoteControl) note.PeriodDelta {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetCurrentPeriodDelta(nc)
-	}
-	return note.PeriodDelta(0)
-}
-
-// GetCurrentFilterEnvValue returns the current filter envelope value
-func (inst *Instrument) GetCurrentFilterEnvValue(nc intf.NoteControl) float32 {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetCurrentFilterEnvValue(nc)
-	}
-	return 1
-}
-
-// GetCurrentPanning returns the panning envelope position
-func (inst *Instrument) GetCurrentPanning(nc intf.NoteControl) panning.Position {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetCurrentPanning(nc)
-	}
-	return panning.CenterAhead
-}
-
-// Attack sets the key-on flag for the instrument
-func (inst *Instrument) Attack(nc intf.NoteControl) {
-	if ii := inst.Inst; ii != nil {
-		ii.Attack(nc)
-	}
-}
-
-// Release clears the key-on flag for the instrument
-func (inst *Instrument) Release(nc intf.NoteControl) {
-	if ii := inst.Inst; ii != nil {
-		ii.Release(nc)
-	}
-}
-
-// Fadeout sets the instrument to fading-out mode
-func (inst *Instrument) Fadeout(nc intf.NoteControl) {
-	if ii := inst.Inst; ii != nil {
-		ii.Fadeout(nc)
-	}
-}
-
-// GetKeyOn returns the key-on flag state for the instrument
-func (inst *Instrument) GetKeyOn(nc intf.NoteControl) bool {
-	if ii := inst.Inst; ii != nil {
-		return ii.GetKeyOn(nc)
-	}
-	return false
-}
-
-// Update updates the instrument
-func (inst *Instrument) Update(nc intf.NoteControl, tickDuration time.Duration) {
-	if ii := inst.Inst; ii != nil {
-		if inst.Static.AutoVibrato.Enabled {
-			if ncav := nc.GetAutoVibratoState(); ncav != nil && ncav.Osc != nil {
-				ncav.Osc.Advance(int(inst.Static.AutoVibrato.Rate))
-				ncav.Ticks++
-				d := float32(inst.Static.AutoVibrato.Depth) / 64
-				if inst.Static.AutoVibrato.Sweep > 0 && ncav.Ticks < int(inst.Static.AutoVibrato.Sweep) {
-					d *= float32(ncav.Ticks) / float32(inst.Static.AutoVibrato.Sweep)
-				}
-				if ncs := nc.GetPlaybackState(); ncs != nil {
-					pd := note.PeriodDelta(ncav.Osc.GetWave(d))
-					ncs.Period = ncs.Period.Add(pd)
-				}
-			}
-		}
-		ii.Update(nc, tickDuration)
-		if oc := nc.GetOutputChannel(); oc != nil && oc.Filter != nil {
-			oc.Filter.UpdateEnv(ii.GetCurrentFilterEnvValue(nc))
-		}
-	}
-}
-
-// SetEnvelopePosition sets the envelope position for the instrument
-func (inst *Instrument) SetEnvelopePosition(nc intf.NoteControl, ticks int) {
-	if ii := inst.Inst; ii != nil {
-		ii.SetEnvelopePosition(nc, ticks)
-	}
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
@@ -253,47 +100,17 @@ func (inst *Instrument) GetNewNoteAction() note.Action {
 	return inst.NewNoteAction
 }
 
-// CloneData clones the data associated to the note-control interface
-func (inst *Instrument) CloneData(nc intf.NoteControl) interface{} {
-	if ii := inst.Inst; ii != nil {
-		return ii.CloneData(nc)
-	}
-	return nil
+// GetData returns the instrument-specific data interface
+func (inst *Instrument) GetData() intf.InstrumentDataIntf {
+	return inst.Inst
 }
 
-// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
-func (inst *Instrument) IsVolumeEnvelopeEnabled() bool {
-	if ii := inst.Inst; ii != nil {
-		return ii.IsVolumeEnvelopeEnabled()
-	}
-	return false
+// GetChannelFilterFactory returns the factory for the channel filter
+func (inst *Instrument) GetChannelFilterFactory() intf.ChannelFilterFactory {
+	return inst.Static.ChannelFilterFactory
 }
 
-// IsDone returns true if the instrument has stopped
-func (inst *Instrument) IsDone(nc intf.NoteControl) bool {
-	if ii := inst.Inst; ii != nil {
-		return ii.IsDone(nc)
-	}
-	return false
-}
-
-// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
-func (inst *Instrument) SetVolumeEnvelopeEnable(nc intf.NoteControl, enabled bool) {
-	if ii := inst.Inst; ii != nil {
-		ii.SetVolumeEnvelopeEnable(nc, enabled)
-	}
-}
-
-// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
-func (inst *Instrument) SetPanningEnvelopeEnable(nc intf.NoteControl, enabled bool) {
-	if ii := inst.Inst; ii != nil {
-		ii.SetPanningEnvelopeEnable(nc, enabled)
-	}
-}
-
-// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
-func (inst *Instrument) SetPitchEnvelopeEnable(nc intf.NoteControl, enabled bool) {
-	if ii := inst.Inst; ii != nil {
-		ii.SetPitchEnvelopeEnable(nc, enabled)
-	}
+// GetAutoVibrato returns the settings for the autovibrato system
+func (inst *Instrument) GetAutoVibrato() voiceIntf.AutoVibrato {
+	return inst.Static.AutoVibrato
 }

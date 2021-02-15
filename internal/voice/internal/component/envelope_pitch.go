@@ -19,6 +19,7 @@ func (e *PitchEnvelope) Reset(env *envelope.Envelope) {
 	e.state.Reset(env)
 	e.keyOn = false
 	e.prevKeyOn = false
+	e.update()
 }
 
 // SetEnabled sets the enabled flag for the envelope
@@ -70,5 +71,5 @@ func (e *PitchEnvelope) update() {
 	}
 
 	val := y0 + t*(y1-y0)
-	e.delta = note.PeriodDelta(val)
+	e.delta = note.PeriodDelta(-val)
 }

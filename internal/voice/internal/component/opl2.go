@@ -26,15 +26,17 @@ type OPL2Registers struct {
 
 // OPL2 is an OPL2 component
 type OPL2 struct {
-	chip  render.OPL2Chip
-	reg   OPL2Registers
-	c2spd note.C2SPD
-	keyOn bool
+	chip    render.OPL2Chip
+	channel int
+	reg     OPL2Registers
+	c2spd   note.C2SPD
+	keyOn   bool
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2) Setup(chip render.OPL2Chip, reg OPL2Registers, c2spd note.C2SPD) {
+func (o *OPL2) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, c2spd note.C2SPD) {
 	o.chip = chip
+	o.channel = channel
 	o.reg = reg
 	o.c2spd = c2spd
 	o.keyOn = false
@@ -43,18 +45,46 @@ func (o *OPL2) Setup(chip render.OPL2Chip, reg OPL2Registers, c2spd note.C2SPD) 
 // Attack activates the key-on bit
 func (o *OPL2) Attack() {
 	o.keyOn = true
+
+	// calculate the register addressing information
+	index := uint32(o.channel)
+	mod := o.getChannelIndex(o.channel)
+	car := mod + 0x03
+	ch := o.chip
+
+	// send the voice details out to the chip
+	ch.WriteReg(0x20|mod, o.reg.Mod.Reg20)
+	ch.WriteReg(0x40|mod, o.reg.Mod.Reg40)
+	ch.WriteReg(0x60|mod, o.reg.Mod.Reg60)
+	ch.WriteReg(0x80|mod, o.reg.Mod.Reg80)
+	ch.WriteReg(0xE0|mod, o.reg.Mod.RegE0)
+
+	ch.WriteReg(0x20|car, o.reg.Car.Reg20)
+	ch.WriteReg(0x40|car, o.reg.Car.Reg40)
+	ch.WriteReg(0x60|car, o.reg.Car.Reg60)
+	ch.WriteReg(0x80|car, o.reg.Car.Reg80)
+	ch.WriteReg(0xE0|car, o.reg.Car.RegE0)
+
+	ch.WriteReg(0xC0|index, o.reg.RegC0)
 }
 
 // Release deactivates the key-on bit
 func (o *OPL2) Release() {
 	o.keyOn = false
+
+	// calculate the register addressing information
+	index := uint32(o.channel)
+	ch := o.chip
+
+	// send the voice details out to the chip
+	ch.WriteReg(0xB0|index, 0x00)
 }
 
 // Advance advances the playback
-func (o *OPL2) Advance(channel int, carVol volume.Volume, period note.Period) {
+func (o *OPL2) Advance(carVol volume.Volume, period note.Period) {
 	// calculate the register addressing information
-	index := uint32(channel)
-	mod := o.getChannelIndex(channel)
+	index := uint32(o.channel)
+	mod := o.getChannelIndex(o.channel)
 	car := mod + 0x03
 	ch := o.chip
 
@@ -73,22 +103,11 @@ func (o *OPL2) Advance(channel int, carVol volume.Volume, period note.Period) {
 	}
 
 	// send the voice details out to the chip
-	ch.WriteReg(0x20|mod, o.reg.Mod.Reg20)
 	ch.WriteReg(0x40|mod, o.calc40(o.reg.Mod.Reg40, modVol))
-	ch.WriteReg(0x60|mod, o.reg.Mod.Reg60)
-	ch.WriteReg(0x80|mod, o.reg.Mod.Reg80)
-	ch.WriteReg(0xE0|mod, o.reg.Mod.RegE0)
+
+	ch.WriteReg(0x40|car, o.calc40(o.reg.Car.Reg40, carVol))
 
 	ch.WriteReg(0xA0|index, regA0)
-
-	ch.WriteReg(0x20|car, o.reg.Car.Reg20)
-	ch.WriteReg(0x40|car, o.calc40(o.reg.Car.Reg40, carVol))
-	ch.WriteReg(0x60|car, o.reg.Car.Reg60)
-	ch.WriteReg(0x80|car, o.reg.Car.Reg80)
-	ch.WriteReg(0xE0|car, o.reg.Car.RegE0)
-
-	ch.WriteReg(0xC0|index, o.reg.RegC0)
-
 	ch.WriteReg(0xB0|index, regB0)
 }
 
@@ -103,13 +122,12 @@ func (o *OPL2) getChannelIndex(channelIdx int) uint32 {
 }
 
 func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
-	mVol := uint16(vol * 64)
-	oVol := uint16(reg40 & 0x3f)
-	totalVol := uint8(oVol * mVol / 64)
+	oVol := volume.Volume(63-uint16(reg40&0x3f)) / 63
+	totalVol := oVol * vol * 63
 	if totalVol > 63 {
 		totalVol = 63
 	}
-	adlVol := uint8(63) - totalVol
+	adlVol := 63 - uint8(totalVol)
 
 	result := reg40 &^ 0x3f
 	result |= adlVol

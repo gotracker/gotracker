@@ -20,6 +20,23 @@ func (a *AmpModulator) Setup(mixing volume.Volume) {
 	a.updateFinal()
 }
 
+// Attack disables the fadeout and resets its volume
+func (a *AmpModulator) Attack() {
+	a.fadeoutEnabled = false
+	a.fadeoutVol = volume.Volume(1)
+	a.updateFinal()
+}
+
+// Release currently does nothing
+func (a *AmpModulator) Release() {
+}
+
+// Fadeout activates the fadeout
+func (a *AmpModulator) Fadeout() {
+	a.fadeoutEnabled = true
+	a.updateFinal()
+}
+
 // SetVolume sets the current volume (before fadeout calculation)
 func (a *AmpModulator) SetVolume(vol volume.Volume) {
 	a.vol = vol

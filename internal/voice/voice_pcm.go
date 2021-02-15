@@ -7,10 +7,9 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/envelope"
-	"gotracker/internal/loop"
+	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
-	"gotracker/internal/pcm"
+	"gotracker/internal/player/intf"
 	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 	"gotracker/internal/voice/internal/component"
@@ -31,35 +30,26 @@ type PCM interface {
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration struct {
-	Sample                  pcm.Sample
-	C2SPD                   note.C2SPD
-	InitialVolume           volume.Volume
-	InitialPan              panning.Position
-	InitialPeriod           note.Period
-	InitialPos              sampling.Pos
-	MixingVolume            volume.Volume
-	Loop                    loop.Loop
-	SustainLoop             loop.Loop
-	VolEnv                  *envelope.Envelope
-	PitchEnv                *envelope.Envelope
-	PanEnv                  *envelope.Envelope
-	FilterEnv               *envelope.Envelope
-	PitchAndFilterEnvShared bool
-	FilterEnvActive         bool // if PitchAndFilterEnvShared is true, this dictates which is active initially - true=filter, false=pitch
-	FadeoutAmount           volume.Volume
-	AutoVibrato             voiceIntf.AutoVibrato
+	C2SPD         note.C2SPD
+	InitialVolume volume.Volume
+	InitialPeriod note.Period
+	AutoVibrato   voiceIntf.AutoVibrato
+	DataIntf      intf.InstrumentDataIntf
 }
 
 // == the actual pcm voice ==
 
 type pcmVoice struct {
-	c2spd note.C2SPD
+	c2spd         note.C2SPD
+	initialVolume volume.Volume
 
 	keyOn     bool
 	prevKeyOn bool
 
 	pitchAndFilterEnvShared bool
 	filterEnvActive         bool // if pitchAndFilterEnvShared is true, this dictates which is active initially - true=filter, false=pitch
+
+	fadeoutMode intf.FadeoutMode
 
 	sampler   component.Sampler
 	amp       component.AmpModulator
@@ -74,28 +64,33 @@ type pcmVoice struct {
 // NewPCM creates a new PCM voice
 func NewPCM(config PCMConfiguration) voiceIntf.Voice {
 	v := pcmVoice{
-		c2spd:                   config.C2SPD,
-		pitchAndFilterEnvShared: config.PitchAndFilterEnvShared,
-		filterEnvActive:         config.FilterEnvActive,
+		c2spd:         config.C2SPD,
+		initialVolume: config.InitialVolume,
 	}
 
-	v.sampler.Setup(config.Sample, config.Loop, config.SustainLoop)
-	v.sampler.SetPos(config.InitialPos)
-	v.amp.Setup(config.MixingVolume)
+	switch d := config.DataIntf.(type) {
+	case *instrument.PCM:
+		v.pitchAndFilterEnvShared = true
+		v.filterEnvActive = d.PitchFiltMode
+		v.sampler.Setup(d.Sample, d.Loop, d.SustainLoop)
+		//v.sampler.SetPos(d.InitialPos)
+		v.amp.Setup(d.MixingVolume)
+		v.amp.ResetFadeoutValue(d.FadeOut.Amount)
+		v.pan.SetPan(d.Panning)
+		v.volEnv.SetEnabled(d.VolEnv.Enabled)
+		v.volEnv.Reset(&d.VolEnv)
+		v.pitchEnv.SetEnabled(d.PitchFiltEnv.Enabled)
+		v.pitchEnv.Reset(&d.PitchFiltEnv)
+		v.panEnv.SetEnabled(d.PanEnv.Enabled)
+		v.panEnv.Reset(&d.PanEnv)
+		v.filterEnv.SetEnabled(d.PitchFiltEnv.Enabled)
+		v.filterEnv.Reset(&d.PitchFiltEnv)
+	}
+
 	v.amp.SetVolume(config.InitialVolume)
-	v.amp.ResetFadeoutValue(config.FadeoutAmount)
 	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.ConfigureAutoVibrato(config.AutoVibrato)
 	v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
-	v.pan.SetPan(config.InitialPan)
-	v.volEnv.SetEnabled(config.VolEnv.Enabled)
-	v.volEnv.Reset(config.VolEnv)
-	v.pitchEnv.SetEnabled(config.PitchEnv.Enabled)
-	v.pitchEnv.Reset(config.PitchEnv)
-	v.panEnv.SetEnabled(config.PanEnv.Enabled)
-	v.panEnv.Reset(config.PanEnv)
-	v.filterEnv.SetEnabled(config.FilterEnv.Enabled)
-	v.filterEnv.Reset(config.FilterEnv)
 
 	var o PCM = &v
 	return o
@@ -105,19 +100,31 @@ func NewPCM(config PCMConfiguration) voiceIntf.Voice {
 
 func (v *pcmVoice) Attack() {
 	v.keyOn = true
-	v.amp.ResetFadeoutValue()
-	v.amp.SetFadeoutEnabled(false)
+	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
 	v.sampler.Attack()
+	v.volEnv.SetEnvelopePosition(0)
+	v.pitchEnv.SetEnvelopePosition(0)
+	v.panEnv.SetEnvelopePosition(0)
+	v.filterEnv.SetEnvelopePosition(0)
 }
 
 func (v *pcmVoice) Release() {
 	v.keyOn = false
+	v.amp.Release()
 	v.sampler.Release()
 }
 
 func (v *pcmVoice) Fadeout() {
-	v.amp.SetFadeoutEnabled(true)
+	switch v.fadeoutMode {
+	case intf.FadeoutModeAlwaysActive:
+		v.amp.Fadeout()
+	case intf.FadeoutModeOnlyIfVolEnvActive:
+		if v.IsVolumeEnvelopeEnabled() {
+			v.amp.Fadeout()
+		}
+	}
+
 	v.sampler.Fadeout()
 }
 
@@ -184,6 +191,9 @@ func (v *pcmVoice) GetFinalPeriod() note.Period {
 // == AmpModulator ==
 
 func (v *pcmVoice) SetVolume(vol volume.Volume) {
+	if vol == volume.VolumeUseInstVol {
+		vol = v.initialVolume
+	}
 	v.amp.SetVolume(vol)
 }
 
@@ -231,7 +241,7 @@ func (v *pcmVoice) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
-	return 0
+	return 1
 }
 
 func (v *pcmVoice) SetVolumeEnvelopePosition(pos int) {
@@ -317,7 +327,7 @@ func (v *pcmVoice) SetPanEnvelopePosition(pos int) {
 
 // == required function interfaces ==
 
-func (v *pcmVoice) Advance(channel int, tickDuration time.Duration) {
+func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	defer func() {
 		v.prevKeyOn = v.keyOn
 	}()
@@ -344,6 +354,10 @@ func (v *pcmVoice) GetSampler(samplerRate float32, out voiceIntf.FilterApplier) 
 	o := component.OutputFilter{
 		Input:  v,
 		Output: out,
+	}
+	if v.IsFilterEnvelopeEnabled() {
+		fval := v.GetCurrentFilterEnvelope()
+		out.SetFilterEnvelopeValue(fval)
 	}
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }

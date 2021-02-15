@@ -20,6 +20,7 @@ func (e *PanEnvelope) Reset(env *envelope.Envelope) {
 	e.state.Reset(env)
 	e.keyOn = false
 	e.prevKeyOn = false
+	e.update()
 }
 
 // SetEnabled sets the enabled flag for the envelope

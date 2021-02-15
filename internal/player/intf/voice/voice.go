@@ -1,12 +1,13 @@
 package voice
 
 import (
-	"gotracker/internal/player/note"
 	"time"
 
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+
+	"gotracker/internal/player/note"
 )
 
 // Voice is a voice interface
@@ -25,7 +26,7 @@ type Voice interface {
 
 	// == required function interfaces ==
 	Advance(channel int, tickDuration time.Duration)
-	GetSampler(samplerRate float32) sampling.Sampler
+	GetSampler(samplerRate float32, out FilterApplier) sampling.Sampler
 	Clone() Voice
 }
 

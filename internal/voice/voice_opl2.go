@@ -198,7 +198,7 @@ func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {
 	return nil
 }
 
-func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *opl2Voice) GetSampler(samplerRate float32, out voiceIntf.FilterApplier) sampling.Sampler {
 	return nil
 }
 

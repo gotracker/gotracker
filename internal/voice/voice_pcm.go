@@ -108,14 +108,17 @@ func (v *pcmVoice) Attack() {
 	v.amp.ResetFadeoutValue()
 	v.amp.SetFadeoutEnabled(false)
 	v.freq.ResetAutoVibrato()
+	v.sampler.Attack()
 }
 
 func (v *pcmVoice) Release() {
 	v.keyOn = false
+	v.sampler.Release()
 }
 
 func (v *pcmVoice) Fadeout() {
 	v.amp.SetFadeoutEnabled(true)
+	v.sampler.Fadeout()
 }
 
 func (v *pcmVoice) IsKeyOn() bool {
@@ -335,10 +338,14 @@ func (v *pcmVoice) Advance(channel int, tickDuration time.Duration) {
 	}
 }
 
-func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *pcmVoice) GetSampler(samplerRate float32, out voiceIntf.FilterApplier) sampling.Sampler {
 	period := v.GetFinalPeriod()
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
-	return sampling.NewSampler(v, v.GetPos(), samplerAdd)
+	o := component.OutputFilter{
+		Input:  v,
+		Output: out,
+	}
+	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }
 
 func (v *pcmVoice) Clone() voiceIntf.Voice {

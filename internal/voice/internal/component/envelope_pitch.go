@@ -27,12 +27,12 @@ func (e *PitchEnvelope) SetEnabled(enabled bool) {
 }
 
 // IsEnabled returns the enabled flag for the envelope
-func (e PitchEnvelope) IsEnabled() bool {
+func (e *PitchEnvelope) IsEnabled() bool {
 	return e.enabled
 }
 
 // GetCurrentValue returns the current cached envelope value
-func (e PitchEnvelope) GetCurrentValue() note.PeriodDelta {
+func (e *PitchEnvelope) GetCurrentValue() note.PeriodDelta {
 	return e.delta
 }
 

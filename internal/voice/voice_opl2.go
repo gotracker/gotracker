@@ -82,19 +82,19 @@ func (v *opl2Voice) Release() {
 	v.o.Release()
 }
 
-func (v opl2Voice) Fadeout() {
+func (v *opl2Voice) Fadeout() {
 	v.amp.SetFadeoutEnabled(true)
 }
 
-func (v opl2Voice) IsKeyOn() bool {
+func (v *opl2Voice) IsKeyOn() bool {
 	return v.keyOn
 }
 
-func (v opl2Voice) IsFadeout() bool {
+func (v *opl2Voice) IsFadeout() bool {
 	return v.amp.IsFadeoutEnabled()
 }
 
-func (v opl2Voice) IsDone() bool {
+func (v *opl2Voice) IsDone() bool {
 	if !v.amp.IsFadeoutEnabled() {
 		return false
 	}
@@ -107,7 +107,7 @@ func (v *opl2Voice) SetPeriod(period note.Period) {
 	v.freq.SetPeriod(period)
 }
 
-func (v opl2Voice) GetPeriod() note.Period {
+func (v *opl2Voice) GetPeriod() note.Period {
 	return v.freq.GetPeriod()
 }
 
@@ -115,11 +115,11 @@ func (v *opl2Voice) SetPeriodDelta(delta note.PeriodDelta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v opl2Voice) GetPeriodDelta() note.PeriodDelta {
+func (v *opl2Voice) GetPeriodDelta() note.PeriodDelta {
 	return v.freq.GetDelta()
 }
 
-func (v opl2Voice) GetFinalPeriod() note.Period {
+func (v *opl2Voice) GetFinalPeriod() note.Period {
 	return v.freq.GetFinalPeriod().Add(v.GetCurrentPitchEnvelope())
 }
 
@@ -129,11 +129,11 @@ func (v *opl2Voice) SetVolume(vol volume.Volume) {
 	v.amp.SetVolume(vol)
 }
 
-func (v opl2Voice) GetVolume() volume.Volume {
+func (v *opl2Voice) GetVolume() volume.Volume {
 	return v.amp.GetVolume()
 }
 
-func (v opl2Voice) GetFinalVolume() volume.Volume {
+func (v *opl2Voice) GetFinalVolume() volume.Volume {
 	return v.amp.GetFinalVolume() * v.GetCurrentVolumeEnvelope()
 }
 
@@ -143,11 +143,11 @@ func (v *opl2Voice) EnableVolumeEnvelope(enabled bool) {
 	v.volEnv.SetEnabled(enabled)
 }
 
-func (v opl2Voice) IsVolumeEnvelopeEnabled() bool {
+func (v *opl2Voice) IsVolumeEnvelopeEnabled() bool {
 	return v.volEnv.IsEnabled()
 }
 
-func (v opl2Voice) GetCurrentVolumeEnvelope() volume.Volume {
+func (v *opl2Voice) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
@@ -164,11 +164,11 @@ func (v *opl2Voice) EnablePitchEnvelope(enabled bool) {
 	v.pitchEnv.SetEnabled(enabled)
 }
 
-func (v opl2Voice) IsPitchEnvelopeEnabled() bool {
+func (v *opl2Voice) IsPitchEnvelopeEnabled() bool {
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v opl2Voice) GetCurrentPitchEnvelope() note.PeriodDelta {
+func (v *opl2Voice) GetCurrentPitchEnvelope() note.PeriodDelta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
@@ -202,7 +202,7 @@ func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
 	return nil
 }
 
-func (v opl2Voice) Clone() voiceIntf.Voice {
-	o := v
+func (v *opl2Voice) Clone() voiceIntf.Voice {
+	o := *v
 	return &o
 }

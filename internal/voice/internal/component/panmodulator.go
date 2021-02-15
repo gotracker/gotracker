@@ -15,12 +15,12 @@ func (p *PanModulator) SetPan(vol panning.Position) {
 }
 
 // GetPan returns the current panning
-func (p PanModulator) GetPan() panning.Position {
+func (p *PanModulator) GetPan() panning.Position {
 	return p.pan
 }
 
 // GetFinalPan returns the current panning
-func (p PanModulator) GetFinalPan() panning.Position {
+func (p *PanModulator) GetFinalPan() panning.Position {
 	return p.pan
 }
 

@@ -114,19 +114,19 @@ func (v *pcmVoice) Release() {
 	v.keyOn = false
 }
 
-func (v pcmVoice) Fadeout() {
+func (v *pcmVoice) Fadeout() {
 	v.amp.SetFadeoutEnabled(true)
 }
 
-func (v pcmVoice) IsKeyOn() bool {
+func (v *pcmVoice) IsKeyOn() bool {
 	return v.keyOn
 }
 
-func (v pcmVoice) IsFadeout() bool {
+func (v *pcmVoice) IsFadeout() bool {
 	return v.amp.IsFadeoutEnabled()
 }
 
-func (v pcmVoice) IsDone() bool {
+func (v *pcmVoice) IsDone() bool {
 	if !v.amp.IsFadeoutEnabled() {
 		return false
 	}
@@ -135,10 +135,10 @@ func (v pcmVoice) IsDone() bool {
 
 // == SampleStream ==
 
-func (v pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
+func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 	dry := v.sampler.GetSample(pos)
 	vol := v.GetFinalVolume()
-	wet := dry.Apply(vol)
+	wet := dry.ApplyInSitu(vol)
 	return wet
 }
 
@@ -148,7 +148,7 @@ func (v *pcmVoice) SetPos(pos sampling.Pos) {
 	v.sampler.SetPos(pos)
 }
 
-func (v pcmVoice) GetPos() sampling.Pos {
+func (v *pcmVoice) GetPos() sampling.Pos {
 	return v.sampler.GetPos()
 }
 
@@ -158,7 +158,7 @@ func (v *pcmVoice) SetPeriod(period note.Period) {
 	v.freq.SetPeriod(period)
 }
 
-func (v pcmVoice) GetPeriod() note.Period {
+func (v *pcmVoice) GetPeriod() note.Period {
 	return v.freq.GetPeriod()
 }
 
@@ -166,11 +166,11 @@ func (v *pcmVoice) SetPeriodDelta(delta note.PeriodDelta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v pcmVoice) GetPeriodDelta() note.PeriodDelta {
+func (v *pcmVoice) GetPeriodDelta() note.PeriodDelta {
 	return v.freq.GetDelta()
 }
 
-func (v pcmVoice) GetFinalPeriod() note.Period {
+func (v *pcmVoice) GetFinalPeriod() note.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
 		p = p.Add(v.GetCurrentPitchEnvelope())
@@ -184,11 +184,11 @@ func (v *pcmVoice) SetVolume(vol volume.Volume) {
 	v.amp.SetVolume(vol)
 }
 
-func (v pcmVoice) GetVolume() volume.Volume {
+func (v *pcmVoice) GetVolume() volume.Volume {
 	return v.amp.GetVolume()
 }
 
-func (v pcmVoice) GetFinalVolume() volume.Volume {
+func (v *pcmVoice) GetFinalVolume() volume.Volume {
 	vol := v.amp.GetFinalVolume()
 	if v.IsVolumeEnvelopeEnabled() {
 		vol *= v.GetCurrentVolumeEnvelope()
@@ -202,11 +202,11 @@ func (v *pcmVoice) SetPan(pan panning.Position) {
 	v.pan.SetPan(pan)
 }
 
-func (v pcmVoice) GetPan() panning.Position {
+func (v *pcmVoice) GetPan() panning.Position {
 	return v.pan.GetPan()
 }
 
-func (v pcmVoice) GetFinalPan() panning.Position {
+func (v *pcmVoice) GetFinalPan() panning.Position {
 	p := v.pan.GetFinalPan()
 	if v.IsPanEnvelopeEnabled() {
 		p = pan.CalculateCombinedPanning(p, v.panEnv.GetCurrentValue())
@@ -220,11 +220,11 @@ func (v *pcmVoice) EnableVolumeEnvelope(enabled bool) {
 	v.volEnv.SetEnabled(enabled)
 }
 
-func (v pcmVoice) IsVolumeEnvelopeEnabled() bool {
+func (v *pcmVoice) IsVolumeEnvelopeEnabled() bool {
 	return v.volEnv.IsEnabled()
 }
 
-func (v pcmVoice) GetCurrentVolumeEnvelope() volume.Volume {
+func (v *pcmVoice) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
@@ -241,14 +241,14 @@ func (v *pcmVoice) EnablePitchEnvelope(enabled bool) {
 	v.pitchEnv.SetEnabled(enabled)
 }
 
-func (v pcmVoice) IsPitchEnvelopeEnabled() bool {
+func (v *pcmVoice) IsPitchEnvelopeEnabled() bool {
 	if v.pitchAndFilterEnvShared && v.filterEnvActive {
 		return false
 	}
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v pcmVoice) GetCurrentPitchEnvelope() note.PeriodDelta {
+func (v *pcmVoice) GetCurrentPitchEnvelope() note.PeriodDelta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
@@ -277,14 +277,14 @@ func (v *pcmVoice) EnableFilterEnvelope(enabled bool) {
 	v.filterEnv.SetEnabled(enabled)
 }
 
-func (v pcmVoice) IsFilterEnvelopeEnabled() bool {
+func (v *pcmVoice) IsFilterEnvelopeEnabled() bool {
 	if v.pitchAndFilterEnvShared && !v.filterEnvActive {
 		return false
 	}
 	return v.filterEnv.IsEnabled()
 }
 
-func (v pcmVoice) GetCurrentFilterEnvelope() float32 {
+func (v *pcmVoice) GetCurrentFilterEnvelope() float32 {
 	return v.filterEnv.GetCurrentValue()
 }
 
@@ -300,11 +300,11 @@ func (v *pcmVoice) EnablePanEnvelope(enabled bool) {
 	v.panEnv.SetEnabled(enabled)
 }
 
-func (v pcmVoice) IsPanEnvelopeEnabled() bool {
+func (v *pcmVoice) IsPanEnvelopeEnabled() bool {
 	return v.panEnv.IsEnabled()
 }
 
-func (v pcmVoice) GetCurrentPanEnvelope() panning.Position {
+func (v *pcmVoice) GetCurrentPanEnvelope() panning.Position {
 	return v.panEnv.GetCurrentValue()
 }
 
@@ -335,13 +335,13 @@ func (v *pcmVoice) Advance(channel int, tickDuration time.Duration) {
 	}
 }
 
-func (v pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	period := v.GetFinalPeriod()
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
 	return sampling.NewSampler(v, v.GetPos(), samplerAdd)
 }
 
-func (v pcmVoice) Clone() voiceIntf.Voice {
-	p := v
+func (v *pcmVoice) Clone() voiceIntf.Voice {
+	p := *v
 	return &p
 }

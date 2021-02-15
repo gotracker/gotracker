@@ -28,12 +28,12 @@ func (e *PanEnvelope) SetEnabled(enabled bool) {
 }
 
 // IsEnabled returns the enabled flag for the envelope
-func (e PanEnvelope) IsEnabled() bool {
+func (e *PanEnvelope) IsEnabled() bool {
 	return e.enabled
 }
 
 // GetCurrentValue returns the current cached envelope value
-func (e PanEnvelope) GetCurrentValue() panning.Position {
+func (e *PanEnvelope) GetCurrentValue() panning.Position {
 	return e.pan
 }
 

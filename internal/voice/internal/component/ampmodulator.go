@@ -11,7 +11,7 @@ type AmpModulator struct {
 	fadeoutEnabled bool
 	fadeoutVol     volume.Volume
 	fadeoutAmt     volume.Volume
-	final          volume.Volume // = [fadeoutVol *] channel * mixing * vol
+	final          volume.Volume // = [fadeoutVol *] mixing * vol
 }
 
 // Setup configures the initial settings of the modulator
@@ -27,7 +27,7 @@ func (a *AmpModulator) SetVolume(vol volume.Volume) {
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
-func (a AmpModulator) GetVolume() volume.Volume {
+func (a *AmpModulator) GetVolume() volume.Volume {
 	return a.vol
 }
 
@@ -47,23 +47,23 @@ func (a *AmpModulator) ResetFadeoutValue(amount ...volume.Volume) {
 }
 
 // IsFadeoutEnabled returns the status of the fadeout enablement flag
-func (a AmpModulator) IsFadeoutEnabled() bool {
+func (a *AmpModulator) IsFadeoutEnabled() bool {
 	return a.fadeoutEnabled
 }
 
 // GetFadeoutVolume returns the value of the fadeout volume
-func (a AmpModulator) GetFadeoutVolume() volume.Volume {
+func (a *AmpModulator) GetFadeoutVolume() volume.Volume {
 	return a.fadeoutVol
 }
 
 // GetFinalVolume returns the current volume (after fadeout calculation)
-func (a AmpModulator) GetFinalVolume() volume.Volume {
+func (a *AmpModulator) GetFinalVolume() volume.Volume {
 	return a.final
 }
 
 // Advance advances the fadeout value by 1 tick
 func (a *AmpModulator) Advance() {
-	if !a.fadeoutEnabled || a.fadeoutVol <= 0 {
+	if a.fadeoutEnabled || a.fadeoutVol <= 0 {
 		return
 	}
 

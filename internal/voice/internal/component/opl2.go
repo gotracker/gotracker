@@ -98,11 +98,11 @@ var twoOperatorMelodic = [...]uint32{
 	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
 }
 
-func (o OPL2) getChannelIndex(channelIdx int) uint32 {
+func (o *OPL2) getChannelIndex(channelIdx int) uint32 {
 	return twoOperatorMelodic[channelIdx%18]
 }
 
-func (o OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
+func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	mVol := uint16(vol * 64)
 	oVol := uint16(reg40 & 0x3f)
 	totalVol := uint8(oVol * mVol / 64)
@@ -116,21 +116,21 @@ func (o OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	return result
 }
 
-func (o OPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
+func (o *OPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
 	modFreq := period.GetFrequency()
 	freq := float64(c2spd) * float64(modFreq) / 261625
 
 	return o.freqToFnumBlock(freq)
 }
 
-func (o OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
+func (o *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
 	regA0 := uint8(freq)
 	regB0 := uint8(uint16(freq)>>8) & 0x03
 	regB0 |= (block & 0x07) << 3
 	return regA0, regB0
 }
 
-func (o OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
+func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
 	fnum := uint16(1023)
 	block := uint8(8)
 

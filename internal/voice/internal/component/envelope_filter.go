@@ -18,6 +18,7 @@ func (e *FilterEnvelope) Reset(env *envelope.Envelope) {
 	e.state.Reset(env)
 	e.keyOn = false
 	e.prevKeyOn = false
+	e.update()
 }
 
 // SetEnabled sets the enabled flag for the envelope
@@ -69,4 +70,5 @@ func (e *FilterEnvelope) update() {
 	}
 
 	e.value = y0 + t*(y1-y0)
+	e.value /= 256
 }

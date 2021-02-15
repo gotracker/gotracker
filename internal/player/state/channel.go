@@ -197,9 +197,26 @@ func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 		if inst == cs.prevState.Instrument {
 			cs.activeState.NoteControl = cs.prevState.NoteControl
 		} else {
-			cs.activeState.NoteControl = inst.InstantiateOnChannel(cs.Output)
+			cs.activeState.NoteControl = cs.newNoteControl()
 		}
 	}
+}
+
+// newNoteControl takes an instrument and loads it onto an output channel
+func (cs *ChannelState) newNoteControl() intf.NoteControl {
+	ioc := NoteControl{
+		Output: cs.Output,
+	}
+
+	if inst := cs.activeState.Instrument; inst != nil {
+		ioc.SetupVoice(inst)
+
+		if cfact := inst.GetChannelFilterFactory(); cfact != nil {
+			ioc.Output.Filter = cfact(ioc.Output.Playback.GetSampleRate())
+		}
+	}
+
+	return &ioc
 }
 
 // GetNoteControl returns the active note-control interface
@@ -349,32 +366,40 @@ func (cs *ChannelState) SetEnvelopePosition(ticks int) {
 // TransitionActiveToPastState will transition the current active state to the 'past' state
 // and will activate the specified New-Note Action on it
 func (cs *ChannelState) TransitionActiveToPastState() {
-	cs.activeState.NoteControl = nil
-	cs.activeState.Instrument = nil
-	cs.activeState.Period = nil
+	defer func() {
+		cs.activeState.NoteControl = nil
+		cs.activeState.Instrument = nil
+		cs.activeState.Period = nil
+	}()
 
 	if cs.NewNoteAction == note.ActionNoteCut {
 		return
 	}
 
-	pn := cs.activeState.Clone()
+	// TODO: This code should be active, but right now it's chewing CPU like mad
+	/*
+		pn := cs.activeState.Clone()
 
-	switch cs.NewNoteAction {
-	//case note.NewNoteActionNoteCut:
-	//	pn.Enabled = false
-	case note.ActionContinue:
-		// nothing
-	case note.ActionNoteOff:
-		if nc := pn.NoteControl; nc != nil {
-			nc.Release()
+		switch cs.NewNoteAction {
+		//case note.NewNoteActionNoteCut:
+		//	pn.Enabled = false
+		case note.ActionContinue:
+			// nothing
+		case note.ActionNoteOff:
+			if nc := pn.NoteControl; nc != nil {
+				nc.Release()
+			}
+		case note.ActionFadeout:
+			if nc := pn.NoteControl; nc != nil {
+				nc.Release()
+				nc.Fadeout()
+			}
 		}
-	case note.ActionFadeout:
-		if nc := pn.NoteControl; nc != nil {
-			nc.Release()
-			nc.Fadeout()
+		cs.pastNote = append(cs.pastNote, &pn)
+		if len(cs.pastNote) > 2 {
+			cs.pastNote = cs.pastNote[len(cs.pastNote)-2:]
 		}
-	}
-	cs.pastNote = append(cs.pastNote, &pn)
+	*/
 }
 
 // DoPastNoteEffect performs an action on all past-note playbacks associated with the channel

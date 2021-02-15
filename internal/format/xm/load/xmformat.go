@@ -17,6 +17,7 @@ import (
 	"gotracker/internal/oscillator"
 	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
 )
@@ -51,12 +52,12 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Name:               inst.GetName(),
 				Volume:             v.Volume(),
 				RelativeNoteNumber: si.RelativeNoteNumber,
-				AutoVibrato: instrument.AutoVibrato{
+				AutoVibrato: voiceIntf.AutoVibrato{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
-					Sweep:             inst.VibratoSweep, // NOTE: for IT support, this needs to be calculated as (Depth * 256 / VibratoSweep) ticks
+					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: inst.VibratoType,
-					Depth:             inst.VibratoDepth,
-					Rate:              inst.VibratoRate,
+					Depth:             float32(inst.VibratoDepth) / 64,
+					Rate:              int(inst.VibratoRate),
 					Factory:           oscillator.NewProtrackerOscillator,
 				},
 			},
@@ -98,8 +99,8 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii := instrument.PCM{
 			Loop:         &loop.Disabled{},
 			MixingVolume: volume.Volume(1),
-			FadeOut: instrument.FadeoutSettings{
-				Mode:   instrument.FadeoutModeOnlyIfVolEnvActive,
+			FadeOut: intf.FadeoutSettings{
+				Mode:   intf.FadeoutModeOnlyIfVolEnvActive,
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
 			Panning: util.PanningFromXm(si.Panning),

@@ -14,6 +14,9 @@ type AutoVibrato struct {
 
 // Generate creates an AutoVibrato waveform oscillator and configures it with the inital values
 func (a *AutoVibrato) Generate() oscillator.Oscillator {
+	if a.Factory == nil {
+		return nil
+	}
 	o := a.Factory()
 	o.SetWaveform(oscillator.WaveTableSelect(a.WaveformSelection))
 	return o

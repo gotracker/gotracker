@@ -28,3 +28,10 @@ func (oc *OutputChannel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 func (oc *OutputChannel) GetPremixVolume() volume.Volume {
 	return oc.GlobalVolume * oc.ChannelVolume
 }
+
+// SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
+func (oc *OutputChannel) SetFilterEnvelopeValue(envVal float32) {
+	if oc.Filter != nil {
+		oc.Filter.UpdateEnv(envVal)
+	}
+}

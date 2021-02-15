@@ -7,6 +7,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/feature"
+	"gotracker/internal/player/render"
 )
 
 // Playback is an interface for rendering a song to output data
@@ -32,4 +33,5 @@ type Playback interface {
 
 	SetupSampler(int, int, int) error
 	GetSampleRate() float32
+	GetOPL2Chip() render.OPL2Chip
 }

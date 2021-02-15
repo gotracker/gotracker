@@ -4,66 +4,75 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
+	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
+	"gotracker/internal/voice"
 )
 
 // NoteControl is an instance of the instrument on a particular output channel
 type NoteControl struct {
-	intf.NoteControl
-	intf.PlaybackState
-	intf.AutoVibratoState
-
-	Data   interface{}
+	Voice  voiceIntf.Voice
 	Output *intf.OutputChannel
+}
+
+// SetupVoice configures the voice using the instrument data interface provided
+func (nc *NoteControl) SetupVoice(inst intf.Instrument) {
+	switch data := inst.GetData().(type) {
+	case nil:
+		return
+	case *instrument.PCM:
+		nc.Voice = voice.NewPCM(voice.PCMConfiguration{
+			C2SPD:         inst.GetC2Spd(),
+			InitialVolume: inst.GetDefaultVolume(),
+			InitialPeriod: nil,
+			AutoVibrato:   inst.GetAutoVibrato(),
+			DataIntf:      data,
+		})
+	case *instrument.OPL2:
+		nc.Voice = voice.NewOPL2(voice.OPLConfiguration{
+			Chip:          nc.Output.Playback.GetOPL2Chip(),
+			Channel:       nc.Output.ChannelNum,
+			C2SPD:         inst.GetC2Spd(),
+			InitialVolume: inst.GetDefaultVolume(),
+			InitialPeriod: nil,
+			AutoVibrato:   inst.GetAutoVibrato(),
+			DataIntf:      data,
+		})
+	}
 }
 
 // Clone clones the current note-control interface so that it doesn't collide with the existing one
 func (nc *NoteControl) Clone() intf.NoteControl {
 	c := *nc
-	if inst := c.Instrument; inst != nil {
-		c.Data = inst.CloneData(&c)
-	}
+	c.Voice = nc.Voice.Clone()
 
 	return &c
 }
 
-// GetSample returns the sample at position `pos` in the instrument
-func (nc *NoteControl) GetSample(pos sampling.Pos) volume.Matrix {
-	if inst := nc.Instrument; inst != nil {
-		dry := inst.GetSample(nc, pos)
-		if nc.Output != nil {
-			return nc.Output.ApplyFilter(dry)
-		}
-	}
-	return nil
+// SetEnvelopePosition sets the envelope position(s) on the voice
+func (nc *NoteControl) SetEnvelopePosition(pos int) {
+	voiceIntf.SetVolumeEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetPanEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetPitchEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetFilterEnvelopePosition(nc.Voice, pos)
 }
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
 func (nc *NoteControl) GetCurrentPeriodDelta() note.PeriodDelta {
-	if inst := nc.Instrument; inst != nil {
-		return inst.GetCurrentPeriodDelta(nc)
-	}
-	return note.PeriodDelta(0)
+	return voiceIntf.GetPeriodDelta(nc.Voice)
 }
 
 // GetCurrentFilterEnvValue returns the current filter envelope value
 func (nc *NoteControl) GetCurrentFilterEnvValue() float32 {
-	if inst := nc.Instrument; inst != nil {
-		return inst.GetCurrentFilterEnvValue(nc)
-	}
-	return 1
+	return voiceIntf.GetCurrentFilterEnvelope(nc.Voice)
 }
 
 // GetCurrentPanning returns the panning envelope position
 func (nc *NoteControl) GetCurrentPanning() panning.Position {
-	if inst := nc.Instrument; inst != nil {
-		return inst.GetCurrentPanning(nc)
-	}
-	return panning.CenterAhead
+	return voiceIntf.GetFinalPan(nc.Voice)
 }
 
 // GetOutputChannel returns the note-control's output channel
@@ -71,101 +80,68 @@ func (nc *NoteControl) GetOutputChannel() *intf.OutputChannel {
 	return nc.Output
 }
 
-// GetInstrument returns the instrument that's on this instance
-func (nc *NoteControl) GetInstrument() intf.Instrument {
-	return nc.Instrument
+// GetVoice returns the voice that's on this instance
+func (nc *NoteControl) GetVoice() voiceIntf.Voice {
+	return nc.Voice
 }
 
 // Attack sets the key on flag for the instrument
 func (nc *NoteControl) Attack() {
-	if inst := nc.Instrument; inst != nil {
-		nc.AutoVibratoState.Reset()
-		inst.Attack(nc)
+	if v := nc.Voice; v != nil {
+		v.Attack()
 	}
 }
 
 // Release clears the key on flag for the instrument
 func (nc *NoteControl) Release() {
-	if inst := nc.Instrument; inst != nil {
-		inst.Release(nc)
+	if v := nc.Voice; v != nil {
+		v.Release()
 	}
 }
 
 // Fadeout sets the instrument to fading-out mode
 func (nc *NoteControl) Fadeout() {
-	if inst := nc.Instrument; inst != nil {
-		inst.Fadeout(nc)
+	if v := nc.Voice; v != nil {
+		v.Fadeout()
 	}
 }
 
 // GetKeyOn gets the key on flag for the instrument
 func (nc *NoteControl) GetKeyOn() bool {
-	if inst := nc.Instrument; inst != nil {
-		return inst.GetKeyOn(nc)
+	if v := nc.Voice; v != nil {
+		return v.IsKeyOn()
 	}
 	return false
 }
 
 // Update advances time by the amount specified by `tickDuration`
 func (nc *NoteControl) Update(tickDuration time.Duration) {
-	if inst := nc.Instrument; inst != nil {
-		inst.Update(nc, tickDuration)
+	if v := nc.Voice; v != nil && nc.Output != nil {
+		v.Advance(tickDuration)
 	}
-}
-
-// SetData sets the data interface for the note-control
-func (nc *NoteControl) SetData(data interface{}) {
-	nc.Data = data
-}
-
-// GetData gets the data interface for the note-control
-func (nc *NoteControl) GetData() interface{} {
-	return nc.Data
-}
-
-// GetPlaybackState returns the current, mutable playback state
-func (nc *NoteControl) GetPlaybackState() *intf.PlaybackState {
-	return &nc.PlaybackState
-}
-
-// GetAutoVibratoState returns the current, mutable auto-vibrato state
-func (nc *NoteControl) GetAutoVibratoState() *intf.AutoVibratoState {
-	return &nc.AutoVibratoState
 }
 
 // IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
 func (nc *NoteControl) IsVolumeEnvelopeEnabled() bool {
-	if inst := nc.Instrument; inst != nil {
-		return inst.IsVolumeEnvelopeEnabled()
-	}
-	return false
+	return voiceIntf.IsVolumeEnvelopeEnabled(nc.Voice)
 }
 
 // IsDone returns true if the instrument has stopped
 func (nc *NoteControl) IsDone() bool {
-	if inst := nc.Instrument; inst != nil {
-		return inst.IsDone(nc)
-	}
-	return false
+	return nc.Voice == nil || nc.Voice.IsDone()
 }
 
 // SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
 func (nc *NoteControl) SetVolumeEnvelopeEnable(enabled bool) {
-	if inst := nc.Instrument; inst != nil {
-		inst.SetVolumeEnvelopeEnable(nc, enabled)
-	}
+	voiceIntf.EnableVolumeEnvelope(nc.Voice, enabled)
 }
 
 // SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
 func (nc *NoteControl) SetPanningEnvelopeEnable(enabled bool) {
-	if inst := nc.Instrument; inst != nil {
-		inst.SetPanningEnvelopeEnable(nc, enabled)
-	}
+	voiceIntf.EnablePanEnvelope(nc.Voice, enabled)
 }
 
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (nc *NoteControl) SetPitchEnvelopeEnable(enabled bool) {
-	if inst := nc.Instrument; inst != nil {
-		inst.SetPitchEnvelopeEnable(nc, enabled)
-	}
+	voiceIntf.EnablePitchEnvelope(nc.Voice, enabled)
 }

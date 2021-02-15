@@ -25,7 +25,7 @@ type Voice interface {
 	//FilterEnveloper
 
 	// == required function interfaces ==
-	Advance(channel int, tickDuration time.Duration)
+	Advance(tickDuration time.Duration)
 	GetSampler(samplerRate float32, out FilterApplier) sampling.Sampler
 	Clone() Voice
 }

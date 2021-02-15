@@ -6,7 +6,8 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/envelope"
+	"gotracker/internal/instrument"
+	"gotracker/internal/player/intf"
 	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
@@ -28,21 +29,24 @@ type OPL2Registers component.OPL2Registers
 // OPLConfiguration is the information needed to configure an OPL2 voice
 type OPLConfiguration struct {
 	Chip          render.OPL2Chip
-	Registers     OPL2Registers
+	Channel       int
 	C2SPD         note.C2SPD
 	InitialVolume volume.Volume
 	InitialPeriod note.Period
-	VolEnv        *envelope.Envelope
-	PitchEnv      *envelope.Envelope
-	FadeoutAmount volume.Volume
 	AutoVibrato   voiceIntf.AutoVibrato
+	DataIntf      intf.InstrumentDataIntf
 }
 
 // == the actual opl2 voice ==
 
 type opl2Voice struct {
+	c2spd         note.C2SPD
+	initialVolume volume.Volume
+
 	keyOn     bool
 	prevKeyOn bool
+
+	fadeoutMode intf.FadeoutMode
 
 	o        component.OPL2
 	amp      component.AmpModulator
@@ -53,16 +57,42 @@ type opl2Voice struct {
 
 // NewOPL2 creates a new OPL2 voice
 func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
-	v := opl2Voice{}
+	v := opl2Voice{
+		c2spd:         config.C2SPD,
+		initialVolume: config.InitialVolume,
+		fadeoutMode:   intf.FadeoutModeDisabled,
+	}
 
-	v.o.Setup(config.Chip, component.OPL2Registers(config.Registers), config.C2SPD)
+	var regs component.OPL2Registers
+
+	switch d := config.DataIntf.(type) {
+	case *instrument.OPL2:
+		v.amp.Setup(1)
+		v.amp.ResetFadeoutValue(0)
+		v.volEnv.SetEnabled(false)
+		v.volEnv.Reset(nil)
+		v.pitchEnv.SetEnabled(false)
+		v.pitchEnv.Reset(nil)
+		regs.Mod.Reg20 = d.Modulator.GetReg20()
+		regs.Mod.Reg40 = d.Modulator.GetReg40()
+		regs.Mod.Reg60 = d.Modulator.GetReg60()
+		regs.Mod.Reg80 = d.Modulator.GetReg80()
+		regs.Mod.RegE0 = d.Modulator.GetRegE0()
+		regs.Car.Reg20 = d.Carrier.GetReg20()
+		regs.Car.Reg40 = d.Carrier.GetReg40()
+		regs.Car.Reg60 = d.Carrier.GetReg60()
+		regs.Car.Reg80 = d.Carrier.GetReg80()
+		regs.Car.RegE0 = d.Carrier.GetRegE0()
+		regs.RegC0 = d.GetRegC0()
+	default:
+		_ = d
+	}
+
+	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD)
 	v.amp.SetVolume(config.InitialVolume)
-	v.amp.ResetFadeoutValue(config.FadeoutAmount)
 	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.ConfigureAutoVibrato(config.AutoVibrato)
 	v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
-	v.volEnv.Reset(config.VolEnv)
-	v.pitchEnv.Reset(config.PitchEnv)
 
 	var o OPL2 = &v
 	return o
@@ -72,18 +102,28 @@ func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
 
 func (v *opl2Voice) Attack() {
 	v.keyOn = true
-	v.amp.ResetFadeoutValue()
-	v.amp.SetFadeoutEnabled(false)
-	v.o.Attack()
+	v.amp.Attack()
+	v.freq.ResetAutoVibrato()
+	v.volEnv.SetEnvelopePosition(0)
+	v.pitchEnv.SetEnvelopePosition(0)
+
 }
 
 func (v *opl2Voice) Release() {
 	v.keyOn = false
+	v.amp.Release()
 	v.o.Release()
 }
 
 func (v *opl2Voice) Fadeout() {
-	v.amp.SetFadeoutEnabled(true)
+	switch v.fadeoutMode {
+	case intf.FadeoutModeAlwaysActive:
+		v.amp.Fadeout()
+	case intf.FadeoutModeOnlyIfVolEnvActive:
+		if v.IsVolumeEnvelopeEnabled() {
+			v.amp.Fadeout()
+		}
+	}
 }
 
 func (v *opl2Voice) IsKeyOn() bool {
@@ -120,12 +160,19 @@ func (v *opl2Voice) GetPeriodDelta() note.PeriodDelta {
 }
 
 func (v *opl2Voice) GetFinalPeriod() note.Period {
-	return v.freq.GetFinalPeriod().Add(v.GetCurrentPitchEnvelope())
+	p := v.freq.GetFinalPeriod()
+	if v.IsPitchEnvelopeEnabled() {
+		p = p.Add(v.GetCurrentPitchEnvelope())
+	}
+	return p
 }
 
 // == AmpModulator ==
 
 func (v *opl2Voice) SetVolume(vol volume.Volume) {
+	if vol == volume.VolumeUseInstVol {
+		vol = v.initialVolume
+	}
 	v.amp.SetVolume(vol)
 }
 
@@ -134,7 +181,11 @@ func (v *opl2Voice) GetVolume() volume.Volume {
 }
 
 func (v *opl2Voice) GetFinalVolume() volume.Volume {
-	return v.amp.GetFinalVolume() * v.GetCurrentVolumeEnvelope()
+	vol := v.amp.GetFinalVolume()
+	if v.IsVolumeEnvelopeEnabled() {
+		vol *= v.GetCurrentVolumeEnvelope()
+	}
+	return vol
 }
 
 // == VolumeEnveloper ==
@@ -151,7 +202,7 @@ func (v *opl2Voice) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
-	return 0
+	return 1
 }
 
 func (v *opl2Voice) SetVolumeEnvelopePosition(pos int) {
@@ -181,17 +232,29 @@ func (v *opl2Voice) SetPitchEnvelopePosition(pos int) {
 
 // == required function interfaces ==
 
-func (v *opl2Voice) Advance(channel int, tickDuration time.Duration) {
+func (v *opl2Voice) Advance(tickDuration time.Duration) {
 	defer func() {
 		v.prevKeyOn = v.keyOn
 	}()
 	v.amp.Advance()
 	v.freq.Advance()
-	v.volEnv.Advance(v.keyOn, v.prevKeyOn)
-	v.pitchEnv.Advance(v.keyOn, v.prevKeyOn)
+	if v.IsVolumeEnvelopeEnabled() {
+		v.volEnv.Advance(v.keyOn, v.prevKeyOn)
+	}
+	if v.IsPitchEnvelopeEnabled() {
+		v.pitchEnv.Advance(v.keyOn, v.prevKeyOn)
+	}
 
 	// has to be after the mod/env updates
-	v.o.Advance(channel, v.GetFinalVolume(), v.GetFinalPeriod())
+	if v.keyOn != v.prevKeyOn {
+		if v.keyOn {
+			v.o.Attack()
+		} else {
+			v.o.Release()
+		}
+	}
+
+	v.o.Advance(v.GetFinalVolume(), v.GetFinalPeriod())
 }
 
 func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {

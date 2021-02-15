@@ -81,8 +81,8 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		Loop:         &loop.Disabled{},
 		Panning:      panning.CenterAhead,
 		MixingVolume: volume.Volume(1),
-		FadeOut: instrument.FadeoutSettings{
-			Mode:   instrument.FadeoutModeDisabled,
+		FadeOut: intf.FadeoutSettings{
+			Mode:   intf.FadeoutModeDisabled,
 			Amount: volume.Volume(0),
 		},
 	}

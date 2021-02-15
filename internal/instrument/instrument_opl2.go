@@ -1,18 +1,5 @@
 package instrument
 
-import (
-	"time"
-
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/opl2"
-
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/render"
-)
-
 // OPL2OperatorData is the operator data for an OPL2/Adlib instrument
 type OPL2OperatorData struct {
 	// KeyScaleRateSelect returns true if the modulator's envelope scales with keys
@@ -83,84 +70,8 @@ type OPL2 struct {
 	AdditiveSynthesis bool
 }
 
-type ym3812 struct {
-	chip  render.OPL2Chip
-	regB0 uint8
-}
-
-// GetSample returns the sample at position `pos` in the instrument
-func (inst *OPL2) GetSample(ioc intf.NoteControl, pos sampling.Pos) volume.Matrix {
-	return nil
-}
-
-// GetCurrentPeriodDelta returns the current pitch envelope value
-func (inst *OPL2) GetCurrentPeriodDelta(ioc intf.NoteControl) note.PeriodDelta {
-	return note.PeriodDelta(0)
-}
-
-// GetCurrentFilterEnvValue returns the current filter envelope value
-func (inst *OPL2) GetCurrentFilterEnvValue(ioc intf.NoteControl) float32 {
-	return 1
-}
-
-// GetCurrentPanning returns the panning envelope position
-func (inst *OPL2) GetCurrentPanning(ioc intf.NoteControl) panning.Position {
-	return panning.CenterAhead
-}
-
-// SetEnvelopePosition sets the envelope position for the note-control
-func (inst *OPL2) SetEnvelopePosition(ioc intf.NoteControl, ticks int) {
-}
-
-// Initialize completes the setup of this instrument
-func (inst *OPL2) Initialize(ioc intf.NoteControl) error {
-	ym := ym3812{}
-	ioc.SetData(&ym)
-
-	return nil
-}
-
-// Attack sets the key on flag for the instrument
-func (inst *OPL2) Attack(ioc intf.NoteControl) {
-	inst.setKeyOn(ioc, true)
-}
-
-// Release clears the key on flag for the instrument
-func (inst *OPL2) Release(ioc intf.NoteControl) {
-	inst.setKeyOn(ioc, false)
-}
-
-// Fadeout sets the instrument to fading-out mode
-func (inst *OPL2) Fadeout(ioc intf.NoteControl) {
-	// not available in OPL2
-}
-
-func (inst *OPL2) setKeyOn(ioc intf.NoteControl, on bool) {
-	ym := ioc.GetData().(*ym3812)
-	ch := ym.chip
-	if ch == nil {
-		p := ioc.GetOutputChannel().Playback.(render.OPL2Intf)
-		ch = p.GetOPL2Chip()
-		ym.chip = ch
-	}
-
-	if ch == nil {
-		panic("no ym3812 available")
-	}
-
-	index := uint32(ioc.GetOutputChannel().ChannelNum)
-
-	// write the instrument to the channel!
-	if !on {
-		ym.regB0 &^= 0x20 // key off
-		ch.WriteReg(0xB0|index, ym.regB0)
-	} else {
-		ym.regB0 |= 0x20 // key on
-		ch.WriteReg(0xB0|index, ym.regB0)
-	}
-}
-
-func (inst *OPL2) getReg20(o *OPL2OperatorData) uint8 {
+// GetReg20 calculates the Register 0x20 value
+func (o *OPL2OperatorData) GetReg20() uint8 {
 	reg20 := uint8(0x00)
 	if o.Tremolo {
 		reg20 |= 0x80
@@ -179,36 +90,38 @@ func (inst *OPL2) getReg20(o *OPL2OperatorData) uint8 {
 	return reg20
 }
 
-func (inst *OPL2) getReg40(o *OPL2OperatorData, vol volume.Volume) uint8 {
-	mVol := uint16(vol * 64)
-	oVol := uint16(o.Volume)
-	totalVol := uint8(oVol * mVol / 64)
-	if totalVol > 63 {
-		totalVol = 63
+// GetReg40 calculates the Register 0x40 value
+func (o *OPL2OperatorData) GetReg40() uint8 {
+	oVol := uint8(o.Volume)
+	if oVol > 63 {
+		oVol = 63
 	}
-	adlVol := uint8(63) - totalVol
+	vol := uint8(63) - oVol
 
 	reg40 := uint8(0x00)
 	reg40 |= (uint8(o.KeyScaleLevel) & 0x03) << 6
-	reg40 |= adlVol & 0x3f
+	reg40 |= vol & 0x3f
 	return reg40
 }
 
-func (inst *OPL2) getReg60(o *OPL2OperatorData) uint8 {
+// GetReg60 calculates the Register 0x60 value
+func (o *OPL2OperatorData) GetReg60() uint8 {
 	reg60 := uint8(0x00)
 	reg60 |= (o.AttackRate & 0x0f) << 4
 	reg60 |= o.DecayRate & 0x0f
 	return reg60
 }
 
-func (inst *OPL2) getReg80(o *OPL2OperatorData) uint8 {
+// GetReg80 calculates the Register 0x80 value
+func (o *OPL2OperatorData) GetReg80() uint8 {
 	reg80 := uint8(0x00)
 	reg80 |= (15 - (o.SustainLevel & 0x0f)) << 4
 	reg80 |= o.ReleaseRate & 0x0f
 	return reg80
 }
 
-func (inst *OPL2) getRegC0() uint8 {
+// GetRegC0 calculates the Register 0xC0 value
+func (inst *OPL2) GetRegC0() uint8 {
 	regC0 := uint8(0x00)
 	regC0 |= 0x20 | 0x10 // right and left enable [OPL3 only]
 	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
@@ -218,169 +131,9 @@ func (inst *OPL2) getRegC0() uint8 {
 	return regC0
 }
 
-func (inst *OPL2) getRegE0(o *OPL2OperatorData) uint8 {
+// GetRegE0 calculates the Register 0xE0 value
+func (o *OPL2OperatorData) GetRegE0() uint8 {
 	regE0 := uint8(0x00)
 	regE0 |= uint8(o.WaveformSelection & 0x07)
 	return regE0
-}
-
-// twoOperatorMelodic
-var twoOperatorMelodic = [...]uint32{
-	0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12,
-	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
-}
-
-func (inst *OPL2) getChannelIndex(channelIdx int) uint32 {
-	return twoOperatorMelodic[channelIdx%18]
-}
-
-func freqToFnumBlock(freq float64) (uint16, uint8) {
-	fnum := uint16(1023)
-	block := uint8(8)
-
-	if freq > 6208.431 {
-		return 0, 0
-	}
-
-	if freq > 3104.215 {
-		block = 7
-	} else if freq > 1552.107 {
-		block = 6
-	} else if freq > 776.053 {
-		block = 5
-	} else if freq > 388.026 {
-		block = 4
-	} else if freq > 194.013 {
-		block = 3
-	} else if freq > 97.006 {
-		block = 2
-	} else if freq > 48.503 {
-		block = 1
-	} else {
-		block = 0
-	}
-	fnum = uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
-
-	return fnum, block
-}
-
-func (inst *OPL2) periodToFreqBlock(period note.Period, c2spd note.C2SPD) (uint16, uint8) {
-	modFreq := period.GetFrequency()
-	freq := float64(c2spd) * float64(modFreq) / 261625
-
-	return freqToFnumBlock(freq)
-}
-
-func (inst *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
-	regA0 := uint8(freq)
-	regB0 := uint8(uint16(freq)>>8) & 0x03
-	regB0 |= (block & 0x07) << 3
-	return regA0, regB0
-}
-
-// GetKeyOn gets the key on flag for the instrument
-func (inst *OPL2) GetKeyOn(ioc intf.NoteControl) bool {
-	ym := ioc.GetData().(*ym3812)
-	return (ym.regB0 & 0x20) != 0
-}
-
-// Update advances time by the amount specified by `tickDuration`
-func (inst *OPL2) Update(ioc intf.NoteControl, tickDuration time.Duration) {
-	ym := ioc.GetData().(*ym3812)
-	ch := ym.chip
-	if ch == nil {
-		p := ioc.GetOutputChannel().Playback.(render.OPL2Intf)
-		ch = p.GetOPL2Chip()
-		ym.chip = ch
-	}
-
-	if ch == nil {
-		panic("no ym3812 available")
-	}
-
-	index := uint32(ioc.GetOutputChannel().ChannelNum)
-
-	mod := inst.getChannelIndex(int(index))
-	car := mod + 0x03
-
-	ncs := ioc.GetPlaybackState()
-	if ncs == nil {
-		panic("no playback state on note-control interface")
-	}
-
-	freq, block := inst.periodToFreqBlock(ncs.Period, ncs.Instrument.GetC2Spd())
-	regA0, regB0 := inst.freqBlockToRegA0B0(freq, block)
-
-	regC0 := inst.getRegC0()
-
-	vol := ncs.Volume
-	modVol := vol
-	if !inst.AdditiveSynthesis {
-		modVol = 1.0
-	}
-
-	modReg20 := inst.getReg20(&inst.Modulator)
-	modReg40 := inst.getReg40(&inst.Modulator, modVol)
-	modReg60 := inst.getReg60(&inst.Modulator)
-	modReg80 := inst.getReg80(&inst.Modulator)
-	modRegE0 := inst.getRegE0(&inst.Modulator)
-
-	carReg20 := inst.getReg20(&inst.Carrier)
-	carReg40 := inst.getReg40(&inst.Carrier, vol)
-	carReg60 := inst.getReg60(&inst.Carrier)
-	carReg80 := inst.getReg80(&inst.Carrier)
-	carRegE0 := inst.getRegE0(&inst.Carrier)
-
-	ch.WriteReg(0x20|mod, modReg20)
-	ch.WriteReg(0x40|mod, modReg40)
-	ch.WriteReg(0x60|mod, modReg60)
-	ch.WriteReg(0x80|mod, modReg80)
-	ch.WriteReg(0xE0|mod, modRegE0)
-
-	ch.WriteReg(0xA0|index, regA0)
-
-	ch.WriteReg(0x20|car, carReg20)
-	ch.WriteReg(0x40|car, carReg40)
-	ch.WriteReg(0x60|car, carReg60)
-	ch.WriteReg(0x80|car, carReg80)
-	ch.WriteReg(0xE0|car, carRegE0)
-
-	ch.WriteReg(0xC0|index, regC0)
-
-	regB0 |= ym.regB0 & 0x20 // key on bit
-	ym.regB0 = regB0
-	ch.WriteReg(0xB0|index, regB0)
-}
-
-// GetKind returns the kind of the instrument
-func (inst *OPL2) GetKind() note.InstrumentKind {
-	return note.InstrumentKindOPL2
-}
-
-// CloneData clones the data associated to the note-control interface
-func (inst *OPL2) CloneData(ioc intf.NoteControl) interface{} {
-	ym := ioc.GetData().(*ym3812)
-	return &ym
-}
-
-// IsVolumeEnvelopeEnabled returns true if the volume envelope is enabled
-func (inst *OPL2) IsVolumeEnvelopeEnabled() bool {
-	return false
-}
-
-// IsDone returns true if the instrument has stopped
-func (inst *OPL2) IsDone(ioc intf.NoteControl) bool {
-	return false
-}
-
-// SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
-func (inst *OPL2) SetVolumeEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
-}
-
-// SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
-func (inst *OPL2) SetPanningEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
-}
-
-// SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
-func (inst *OPL2) SetPitchEnvelopeEnable(ioc intf.NoteControl, enabled bool) {
 }

@@ -112,7 +112,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			},
 		}
 
-		if ii.VolEnv.Enabled && ii.VolEnv.Loop.Length() >= 0 {
+		if ii.VolEnv.Enabled && (volEnvLoopSettings.End-volEnvLoopSettings.Begin) >= 0 {
 			if enabled := (inst.VolFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
 				volEnvLoopMode = loop.ModeNormal
 			}
@@ -137,7 +137,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			}
 		}
 
-		if ii.PanEnv.Enabled && ii.PanEnv.Loop.Length() >= 0 {
+		if ii.PanEnv.Enabled && (panEnvLoopSettings.End-panEnvLoopSettings.Begin) >= 0 {
 			if enabled := (inst.PanFlags & xmfile.EnvelopeFlagLoopEnabled) != 0; enabled {
 				panEnvLoopMode = loop.ModeNormal
 			}

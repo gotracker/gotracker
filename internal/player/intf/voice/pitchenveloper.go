@@ -9,4 +9,5 @@ type PitchEnveloper interface {
 	EnablePitchEnvelope(enabled bool)
 	IsPitchEnvelopeEnabled() bool
 	GetCurrentPitchEnvelope() note.PeriodDelta
+	SetPitchEnvelopePosition(pos int)
 }

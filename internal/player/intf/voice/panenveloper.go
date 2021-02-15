@@ -9,4 +9,5 @@ type PanEnveloper interface {
 	EnablePanEnvelope(enabled bool)
 	IsPanEnvelopeEnabled() bool
 	GetCurrentPanEnvelope() panning.Position
+	SetPanEnvelopePosition(pos int)
 }

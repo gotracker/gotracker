@@ -9,6 +9,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/fadeout"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/layout/channel"
@@ -81,8 +82,8 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		Loop:         &loop.Disabled{},
 		Panning:      panning.CenterAhead,
 		MixingVolume: volume.Volume(1),
-		FadeOut: intf.FadeoutSettings{
-			Mode:   intf.FadeoutModeDisabled,
+		FadeOut: fadeout.Settings{
+			Mode:   fadeout.ModeDisabled,
 			Amount: volume.Volume(0),
 		},
 	}

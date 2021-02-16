@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/fadeout"
 	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
 	"gotracker/internal/player/intf"
@@ -49,7 +50,7 @@ type pcmVoice struct {
 	pitchAndFilterEnvShared bool
 	filterEnvActive         bool // if pitchAndFilterEnvShared is true, this dictates which is active initially - true=filter, false=pitch
 
-	fadeoutMode intf.FadeoutMode
+	fadeoutMode fadeout.Mode
 
 	sampler   component.Sampler
 	amp       component.AmpModulator
@@ -117,9 +118,9 @@ func (v *pcmVoice) Release() {
 
 func (v *pcmVoice) Fadeout() {
 	switch v.fadeoutMode {
-	case intf.FadeoutModeAlwaysActive:
+	case fadeout.ModeAlwaysActive:
 		v.amp.Fadeout()
-	case intf.FadeoutModeOnlyIfVolEnvActive:
+	case fadeout.ModeOnlyIfVolEnvActive:
 		if v.IsVolumeEnvelopeEnabled() {
 			v.amp.Fadeout()
 		}

@@ -5,9 +5,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/envelope"
+	"gotracker/internal/fadeout"
 	"gotracker/internal/loop"
 	"gotracker/internal/pcm"
-	"gotracker/internal/player/intf"
 )
 
 // PCM is a PCM-data instrument
@@ -17,7 +17,7 @@ type PCM struct {
 	SustainLoop   loop.Loop
 	Panning       panning.Position
 	MixingVolume  volume.Volume
-	FadeOut       intf.FadeoutSettings
+	FadeOut       fadeout.Settings
 	VolEnv        envelope.Envelope
 	PanEnv        envelope.Envelope
 	PitchFiltMode bool              // true = filter, false = pitch

@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/envelope"
+	"gotracker/internal/fadeout"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
@@ -99,8 +100,8 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii := instrument.PCM{
 			Loop:         &loop.Disabled{},
 			MixingVolume: volume.Volume(1),
-			FadeOut: intf.FadeoutSettings{
-				Mode:   intf.FadeoutModeOnlyIfVolEnvActive,
+			FadeOut: fadeout.Settings{
+				Mode:   fadeout.ModeOnlyIfVolEnvActive,
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
 			Panning: util.PanningFromXm(si.Panning),

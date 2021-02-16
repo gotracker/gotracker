@@ -13,6 +13,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/envelope"
+	"gotracker/internal/fadeout"
 	"gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
@@ -48,8 +49,8 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
-			FadeOut: intf.FadeoutSettings{
-				Mode:   intf.FadeoutModeAlwaysActive,
+			FadeOut: fadeout.Settings{
+				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
 			},
 			VolEnv: envelope.Envelope{
@@ -134,8 +135,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	for i, ci := range outInsts {
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
-			FadeOut: intf.FadeoutSettings{
-				Mode:   intf.FadeoutModeAlwaysActive,
+			FadeOut: fadeout.Settings{
+				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
 			},
 		}

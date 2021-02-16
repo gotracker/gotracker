@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/fadeout"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	voiceIntf "gotracker/internal/player/intf/voice"
@@ -46,7 +47,7 @@ type opl2Voice struct {
 	keyOn     bool
 	prevKeyOn bool
 
-	fadeoutMode intf.FadeoutMode
+	fadeoutMode fadeout.Mode
 
 	o        component.OPL2
 	amp      component.AmpModulator
@@ -60,7 +61,7 @@ func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
 	v := opl2Voice{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
-		fadeoutMode:   intf.FadeoutModeDisabled,
+		fadeoutMode:   fadeout.ModeDisabled,
 	}
 
 	var regs component.OPL2Registers
@@ -117,9 +118,9 @@ func (v *opl2Voice) Release() {
 
 func (v *opl2Voice) Fadeout() {
 	switch v.fadeoutMode {
-	case intf.FadeoutModeAlwaysActive:
+	case fadeout.ModeAlwaysActive:
 		v.amp.Fadeout()
-	case intf.FadeoutModeOnlyIfVolEnvActive:
+	case fadeout.ModeOnlyIfVolEnvActive:
 		if v.IsVolumeEnvelopeEnabled() {
 			v.amp.Fadeout()
 		}

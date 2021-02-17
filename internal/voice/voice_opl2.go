@@ -270,3 +270,10 @@ func (v *opl2Voice) Clone() voiceIntf.Voice {
 	o := *v
 	return &o
 }
+
+func (v *opl2Voice) StartTransaction() voiceIntf.Transaction {
+	t := txn{
+		Voice: v,
+	}
+	return &t
+}

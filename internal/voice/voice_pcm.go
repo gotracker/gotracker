@@ -367,3 +367,10 @@ func (v *pcmVoice) Clone() voiceIntf.Voice {
 	p := *v
 	return &p
 }
+
+func (v *pcmVoice) StartTransaction() voiceIntf.Transaction {
+	t := txn{
+		Voice: v,
+	}
+	return &t
+}

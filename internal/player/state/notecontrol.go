@@ -5,7 +5,6 @@ import (
 
 	"github.com/gotracker/gomixing/panning"
 
-	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
@@ -16,31 +15,14 @@ import (
 type NoteControl struct {
 	Voice  voiceIntf.Voice
 	Output *intf.OutputChannel
+	txn    voiceIntf.Transaction
 }
 
 // SetupVoice configures the voice using the instrument data interface provided
 func (nc *NoteControl) SetupVoice(inst intf.Instrument) {
-	switch data := inst.GetData().(type) {
-	case nil:
-		return
-	case *instrument.PCM:
-		nc.Voice = voice.NewPCM(voice.PCMConfiguration{
-			C2SPD:         inst.GetC2Spd(),
-			InitialVolume: inst.GetDefaultVolume(),
-			InitialPeriod: nil,
-			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
-		})
-	case *instrument.OPL2:
-		nc.Voice = voice.NewOPL2(voice.OPLConfiguration{
-			Chip:          nc.Output.Playback.GetOPL2Chip(),
-			Channel:       nc.Output.ChannelNum,
-			C2SPD:         inst.GetC2Spd(),
-			InitialVolume: inst.GetDefaultVolume(),
-			InitialPeriod: nil,
-			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
-		})
+	nc.Voice = voice.New(inst, nc.Output)
+	if nc.Voice != nil {
+		nc.txn = nc.Voice.StartTransaction()
 	}
 }
 
@@ -52,12 +34,25 @@ func (nc *NoteControl) Clone() intf.NoteControl {
 	return &c
 }
 
+// Cancel cancels the current voice update transaction
+func (nc *NoteControl) Cancel() {
+	if nc.txn != nil {
+		nc.txn.Cancel()
+		nc.txn = nc.Voice.StartTransaction()
+	}
+}
+
+// Commit commits the current voice update transaction
+func (nc *NoteControl) Commit() {
+	if nc.txn != nil {
+		nc.txn.Commit()
+		nc.txn = nc.Voice.StartTransaction()
+	}
+}
+
 // SetEnvelopePosition sets the envelope position(s) on the voice
 func (nc *NoteControl) SetEnvelopePosition(pos int) {
-	voiceIntf.SetVolumeEnvelopePosition(nc.Voice, pos)
-	voiceIntf.SetPanEnvelopePosition(nc.Voice, pos)
-	voiceIntf.SetPitchEnvelopePosition(nc.Voice, pos)
-	voiceIntf.SetFilterEnvelopePosition(nc.Voice, pos)
+	nc.txn.SetAllEnvelopePositions(pos)
 }
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
@@ -87,23 +82,17 @@ func (nc *NoteControl) GetVoice() voiceIntf.Voice {
 
 // Attack sets the key on flag for the instrument
 func (nc *NoteControl) Attack() {
-	if v := nc.Voice; v != nil {
-		v.Attack()
-	}
+	nc.txn.Attack()
 }
 
 // Release clears the key on flag for the instrument
 func (nc *NoteControl) Release() {
-	if v := nc.Voice; v != nil {
-		v.Release()
-	}
+	nc.txn.Release()
 }
 
 // Fadeout sets the instrument to fading-out mode
 func (nc *NoteControl) Fadeout() {
-	if v := nc.Voice; v != nil {
-		v.Fadeout()
-	}
+	nc.txn.Fadeout()
 }
 
 // GetKeyOn gets the key on flag for the instrument
@@ -117,7 +106,10 @@ func (nc *NoteControl) GetKeyOn() bool {
 // Update advances time by the amount specified by `tickDuration`
 func (nc *NoteControl) Update(tickDuration time.Duration) {
 	if v := nc.Voice; v != nil && nc.Output != nil {
+		nc.Commit()
 		v.Advance(tickDuration)
+	} else {
+		nc.Cancel()
 	}
 }
 
@@ -133,15 +125,15 @@ func (nc *NoteControl) IsDone() bool {
 
 // SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
 func (nc *NoteControl) SetVolumeEnvelopeEnable(enabled bool) {
-	voiceIntf.EnableVolumeEnvelope(nc.Voice, enabled)
+	nc.txn.EnableVolumeEnvelope(enabled)
 }
 
 // SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
 func (nc *NoteControl) SetPanningEnvelopeEnable(enabled bool) {
-	voiceIntf.EnablePanEnvelope(nc.Voice, enabled)
+	nc.txn.EnablePanEnvelope(enabled)
 }
 
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (nc *NoteControl) SetPitchEnvelopeEnable(enabled bool) {
-	voiceIntf.EnablePitchEnvelope(nc.Voice, enabled)
+	nc.txn.EnablePitchEnvelope(enabled)
 }

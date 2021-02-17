@@ -28,6 +28,7 @@ type Voice interface {
 	Advance(tickDuration time.Duration)
 	GetSampler(samplerRate float32, out FilterApplier) sampling.Sampler
 	Clone() Voice
+	StartTransaction() Transaction
 }
 
 // Controller is the instrument actuation control interface
@@ -188,6 +189,13 @@ func SetPitchEnvelopePosition(v Voice, pos int) {
 }
 
 // == FilterEnveloper ==
+
+// EnableFilterEnvelope sets the filter envelope enable flag, if the interface for it exists on the voice
+func EnableFilterEnvelope(v Voice, enabled bool) {
+	if pe, ok := v.(FilterEnveloper); ok {
+		pe.EnableFilterEnvelope(enabled)
+	}
+}
 
 // SetFilterEnvelopePosition sets the filter envelope position, if the interface for it exists on the voice
 func SetFilterEnvelopePosition(v Voice, pos int) {

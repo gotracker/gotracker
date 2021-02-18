@@ -12,6 +12,8 @@ func ReadFile(filename string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 	buffer := &bytes.Buffer{}
-	buffer.ReadFrom(file)
+	if _, err := buffer.ReadFrom(file); err != nil {
+		return nil, err
+	}
 	return buffer, nil
 }

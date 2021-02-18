@@ -15,3 +15,7 @@ const (
 	// IgnoreUnknownEffect describes a bypass/ignore of unknown effects
 	IgnoreUnknownEffect
 )
+
+func init() {
+	_ = featureUnknown // lint
+}

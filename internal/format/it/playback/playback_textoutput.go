@@ -44,7 +44,7 @@ func xmChannelRender(cdata render.ChannelData) string {
 		if data.HasCommand() {
 			var c uint8
 			switch {
-			case data.Effect >= 0 && data.Effect <= 26:
+			case data.Effect <= 26:
 				c = '@' + data.Effect
 			default:
 				panic("effect out of range")

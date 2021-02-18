@@ -106,6 +106,7 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 	return nil
 }
 
+/** unused in XM, for now
 func (m *Manager) ensureOPL2() {
 	if opl2 := m.GetOPL2Chip(); opl2 == nil {
 		if s := m.GetSampler(); s != nil {
@@ -118,3 +119,4 @@ func (m *Manager) ensureOPL2() {
 		}
 	}
 }
+*/

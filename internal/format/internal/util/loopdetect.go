@@ -4,12 +4,7 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type loopDetectSequence struct {
-	min intf.RowIdx
-	max intf.RowIdx
-}
-
-type loopDetectNode map[intf.RowIdx]bool
+type loopDetectNode map[intf.RowIdx]struct{}
 
 // LoopDetect is a poorly-optimized, but simple loop detection system for tracked music
 type LoopDetect struct {
@@ -29,7 +24,7 @@ func (ld *LoopDetect) Observe(ord intf.OrderIdx, row intf.RowIdx) bool {
 		return true
 	}
 
-	(*n)[row] = true
+	(*n)[row] = struct{}{}
 	return false
 }
 

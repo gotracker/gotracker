@@ -45,69 +45,6 @@ func TestPortaLinkMem(t *testing.T) {
 	performChannelComparison(t, fn, sampleRate, channels, bitsPerSample)
 }
 
-func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels int, bitsPerSample int) {
-	t.Helper()
-
-	playback, err := xm.XM.Load(fn)
-	if err != nil {
-		t.Fatalf("Could not create song state! err[%v]", err)
-	}
-
-	if err := playback.SetupSampler(sampleRate, channels, bitsPerSample); err != nil {
-		t.Fatalf("Could not setup playback sampler! err[%v]", err)
-	}
-
-	playback.DisableFeatures([]feature.Feature{feature.OrderLoop})
-
-	for {
-		premixData, err := playback.Generate(time.Duration(0))
-		if err != nil {
-			if err == intf.ErrStopSong {
-				break
-			}
-			t.Fatal(err)
-		}
-
-		if len(premixData.Data) == 0 {
-			continue
-		}
-
-		if len(premixData.Data) < 1 {
-			t.Fatal("Not enough channels of data in premix buffer")
-		}
-
-		for _, test := range premixData.Data {
-
-			if len(test) < 1 {
-				t.Fatal("Not enough blocks of premixed track data in premix buffer")
-			} else if len(test) > 1 {
-				t.Fatal("Too many blocks of premixed track data in premix buffer")
-			}
-
-			pm := test[0]
-
-			data := pm.Data
-			if data == nil {
-				continue
-			}
-
-			if len(data) < channels {
-				t.Fatal("Not enough output channels of premixed track data in premix buffer")
-			} else if len(data) > channels {
-				t.Fatal("Too many output channels of premixed track data in premix buffer")
-			}
-
-			for _, chdata := range data {
-				for _, s := range chdata {
-					if math.Abs(float64(s)) >= 0.5 {
-						t.Fatal("expected relative silence, got waveform")
-					}
-				}
-			}
-		}
-	}
-}
-
 func performChannelComparison(t *testing.T, fn string, sampleRate int, channels int, bitsPerSample int) {
 	t.Helper()
 

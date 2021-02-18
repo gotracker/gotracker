@@ -104,10 +104,8 @@ func (p *Player) Play(playback intf.Playback) error {
 
 // WaitUntilDone waits until the player is done
 func (p *Player) WaitUntilDone() error {
-	select {
-	case <-p.ctx.Done():
-		return p.ctx.Err()
-	}
+	<-p.ctx.Done()
+	return p.ctx.Err()
 }
 
 func (p *Player) runStateMachine() error {

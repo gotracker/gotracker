@@ -33,7 +33,9 @@ type convInst struct {
 func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
-	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
+	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
+		return nil, err
+	}
 
 	for i, ci := range outInsts {
 		volEnvLoopMode := loop.ModeDisabled
@@ -77,7 +79,9 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides)
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides); err != nil {
+			return nil, err
+		}
 
 		if id.VolEnv.Enabled && id.VolEnv.Loop.Length() >= 0 {
 			if enabled := (inst.Flags & itfile.IMPIOldFlagUseVolumeLoop) != 0; enabled {
@@ -123,7 +127,9 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
-	buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:])
+	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
+		return nil, err
+	}
 
 	var channelFilterFactory func(sampleRate float32) intf.Filter
 	if inst.InitialFilterResonance != 0 {
@@ -164,10 +170,12 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		mixVol := volume.Volume(inst.GlobalVolume.Value())
 
 		ci.Inst = &ii
-		addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides)
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides); err != nil {
+			return nil, err
+		}
 
 		var volEnv envelope.VolumePoint
-		convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), func(v int8) interface{} {
+		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), func(v int8) interface{} {
 			vol := volume.Volume(uint8(v)) / 64
 			if vol > 1 {
 				// NOTE: there might be an incoming Y value == 0xFF, which really
@@ -176,21 +184,27 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 				vol = 1
 			}
 			return vol
-		})
+		}); err != nil {
+			return nil, err
+		}
 		id.VolEnv.OnFinished = func(ioc intf.NoteControl) {
 			ioc.Fadeout()
 		}
 
 		var panEnv envelope.PanPoint
-		convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), func(v int8) interface{} {
+		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), func(v int8) interface{} {
 			return panning.MakeStereoPosition(float32(v), -32, 32)
-		})
+		}); err != nil {
+			return nil, err
+		}
 
 		var pitchEnv envelope.PitchPoint
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
-		convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), func(v int8) interface{} {
+		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), func(v int8) interface{} {
 			return float32(uint8(v))
-		})
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	return outInsts, nil
@@ -286,7 +300,6 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDa
 func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
-	format := pcm.SampleDataFormat8BitUnsigned
 
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
 	id.MixingVolume *= instVol
@@ -327,7 +340,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	is16Bit := si.Header.Flags.Is16Bit()
 	isSigned := si.Header.ConvertFlags.IsSignedSamples()
 	isBigEndian := si.Header.ConvertFlags.IsBigEndian()
-	format = getSampleFormat(is16Bit, isSigned, isBigEndian)
+	format := getSampleFormat(is16Bit, isSigned, isBigEndian)
 
 	isDeltaSamples := si.Header.ConvertFlags.IsSampleDelta()
 	var data []byte
@@ -374,7 +387,9 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 		buf := bytes.NewBuffer(data)
 		for buf.Len() < int(si.Header.Length+1)*bytesPerFrame {
-			binary.Write(buf, order, value)
+			if err := binary.Write(buf, order, value); err != nil {
+				return err
+			}
 		}
 		data = buf.Bytes()
 	}

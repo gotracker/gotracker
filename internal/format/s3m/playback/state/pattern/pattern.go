@@ -66,10 +66,7 @@ func (state *State) GetNumRows() int {
 
 // WantsStop returns true when the current pattern wants to end the song
 func (state *State) WantsStop() bool {
-	if state.GetPatNum() == intf.InvalidPattern {
-		return true
-	}
-	return false
+	return state.GetPatNum() == intf.InvalidPattern
 }
 
 // setCurrentOrder sets the current order index
@@ -90,18 +87,6 @@ func (state *State) GetCurrentOrder() intf.OrderIdx {
 // GetNumOrders returns the number of orders in the song
 func (state *State) GetNumOrders() int {
 	return len(state.Orders)
-}
-
-func (state *State) getCurrentPattern() (*pattern.Pattern, error) {
-	patIdx, err := state.GetCurrentPatternIdx()
-	if err != nil {
-		return nil, err
-	}
-
-	if int(patIdx) >= len(state.Patterns) {
-		return nil, errors.New("invalid pattern index")
-	}
-	return &state.Patterns[patIdx], nil
 }
 
 // NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
@@ -173,7 +158,7 @@ func (state *State) nextOrder(resetRow ...bool) {
 	state.rowHasPatternDelay = false
 	state.patternDelay = 0
 	state.finePatternDelay = 0
-	state.GetCurrentPatternIdx() // called only to clean up order position info
+	_, _ = state.GetCurrentPatternIdx() // called only to clean up order position info
 	if len(resetRow) > 0 && resetRow[0] {
 		state.currentRow = 0
 	}

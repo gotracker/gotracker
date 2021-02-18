@@ -25,14 +25,14 @@ func NewAmigaLPF() *AmigaLPF {
 	return &lpf
 }
 
-var (
-	amigaLPFCoeffA0 volume.Volume = 1.0
+const (
+	//amigaLPFCoeffA0 volume.Volume = 1.0
 	amigaLPFCoeffA1 volume.Volume = math.Sqrt2
-	amigaLPFCoeffA2 volume.Volume = 1.0
+	//amigaLPFCoeffA2 volume.Volume = 1.0
 
-	amigaLPFCoeffB0 volume.Volume = 1.0
-	amigaLPFCoeffB1 volume.Volume = 0.0
-	amigaLPFCoeffB2 volume.Volume = 0.0
+	//amigaLPFCoeffB0 volume.Volume = 1.0
+	//amigaLPFCoeffB1 volume.Volume = 0.0
+	//amigaLPFCoeffB2 volume.Volume = 0.0
 )
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result

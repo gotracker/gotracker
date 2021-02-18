@@ -93,7 +93,7 @@ func VolumeFromIt(vol itfile.Volume) volume.Volume {
 // VolumeFromVolPan converts an it volume-pan to a player volume
 func VolumeFromVolPan(vp uint8) volume.Volume {
 	switch {
-	case vp >= 0 && vp <= 64:
+	case vp <= 64:
 		return volume.Volume(vp) / 64
 	default:
 		return volume.VolumeUseInstVol

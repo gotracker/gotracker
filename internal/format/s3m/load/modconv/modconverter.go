@@ -12,7 +12,7 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 )
 
-func convertMODPatternToS3M(mp *modfile.Pattern) *s3mfile.PackedPattern {
+func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error) {
 	w := &bytes.Buffer{}
 
 	for _, row := range mp {
@@ -171,21 +171,35 @@ func convertMODPatternToS3M(mp *modfile.Pattern) *s3mfile.PackedPattern {
 			}
 
 			if u.What.HasNote() || u.What.HasCommand() || u.What.HasVolume() {
-				binary.Write(w, binary.LittleEndian, u.What)
+				if err := binary.Write(w, binary.LittleEndian, u.What); err != nil {
+					return nil, err
+				}
 				if u.What.HasNote() {
-					binary.Write(w, binary.LittleEndian, u.Note)
-					binary.Write(w, binary.LittleEndian, u.Instrument)
+					if err := binary.Write(w, binary.LittleEndian, u.Note); err != nil {
+						return nil, err
+					}
+					if err := binary.Write(w, binary.LittleEndian, u.Instrument); err != nil {
+						return nil, err
+					}
 				}
 				if u.What.HasVolume() {
-					binary.Write(w, binary.LittleEndian, u.Volume)
+					if err := binary.Write(w, binary.LittleEndian, u.Volume); err != nil {
+						return nil, err
+					}
 				}
 				if u.What.HasCommand() {
-					binary.Write(w, binary.LittleEndian, u.Command)
-					binary.Write(w, binary.LittleEndian, u.Info)
+					if err := binary.Write(w, binary.LittleEndian, u.Command); err != nil {
+						return nil, err
+					}
+					if err := binary.Write(w, binary.LittleEndian, u.Info); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
-		binary.Write(w, binary.LittleEndian, uint8(0))
+		if err := binary.Write(w, binary.LittleEndian, uint8(0)); err != nil {
+			return nil, err
+		}
 	}
 
 	pattern := s3mfile.PackedPattern{
@@ -193,7 +207,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) *s3mfile.PackedPattern {
 		Data:   w.Bytes(),
 	}
 
-	return &pattern
+	return &pattern, nil
 }
 
 var (
@@ -314,7 +328,10 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 
 	f.Patterns = make([]s3mfile.PackedPattern, f.Head.PatternCount)
 	for i, p := range mf.Patterns {
-		pattern := convertMODPatternToS3M(&p)
+		pattern, err := convertMODPatternToS3M(&p)
+		if err != nil {
+			return nil, err
+		}
 		if pattern == nil {
 			continue
 		}

@@ -67,6 +67,7 @@ func Setup() {
 }
 
 func init() {
+	_ = devicePriorityNone // lint
 	devicePriorityMap["file"] = devicePriorityFile
 	devicePriorityMap["pulseaudio"] = devicePriorityPulseAudio
 	devicePriorityMap["winmm"] = devicePriorityWinmm

@@ -43,7 +43,7 @@ func xmChannelRender(cdata render.ChannelData) string {
 		if data.HasEffect() {
 			var c uint8
 			switch {
-			case data.Effect >= 0 && data.Effect <= 9:
+			case data.Effect <= 9:
 				c = '0' + data.Effect
 			case data.Effect >= 10 && data.Effect < 36:
 				c = 'A' + (data.Effect - 10)

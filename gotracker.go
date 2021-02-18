@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -167,7 +169,7 @@ func main() {
 		tickInterval = time.Duration(0)
 	}
 
-	p, err := player.NewPlayer(nil, outBufs, tickInterval)
+	p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -186,10 +188,14 @@ func main() {
 
 	go func() {
 		defer close(outBufs)
-		p.WaitUntilDone()
+		if err := p.WaitUntilDone(); err != nil && !errors.Is(err, intf.ErrStopSong) {
+			log.Fatalln(err)
+		}
 	}()
 
-	waveOut.Play(outBufs)
+	if err := waveOut.Play(outBufs); err != nil && !errors.Is(err, intf.ErrStopSong) {
+		log.Fatalln(err)
+	}
 
 	for k, v := range effectMap {
 		fmt.Println(k, v)

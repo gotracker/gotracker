@@ -68,7 +68,7 @@ func (d *Data) HasVolume() bool {
 	}
 
 	v := d.VolPan
-	return v >= 0 && v <= 64
+	return v <= 64
 }
 
 // GetVolume returns the volume for the channel

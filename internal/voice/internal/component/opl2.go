@@ -149,13 +149,11 @@ func (o *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
 }
 
 func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
-	fnum := uint16(1023)
-	block := uint8(8)
-
 	if freq > 6208.431 {
 		return 0, 0
 	}
 
+	var block uint8
 	if freq > 3104.215 {
 		block = 7
 	} else if freq > 1552.107 {
@@ -173,7 +171,7 @@ func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
 	} else {
 		block = 0
 	}
-	fnum = uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
+	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
 
 	return fnum, block
 }

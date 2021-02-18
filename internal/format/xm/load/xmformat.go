@@ -125,7 +125,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
-				x2 := x1
+				var x2 int
 				if i+1 < len(ii.VolEnv.Values) {
 					x2 = int(inst.VolEnv[i+1].X)
 				} else {
@@ -153,7 +153,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				// So we have to do some gymnastics to remap the values
 				panEnv01 := float64(uint8(inst.PanEnv[i].Y)) / 64
 				y1 := uint8(panEnv01 * 255)
-				x2 := x1
+				var x2 int
 				if i+1 < len(ii.PanEnv.Values) {
 					x2 = int(inst.PanEnv[i+1].X)
 				} else {

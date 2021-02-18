@@ -12,8 +12,6 @@ import (
 	"gotracker/internal/player/note"
 )
 
-type commandFunc func(int, *ChannelState, int, bool)
-
 // NoteTriggerDetails is for when a note needs to be played
 type NoteTriggerDetails struct {
 	Tick int

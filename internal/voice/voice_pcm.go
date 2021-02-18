@@ -36,6 +36,7 @@ type PCMConfiguration struct {
 	InitialPeriod note.Period
 	AutoVibrato   voiceIntf.AutoVibrato
 	DataIntf      intf.InstrumentDataIntf
+	FilterApplier voiceIntf.FilterApplier
 }
 
 // == the actual pcm voice ==
@@ -43,7 +44,9 @@ type PCMConfiguration struct {
 type pcmVoice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
+	filterApplier voiceIntf.FilterApplier
 
+	active    bool
 	keyOn     bool
 	prevKeyOn bool
 
@@ -67,6 +70,8 @@ func NewPCM(config PCMConfiguration) voiceIntf.Voice {
 	v := pcmVoice{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
+		filterApplier: config.FilterApplier,
+		active:        true,
 	}
 
 	switch d := config.DataIntf.(type) {
@@ -349,16 +354,16 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	}
 }
 
-func (v *pcmVoice) GetSampler(samplerRate float32, out voiceIntf.FilterApplier) sampling.Sampler {
+func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	period := v.GetFinalPeriod()
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
 	o := component.OutputFilter{
 		Input:  v,
-		Output: out,
+		Output: v.filterApplier,
 	}
 	if v.IsFilterEnvelopeEnabled() {
 		fval := v.GetCurrentFilterEnvelope()
-		out.SetFilterEnvelopeValue(fval)
+		o.Output.SetFilterEnvelopeValue(fval)
 	}
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }
@@ -373,4 +378,12 @@ func (v *pcmVoice) StartTransaction() voiceIntf.Transaction {
 		Voice: v,
 	}
 	return &t
+}
+
+func (v *pcmVoice) SetActive(active bool) {
+	v.active = active
+}
+
+func (v *pcmVoice) IsActive() bool {
+	return v.active
 }

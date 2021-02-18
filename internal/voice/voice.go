@@ -15,6 +15,7 @@ func New(inst intf.Instrument, output *intf.OutputChannel) voiceIntf.Voice {
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
 			DataIntf:      data,
+			FilterApplier: output,
 		})
 	case *instrument.OPL2:
 		return NewOPL2(OPLConfiguration{

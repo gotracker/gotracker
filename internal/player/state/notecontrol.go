@@ -15,15 +15,11 @@ import (
 type NoteControl struct {
 	Voice  voiceIntf.Voice
 	Output *intf.OutputChannel
-	txn    voiceIntf.Transaction
 }
 
 // SetupVoice configures the voice using the instrument data interface provided
 func (nc *NoteControl) SetupVoice(inst intf.Instrument) {
 	nc.Voice = voice.New(inst, nc.Output)
-	if nc.Voice != nil {
-		nc.txn = nc.Voice.StartTransaction()
-	}
 }
 
 // Clone clones the current note-control interface so that it doesn't collide with the existing one
@@ -34,25 +30,12 @@ func (nc *NoteControl) Clone() intf.NoteControl {
 	return &c
 }
 
-// Cancel cancels the current voice update transaction
-func (nc *NoteControl) Cancel() {
-	if nc.txn != nil {
-		nc.txn.Cancel()
-		nc.txn = nc.Voice.StartTransaction()
-	}
-}
-
-// Commit commits the current voice update transaction
-func (nc *NoteControl) Commit() {
-	if nc.txn != nil {
-		nc.txn.Commit()
-		nc.txn = nc.Voice.StartTransaction()
-	}
-}
-
 // SetEnvelopePosition sets the envelope position(s) on the voice
 func (nc *NoteControl) SetEnvelopePosition(pos int) {
-	nc.txn.SetAllEnvelopePositions(pos)
+	voiceIntf.SetVolumeEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetPanEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetPitchEnvelopePosition(nc.Voice, pos)
+	voiceIntf.SetFilterEnvelopePosition(nc.Voice, pos)
 }
 
 // GetCurrentPeriodDelta returns the current pitch envelope value
@@ -82,17 +65,23 @@ func (nc *NoteControl) GetVoice() voiceIntf.Voice {
 
 // Attack sets the key on flag for the instrument
 func (nc *NoteControl) Attack() {
-	nc.txn.Attack()
+	if v := nc.Voice; v != nil {
+		v.Attack()
+	}
 }
 
 // Release clears the key on flag for the instrument
 func (nc *NoteControl) Release() {
-	nc.txn.Release()
+	if v := nc.Voice; v != nil {
+		v.Release()
+	}
 }
 
 // Fadeout sets the instrument to fading-out mode
 func (nc *NoteControl) Fadeout() {
-	nc.txn.Fadeout()
+	if v := nc.Voice; v != nil {
+		v.Fadeout()
+	}
 }
 
 // GetKeyOn gets the key on flag for the instrument
@@ -106,10 +95,7 @@ func (nc *NoteControl) GetKeyOn() bool {
 // Update advances time by the amount specified by `tickDuration`
 func (nc *NoteControl) Update(tickDuration time.Duration) {
 	if v := nc.Voice; v != nil && nc.Output != nil {
-		nc.Commit()
 		v.Advance(tickDuration)
-	} else {
-		nc.Cancel()
 	}
 }
 
@@ -125,15 +111,15 @@ func (nc *NoteControl) IsDone() bool {
 
 // SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
 func (nc *NoteControl) SetVolumeEnvelopeEnable(enabled bool) {
-	nc.txn.EnableVolumeEnvelope(enabled)
+	voiceIntf.EnableVolumeEnvelope(nc.Voice, enabled)
 }
 
 // SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
 func (nc *NoteControl) SetPanningEnvelopeEnable(enabled bool) {
-	nc.txn.EnablePanEnvelope(enabled)
+	voiceIntf.EnablePanEnvelope(nc.Voice, enabled)
 }
 
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (nc *NoteControl) SetPitchEnvelopeEnable(enabled bool) {
-	nc.txn.EnablePitchEnvelope(enabled)
+	voiceIntf.EnablePitchEnvelope(nc.Voice, enabled)
 }

@@ -44,6 +44,7 @@ type opl2Voice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
 
+	active    bool
 	keyOn     bool
 	prevKeyOn bool
 
@@ -62,6 +63,7 @@ func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
 		fadeoutMode:   fadeout.ModeDisabled,
+		active:        true,
 	}
 
 	var regs component.OPL2Registers
@@ -262,7 +264,7 @@ func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {
 	return nil
 }
 
-func (v *opl2Voice) GetSampler(samplerRate float32, out voiceIntf.FilterApplier) sampling.Sampler {
+func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
 	return nil
 }
 
@@ -276,4 +278,12 @@ func (v *opl2Voice) StartTransaction() voiceIntf.Transaction {
 		Voice: v,
 	}
 	return &t
+}
+
+func (v *opl2Voice) SetActive(active bool) {
+	v.active = active
+}
+
+func (v *opl2Voice) IsActive() bool {
+	return v.active
 }

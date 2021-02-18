@@ -93,7 +93,7 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 		// make a stand-alone data buffer for this channel for this tick
 		if a.VoiceActive {
 			mixData := mixing.SampleMixIn{
-				Sample:    ncv.GetSampler(samplerSpeed, nc.GetOutputChannel()),
+				Sample:    ncv.GetSampler(samplerSpeed),
 				StaticVol: volume.Volume(1.0),
 				VolMatrix: volMatrix,
 				MixPos:    0,

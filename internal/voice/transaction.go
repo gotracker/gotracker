@@ -26,6 +26,7 @@ type txn struct {
 	cancelled bool
 	Voice     voiceIntf.Voice
 
+	active      optional.Value //bool
 	playing     optional.Value //playingMode
 	fadeout     optional.Value //struct{}
 	period      optional.Value //note.Period
@@ -37,6 +38,18 @@ type txn struct {
 	pitchEnv    envSettings
 	panEnv      envSettings
 	filterEnv   envSettings
+}
+
+func (t *txn) SetActive(active bool) {
+	t.active.Set(active)
+}
+
+func (t *txn) IsPendingActive() (bool, bool) {
+	return t.active.GetBool()
+}
+
+func (t *txn) IsCurrentlyActive() bool {
+	return t.Voice.IsActive()
 }
 
 // Attack sets the playing mode to Attack
@@ -59,9 +72,25 @@ func (t *txn) SetPeriod(period note.Period) {
 	t.period.Set(period)
 }
 
+func (t *txn) GetPendingPeriod() (note.Period, bool) {
+	return t.period.GetPeriod()
+}
+
+func (t *txn) GetCurrentPeriod() note.Period {
+	return voiceIntf.GetPeriod(t.Voice)
+}
+
 // SetPeriodDelta sets the period delta
 func (t *txn) SetPeriodDelta(delta note.PeriodDelta) {
 	t.periodDelta.Set(delta)
+}
+
+func (t *txn) GetPendingPeriodDelta() (note.PeriodDelta, bool) {
+	return t.periodDelta.GetPeriodDelta()
+}
+
+func (t *txn) GetCurrentPeriodDelta() note.PeriodDelta {
+	return voiceIntf.GetPeriodDelta(t.Voice)
 }
 
 // SetVolume sets the volume
@@ -69,14 +98,38 @@ func (t *txn) SetVolume(vol volume.Volume) {
 	t.vol.Set(vol)
 }
 
+func (t *txn) GetPendingVolume() (volume.Volume, bool) {
+	return t.vol.GetVolume()
+}
+
+func (t *txn) GetCurrentVolume() volume.Volume {
+	return voiceIntf.GetVolume(t.Voice)
+}
+
 // SetPos sets the position
 func (t *txn) SetPos(pos sampling.Pos) {
 	t.pos.Set(pos)
 }
 
+func (t *txn) GetPendingPos() (sampling.Pos, bool) {
+	return t.pos.GetPosition()
+}
+
+func (t *txn) GetCurrentPos() sampling.Pos {
+	return voiceIntf.GetPos(t.Voice)
+}
+
 // SetPan sets the panning position
 func (t *txn) SetPan(pan panning.Position) {
 	t.pan.Set(pan)
+}
+
+func (t *txn) GetPendingPan() (panning.Position, bool) {
+	return t.pan.GetPanning()
+}
+
+func (t *txn) GetCurrentPan() panning.Position {
+	return voiceIntf.GetPan(t.Voice)
 }
 
 // SetVolumeEnvelopePosition sets the volume envelope position
@@ -87,6 +140,14 @@ func (t *txn) SetVolumeEnvelopePosition(pos int) {
 // EnableVolumeEnvelope sets the volume envelope enable flag
 func (t *txn) EnableVolumeEnvelope(enabled bool) {
 	t.volEnv.enabled.Set(enabled)
+}
+
+func (t *txn) IsPendingVolumeEnvelopeEnabled() (bool, bool) {
+	return t.volEnv.enabled.GetBool()
+}
+
+func (t *txn) IsCurrentVolumeEnvelopeEnabled() bool {
+	return voiceIntf.IsVolumeEnvelopeEnabled(t.Voice)
 }
 
 // SetPitchEnvelopePosition sets the pitch envelope position
@@ -143,6 +204,10 @@ func (t *txn) Commit() {
 
 	if t.Voice == nil {
 		panic("voice not initialized")
+	}
+
+	if active, ok := t.active.Get(); ok {
+		t.Voice.SetActive(active.(bool))
 	}
 
 	if period, ok := t.period.Get(); ok {
@@ -209,4 +274,13 @@ func (t *txn) Commit() {
 	if _, ok := t.fadeout.Get(); ok {
 		t.Voice.Fadeout()
 	}
+}
+
+func (t *txn) GetVoice() voiceIntf.Voice {
+	return t.Voice
+}
+
+func (t *txn) Clone() voiceIntf.Transaction {
+	c := *t
+	return &c
 }

@@ -26,7 +26,7 @@ type Voice interface {
 
 	// == required function interfaces ==
 	Advance(tickDuration time.Duration)
-	GetSampler(samplerRate float32, out FilterApplier) sampling.Sampler
+	GetSampler(samplerRate float32) sampling.Sampler
 	Clone() Voice
 	StartTransaction() Transaction
 }
@@ -39,6 +39,8 @@ type Controller interface {
 	IsKeyOn() bool
 	IsFadeout() bool
 	IsDone() bool
+	SetActive(active bool)
+	IsActive() bool
 }
 
 // == Positioner ==
@@ -67,6 +69,14 @@ func SetPeriod(v Voice, period note.Period) {
 	}
 }
 
+// GetPeriod gets the period from the frequency modulator, if the interface for it exists on the voice
+func GetPeriod(v Voice) note.Period {
+	if fm, ok := v.(FreqModulator); ok {
+		return fm.GetPeriod()
+	}
+	return nil
+}
+
 // SetPeriodDelta sets the period delta into the frequency modulator, if the interface for it exists on the voice
 func SetPeriodDelta(v Voice, delta note.PeriodDelta) {
 	if fm, ok := v.(FreqModulator); ok {
@@ -92,11 +102,19 @@ func GetFinalPeriod(v Voice) note.Period {
 
 // == AmpModulator ==
 
-// SetVolume sets the period into the amplitude modulator, if the interface for it exists on the voice
+// SetVolume sets the volume into the amplitude modulator, if the interface for it exists on the voice
 func SetVolume(v Voice, vol volume.Volume) {
 	if am, ok := v.(AmpModulator); ok {
 		am.SetVolume(vol)
 	}
+}
+
+// GetVolume gets the volume from the amplitude modulator, if the interface for it exists on the voice
+func GetVolume(v Voice) volume.Volume {
+	if am, ok := v.(AmpModulator); ok {
+		return am.GetVolume()
+	}
+	return volume.Volume(1)
 }
 
 // GetFinalVolume returns the final volume from the amplitude modulator, if the interface for it exists on the voice

@@ -40,7 +40,7 @@ type Instrument interface {
 	GetLength() sampling.Pos
 	GetNewNoteAction() note.Action
 	GetData() InstrumentDataIntf
-	GetChannelFilterFactory() FilterFactory
+	GetFilterFactory() FilterFactory
 	GetAutoVibrato() voiceIntf.AutoVibrato
 	IsReleaseNote(note.Note) bool
 	IsStopNote(note.Note) bool

@@ -209,7 +209,7 @@ func (cs *ChannelState) newNoteControl() intf.NoteControl {
 	if inst := cs.activeState.Instrument; inst != nil {
 		ioc.SetupVoice(inst)
 
-		if cfact := inst.GetChannelFilterFactory(); cfact != nil {
+		if cfact := inst.GetFilterFactory(); cfact != nil {
 			ioc.Output.Filter = cfact(ioc.Output.Playback.GetSampleRate())
 		}
 	}

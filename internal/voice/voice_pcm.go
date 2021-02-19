@@ -36,7 +36,8 @@ type PCMConfiguration struct {
 	InitialPeriod note.Period
 	AutoVibrato   voiceIntf.AutoVibrato
 	DataIntf      intf.InstrumentDataIntf
-	FilterApplier voiceIntf.FilterApplier
+	OutputFilter  voiceIntf.FilterApplier
+	VoiceFilter   intf.Filter
 }
 
 // == the actual pcm voice ==
@@ -44,7 +45,9 @@ type PCMConfiguration struct {
 type pcmVoice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
-	filterApplier voiceIntf.FilterApplier
+	outputFilter  voiceIntf.FilterApplier
+	voiceFilter   intf.Filter
+	fadeoutMode   fadeout.Mode
 
 	active    bool
 	keyOn     bool
@@ -52,8 +55,6 @@ type pcmVoice struct {
 
 	pitchAndFilterEnvShared bool
 	filterEnvActive         bool // if pitchAndFilterEnvShared is true, this dictates which is active initially - true=filter, false=pitch
-
-	fadeoutMode fadeout.Mode
 
 	sampler   component.Sampler
 	amp       component.AmpModulator
@@ -70,7 +71,8 @@ func NewPCM(config PCMConfiguration) voiceIntf.Voice {
 	v := pcmVoice{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
-		filterApplier: config.FilterApplier,
+		outputFilter:  config.OutputFilter,
+		voiceFilter:   config.VoiceFilter,
 		active:        true,
 	}
 
@@ -155,6 +157,9 @@ func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 	dry := v.sampler.GetSample(pos)
 	vol := v.GetFinalVolume()
 	wet := dry.ApplyInSitu(vol)
+	if v.voiceFilter != nil {
+		wet = v.voiceFilter.Filter(wet)
+	}
 	return wet
 }
 
@@ -359,11 +364,11 @@ func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
 	o := component.OutputFilter{
 		Input:  v,
-		Output: v.filterApplier,
+		Output: v.outputFilter,
 	}
-	if v.IsFilterEnvelopeEnabled() {
+	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
 		fval := v.GetCurrentFilterEnvelope()
-		o.Output.SetFilterEnvelopeValue(fval)
+		v.voiceFilter.UpdateEnv(fval)
 	}
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }

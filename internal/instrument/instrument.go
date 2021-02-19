@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/optional"
 	"gotracker/internal/player/intf"
 	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
@@ -13,22 +14,23 @@ import (
 
 // StaticValues are the static values associated with an instrument
 type StaticValues struct {
-	Filename             string
-	Name                 string
-	ID                   intf.InstrumentID
-	Volume               volume.Volume
-	RelativeNoteNumber   int8
-	AutoVibrato          voiceIntf.AutoVibrato
-	ChannelFilterFactory intf.ChannelFilterFactory
+	Filename           string
+	Name               string
+	ID                 intf.InstrumentID
+	Volume             volume.Volume
+	RelativeNoteNumber int8
+	AutoVibrato        voiceIntf.AutoVibrato
+	NewNoteAction      note.Action
+	Finetune           note.Finetune
+	FilterFactory      intf.FilterFactory
 }
 
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
-	Static        StaticValues
-	Inst          intf.InstrumentDataIntf
-	C2Spd         note.C2SPD
-	Finetune      note.Finetune
-	NewNoteAction note.Action
+	Static   StaticValues
+	Inst     intf.InstrumentDataIntf
+	C2Spd    note.C2SPD
+	Finetune optional.Value //note.Finetune
 }
 
 // IsInvalid always returns false (valid)
@@ -66,12 +68,15 @@ func (inst *Instrument) GetLength() sampling.Pos {
 
 // SetFinetune sets the finetune value on the instrument
 func (inst *Instrument) SetFinetune(ft note.Finetune) {
-	inst.Finetune = ft
+	inst.Finetune.Set(ft)
 }
 
 // GetFinetune returns the finetune value on the instrument
 func (inst *Instrument) GetFinetune() note.Finetune {
-	return inst.Finetune
+	if ft, ok := inst.Finetune.GetFinetune(); ok {
+		return ft
+	}
+	return inst.Static.Finetune
 }
 
 // GetID returns the instrument number (1-based)
@@ -97,7 +102,7 @@ func (inst *Instrument) GetKind() intf.InstrumentKind {
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
 func (inst *Instrument) GetNewNoteAction() note.Action {
-	return inst.NewNoteAction
+	return inst.Static.NewNoteAction
 }
 
 // GetData returns the instrument-specific data interface
@@ -106,8 +111,8 @@ func (inst *Instrument) GetData() intf.InstrumentDataIntf {
 }
 
 // GetChannelFilterFactory returns the factory for the channel filter
-func (inst *Instrument) GetChannelFilterFactory() intf.ChannelFilterFactory {
-	return inst.Static.ChannelFilterFactory
+func (inst *Instrument) GetChannelFilterFactory() intf.FilterFactory {
+	return inst.Static.FilterFactory
 }
 
 // GetAutoVibrato returns the settings for the autovibrato system

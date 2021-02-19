@@ -4,23 +4,23 @@ import (
 	"errors"
 
 	formatutil "gotracker/internal/format/internal/util"
+	"gotracker/internal/optional"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/pattern"
 )
 
 // State is the current pattern state
 type State struct {
-	currentOrder       intf.OrderIdx
-	currentRow         intf.RowIdx
-	ticks              int
-	tempo              int
-	rowHasPatternDelay bool
-	patternDelay       int
-	finePatternDelay   int
-	resetPatternLoops  bool
+	currentOrder      intf.OrderIdx
+	currentRow        intf.RowIdx
+	ticks             int
+	tempo             int
+	patternDelay      optional.Value //int
+	finePatternDelay  int
+	resetPatternLoops bool
 
 	SongLoopEnabled bool
-	loopDetect      formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect loops
+	loopDetect      formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 
 	Patterns []pattern.Pattern
 	Orders   []intf.PatternIdx
@@ -39,8 +39,8 @@ func (state *State) GetSpeed() int {
 // GetTicksThisRow returns the number of ticks in the current row
 func (state *State) GetTicksThisRow() int {
 	rowLoops := 1
-	if state.rowHasPatternDelay {
-		rowLoops = state.patternDelay
+	if patternDelay, ok := state.patternDelay.GetInt(); ok {
+		rowLoops = patternDelay
 	}
 	extraTicks := state.finePatternDelay
 
@@ -147,8 +147,7 @@ func (state *State) Observe() error {
 // nextOrder travels to the next pattern in the order list
 func (state *State) nextOrder(resetRow ...bool) {
 	state.advanceOrder()
-	state.rowHasPatternDelay = false
-	state.patternDelay = 0
+	state.patternDelay.Reset()
 	state.finePatternDelay = 0
 	_, _ = state.GetCurrentPatternIdx() // called only to clean up order position info
 	if len(resetRow) > 0 && resetRow[0] {
@@ -166,8 +165,7 @@ func (state *State) Reset() {
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
 func (state *State) nextRow() {
-	state.rowHasPatternDelay = false
-	state.patternDelay = 0
+	state.patternDelay.Reset()
 	state.finePatternDelay = 0
 
 	var patNum = state.GetPatNum()
@@ -180,12 +178,8 @@ func (state *State) nextRow() {
 		return
 	}
 
-	nextRow := int(state.currentRow)
-	nextRow++
-	if nextRow >= state.GetNumRows() {
+	if state.currentRow.Increment(state.GetNumRows()) {
 		state.nextOrder(true)
-	} else {
-		state.setCurrentRow(intf.RowIdx(nextRow))
 	}
 }
 
@@ -218,63 +212,64 @@ func (state *State) NeedResetPatternLoops() bool {
 	return rpl
 }
 
-// CommitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
-func (state *State) CommitTransaction(txn *RowUpdateTransaction) {
-	if txn.committed {
-		return
-	}
-	txn.committed = true
-
-	if txn.tempoSet || txn.tempoDeltaSet {
+// commitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
+func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) {
+	tempo, tempoSet := txn.Tempo.GetInt()
+	tempoDelta, tempoDeltaSet := txn.TempoDelta.GetInt()
+	if tempoSet || tempoDeltaSet {
 		newTempo := state.tempo
-		if txn.tempoSet {
-			newTempo = txn.tempo
+		if tempoSet {
+			newTempo = tempo
 		}
-		if txn.tempoDeltaSet {
-			newTempo += txn.tempoDelta
+		if tempoDeltaSet {
+			newTempo += tempoDelta
 		}
 		state.tempo = newTempo
 	}
 
-	if txn.ticksSet {
-		state.ticks = txn.ticks
+	if ticks, ok := txn.Ticks.GetInt(); ok {
+		state.ticks = ticks
 	}
 
-	if txn.finePatternDelaySet {
-		state.finePatternDelay = txn.finePatternDelay
+	if finePatternDelay, ok := txn.FinePatternDelay.GetInt(); ok {
+		state.finePatternDelay = finePatternDelay
 	}
 
-	if !state.rowHasPatternDelay && txn.patternDelaySet {
-		state.patternDelay = txn.patternDelay
-		state.rowHasPatternDelay = true
+	if !state.patternDelay.IsSet() {
+		if patternDelay, ok := txn.GetPatternDelay(); ok {
+			state.patternDelay.Set(patternDelay)
+		}
 	}
 
-	if txn.breakOrder {
+	if txn.BreakOrder {
 		state.nextOrder(true)
 	}
 
-	if txn.orderIdxSet || txn.rowIdxSet {
-		if txn.orderIdxSet {
-			state.setCurrentOrder(txn.orderIdx)
-			if !txn.rowIdxSet {
+	orderIdx, orderIdxSet := txn.GetOrderIdx()
+	rowIdx, rowIdxSet := txn.GetRowIdx()
+
+	if orderIdxSet || rowIdxSet {
+		if orderIdxSet {
+			state.setCurrentOrder(orderIdx)
+			if !rowIdxSet {
 				state.setCurrentRow(0)
 			}
 		}
-		if txn.rowIdxSet {
-			if !txn.orderIdxSet && !txn.rowIdxAllowBacktrack && state.currentRow > txn.rowIdx {
+		if rowIdxSet {
+			if !orderIdxSet && !txn.RowIdxAllowBacktrack && state.currentRow > rowIdx {
 				state.nextOrder()
 			}
-			state.setCurrentRow(txn.rowIdx)
+			state.setCurrentRow(rowIdx)
 		}
-	} else if txn.advanceRow {
+	} else if txn.AdvanceRow {
 		state.nextRow()
 	}
 }
 
 // StartTransaction starts a row update transaction
-func (state *State) StartTransaction() *RowUpdateTransaction {
-	txn := RowUpdateTransaction{
-		state: state,
+func (state *State) StartTransaction() *pattern.RowUpdateTransaction {
+	txn := pattern.RowUpdateTransaction{
+		CommitTransaction: state.commitTransaction,
 	}
 
 	return &txn

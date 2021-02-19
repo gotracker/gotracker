@@ -1,6 +1,9 @@
 package intf
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 var (
 	// ErrStopSong is a magic error asking to stop the current song
@@ -30,6 +33,24 @@ type PatternIdx uint8
 
 // RowIdx is an index into the pattern for the row
 type RowIdx uint8
+
+// Increment will in-situ increment the value of the index and will return true if an overflow occurs
+func (r *RowIdx) Increment(maxRows ...int) bool {
+	var overflow bool
+	mr := math.MaxUint8
+	if len(maxRows) > 0 {
+		mr = maxRows[0]
+		if mr > 0 {
+			mr--
+		}
+	}
+	if int(*r) == mr {
+		overflow = true
+	}
+
+	*r += 1
+	return overflow
+}
 
 const (
 	// NextPattern allows the order system the ability to kick to the next pattern

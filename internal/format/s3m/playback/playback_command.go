@@ -102,12 +102,12 @@ func (m *Manager) SetFilterEnable(on bool) {
 // SetTicks sets the number of ticks the row expects to play for
 func (m *Manager) SetTicks(ticks int) {
 	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetTicks(ticks)
+		m.preMixRowTxn.Ticks.Set(ticks)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetTicks(ticks)
+		rowTxn.Ticks.Set(ticks)
 		rowTxn.Commit()
 	}
 }
@@ -115,12 +115,12 @@ func (m *Manager) SetTicks(ticks int) {
 // AddRowTicks increases the number of ticks the row expects to play for
 func (m *Manager) AddRowTicks(ticks int) {
 	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetFinePatternDelay(ticks)
+		m.preMixRowTxn.FinePatternDelay.Set(ticks)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetFinePatternDelay(ticks)
+		rowTxn.FinePatternDelay.Set(ticks)
 		rowTxn.Commit()
 	}
 }

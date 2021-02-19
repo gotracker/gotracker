@@ -1,6 +1,7 @@
 package optional
 
 import (
+	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 
 	"github.com/gotracker/gomixing/panning"
@@ -14,10 +15,20 @@ type Value struct {
 	value interface{}
 }
 
+// Reset clears the memory on the value
+func (o *Value) Reset() {
+	o.value = nil
+	o.set = false
+}
+
 // Set updates the value and sets the set flag
 func (o *Value) Set(value interface{}) {
 	o.value = value
 	o.set = true
+}
+
+func (o *Value) IsSet() bool {
+	return o.set
 }
 
 // Get returns the value and its set flag
@@ -79,4 +90,20 @@ func (o *Value) GetPosition() (sampling.Pos, bool) {
 		return v, o.set
 	}
 	return sampling.Pos{}, false
+}
+
+// GetOrderIdx returns the stored value as an order index and if it has been set
+func (o *Value) GetOrderIdx() (intf.OrderIdx, bool) {
+	if v, ok := o.value.(intf.OrderIdx); ok {
+		return v, o.set
+	}
+	return intf.OrderIdx(0), false
+}
+
+// GetRowIdx returns the stored value as a row index and if it has been set
+func (o *Value) GetRowIdx() (intf.RowIdx, bool) {
+	if v, ok := o.value.(intf.RowIdx); ok {
+		return v, o.set
+	}
+	return intf.RowIdx(0), false
 }

@@ -357,6 +357,11 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	if v.IsFilterEnvelopeEnabled() {
 		v.filterEnv.Advance(v.keyOn, v.prevKeyOn)
 	}
+
+	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
+		fval := v.GetCurrentFilterEnvelope()
+		v.voiceFilter.UpdateEnv(fval)
+	}
 }
 
 func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
@@ -365,10 +370,6 @@ func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	o := component.OutputFilter{
 		Input:  v,
 		Output: v.outputFilter,
-	}
-	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
-		fval := v.GetCurrentFilterEnvelope()
-		v.voiceFilter.UpdateEnv(fval)
 	}
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }

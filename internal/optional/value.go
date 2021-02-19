@@ -107,3 +107,11 @@ func (o *Value) GetRowIdx() (intf.RowIdx, bool) {
 	}
 	return intf.RowIdx(0), false
 }
+
+// GetFinetune returns the stored value as a finetune value and if it has been set
+func (o *Value) GetFinetune() (note.Finetune, bool) {
+	if v, ok := o.value.(note.Finetune); ok {
+		return v, o.set
+	}
+	return note.Finetune(0), false
+}

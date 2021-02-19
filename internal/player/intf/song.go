@@ -13,19 +13,3 @@ type SongData interface {
 	GetInstrument(InstrumentID) (Instrument, note.Semitone)
 	GetName() string
 }
-
-// SongPositionState is an interface to the song position system
-type SongPositionState interface {
-	AdvanceRow()
-	BreakOrder()
-	SetNextOrder(OrderIdx)
-	SetNextRow(RowIdx, ...bool)
-	SetPatternDelay(int)
-	SetTempo(int)
-	SetTicks(int)
-	AccTempoDelta(int)
-	SetFinePatternDelay(int)
-
-	GetCurrentOrder() OrderIdx
-	GetCurrentRow() RowIdx
-}

@@ -60,7 +60,7 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 
 	m.rowRenderState.currentTick++
 	if m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
-		postMixRowTxn.AdvanceRow()
+		postMixRowTxn.AdvanceRow = true
 	}
 
 	postMixRowTxn.Commit()

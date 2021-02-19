@@ -13,6 +13,7 @@ import (
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	playpattern "gotracker/internal/player/pattern"
 	"gotracker/internal/player/state"
 )
 
@@ -26,8 +27,8 @@ type Manager struct {
 	channels []state.ChannelState
 	pattern  pattern.State
 
-	preMixRowTxn  intf.SongPositionState
-	postMixRowTxn intf.SongPositionState
+	preMixRowTxn  *playpattern.RowUpdateTransaction
+	postMixRowTxn *playpattern.RowUpdateTransaction
 
 	premix *device.PremixData
 
@@ -98,8 +99,8 @@ func NewManager(song *layout.Song) *Manager {
 	txn := m.pattern.StartTransaction()
 	defer txn.Cancel()
 
-	txn.SetTicks(song.Head.InitialSpeed)
-	txn.SetTempo(song.Head.InitialTempo)
+	txn.Ticks.Set(song.Head.InitialSpeed)
+	txn.Tempo.Set(song.Head.InitialTempo)
 
 	txn.Commit()
 
@@ -172,12 +173,12 @@ func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) {
 // SetTempo sets the desired tempo for the song
 func (m *Manager) SetTempo(tempo int) {
 	if m.preMixRowTxn != nil {
-		m.preMixRowTxn.SetTempo(tempo)
+		m.preMixRowTxn.Tempo.Set(tempo)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetTempo(tempo)
+		rowTxn.Tempo.Set(tempo)
 		rowTxn.Commit()
 	}
 }

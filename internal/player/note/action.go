@@ -4,13 +4,13 @@ package note
 type Action uint8
 
 const (
-	// ActionNoteCut will cut the old note/instrument playback immediately
+	// ActionCut will cut the old note/instrument playback immediately
 	// (this is the default for most tracker formats)
-	ActionNoteCut = Action(iota)
+	ActionCut = Action(iota)
 	// ActionContinue will continue the old note/instrument playback indefinitely
 	ActionContinue
-	// ActionNoteOff will perform a release (key-off) on the old note/instrument playback
-	ActionNoteOff
+	// ActionRelease will perform a release (key-off) on the old note/instrument playback
+	ActionRelease
 	// ActionFadeout will fade out the old note/instrument playback
 	// (if the instrument's fadeout volume is 0, then this effectively becomes a NewNoteActionContinue)
 	ActionFadeout

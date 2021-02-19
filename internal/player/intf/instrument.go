@@ -19,6 +19,16 @@ type InstrumentDataIntf interface{}
 // ChannelFilterFactory is a function type that builds a filter with an input parameter taking a value between 0 and 1
 type ChannelFilterFactory func(float32) Filter
 
+// InstrumentKind defines the kind of instrument
+type InstrumentKind int
+
+const (
+	// InstrumentKindPCM defines a PCM instrument
+	InstrumentKindPCM = InstrumentKind(iota)
+	// InstrumentKindOPL2 defines an OPL2 instrument
+	InstrumentKindOPL2
+)
+
 // Instrument is an interface for instrument/sample data
 type Instrument interface {
 	IsInvalid() bool
@@ -29,10 +39,12 @@ type Instrument interface {
 	GetSemitoneShift() int8
 	SetFinetune(note.Finetune)
 	GetFinetune() note.Finetune
-	GetKind() note.InstrumentKind
+	GetKind() InstrumentKind
 	GetLength() sampling.Pos
 	GetNewNoteAction() note.Action
 	GetData() InstrumentDataIntf
 	GetChannelFilterFactory() ChannelFilterFactory
 	GetAutoVibrato() voiceIntf.AutoVibrato
+	IsReleaseNote(note.Note) bool
+	IsStopNote(note.Note) bool
 }

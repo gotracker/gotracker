@@ -1,9 +1,11 @@
 package note
 
+import "gotracker/internal/comparison"
+
 // Period is an interface that defines a sampler period
 type Period interface {
 	Add(PeriodDelta) Period
-	Compare(Period) SpaceshipResult // <=>
+	Compare(Period) comparison.Spaceship // <=>
 	Lerp(float64, Period) Period
 	GetSamplerAdd(float64) float64
 	GetFrequency() float64
@@ -15,14 +17,14 @@ type Period interface {
 type PeriodDelta float64
 
 // ComparePeriods compares two periods, taking nil into account
-func ComparePeriods(lhs Period, rhs Period) SpaceshipResult {
+func ComparePeriods(lhs Period, rhs Period) comparison.Spaceship {
 	if lhs == nil {
 		if rhs == nil {
-			return CompareEqual
+			return comparison.SpaceshipEqual
 		}
-		return CompareRightHigher
+		return comparison.SpaceshipRightGreater
 	} else if rhs == nil {
-		return CompareLeftHigher
+		return comparison.SpaceshipLeftGreater
 	}
 
 	return lhs.Compare(rhs)

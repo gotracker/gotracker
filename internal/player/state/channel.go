@@ -370,7 +370,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		cs.activeState.Period = nil
 	}()
 
-	if cs.NewNoteAction == note.ActionNoteCut {
+	if cs.NewNoteAction == note.ActionCut {
 		return
 	}
 
@@ -403,11 +403,11 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 // DoPastNoteEffect performs an action on all past-note playbacks associated with the channel
 func (cs *ChannelState) DoPastNoteEffect(action note.Action) {
 	switch action {
-	case note.ActionNoteCut:
+	case note.ActionCut:
 		cs.pastNote = nil
 	case note.ActionContinue:
 		// nothing
-	case note.ActionNoteOff:
+	case note.ActionRelease:
 		for _, pn := range cs.pastNote {
 			if nc := pn.NoteControl; nc != nil {
 				nc.Release()

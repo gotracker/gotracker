@@ -1,6 +1,7 @@
 package util
 
 import (
+	"gotracker/internal/comparison"
 	"gotracker/internal/player/note"
 )
 
@@ -27,17 +28,17 @@ func (p *LinearPeriod) Add(delta note.PeriodDelta) note.Period {
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *LinearPeriod) Compare(rhs note.Period) note.SpaceshipResult {
+func (p *LinearPeriod) Compare(rhs note.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
 	switch {
 	case lf < rf:
-		return note.CompareRightHigher
+		return comparison.SpaceshipRightGreater
 	case lf > rf:
-		return note.CompareLeftHigher
+		return comparison.SpaceshipLeftGreater
 	default:
-		return note.CompareEqual
+		return comparison.SpaceshipEqual
 	}
 }
 

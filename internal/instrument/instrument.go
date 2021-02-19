@@ -110,8 +110,8 @@ func (inst *Instrument) GetData() intf.InstrumentDataIntf {
 	return inst.Inst
 }
 
-// GetChannelFilterFactory returns the factory for the channel filter
-func (inst *Instrument) GetChannelFilterFactory() intf.FilterFactory {
+// GetFilterFactory returns the factory for the channel filter
+func (inst *Instrument) GetFilterFactory() intf.FilterFactory {
 	return inst.Static.FilterFactory
 }
 

@@ -229,3 +229,13 @@ func GetCurrentFilterEnvelope(v Voice) float32 {
 	}
 	return 1
 }
+
+// == Envelopes ==
+
+// SetEnvelopePosition sets the envelope position(s) on the voice
+func SetAllEnvelopePositions(v Voice, pos int) {
+	SetVolumeEnvelopePosition(v, pos)
+	SetPanEnvelopePosition(v, pos)
+	SetPitchEnvelopePosition(v, pos)
+	SetFilterEnvelopePosition(v, pos)
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"gotracker/internal/comparison"
 	"gotracker/internal/player/note"
 )
 
@@ -29,17 +30,17 @@ func (p *testPeriod) Add(delta note.PeriodDelta) note.Period {
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *testPeriod) Compare(rhs note.Period) note.SpaceshipResult {
+func (p *testPeriod) Compare(rhs note.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
 	switch {
 	case lf < rf:
-		return note.CompareRightHigher
+		return comparison.SpaceshipRightGreater
 	case lf > rf:
-		return note.CompareLeftHigher
+		return comparison.SpaceshipLeftGreater
 	default:
-		return note.CompareEqual
+		return comparison.SpaceshipEqual
 	}
 }
 
@@ -74,7 +75,7 @@ func (p *testPeriod) String() string {
 	return fmt.Sprintf("%f", *p)
 }
 
-func periodCompareTest(t *testing.T, lhs note.Period, rhs note.Period, expected note.SpaceshipResult) {
+func periodCompareTest(t *testing.T, lhs note.Period, rhs note.Period, expected comparison.Spaceship) {
 	t.Helper()
 
 	if note.ComparePeriods(lhs, rhs) != expected {
@@ -85,13 +86,13 @@ func periodCompareTest(t *testing.T, lhs note.Period, rhs note.Period, expected 
 func TestPeriodCompare(t *testing.T) {
 	lhs1 := testPeriod(1)
 	rhs1 := testPeriod(1)
-	periodCompareTest(t, &lhs1, &rhs1, note.CompareEqual)
+	periodCompareTest(t, &lhs1, &rhs1, comparison.SpaceshipEqual)
 
 	lhs2 := testPeriod(1)
 	rhs2 := testPeriod(2)
-	periodCompareTest(t, &lhs2, &rhs2, note.CompareLeftHigher)
+	periodCompareTest(t, &lhs2, &rhs2, comparison.SpaceshipLeftGreater)
 
 	lhs3 := testPeriod(2)
 	rhs3 := testPeriod(1)
-	periodCompareTest(t, &lhs3, &rhs3, note.CompareRightHigher)
+	periodCompareTest(t, &lhs3, &rhs3, comparison.SpaceshipRightGreater)
 }

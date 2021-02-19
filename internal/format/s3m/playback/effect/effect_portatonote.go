@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/comparison"
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -34,7 +35,7 @@ func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	period = period.Add(cs.GetPeriodDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
-		if note.ComparePeriods(period, ptp) == note.CompareRightHigher {
+		if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
 			doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
 			doPortaDownToNote(cs, float32(xx), 4, ptp) // adds

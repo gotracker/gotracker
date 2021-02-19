@@ -1,6 +1,9 @@
 package util
 
-import "gotracker/internal/player/note"
+import (
+	"gotracker/internal/comparison"
+	"gotracker/internal/player/note"
+)
 
 // AmigaPeriod defines a sampler period that follows the Amiga-style approach of note
 // definition. Useful in calculating resampling.
@@ -32,17 +35,17 @@ func (p *AmigaPeriod) Add(delta note.PeriodDelta) note.Period {
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *AmigaPeriod) Compare(rhs note.Period) note.SpaceshipResult {
+func (p *AmigaPeriod) Compare(rhs note.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
 	switch {
 	case lf > rf:
-		return note.CompareLeftHigher
+		return comparison.SpaceshipLeftGreater
 	case lf < rf:
-		return note.CompareRightHigher
+		return comparison.SpaceshipRightGreater
 	default:
-		return note.CompareEqual
+		return comparison.SpaceshipEqual
 	}
 }
 

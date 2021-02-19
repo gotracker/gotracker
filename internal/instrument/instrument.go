@@ -85,14 +85,14 @@ func (inst *Instrument) GetSemitoneShift() int8 {
 }
 
 // GetKind returns the kind of the instrument
-func (inst *Instrument) GetKind() note.InstrumentKind {
+func (inst *Instrument) GetKind() intf.InstrumentKind {
 	switch inst.Inst.(type) {
 	case *PCM:
-		return note.InstrumentKindPCM
+		return intf.InstrumentKindPCM
 	case *OPL2:
-		return note.InstrumentKindOPL2
+		return intf.InstrumentKindOPL2
 	}
-	return note.InstrumentKindPCM
+	return intf.InstrumentKindPCM
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
@@ -113,4 +113,22 @@ func (inst *Instrument) GetChannelFilterFactory() intf.ChannelFilterFactory {
 // GetAutoVibrato returns the settings for the autovibrato system
 func (inst *Instrument) GetAutoVibrato() voiceIntf.AutoVibrato {
 	return inst.Static.AutoVibrato
+}
+
+// IsReleaseNote returns true if the note is a release (Note-Off)
+func (inst *Instrument) IsReleaseNote(n note.Note) bool {
+	switch n.Type() {
+	case note.SpecialTypeStopOrRelease:
+		return inst.GetKind() == intf.InstrumentKindOPL2
+	}
+	return n.IsRelease()
+}
+
+// IsStopNote returns true if the note is a stop (Note-Cut)
+func (inst *Instrument) IsStopNote(n note.Note) bool {
+	switch n.Type() {
+	case note.SpecialTypeStopOrRelease:
+		return inst.GetKind() == intf.InstrumentKindPCM
+	}
+	return n.IsRelease()
 }

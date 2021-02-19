@@ -3,6 +3,7 @@ package effect
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
+	"gotracker/internal/comparison"
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/oscillator"
@@ -46,7 +47,7 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(-delta)
 	period = period.Add(d)
-	if note.ComparePeriods(period, target) == note.CompareLeftHigher {
+	if note.ComparePeriods(period, target) == comparison.SpaceshipLeftGreater {
 		period = target
 	}
 	cs.SetPeriod(period)
@@ -73,7 +74,7 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(delta)
 	period = period.Add(d)
-	if note.ComparePeriods(period, target) == note.CompareRightHigher {
+	if note.ComparePeriods(period, target) == comparison.SpaceshipRightGreater {
 		period = target
 	}
 	cs.SetPeriod(period)

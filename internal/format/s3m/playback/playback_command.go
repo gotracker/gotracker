@@ -60,9 +60,8 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		cs.SetPos(cs.GetTargetPos())
 	}
 	if inst := cs.GetInstrument(); inst != nil {
-		k := inst.GetKind()
-		keyOff = n.IsRelease(k)
-		stop = n.IsStop(k)
+		keyOff = inst.IsReleaseNote(n)
+		stop = inst.IsStopNote(n)
 	}
 
 	if nc := cs.GetNoteControl(); nc != nil {

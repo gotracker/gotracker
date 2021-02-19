@@ -1,41 +1,41 @@
 package note
 
-type noteSpecial int
+type SpecialType int
 
 const (
-	noteSpecialEmpty = noteSpecial(iota)
-	noteSpecialRelease
-	noteSpecialStop
-	noteSpecialNone
-	noteSpecialStopOrRelease
-	noteSpecialInvalid
+	SpecialTypeEmpty = SpecialType(iota)
+	SpecialTypeRelease
+	SpecialTypeStop
+	SpecialTypeNormal
+	SpecialTypeStopOrRelease
+	SpecialTypeInvalid
 )
 
 // Note is a combination of key and octave
 type Note struct {
-	special  noteSpecial
+	special  SpecialType
 	semitone Semitone
 }
 
 var (
 	// EmptyNote denotes an empty note
-	EmptyNote = Note{special: noteSpecialEmpty}
+	EmptyNote = Note{special: SpecialTypeEmpty}
 	// ReleaseNote denotes a release for the currently-playing instrument
-	ReleaseNote = Note{special: noteSpecialRelease}
+	ReleaseNote = Note{special: SpecialTypeRelease}
 	// StopNote denotes a full stop for the currently-playing instrument
-	StopNote = Note{special: noteSpecialStop}
+	StopNote = Note{special: SpecialTypeStop}
 	// StopOrReleaseNote denotes an S3M-style Stop note
 	// NOTE: ST3 treats a "stop" note like a combination of release (note-off) and stop (note-cut)
 	// For PCM, it is a stop, but for OPL2, it is a release
-	StopOrReleaseNote = Note{special: noteSpecialStopOrRelease}
+	StopOrReleaseNote = Note{special: SpecialTypeStopOrRelease}
 	// InvalidNote denotes an invalid note
-	InvalidNote = Note{special: noteSpecialInvalid}
+	InvalidNote = Note{special: SpecialTypeInvalid}
 )
 
 // NewNote returns a note from a semitone
 func NewNote(s Semitone) Note {
 	return Note{
-		special:  noteSpecialNone,
+		special:  SpecialTypeNormal,
 		semitone: s,
 	}
 }
@@ -62,54 +62,49 @@ func (n Note) Octave() Octave {
 	return n.semitone.Octave()
 }
 
+// Type returns the SpecialType enumerator reflecting the type of the note
+func (n Note) Type() SpecialType {
+	return n.special
+}
+
 // IsRelease returns true if the note is a release (Note-Off)
-func (n Note) IsRelease(kind InstrumentKind) bool {
-	if n.special == noteSpecialRelease {
-		return true
-	} else if kind == InstrumentKindOPL2 && n.special == noteSpecialStopOrRelease {
-		return true
-	}
-	return false
+func (n Note) IsRelease() bool {
+	return n.special == SpecialTypeRelease
 }
 
 // IsStop returns true if the note is a stop (Note-Cut)
-func (n Note) IsStop(kind InstrumentKind) bool {
-	if n.special == noteSpecialStop {
-		return true
-	} else if kind == InstrumentKindPCM && n.special == noteSpecialStopOrRelease {
-		return true
-	}
-	return false
+func (n Note) IsStop() bool {
+	return n.special == SpecialTypeStop
 }
 
 // IsEmpty returns true if the note is empty
 func (n Note) IsEmpty() bool {
-	return n.special == noteSpecialEmpty
+	return n.special == SpecialTypeEmpty
 }
 
 // IsInvalid returns true if the note is invalid in any way
 func (n Note) IsInvalid() bool {
-	return n.special == noteSpecialInvalid
+	return n.special == SpecialTypeInvalid
 }
 
 // IsSpecial returns true if the note is special in any way
 func (n Note) IsSpecial() bool {
-	return n.special != noteSpecialNone
+	return n.special != SpecialTypeNormal
 }
 
 func (n Note) String() string {
 	switch n.special {
-	case noteSpecialEmpty:
+	case SpecialTypeEmpty:
 		return "..."
-	case noteSpecialRelease:
+	case SpecialTypeRelease:
 		return "==="
-	case noteSpecialStop:
+	case SpecialTypeStop:
 		return "^^^"
-	case noteSpecialNone:
+	case SpecialTypeNormal:
 		return n.Key().String() + n.Octave().String()
-	case noteSpecialStopOrRelease:
+	case SpecialTypeStopOrRelease:
 		return "^^."
-	case noteSpecialInvalid:
+	case SpecialTypeInvalid:
 		fallthrough
 	default:
 		return "???"

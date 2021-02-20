@@ -188,13 +188,25 @@ func main() {
 
 	go func() {
 		defer close(outBufs)
-		if err := p.WaitUntilDone(); err != nil && !errors.Is(err, intf.ErrStopSong) {
-			log.Fatalln(err)
+		if err := p.WaitUntilDone(); err != nil {
+			switch {
+			case errors.Is(err, intf.ErrStopSong):
+			case errors.Is(err, context.Canceled):
+
+			default:
+				log.Fatalln(err)
+			}
 		}
 	}()
 
-	if err := waveOut.Play(outBufs); err != nil && !errors.Is(err, intf.ErrStopSong) {
-		log.Fatalln(err)
+	if err := waveOut.Play(outBufs); err != nil {
+		switch {
+		case errors.Is(err, intf.ErrStopSong):
+		case errors.Is(err, context.Canceled):
+
+		default:
+			log.Fatalln(err)
+		}
 	}
 
 	for k, v := range effectMap {

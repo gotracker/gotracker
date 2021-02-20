@@ -128,16 +128,16 @@ func PanningToIt(pan panning.Position) itfile.PanValue {
 func NoteFromItNote(in itfile.Note) note.Note {
 	switch {
 	case in.IsNoteOff():
-		return note.ReleaseNote
+		return note.ReleaseNote{}
 	case in.IsNoteCut():
-		return note.StopNote
+		return note.StopNote{}
 	case in.IsNoteFade(): // not really invalid, but...
-		return note.InvalidNote
+		return note.InvalidNote{}
 	}
 
 	an := uint8(in)
 	s := note.Semitone(an)
-	return note.NewNote(s)
+	return note.Normal(s)
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

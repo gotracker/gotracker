@@ -265,16 +265,18 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 			continue
 		}
 		n := util.NoteFromItNote(ns.Note)
-		st := n.Semitone()
-		ci, ok := noteKeyboard[si]
-		if !ok {
-			ci = &convInst{}
-			noteKeyboard[si] = ci
+		if nn, ok := n.(note.Normal); ok {
+			st := note.Semitone(nn)
+			ci, ok := noteKeyboard[si]
+			if !ok {
+				ci = &convInst{}
+				noteKeyboard[si] = ci
+			}
+			ci.NR = append(ci.NR, noteRemap{
+				Orig:  note.Semitone(o),
+				Remap: st,
+			})
 		}
-		ci.NR = append(ci.NR, noteRemap{
-			Orig:  note.Semitone(o),
-			Remap: st,
-		})
 	}
 
 	return nil

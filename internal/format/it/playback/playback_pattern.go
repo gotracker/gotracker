@@ -163,17 +163,17 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			}
 		}
 
-		if n == note.EmptyNote {
+		if note.IsEmpty(n) {
 			cs.WantNoteCalc = false
 			willTrigger = cs.TrackData.HasInstrument()
 			if willTrigger {
 				cs.SetTargetPos(sampling.Pos{})
 			}
-		} else if n.IsInvalid() {
+		} else if note.IsInvalid(n) {
 			cs.SetTargetPeriod(nil)
 			cs.WantNoteCalc = false
 			willTrigger = false
-		} else if n == note.ReleaseNote {
+		} else if note.IsRelease(n) {
 			cs.SetTargetPeriod(cs.GetPeriod())
 			if prevInst := cs.GetPrevInst(); prevInst != nil {
 				cs.SetTargetInst(prevInst)
@@ -181,9 +181,11 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState) {
 			cs.WantNoteCalc = false
 			willTrigger = false
 		} else if cs.GetTargetInst() != nil {
-			cs.StoredSemitone = n.Semitone()
-			cs.TargetSemitone = cs.StoredSemitone
-			cs.WantNoteCalc = true
+			if nn, ok := n.(note.Normal); ok {
+				cs.StoredSemitone = note.Semitone(nn)
+				cs.TargetSemitone = cs.StoredSemitone
+				cs.WantNoteCalc = true
+			}
 			willTrigger = true
 		}
 		if inst := cs.GetInstrument(); inst != nil {

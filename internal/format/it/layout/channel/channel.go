@@ -51,8 +51,8 @@ func (d *Data) GetInstrument(stmem note.Semitone) intf.InstrumentID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()
-		if !n.IsSpecial() {
-			st = n.Semitone()
+		if nn, ok := n.(note.Normal); ok {
+			st = note.Semitone(nn)
 		}
 	}
 	return SampleID{

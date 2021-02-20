@@ -18,10 +18,13 @@ func xmChannelRender(cdata render.ChannelData) string {
 	if data, ok := cdata.(*channel.Data); ok && data != nil {
 		if data.HasNote() {
 			nt := data.GetNote()
-			if nt != note.ReleaseNote {
-				n = nt.String()
-			} else {
+			switch note.Type(nt) {
+			case note.SpecialTypeRelease:
 				n = "== "
+			case note.SpecialTypeNormal:
+				n = nt.String()
+			default:
+				n = "???"
 			}
 		}
 

@@ -125,18 +125,18 @@ func PanningFromS3M(pos uint8) panning.Position {
 func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 	switch {
 	case sn == s3mfile.EmptyNote:
-		return note.EmptyNote
+		return note.EmptyNote{}
 	case sn == s3mfile.StopNote:
-		return note.StopOrReleaseNote
+		return note.StopOrReleaseNote{}
 	default:
 		k := uint8(sn.Key()) & 0x0f
 		o := uint8(sn.Octave()) & 0x0f
 		if k < 12 && o < 10 {
 			s := note.Semitone(o*12 + k)
-			return note.NewNote(s)
+			return note.Normal(s)
 		}
 	}
-	return note.InvalidNote
+	return note.InvalidNote{}
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

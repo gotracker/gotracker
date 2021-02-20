@@ -126,7 +126,7 @@ func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 	case note.SpecialTypeStopOrRelease:
 		return inst.GetKind() == intf.InstrumentKindOPL2
 	}
-	return n.IsRelease()
+	return note.IsRelease(n)
 }
 
 // IsStopNote returns true if the note is a stop (Note-Cut)
@@ -135,5 +135,5 @@ func (inst *Instrument) IsStopNote(n note.Note) bool {
 	case note.SpecialTypeStopOrRelease:
 		return inst.GetKind() == intf.InstrumentKindPCM
 	}
-	return n.IsRelease()
+	return note.IsRelease(n)
 }

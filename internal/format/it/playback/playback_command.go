@@ -36,7 +36,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	m.doNoteVolCalcs(cs)
 	cs.SetGlobalVolume(m.GetGlobalVolume())
 
-	n := note.EmptyNote
+	var n note.Note = note.EmptyNote{}
 	if cs.TrackData != nil {
 		n = cs.TrackData.GetNote()
 	}

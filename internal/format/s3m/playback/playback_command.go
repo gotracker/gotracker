@@ -34,7 +34,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 	// post-effect
 	m.doNoteVolCalcs(cs)
 
-	n := note.EmptyNote
+	var n note.Note = note.EmptyNote{}
 	if cs.TrackData != nil {
 		n = cs.TrackData.GetNote()
 	}

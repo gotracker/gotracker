@@ -146,16 +146,16 @@ func PanningToXm(pan panning.Position) uint8 {
 func NoteFromXmNote(xn uint8) note.Note {
 	switch {
 	case xn == 97:
-		return note.ReleaseNote
+		return note.ReleaseNote{}
 	case xn == 0:
-		return note.EmptyNote
+		return note.EmptyNote{}
 	case xn > 97: // invalid
-		return note.InvalidNote
+		return note.InvalidNote{}
 	}
 
 	an := uint8(xn - 1)
 	s := note.Semitone(an)
-	return note.NewNote(s)
+	return note.Normal(s)
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

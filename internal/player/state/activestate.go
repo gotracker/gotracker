@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
-	panutil "gotracker/internal/pan"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
@@ -42,10 +41,12 @@ func (a *ActiveState) Clone() ActiveState {
 }
 
 // RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
-func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) (*mixing.Data, []*ActiveState) {
+func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) ([]mixing.Data, []*ActiveState) {
 	data := mix.NewMixBuffer(samples)
-	var firstPan *panning.Position
-	var tempPan panning.Position
+
+	mixData := []mixing.Data{}
+
+	centerAheadPan := panmixer.GetMixingMatrix(panning.CenterAhead)
 
 	participatingStates := []*ActiveState{}
 	for _, a := range states {
@@ -69,11 +70,6 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 		voice.SetPos(ncv, a.Pos)
 		voice.SetPan(ncv, a.Pan)
 
-		if firstPan == nil {
-			tempPan = voice.GetPan(ncv)
-			firstPan = &tempPan
-		}
-
 		voice.SetPeriodDelta(ncv, a.PeriodDelta)
 
 		// the period might be updated by the auto-vibrato system, here
@@ -81,28 +77,30 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 
 		// ... so grab the new value now.
 		period := voice.GetFinalPeriod(ncv)
-		panVoice := voice.GetFinalPan(ncv)
+		pan := voice.GetFinalPan(ncv)
 
 		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
 
-		panOrig := nc.GetCurrentPanning()
-		panDiff := panutil.GetPanningDifference(*firstPan, panOrig)
-		panning := panutil.CalculateCombinedPanning(panVoice, panDiff)
-		volMatrix := panmixer.GetMixingMatrix(panning)
-
 		// make a stand-alone data buffer for this channel for this tick
 		if a.VoiceActive {
-			mixData := mixing.SampleMixIn{
+			sampleData := mixing.SampleMixIn{
 				Sample:    ncv.GetSampler(samplerSpeed),
 				StaticVol: volume.Volume(1.0),
-				VolMatrix: volMatrix,
+				VolMatrix: centerAheadPan,
 				MixPos:    0,
 				MixLen:    samples,
 			}
-			if mixData.Sample != nil {
-				data.MixInSample(mixData)
+			if sampleData.Sample != nil {
+				data.MixInSample(sampleData)
 			}
 		}
+
+		mixData = append(mixData, mixing.Data{
+			Data:       data,
+			Pan:        pan,
+			Volume:     volume.Volume(1.0),
+			SamplesLen: samples,
+		})
 
 		a.Pos = voice.GetPos(ncv)
 		a.Pos.Add(samplerAdd * float32(samples))
@@ -110,16 +108,5 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 		participatingStates = append(participatingStates, a)
 	}
 
-	if firstPan == nil {
-		return nil, nil
-	}
-
-	mixData := mixing.Data{
-		Data:       data,
-		Pan:        *firstPan,
-		Volume:     volume.Volume(1.0),
-		SamplesLen: samples,
-	}
-
-	return &mixData, participatingStates
+	return mixData, participatingStates
 }

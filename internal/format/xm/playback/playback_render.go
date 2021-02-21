@@ -97,7 +97,7 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 				return err
 			}
 			if rr != nil {
-				premix.Data = append(premix.Data, []mixing.Data{*rr})
+				premix.Data = append(premix.Data, rr)
 			}
 		}
 	}

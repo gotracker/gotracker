@@ -69,7 +69,7 @@ func (cs *ChannelState) AdvanceRow() {
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, tickDuration time.Duration) (*mixing.Data, error) {
+func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, tickSamples int, tickDuration time.Duration) ([]mixing.Data, error) {
 	if cs.PlaybackFrozen() {
 		return nil, nil
 	}

@@ -10,10 +10,16 @@ github.com/gotracker/gomixing v1.0.7 h1:oClfOkmf3ej2Vm3I7swVb1G90BCnYhYvBZ6He9b7
 github.com/gotracker/gomixing v1.0.7/go.mod h1:orU2G///ovcRkt4bdNZMhOPvHW0vl5yebXaLKqQcHWw=
 github.com/gotracker/gomixing v1.0.10 h1:Vv8OlEjrUh1aaE6Tsxx+MRsHnuIZVYe5P1w37bDPv2M=
 github.com/gotracker/gomixing v1.0.10/go.mod h1:orU2G///ovcRkt4bdNZMhOPvHW0vl5yebXaLKqQcHWw=
-github.com/gotracker/gosound v1.0.10 h1:MJizjw8MbHTeLUYnfHjkU5YcBgnIM8wM7srQWYCHj4k=
-github.com/gotracker/gosound v1.0.10/go.mod h1:rbnxZbQPOlTCq3mGWZR2ZyobGoLEDwNnRqmYuGyY1Q4=
+github.com/gotracker/gosound v1.0.11 h1:EXuFdsUzlHlcB61MbmgMom6//TJ8dMenrJmkstLARIQ=
+github.com/gotracker/gosound v1.0.11/go.mod h1:Z5oKrytGMzpLvfi4L7byKNNWJo8uNQXBSSj6eQuGCcI=
 github.com/gotracker/opl2 v1.0.1 h1:1PVNs0dXqEAQxdws7fz2WEE3nSKkMb1osTTT7KgEi5g=
 github.com/gotracker/opl2 v1.0.1/go.mod h1:lW1WbZlh7svEMpurp9LLYWSyf1WPAb750cQ7xGIhCnY=
+github.com/heucuva/go-directsound v1.0.0 h1:bN33QBwLmF95ZACyvJL9NDhauhMANi3g0tlsg0FaoEQ=
+github.com/heucuva/go-directsound v1.0.0/go.mod h1:TCaliTXvuotXwuP1G9hasPHWqWrRnSlGRnvqswKf//w=
+github.com/heucuva/go-win32 v1.0.0 h1:CXJEwYkGaW2ZubKt8GZO/g0z7xsKam97mMZjkzgE1IA=
+github.com/heucuva/go-win32 v1.0.0/go.mod h1:vIRx8BmGjRCCwvCFn7rwlOGgRC+MjqS6ttY7e2vbyQ4=
+github.com/heucuva/go-winmm v1.0.0 h1:ePsM4MEaKJBcnMvJKoe/bzCrQCnjaLicw/F/VtGOoyY=
+github.com/heucuva/go-winmm v1.0.0/go.mod h1:MF2kyWivfQIAxPCVgRKYoxALaH6pCRo1GMaQ2znLeWA=
 github.com/icza/bitio v1.0.0/go.mod h1:0jGnlLAx8MKMr9VGnn/4YrvZiprkvBelsVIbA9Jjr9A=
 github.com/icza/mighty v0.0.0-20180919140131-cfd07d671de6/go.mod h1:xQig96I1VNBDIWGCdTt54nHt6EeI639SmHycLYL7FkA=
 github.com/jfreymuth/pulse v0.1.0/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
@@ -29,4 +35,6 @@ golang.org/x/image v0.0.0-20190220214146-31aff87c08e9/go.mod h1:kZ7UVZpmo3dzQBMx
 golang.org/x/net v0.0.0-20190213061140-3a22650c66bd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20191026070338-33540a1f6037/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 h1:SgQ6LNaYJU0JIuEHv9+s6EbhSCwYeAf5Yvj6lpYlqAE=
+golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

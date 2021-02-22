@@ -6,6 +6,8 @@ import (
 
 	"gotracker/internal/comparison"
 	"gotracker/internal/player/note"
+
+	"github.com/gotracker/voice/period"
 )
 
 // testPeriod defines a sampler period that follows the Amiga-style approach of note
@@ -20,9 +22,10 @@ func (p *testPeriod) AddInteger(delta int) testPeriod {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p *testPeriod) Add(delta note.PeriodDelta) note.Period {
+func (p *testPeriod) AddDelta(delta period.Delta) period.Period {
 	period := *p
-	period += testPeriod(delta)
+	d := note.ToPeriodDelta(delta)
+	period += testPeriod(d)
 	return &period
 }
 
@@ -53,7 +56,7 @@ func (p *testPeriod) Lerp(t float64, rhs note.Period) note.Period {
 
 	period := *p
 	delta := note.PeriodDelta(t * (float64(right) - float64(period)))
-	period.Add(delta)
+	period.AddDelta(delta)
 	return &period
 }
 
@@ -67,8 +70,8 @@ func (p *testPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (p *testPeriod) GetFrequency() float64 {
-	return p.GetSamplerAdd(float64(8363 * 1712))
+func (p *testPeriod) GetFrequency() period.Frequency {
+	return period.Frequency(p.GetSamplerAdd(float64(8363 * 1712)))
 }
 
 func (p *testPeriod) String() string {

@@ -7,9 +7,11 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
+	voiceImpl "gotracker/internal/voice"
 )
 
 // NoteTriggerDetails is for when a note needs to be played
@@ -19,9 +21,9 @@ type NoteTriggerDetails struct {
 
 // ChannelState is the state of a single channel
 type ChannelState struct {
-	activeState ActiveState
-	targetState intf.PlaybackState
-	prevState   ActiveState
+	activeState Active
+	targetState Playback
+	prevState   Active
 
 	ActiveEffect intf.Effect
 
@@ -41,7 +43,7 @@ type ChannelState struct {
 	volumeActive      bool
 	PanEnabled        bool
 	NewNoteAction     note.Action
-	pastNote          []*ActiveState
+	pastNote          []*Active
 
 	Output *intf.OutputChannel
 }
@@ -58,7 +60,7 @@ func (cs *ChannelState) WillTriggerOn(tick int) bool {
 // AdvanceRow will update the current state to make room for the next row's state data
 func (cs *ChannelState) AdvanceRow() {
 	cs.prevState = cs.activeState
-	cs.targetState = cs.activeState.PlaybackState
+	cs.targetState = cs.activeState.Playback
 	cs.Trigger = nil
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
@@ -74,11 +76,11 @@ func (cs *ChannelState) RenderRowTick(mix *mixing.Mixer, panmixer mixing.PanMixe
 		return nil, nil
 	}
 
-	activeStates := []*ActiveState{&cs.activeState}
+	activeStates := []*Active{&cs.activeState}
 	activeStates = append(activeStates, cs.pastNote...)
 	mixData, participatingStates := RenderStatesTogether(activeStates, mix, panmixer, samplerSpeed, tickSamples, tickDuration)
 
-	var uNotes []*ActiveState
+	var uNotes []*Active
 	for _, pn := range participatingStates {
 		if pn != &cs.activeState {
 			uNotes = append(uNotes, pn)
@@ -186,40 +188,22 @@ func (cs *ChannelState) GetInstrument() intf.Instrument {
 func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
 	cs.activeState.Instrument = inst
 	if cs.prevState.Instrument != inst {
-		if prevNc := cs.prevState.NoteControl; prevNc != nil && prevNc.GetKeyOn() {
-			prevNc.Release()
+		if prevVoice := cs.prevState.Voice; prevVoice != nil && prevVoice.IsKeyOn() {
+			prevVoice.Release()
 		}
 	}
 	if inst != nil {
-		cs.activeState.Enabled = true
 		if inst == cs.prevState.Instrument {
-			cs.activeState.NoteControl = cs.prevState.NoteControl
+			cs.activeState.Voice = cs.prevState.Voice
 		} else {
-			cs.activeState.NoteControl = cs.newNoteControl()
+			cs.activeState.Voice = voiceImpl.New(inst, cs.Output)
 		}
 	}
 }
 
-// newNoteControl takes an instrument and loads it onto an output channel
-func (cs *ChannelState) newNoteControl() intf.NoteControl {
-	ioc := NoteControl{
-		Output: cs.Output,
-	}
-
-	if inst := cs.activeState.Instrument; inst != nil {
-		ioc.SetupVoice(inst)
-
-		if cfact := inst.GetFilterFactory(); cfact != nil {
-			ioc.Output.Filter = cfact(ioc.Output.Playback.GetSampleRate())
-		}
-	}
-
-	return &ioc
-}
-
-// GetNoteControl returns the active note-control interface
-func (cs *ChannelState) GetNoteControl() intf.NoteControl {
-	return cs.activeState.NoteControl
+// GetVoice returns the active voice interface
+func (cs *ChannelState) GetVoice() voice.Voice {
+	return cs.activeState.Voice
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
@@ -237,9 +221,9 @@ func (cs *ChannelState) GetPrevInst() intf.Instrument {
 	return cs.prevState.Instrument
 }
 
-// GetPrevNoteControl returns the interface to the last row's active note-control
-func (cs *ChannelState) GetPrevNoteControl() intf.NoteControl {
-	return cs.prevState.NoteControl
+// GetPrevVoice returns the interface to the last row's active voice
+func (cs *ChannelState) GetPrevVoice() voice.Voice {
+	return cs.prevState.Voice
 }
 
 // GetNoteSemitone returns the note semitone for the channel
@@ -356,8 +340,11 @@ func (cs *ChannelState) GetChannelVolume() volume.Volume {
 
 // SetEnvelopePosition sets the envelope position for the active instrument
 func (cs *ChannelState) SetEnvelopePosition(ticks int) {
-	if nc := cs.GetNoteControl(); nc != nil {
-		nc.SetEnvelopePosition(ticks)
+	if nc := cs.GetVoice(); nc != nil {
+		voice.SetVolumeEnvelopePosition(nc, ticks)
+		voice.SetPanEnvelopePosition(nc, ticks)
+		voice.SetPitchEnvelopePosition(nc, ticks)
+		voice.SetFilterEnvelopePosition(nc, ticks)
 	}
 }
 
@@ -365,7 +352,7 @@ func (cs *ChannelState) SetEnvelopePosition(ticks int) {
 // and will activate the specified New-Note Action on it
 func (cs *ChannelState) TransitionActiveToPastState() {
 	defer func() {
-		cs.activeState.NoteControl = nil
+		cs.activeState.Voice = nil
 		cs.activeState.Instrument = nil
 		cs.activeState.Period = nil
 	}()
@@ -409,13 +396,13 @@ func (cs *ChannelState) DoPastNoteEffect(action note.Action) {
 		// nothing
 	case note.ActionRelease:
 		for _, pn := range cs.pastNote {
-			if nc := pn.NoteControl; nc != nil {
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 			}
 		}
 	case note.ActionFadeout:
 		for _, pn := range cs.pastNote {
-			if nc := pn.NoteControl; nc != nil {
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 				nc.Fadeout()
 			}
@@ -435,21 +422,15 @@ func (cs *ChannelState) GetNewNoteAction() note.Action {
 
 // SetVolumeEnvelopeEnable sets the enable flag on the active volume envelope
 func (cs *ChannelState) SetVolumeEnvelopeEnable(enabled bool) {
-	if nc := cs.activeState.NoteControl; nc != nil {
-		nc.SetVolumeEnvelopeEnable(enabled)
-	}
+	voice.EnableVolumeEnvelope(cs.activeState.Voice, enabled)
 }
 
 // SetPanningEnvelopeEnable sets the enable flag on the active panning envelope
 func (cs *ChannelState) SetPanningEnvelopeEnable(enabled bool) {
-	if nc := cs.activeState.NoteControl; nc != nil {
-		nc.SetPanningEnvelopeEnable(enabled)
-	}
+	voice.EnablePanEnvelope(cs.activeState.Voice, enabled)
 }
 
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (cs *ChannelState) SetPitchEnvelopeEnable(enabled bool) {
-	if nc := cs.activeState.NoteControl; nc != nil {
-		nc.SetPitchEnvelopeEnable(enabled)
-	}
+	voice.EnablePitchEnvelope(cs.activeState.Voice, enabled)
 }

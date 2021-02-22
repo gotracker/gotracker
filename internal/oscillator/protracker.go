@@ -1,6 +1,10 @@
 package oscillator
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/gotracker/voice/oscillator"
+)
 
 var (
 	protrackerSineTable = [32]uint8{
@@ -21,12 +25,12 @@ func GetProtrackerSine(pos int) float32 {
 
 // protrackerOscillator is an oscillator using the protracker sine table
 type protrackerOscillator struct {
-	Table WaveTableSelect
+	Table oscillator.WaveTableSelect
 	Pos   int8
 }
 
 // NewProtrackerOscillator creates a new Protracker-compatible oscillator
-func NewProtrackerOscillator() Oscillator {
+func NewProtrackerOscillator() oscillator.Oscillator {
 	return &protrackerOscillator{}
 }
 
@@ -64,7 +68,7 @@ func (o *protrackerOscillator) Advance(speed int) {
 }
 
 // SetWaveform sets the waveform for the current oscillator
-func (o *protrackerOscillator) SetWaveform(table WaveTableSelect) {
+func (o *protrackerOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
 }
 

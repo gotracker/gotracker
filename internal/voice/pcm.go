@@ -6,37 +6,38 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
+	"github.com/gotracker/voice/component"
+	"github.com/gotracker/voice/fadeout"
+	"github.com/gotracker/voice/period"
 
-	"gotracker/internal/fadeout"
 	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
 	"gotracker/internal/player/intf"
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
-	"gotracker/internal/voice/internal/component"
 )
 
 // PCM is an PCM voice interface
 type PCM interface {
-	voiceIntf.Voice
-	voiceIntf.Positioner
-	voiceIntf.FreqModulator
-	voiceIntf.AmpModulator
-	voiceIntf.PanModulator
-	voiceIntf.VolumeEnveloper
-	voiceIntf.PitchEnveloper
-	voiceIntf.PanEnveloper
-	voiceIntf.FilterEnveloper
+	voice.Voice
+	voice.Positioner
+	voice.FreqModulator
+	voice.AmpModulator
+	voice.PanModulator
+	voice.VolumeEnveloper
+	voice.PitchEnveloper
+	voice.PanEnveloper
+	voice.FilterEnveloper
 }
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration struct {
 	C2SPD         note.C2SPD
 	InitialVolume volume.Volume
-	InitialPeriod note.Period
-	AutoVibrato   voiceIntf.AutoVibrato
+	InitialPeriod period.Period
+	AutoVibrato   voice.AutoVibrato
 	DataIntf      intf.InstrumentDataIntf
-	OutputFilter  voiceIntf.FilterApplier
+	OutputFilter  voice.FilterApplier
 	VoiceFilter   intf.Filter
 }
 
@@ -45,7 +46,7 @@ type PCMConfiguration struct {
 type pcmVoice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
-	outputFilter  voiceIntf.FilterApplier
+	outputFilter  voice.FilterApplier
 	voiceFilter   intf.Filter
 	fadeoutMode   fadeout.Mode
 
@@ -67,7 +68,7 @@ type pcmVoice struct {
 }
 
 // NewPCM creates a new PCM voice
-func NewPCM(config PCMConfiguration) voiceIntf.Voice {
+func NewPCM(config PCMConfiguration) voice.Voice {
 	v := pcmVoice{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
@@ -111,10 +112,10 @@ func (v *pcmVoice) Attack() {
 	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
 	v.sampler.Attack()
-	v.volEnv.SetEnvelopePosition(0)
-	v.pitchEnv.SetEnvelopePosition(0)
-	v.panEnv.SetEnvelopePosition(0)
-	v.filterEnv.SetEnvelopePosition(0)
+	v.SetVolumeEnvelopePosition(0)
+	v.SetPitchEnvelopePosition(0)
+	v.SetPanEnvelopePosition(0)
+	v.SetFilterEnvelopePosition(0)
 }
 
 func (v *pcmVoice) Release() {
@@ -175,26 +176,26 @@ func (v *pcmVoice) GetPos() sampling.Pos {
 
 // == FreqModulator ==
 
-func (v *pcmVoice) SetPeriod(period note.Period) {
+func (v *pcmVoice) SetPeriod(period period.Period) {
 	v.freq.SetPeriod(period)
 }
 
-func (v *pcmVoice) GetPeriod() note.Period {
+func (v *pcmVoice) GetPeriod() period.Period {
 	return v.freq.GetPeriod()
 }
 
-func (v *pcmVoice) SetPeriodDelta(delta note.PeriodDelta) {
+func (v *pcmVoice) SetPeriodDelta(delta period.Delta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v *pcmVoice) GetPeriodDelta() note.PeriodDelta {
+func (v *pcmVoice) GetPeriodDelta() period.Delta {
 	return v.freq.GetDelta()
 }
 
-func (v *pcmVoice) GetFinalPeriod() note.Period {
+func (v *pcmVoice) GetFinalPeriod() period.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
-		p = p.Add(v.GetCurrentPitchEnvelope())
+		p = p.AddDelta(v.GetCurrentPitchEnvelope())
 	}
 	return p
 }
@@ -256,7 +257,9 @@ func (v *pcmVoice) GetCurrentVolumeEnvelope() volume.Volume {
 }
 
 func (v *pcmVoice) SetVolumeEnvelopePosition(pos int) {
-	v.volEnv.SetEnvelopePosition(pos)
+	if doneCB := v.volEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB(v)
+	}
 }
 
 // == PitchEnveloper ==
@@ -272,7 +275,7 @@ func (v *pcmVoice) IsPitchEnvelopeEnabled() bool {
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentPitchEnvelope() note.PeriodDelta {
+func (v *pcmVoice) GetCurrentPitchEnvelope() period.Delta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
@@ -281,7 +284,9 @@ func (v *pcmVoice) GetCurrentPitchEnvelope() note.PeriodDelta {
 
 func (v *pcmVoice) SetPitchEnvelopePosition(pos int) {
 	if !v.pitchAndFilterEnvShared || !v.filterEnvActive {
-		v.pitchEnv.SetEnvelopePosition(pos)
+		if doneCB := v.pitchEnv.SetEnvelopePosition(pos); doneCB != nil {
+			doneCB(v)
+		}
 	}
 }
 
@@ -314,7 +319,9 @@ func (v *pcmVoice) GetCurrentFilterEnvelope() float32 {
 
 func (v *pcmVoice) SetFilterEnvelopePosition(pos int) {
 	if !v.pitchAndFilterEnvShared || v.filterEnvActive {
-		v.filterEnv.SetEnvelopePosition(pos)
+		if doneCB := v.filterEnv.SetEnvelopePosition(pos); doneCB != nil {
+			doneCB(v)
+		}
 	}
 }
 
@@ -333,7 +340,9 @@ func (v *pcmVoice) GetCurrentPanEnvelope() panning.Position {
 }
 
 func (v *pcmVoice) SetPanEnvelopePosition(pos int) {
-	v.panEnv.SetEnvelopePosition(pos)
+	if doneCB := v.panEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB(v)
+	}
 }
 
 // == required function interfaces ==
@@ -346,16 +355,24 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	v.freq.Advance()
 	v.pan.Advance()
 	if v.IsVolumeEnvelopeEnabled() {
-		v.volEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.volEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 	if v.IsPanEnvelopeEnabled() {
-		v.panEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.panEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 	if v.IsPitchEnvelopeEnabled() {
-		v.pitchEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.pitchEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 	if v.IsFilterEnvelopeEnabled() {
-		v.filterEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.filterEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 
 	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
@@ -374,12 +391,12 @@ func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }
 
-func (v *pcmVoice) Clone() voiceIntf.Voice {
+func (v *pcmVoice) Clone() voice.Voice {
 	p := *v
 	return &p
 }
 
-func (v *pcmVoice) StartTransaction() voiceIntf.Transaction {
+func (v *pcmVoice) StartTransaction() voice.Transaction {
 	t := txn{
 		Voice: v,
 	}

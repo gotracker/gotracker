@@ -2,11 +2,11 @@ package effect
 
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/voice/oscillator"
 
 	"gotracker/internal/comparison"
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -34,7 +34,7 @@ func doPortaUp(cs intf.Channel, amount float32, multiplier float32) {
 
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(-delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	cs.SetPeriod(period)
 }
 
@@ -46,7 +46,7 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(-delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	if note.ComparePeriods(period, target) == comparison.SpaceshipLeftGreater {
 		period = target
 	}
@@ -61,7 +61,7 @@ func doPortaDown(cs intf.Channel, amount float32, multiplier float32) {
 
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	cs.SetPeriod(period)
 }
 
@@ -73,7 +73,7 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 
 	delta := int(amount * multiplier)
 	d := note.PeriodDelta(delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	if note.ComparePeriods(period, target) == comparison.SpaceshipRightGreater {
 		period = target
 	}

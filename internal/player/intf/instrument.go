@@ -3,8 +3,8 @@ package intf
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
 
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -41,7 +41,7 @@ type Instrument interface {
 	GetNewNoteAction() note.Action
 	GetData() InstrumentDataIntf
 	GetFilterFactory() FilterFactory
-	GetAutoVibrato() voiceIntf.AutoVibrato
+	GetAutoVibrato() voice.AutoVibrato
 	IsReleaseNote(note.Note) bool
 	IsStopNote(note.Note) bool
 }

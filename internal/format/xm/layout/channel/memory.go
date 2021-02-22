@@ -1,8 +1,10 @@
 package channel
 
 import (
+	"github.com/gotracker/voice/oscillator"
+
 	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/oscillator"
+	oscillatorImpl "gotracker/internal/oscillator"
 )
 
 // Memory is the storage object for custom effect/effect values
@@ -37,8 +39,8 @@ type Memory struct {
 
 // ResetOscillators resets the oscillators to defaults
 func (m *Memory) ResetOscillators() {
-	m.vibratoOscillator = oscillator.NewProtrackerOscillator()
-	m.tremoloOscillator = oscillator.NewProtrackerOscillator()
+	m.vibratoOscillator = oscillatorImpl.NewProtrackerOscillator()
+	m.tremoloOscillator = oscillatorImpl.NewProtrackerOscillator()
 }
 
 func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {

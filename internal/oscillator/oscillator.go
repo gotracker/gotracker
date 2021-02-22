@@ -1,11 +1,12 @@
 package oscillator
 
-// WaveTableSelect is the selection code for which waveform to use in an oscillator
-type WaveTableSelect uint8
+import (
+	"github.com/gotracker/voice/oscillator"
+)
 
 const (
 	// WaveTableSelectSineRetrigger is for a sine wave that retriggers when a new note is played
-	WaveTableSelectSineRetrigger = WaveTableSelect(iota)
+	WaveTableSelectSineRetrigger = oscillator.WaveTableSelect(iota)
 	// WaveTableSelectSawtoothRetrigger is for a sawtooth wave that retriggers when a new note is played
 	WaveTableSelectSawtoothRetrigger
 	// WaveTableSelectSquareRetrigger is for a square wave that retriggers when a new note is played
@@ -21,11 +22,3 @@ const (
 	// WaveTableSelectRandomContinue is for random data wave that does not retrigger when a new note is played
 	WaveTableSelectRandomContinue
 )
-
-// Oscillator is an oscillator
-type Oscillator interface {
-	GetWave(depth float32) float32
-	Advance(speed int)
-	SetWaveform(table WaveTableSelect)
-	Reset(hard ...bool)
-}

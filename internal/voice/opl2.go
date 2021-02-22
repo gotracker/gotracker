@@ -5,23 +5,24 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
+	"github.com/gotracker/voice/component"
+	"github.com/gotracker/voice/fadeout"
+	"github.com/gotracker/voice/period"
+	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/fadeout"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
-	"gotracker/internal/player/render"
-	"gotracker/internal/voice/internal/component"
 )
 
 // OPL2 is an OPL2 voice interface
 type OPL2 interface {
-	voiceIntf.Voice
-	voiceIntf.FreqModulator
-	voiceIntf.AmpModulator
-	voiceIntf.VolumeEnveloper
-	voiceIntf.PitchEnveloper
+	voice.Voice
+	voice.FreqModulator
+	voice.AmpModulator
+	voice.VolumeEnveloper
+	voice.PitchEnveloper
 }
 
 // OPL2Registers is a set of OPL operator configurations
@@ -33,8 +34,8 @@ type OPLConfiguration struct {
 	Channel       int
 	C2SPD         note.C2SPD
 	InitialVolume volume.Volume
-	InitialPeriod note.Period
-	AutoVibrato   voiceIntf.AutoVibrato
+	InitialPeriod period.Period
+	AutoVibrato   voice.AutoVibrato
 	DataIntf      intf.InstrumentDataIntf
 }
 
@@ -58,7 +59,7 @@ type opl2Voice struct {
 }
 
 // NewOPL2 creates a new OPL2 voice
-func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
+func NewOPL2(config OPLConfiguration) voice.Voice {
 	v := opl2Voice{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
@@ -91,7 +92,7 @@ func NewOPL2(config OPLConfiguration) voiceIntf.Voice {
 		_ = d
 	}
 
-	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD)
+	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD.ToFrequency())
 	v.amp.SetVolume(config.InitialVolume)
 	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.ConfigureAutoVibrato(config.AutoVibrato)
@@ -107,8 +108,8 @@ func (v *opl2Voice) Attack() {
 	v.keyOn = true
 	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
-	v.volEnv.SetEnvelopePosition(0)
-	v.pitchEnv.SetEnvelopePosition(0)
+	v.SetVolumeEnvelopePosition(0)
+	v.SetPitchEnvelopePosition(0)
 
 }
 
@@ -146,26 +147,26 @@ func (v *opl2Voice) IsDone() bool {
 
 // == FreqModulator ==
 
-func (v *opl2Voice) SetPeriod(period note.Period) {
+func (v *opl2Voice) SetPeriod(period period.Period) {
 	v.freq.SetPeriod(period)
 }
 
-func (v *opl2Voice) GetPeriod() note.Period {
+func (v *opl2Voice) GetPeriod() period.Period {
 	return v.freq.GetPeriod()
 }
 
-func (v *opl2Voice) SetPeriodDelta(delta note.PeriodDelta) {
+func (v *opl2Voice) SetPeriodDelta(delta period.Delta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v *opl2Voice) GetPeriodDelta() note.PeriodDelta {
+func (v *opl2Voice) GetPeriodDelta() period.Delta {
 	return v.freq.GetDelta()
 }
 
-func (v *opl2Voice) GetFinalPeriod() note.Period {
+func (v *opl2Voice) GetFinalPeriod() period.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
-		p = p.Add(v.GetCurrentPitchEnvelope())
+		p = p.AddDelta(v.GetCurrentPitchEnvelope())
 	}
 	return p
 }
@@ -209,7 +210,9 @@ func (v *opl2Voice) GetCurrentVolumeEnvelope() volume.Volume {
 }
 
 func (v *opl2Voice) SetVolumeEnvelopePosition(pos int) {
-	v.volEnv.SetEnvelopePosition(pos)
+	if doneCB := v.volEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB(v)
+	}
 }
 
 // == PitchEnveloper ==
@@ -222,7 +225,7 @@ func (v *opl2Voice) IsPitchEnvelopeEnabled() bool {
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v *opl2Voice) GetCurrentPitchEnvelope() note.PeriodDelta {
+func (v *opl2Voice) GetCurrentPitchEnvelope() period.Delta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
@@ -230,7 +233,9 @@ func (v *opl2Voice) GetCurrentPitchEnvelope() note.PeriodDelta {
 }
 
 func (v *opl2Voice) SetPitchEnvelopePosition(pos int) {
-	v.pitchEnv.SetEnvelopePosition(pos)
+	if doneCB := v.pitchEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB(v)
+	}
 }
 
 // == required function interfaces ==
@@ -242,10 +247,14 @@ func (v *opl2Voice) Advance(tickDuration time.Duration) {
 	v.amp.Advance()
 	v.freq.Advance()
 	if v.IsVolumeEnvelopeEnabled() {
-		v.volEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.volEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 	if v.IsPitchEnvelopeEnabled() {
-		v.pitchEnv.Advance(v.keyOn, v.prevKeyOn)
+		if doneCB := v.pitchEnv.Advance(v.keyOn, v.prevKeyOn); doneCB != nil {
+			doneCB(v)
+		}
 	}
 
 	// has to be after the mod/env updates
@@ -268,12 +277,12 @@ func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
 	return nil
 }
 
-func (v *opl2Voice) Clone() voiceIntf.Voice {
+func (v *opl2Voice) Clone() voice.Voice {
 	o := *v
 	return &o
 }
 
-func (v *opl2Voice) StartTransaction() voiceIntf.Transaction {
+func (v *opl2Voice) StartTransaction() voice.Transaction {
 	t := txn{
 		Voice: v,
 	}

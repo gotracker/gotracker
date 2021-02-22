@@ -6,19 +6,19 @@ import (
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
+	"github.com/gotracker/voice/envelope"
+	"github.com/gotracker/voice/fadeout"
+	"github.com/gotracker/voice/loop"
+	"github.com/gotracker/voice/pcm"
 
-	"gotracker/internal/envelope"
-	"gotracker/internal/fadeout"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/instrument"
-	"gotracker/internal/loop"
 	"gotracker/internal/oscillator"
-	"gotracker/internal/pcm"
 	"gotracker/internal/player/intf"
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
 )
@@ -53,7 +53,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Name:               inst.GetName(),
 				Volume:             v.Volume(),
 				RelativeNoteNumber: si.RelativeNoteNumber,
-				AutoVibrato: voiceIntf.AutoVibrato{
+				AutoVibrato: voice.AutoVibrato{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: inst.VibratoType,

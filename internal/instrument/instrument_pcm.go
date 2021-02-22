@@ -3,11 +3,10 @@ package instrument
 import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-
-	"gotracker/internal/envelope"
-	"gotracker/internal/fadeout"
-	"gotracker/internal/loop"
-	"gotracker/internal/pcm"
+	"github.com/gotracker/voice/envelope"
+	"github.com/gotracker/voice/fadeout"
+	"github.com/gotracker/voice/loop"
+	"github.com/gotracker/voice/pcm"
 )
 
 // PCM is a PCM-data instrument

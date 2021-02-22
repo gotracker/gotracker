@@ -1,10 +1,11 @@
 package effect
 
 import (
+	"github.com/gotracker/voice/oscillator"
+
 	"gotracker/internal/comparison"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 )
@@ -44,7 +45,7 @@ func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
 	}
 
 	d := note.PeriodDelta(delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	cs.SetPeriod(period)
 }
 
@@ -55,7 +56,7 @@ func doPortaByDeltaLinear(cs intf.Channel, delta int) {
 	}
 
 	finetune := note.PeriodDelta(delta)
-	period = period.Add(finetune)
+	period = period.AddDelta(finetune).(note.Period)
 	cs.SetPeriod(period)
 }
 

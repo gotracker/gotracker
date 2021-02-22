@@ -5,9 +5,9 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/voice/render"
 
 	"gotracker/internal/player/feature"
-	"gotracker/internal/player/render"
 )
 
 // Playback is an interface for rendering a song to output data

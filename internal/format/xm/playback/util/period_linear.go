@@ -3,6 +3,8 @@ package util
 import (
 	"gotracker/internal/comparison"
 	"gotracker/internal/player/note"
+
+	"github.com/gotracker/voice/period"
 )
 
 // LinearPeriod is a linear period, based on semitone and finetune values
@@ -12,11 +14,12 @@ type LinearPeriod struct {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p *LinearPeriod) Add(delta note.PeriodDelta) note.Period {
+func (p *LinearPeriod) AddDelta(delta period.Delta) period.Period {
 	period := *p
 	// 0 means "not playing", so keep it that way
 	if period.Finetune > 0 {
-		period.Finetune += note.Finetune(delta)
+		d := note.ToPeriodDelta(delta)
+		period.Finetune += note.Finetune(d)
 		if period.Finetune < 1 {
 			period.Finetune = 1
 		}
@@ -52,7 +55,7 @@ func (p *LinearPeriod) Lerp(t float64, rhs note.Period) note.Period {
 	rnft := float64(right.Finetune)
 
 	delta := note.PeriodDelta(t * (rnft - lnft))
-	period.Add(delta)
+	period.AddDelta(delta)
 	return &period
 }
 
@@ -66,7 +69,7 @@ func (p *LinearPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (p *LinearPeriod) GetFrequency() float64 {
+func (p *LinearPeriod) GetFrequency() period.Frequency {
 	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
 }

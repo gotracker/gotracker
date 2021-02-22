@@ -6,61 +6,51 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
 
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
-// ActiveState is the active state of a channel
-type ActiveState struct {
-	intf.PlaybackState
-	VoiceActive bool
-	Enabled     bool
-	NoteControl intf.NoteControl
+// Active is the active state of a channel
+type Active struct {
+	Playback
+	Voice       voice.Voice
 	PeriodDelta note.PeriodDelta
 }
 
 // Reset sets the active state to defaults
-func (a *ActiveState) Reset() {
-	a.PlaybackState.Reset()
-	a.VoiceActive = true
-	a.Enabled = true
-	a.NoteControl = nil
+func (a *Active) Reset() {
+	a.Playback.Reset()
+	a.Voice = nil
 	a.PeriodDelta = 0
 }
 
 // Clone clones the active state so that various interfaces do not collide
-func (a *ActiveState) Clone() ActiveState {
-	var c ActiveState = *a
-	if a.NoteControl != nil {
-		c.NoteControl = a.NoteControl.Clone()
+func (a *Active) Clone() Active {
+	var c Active = *a
+	if a.Voice != nil {
+		c.Voice = a.Voice.Clone()
 	}
 
 	return c
 }
 
 // RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
-func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) ([]mixing.Data, []*ActiveState) {
+func RenderStatesTogether(states []*Active, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) ([]mixing.Data, []*Active) {
 	data := mix.NewMixBuffer(samples)
 
 	mixData := []mixing.Data{}
 
 	centerAheadPan := panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	participatingStates := []*ActiveState{}
+	participatingStates := []*Active{}
 	for _, a := range states {
-		if !a.Enabled || a.Period == nil {
+		if a.Period == nil {
 			continue
 		}
 
-		nc := a.NoteControl
-		if nc == nil || nc.IsDone() {
-			continue
-		}
-
-		ncv := nc.GetVoice()
-		if ncv == nil {
+		ncv := a.Voice
+		if ncv == nil || ncv.IsDone() {
 			continue
 		}
 
@@ -73,7 +63,7 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 		voice.SetPeriodDelta(ncv, a.PeriodDelta)
 
 		// the period might be updated by the auto-vibrato system, here
-		nc.Update(duration)
+		ncv.Advance(duration)
 
 		// ... so grab the new value now.
 		period := voice.GetFinalPeriod(ncv)
@@ -82,7 +72,7 @@ func RenderStatesTogether(states []*ActiveState, mix *mixing.Mixer, panmixer mix
 		samplerAdd := float32(period.GetSamplerAdd(float64(samplerSpeed)))
 
 		// make a stand-alone data buffer for this channel for this tick
-		if a.VoiceActive {
+		if ncv.IsActive() {
 			sampleData := mixing.SampleMixIn{
 				Sample:    ncv.GetSampler(samplerSpeed),
 				StaticVol: volume.Volume(1.0),

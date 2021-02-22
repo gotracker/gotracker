@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
 
 	"gotracker/internal/player/note"
 )
@@ -44,11 +45,11 @@ type Channel interface {
 	GetPeriodDelta() note.PeriodDelta
 	SetInstrument(Instrument)
 	GetInstrument() Instrument
-	GetNoteControl() NoteControl
+	GetVoice() voice.Voice
 	GetTargetInst() Instrument
 	SetTargetInst(Instrument)
 	GetPrevInst() Instrument
-	GetPrevNoteControl() NoteControl
+	GetPrevVoice() voice.Voice
 	GetNoteSemitone() note.Semitone
 	SetStoredSemitone(note.Semitone)
 	SetTargetSemitone(note.Semitone)

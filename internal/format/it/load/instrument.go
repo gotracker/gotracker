@@ -11,17 +11,18 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
+	"github.com/gotracker/voice/envelope"
+	"github.com/gotracker/voice/fadeout"
+	"github.com/gotracker/voice/loop"
+	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/voice/pcm"
 
-	"gotracker/internal/envelope"
-	"gotracker/internal/fadeout"
 	"gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/instrument"
-	"gotracker/internal/loop"
-	"gotracker/internal/oscillator"
-	"gotracker/internal/pcm"
+	oscillatorImpl "gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -187,8 +188,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		}); err != nil {
 			return nil, err
 		}
-		id.VolEnv.OnFinished = func(ioc intf.NoteControl) {
-			ioc.Fadeout()
+		id.VolEnv.OnFinished = func(v voice.Voice) {
+			v.Fadeout()
 		}
 
 		var panEnv envelope.PanPoint
@@ -401,14 +402,14 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed) / note.C2SPD(bytesPerFrame)
-	ii.Static.AutoVibrato = voiceIntf.AutoVibrato{
+	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,
 		WaveformSelection: si.Header.VibratoType,
 		Depth:             float32(si.Header.VibratoDepth) / 64,
 		Rate:              int(si.Header.VibratoSpeed),
 		Factory: func() oscillator.Oscillator {
-			return oscillator.NewImpulseTrackerOscillator(1)
+			return oscillatorImpl.NewImpulseTrackerOscillator(1)
 		},
 	}
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())

@@ -53,7 +53,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			cs.SetInstrument(nil)
 		}
 		if cs.UseTargetPeriod {
-			if nc := cs.GetNoteControl(); nc != nil {
+			if nc := cs.GetVoice(); nc != nil {
 				nc.Release()
 			}
 			cs.SetPeriod(targetPeriod)
@@ -66,7 +66,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		stop = inst.IsStopNote(n)
 	}
 
-	if nc := cs.GetNoteControl(); nc != nil {
+	if nc := cs.GetVoice(); nc != nil {
 		if keyOn {
 			nc.Attack()
 			mem := cs.GetMemory().(*channel.Memory)

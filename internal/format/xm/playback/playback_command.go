@@ -1,6 +1,8 @@
 package playback
 
 import (
+	"github.com/gotracker/voice"
+
 	"gotracker/internal/format/internal/filter"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
@@ -52,9 +54,9 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 			cs.SetInstrument(nil)
 		}
 		if cs.UseTargetPeriod {
-			if nc := cs.GetNoteControl(); nc != nil {
+			if nc := cs.GetVoice(); nc != nil {
 				nc.Release()
-				if nc.IsVolumeEnvelopeEnabled() {
+				if voice.IsVolumeEnvelopeEnabled(nc) {
 					nc.Fadeout()
 				}
 			}
@@ -68,14 +70,14 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 		stop = inst.IsStopNote(n)
 	}
 
-	if nc := cs.GetNoteControl(); nc != nil {
+	if nc := cs.GetVoice(); nc != nil {
 		if keyOn {
 			nc.Attack()
 			mem := cs.GetMemory().(*channel.Memory)
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()
-			if nc.IsVolumeEnvelopeEnabled() {
+			if voice.IsVolumeEnvelopeEnabled(nc) {
 				nc.Fadeout()
 			}
 			cs.SetPeriod(nil)

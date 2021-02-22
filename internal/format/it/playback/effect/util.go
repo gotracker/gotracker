@@ -1,14 +1,14 @@
 package effect
 
 import (
+	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
+	"github.com/gotracker/voice/oscillator"
+
 	"gotracker/internal/comparison"
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
-
-	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 )
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) {
@@ -48,7 +48,7 @@ func doPortaByDeltaAmiga(cs intf.Channel, delta int) {
 	}
 
 	d := note.PeriodDelta(delta)
-	period = period.Add(d)
+	period = period.AddDelta(d).(note.Period)
 	cs.SetPeriod(period)
 }
 
@@ -59,7 +59,7 @@ func doPortaByDeltaLinear(cs intf.Channel, delta int) {
 	}
 
 	finetune := note.PeriodDelta(delta)
-	period = period.Add(finetune)
+	period = period.AddDelta(finetune).(note.Period)
 	cs.SetPeriod(period)
 }
 

@@ -1,6 +1,10 @@
 package oscillator
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/gotracker/voice/oscillator"
+)
 
 var (
 	impulseSineTable = [...]int8{
@@ -56,13 +60,13 @@ func GetImpulseSawtooth(pos int) float32 {
 
 // impulseOscillator is an oscillator using the protracker sine table
 type impulseOscillator struct {
-	Table WaveTableSelect
+	Table oscillator.WaveTableSelect
 	Pos   uint8
 	Mul   uint8
 }
 
 // NewImpulseTrackerOscillator creates a new ImpulseTracker-compatible oscillator
-func NewImpulseTrackerOscillator(mul uint8) Oscillator {
+func NewImpulseTrackerOscillator(mul uint8) oscillator.Oscillator {
 	return &impulseOscillator{
 		Mul: mul,
 	}
@@ -96,7 +100,7 @@ func (o *impulseOscillator) Advance(speed int) {
 }
 
 // SetWaveform sets the waveform for the current oscillator
-func (o *impulseOscillator) SetWaveform(table WaveTableSelect) {
+func (o *impulseOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
 }
 

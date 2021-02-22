@@ -5,10 +5,10 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice"
 
 	"gotracker/internal/optional"
 	"gotracker/internal/player/intf"
-	voiceIntf "gotracker/internal/player/intf/voice"
 	"gotracker/internal/player/note"
 )
 
@@ -19,7 +19,7 @@ type StaticValues struct {
 	ID                 intf.InstrumentID
 	Volume             volume.Volume
 	RelativeNoteNumber int8
-	AutoVibrato        voiceIntf.AutoVibrato
+	AutoVibrato        voice.AutoVibrato
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
 	FilterFactory      intf.FilterFactory
@@ -116,7 +116,7 @@ func (inst *Instrument) GetFilterFactory() intf.FilterFactory {
 }
 
 // GetAutoVibrato returns the settings for the autovibrato system
-func (inst *Instrument) GetAutoVibrato() voiceIntf.AutoVibrato {
+func (inst *Instrument) GetAutoVibrato() voice.AutoVibrato {
 	return inst.Static.AutoVibrato
 }
 

@@ -8,10 +8,10 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/voice/render"
 
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/render"
 	"gotracker/internal/player/sampler"
 )
 

@@ -3,8 +3,9 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/voice/oscillator"
+
 	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
 )
 

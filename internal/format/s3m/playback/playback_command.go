@@ -50,7 +50,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.SetInstrument(nil)
 		}
 		if cs.UseTargetPeriod {
-			if nc := cs.GetNoteControl(); nc != nil {
+			if nc := cs.GetVoice(); nc != nil {
 				nc.Release()
 				nc.Fadeout()
 			}
@@ -64,7 +64,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 		stop = inst.IsStopNote(n)
 	}
 
-	if nc := cs.GetNoteControl(); nc != nil {
+	if nc := cs.GetVoice(); nc != nil {
 		if keyOn {
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())

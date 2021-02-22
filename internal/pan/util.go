@@ -18,20 +18,20 @@ const (
 // panning value `p0` such that `p0` is primary component and `p1` is secondary
 // TODO: JBC - move this calculation function into gomixing lib
 func CalculateCombinedPanning(p0, p1 panning.Position) panning.Position {
-	p0a := float64(p0.Angle)
-	p1a := float64(p1.Angle)
+	p0a := float64(p0.Angle) - pi4
+	p1a := float64(p1.Angle) - pi4
 
 	fa := p0a + (p1a-pi8)*(pi4-math.Abs(p0a-pi4))/pi8
 	if fa > pi2 {
 		fa = pi2
-	} else if fa < 0 {
-		fa = 0
+	} else if fa < -pi2 {
+		fa = -pi2
 	}
 
 	fd := math.Sqrt(float64(p0.Distance * p1.Distance))
 
 	return panning.Position{
-		Angle:    float32(fa),
+		Angle:    float32(fa + pi4),
 		Distance: float32(fd),
 	}
 }

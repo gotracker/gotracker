@@ -176,39 +176,50 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		}
 
 		var volEnv envelope.VolumePoint
-		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), func(v int8) interface{} {
-			vol := volume.Volume(uint8(v)) / 64
-			if vol > 1 {
-				// NOTE: there might be an incoming Y value == 0xFF, which really
-				// means "end of envelope" and should not mean "full volume",
-				// but we can cheat a little here and probably get away with it...
-				vol = 1
-			}
-			return vol
-		}); err != nil {
+		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), convertVolEnvValue); err != nil {
 			return nil, err
 		}
 		id.VolEnv.OnFinished = func(v voice.Voice) {
 			v.Fadeout()
 		}
 
+		if i == 13 {
+			a := 0
+			a++
+		}
+
 		var panEnv envelope.PanPoint
-		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), func(v int8) interface{} {
-			return panning.MakeStereoPosition(float32(v), -32, 32)
-		}); err != nil {
+		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), convertPanEnvValue); err != nil {
 			return nil, err
 		}
 
 		var pitchEnv envelope.PitchPoint
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
-		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), func(v int8) interface{} {
-			return float32(uint8(v))
-		}); err != nil {
+		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), convertPitchEnvValue); err != nil {
 			return nil, err
 		}
 	}
 
 	return outInsts, nil
+}
+
+func convertVolEnvValue(v int8) interface{} {
+	vol := volume.Volume(uint8(v)) / 64
+	if vol > 1 {
+		// NOTE: there might be an incoming Y value == 0xFF, which really
+		// means "end of envelope" and should not mean "full volume",
+		// but we can cheat a little here and probably get away with it...
+		vol = 1
+	}
+	return vol
+}
+
+func convertPanEnvValue(v int8) interface{} {
+	return panning.MakeStereoPosition(float32(v), -64, 64)
+}
+
+func convertPitchEnvValue(v int8) interface{} {
+	return float32(uint8(v))
 }
 
 func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType reflect.Type, convert func(int8) interface{}) error {

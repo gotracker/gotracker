@@ -27,7 +27,7 @@ func BenchmarkPlayerS3M(b *testing.B) {
 		b.Error(err)
 	}
 
-	playback.DisableFeatures([]feature.Feature{feature.OrderLoop})
+	playback.Configure([]feature.Feature{feature.SongLoop{Enabled: false}})
 
 	lastTime := time.Now()
 	for err == nil {

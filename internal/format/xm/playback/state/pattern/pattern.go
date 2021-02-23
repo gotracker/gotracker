@@ -5,6 +5,7 @@ import (
 
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/optional"
+	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/pattern"
 )
@@ -19,8 +20,8 @@ type State struct {
 	finePatternDelay  int
 	resetPatternLoops bool
 
-	SongLoopEnabled bool
-	loopDetect      formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
+	SongLoop   feature.SongLoop
+	loopDetect formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 
 	Patterns []pattern.Pattern
 	Orders   []intf.PatternIdx
@@ -100,7 +101,7 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 	for loopCount := 0; loopCount < ordLen; loopCount++ {
 		ordIdx := int(state.GetCurrentOrder())
 		if ordIdx >= ordLen {
-			if !state.SongLoopEnabled {
+			if !state.SongLoop.Enabled {
 				return 0, intf.ErrStopSong
 			}
 			state.setCurrentOrder(0)
@@ -138,7 +139,7 @@ func (state *State) setCurrentRow(row intf.RowIdx) {
 
 // Observe will attempt to detect a song loop
 func (state *State) Observe() error {
-	if !state.SongLoopEnabled && state.loopDetect.Observe(state.currentOrder, state.currentRow) {
+	if !state.SongLoop.Enabled && state.loopDetect.Observe(state.currentOrder, state.currentRow) {
 		return intf.ErrStopSong
 	}
 	return nil
@@ -158,7 +159,9 @@ func (state *State) nextOrder(resetRow ...bool) {
 // Reset resets a pattern state back to zeroes
 func (state *State) Reset() {
 	*state = State{
-		SongLoopEnabled: true,
+		SongLoop: feature.SongLoop{
+			Enabled: true,
+		},
 	}
 }
 

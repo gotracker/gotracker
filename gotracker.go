@@ -112,7 +112,7 @@ func main() {
 		}
 	}
 
-	waveOut, disableFeatures, err := output.CreateOutputDevice(outputSettings)
+	waveOut, configuration, err := output.CreateOutputDevice(outputSettings)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -120,12 +120,12 @@ func main() {
 	defer waveOut.Close()
 
 	if !canLoop {
-		disableFeatures = append(disableFeatures, feature.OrderLoop)
+		configuration = append(configuration, feature.SongLoop{Enabled: false})
 	}
 	if panicOnUnhandledEffect {
-		disableFeatures = append(disableFeatures, feature.IgnoreUnknownEffect)
+		configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: true})
 	}
-	playback.DisableFeatures(disableFeatures)
+	playback.Configure(configuration)
 
 	var effectMap map[string]int
 	if effectCoverage {
@@ -162,11 +162,23 @@ func main() {
 	outBufs := make(chan *device.PremixData, 64)
 
 	tickInterval := time.Duration(5) * time.Millisecond
-	disableSleepIdx := sort.Search(len(disableFeatures), func(i int) bool {
-		return disableFeatures[i] == feature.PlayerSleepInterval
+	disableSleepIdx := sort.Search(len(configuration), func(i int) bool {
+		switch configuration[i].(type) {
+		case feature.PlayerSleepInterval:
+			return true
+		}
+		return false
 	})
-	if disableSleepIdx < len(disableFeatures) && disableFeatures[disableSleepIdx] == feature.PlayerSleepInterval {
-		tickInterval = time.Duration(0)
+	if disableSleepIdx < len(configuration) {
+		feat := configuration[disableSleepIdx]
+		switch f := feat.(type) {
+		case feature.PlayerSleepInterval:
+			if f.Enabled {
+				tickInterval = f.Interval
+			} else {
+				tickInterval = time.Duration(0)
+			}
+		}
 	}
 
 	p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)

@@ -24,7 +24,7 @@ type Playback interface {
 	GetCurrentRow() RowIdx
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
-	DisableFeatures([]feature.Feature)
+	Configure([]feature.Feature)
 	GetName() string
 	CanOrderLoop() bool
 	BreakOrder()

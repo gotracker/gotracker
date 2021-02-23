@@ -1,21 +1,22 @@
 package feature
 
-// Feature is an enumeration of player features that can be disabled by a device
-type Feature int
+import "time"
 
-const (
-	featureUnknown = Feature(iota)
+// Feature is an interface for player features that can be optionally modified by the user and/or disabled by an output device
+type Feature interface{}
 
-	// OrderLoop describes the pattern loop feature
-	OrderLoop
+// SongLoop is a setting for enabling or disabling the song looping
+type SongLoop struct {
+	Enabled bool
+}
 
-	// PlayerSleepInterval describes the player sleep interval feature
-	PlayerSleepInterval
+// PlayerSleepInterval describes the player sleep feature
+type PlayerSleepInterval struct {
+	Enabled  bool
+	Interval time.Duration
+}
 
-	// IgnoreUnknownEffect describes a bypass/ignore of unknown effects
-	IgnoreUnknownEffect
-)
-
-func init() {
-	_ = featureUnknown // lint
+// IgnoreUnknownEffect describes a bypass/ignore of unknown effects
+type IgnoreUnknownEffect struct {
+	Enabled bool
 }

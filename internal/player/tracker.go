@@ -35,8 +35,8 @@ type Tracker struct {
 	globalVolume volume.Volume
 	mixerVolume  volume.Volume
 
-	panicOnUnknownEffect bool
-	outputChannels       map[int]*intf.OutputChannel
+	ignoreUnknownEffect feature.IgnoreUnknownEffect
+	outputChannels      map[int]*intf.OutputChannel
 }
 
 // Update runs processing on the tracker, producing premixed sound data
@@ -203,15 +203,15 @@ func (t *Tracker) SetMixerVolume(vol volume.Volume) {
 
 // IgnoreUnknownEffect returns true if the tracker wants unknown effects to be ignored
 func (t *Tracker) IgnoreUnknownEffect() bool {
-	return !t.panicOnUnknownEffect
+	return t.ignoreUnknownEffect.Enabled
 }
 
-// DisableFeatures disables specified features
-func (t *Tracker) DisableFeatures(features []feature.Feature) {
-	for _, f := range features {
-		switch f {
+// Configure sets specified features
+func (t *Tracker) Configure(features []feature.Feature) {
+	for _, feat := range features {
+		switch f := feat.(type) {
 		case feature.IgnoreUnknownEffect:
-			t.panicOnUnknownEffect = true
+			t.ignoreUnknownEffect = f
 		}
 	}
 }

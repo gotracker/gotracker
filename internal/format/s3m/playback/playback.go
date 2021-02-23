@@ -209,20 +209,20 @@ func (m *Manager) IncreaseTempo(delta int) {
 	}
 }
 
-// DisableFeatures disables specified features
-func (m *Manager) DisableFeatures(features []feature.Feature) {
-	m.Tracker.DisableFeatures(features)
-	for _, f := range features {
-		switch f {
-		case feature.OrderLoop:
-			m.pattern.SongLoopEnabled = false
+// Configure sets specified features
+func (m *Manager) Configure(features []feature.Feature) {
+	m.Tracker.Configure(features)
+	for _, feat := range features {
+		switch f := feat.(type) {
+		case feature.SongLoop:
+			m.pattern.SongLoop = f
 		}
 	}
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop
 func (m *Manager) CanOrderLoop() bool {
-	return m.pattern.SongLoopEnabled
+	return m.pattern.SongLoop.Enabled
 }
 
 // GetSongData gets the song data object

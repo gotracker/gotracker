@@ -102,7 +102,7 @@ func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels
 		t.Fatalf("Could not setup playback sampler! err[%v]", err)
 	}
 
-	playback.DisableFeatures([]feature.Feature{feature.OrderLoop})
+	playback.Configure([]feature.Feature{feature.SongLoop{Enabled: false}})
 
 	for {
 		premixData, err := playback.Generate(time.Duration(0))
@@ -165,7 +165,7 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 		t.Fatalf("Could not setup playback sampler! err[%v]", err)
 	}
 
-	playback.DisableFeatures([]feature.Feature{feature.OrderLoop})
+	playback.Configure([]feature.Feature{feature.SongLoop{Enabled: false}})
 
 	for {
 		premixData, err := playback.Generate(time.Duration(0))

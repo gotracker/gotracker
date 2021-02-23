@@ -55,7 +55,10 @@ func CreateOutputDevice(settings device.Settings) (device.Device, []feature.Feat
 	kind := device.GetKind(d)
 	switch kind {
 	case device.KindFile:
-		featureDisable = []feature.Feature{feature.OrderLoop, feature.PlayerSleepInterval}
+		featureDisable = []feature.Feature{
+			feature.SongLoop{Enabled: false},
+			feature.PlayerSleepInterval{Enabled: false},
+		}
 	}
 
 	return d, featureDisable, nil

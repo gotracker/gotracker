@@ -20,10 +20,8 @@ func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.Arpeggio(uint8(e))
-	x := int8(xy >> 4)
-	y := int8(xy & 0x0f)
-	doArpeggio(cs, currentTick, x, y)
+	x, y := mem.Arpeggio(uint8(e))
+	doArpeggio(cs, currentTick, int8(x), int8(y))
 }
 
 func (e Arpeggio) String() string {

@@ -110,8 +110,9 @@ func (m *Memory) Tremor(input uint8) (uint8, uint8) {
 }
 
 // Arpeggio gets or sets the most recent non-zero value (or input) for Arpeggio
-func (m *Memory) Arpeggio(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.arpeggio)
+func (m *Memory) Arpeggio(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.arpeggio)
+	return xy >> 4, xy & 0x0f
 }
 
 // ChannelVolumeSlide gets or sets the most recent non-zero value (or input) for Channel Volume Slide
@@ -153,8 +154,9 @@ func (m *Memory) TempoIncrease(input uint8) uint8 {
 }
 
 // GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
-func (m *Memory) GlobalVolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.globalVolumeSlide)
+func (m *Memory) GlobalVolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.globalVolumeSlide)
+	return xy >> 4, xy & 0x0f
 }
 
 // Panbrello gets or sets the most recent non-zero value (or input) for Panbrello

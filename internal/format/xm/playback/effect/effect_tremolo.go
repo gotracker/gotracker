@@ -18,11 +18,9 @@ func (e Tremolo) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e Tremolo) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.Tremolo(uint8(e))
+	x, y := mem.Tremolo(uint8(e))
 	// NOTE: JBC - XM updates on tick 0, but MOD does not.
 	// Just have to eat this incompatibility, I guess...
-	x := xy >> 4
-	y := xy & 0x0f
 	doTremolo(cs, currentTick, x, y, 4)
 }
 

@@ -18,9 +18,7 @@ func (e GlobalVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 // Tick is called on every tick
 func (e GlobalVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	mem := cs.GetMemory().(*channel.Memory)
-	xy := mem.GlobalVolumeSlide(uint8(e))
-	x := uint8(xy >> 4)
-	y := uint8(xy & 0x0F)
+	x, y := mem.GlobalVolumeSlide(uint8(e))
 
 	if currentTick == 0 {
 		return

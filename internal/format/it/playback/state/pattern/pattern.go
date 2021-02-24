@@ -58,11 +58,15 @@ func (state *State) GetPatNum() intf.PatternIdx {
 }
 
 // GetNumRows returns the number of rows in the current pattern
-func (state *State) GetNumRows() int {
-	if rows := state.GetRows(); rows != nil {
-		return rows.NumRows()
+func (state *State) GetNumRows() (int, error) {
+	rows, err := state.GetRows()
+	if err != nil {
+		return 0, err
 	}
-	return 0
+	if rows != nil {
+		return rows.NumRows(), nil
+	}
+	return 0, nil
 }
 
 // WantsStop returns true when the current pattern wants to end the song
@@ -110,12 +114,16 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 
 		patIdx := state.Orders[ordIdx]
 		if patIdx == intf.NextPattern {
-			state.nextOrder(true)
+			if err := state.nextOrder(true); err != nil {
+				return 0, err
+			}
 			continue
 		}
 
 		if patIdx == intf.InvalidPattern {
-			state.nextOrder(true)
+			if err := state.nextOrder(true); err != nil {
+				return 0, err
+			}
 			continue // this is supposed to be a song break
 		}
 
@@ -130,11 +138,18 @@ func (state *State) GetCurrentRow() intf.RowIdx {
 }
 
 // setCurrentRow sets the current row
-func (state *State) setCurrentRow(row intf.RowIdx) {
+func (state *State) setCurrentRow(row intf.RowIdx) error {
 	state.currentRow = row
-	if int(state.GetCurrentRow()) >= state.GetNumRows() {
-		state.nextOrder(true)
+	rows, err := state.GetNumRows()
+	if err != nil {
+		return err
 	}
+	if int(state.GetCurrentRow()) >= rows {
+		if err := state.nextOrder(true); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Observe will attempt to detect a song loop
@@ -146,14 +161,18 @@ func (state *State) Observe() error {
 }
 
 // nextOrder travels to the next pattern in the order list
-func (state *State) nextOrder(resetRow ...bool) {
+func (state *State) nextOrder(resetRow ...bool) error {
 	state.advanceOrder()
 	state.patternDelay.Reset()
 	state.finePatternDelay = 0
-	_, _ = state.GetCurrentPatternIdx() // called only to clean up order position info
+	// called only to clean up order position info
+	if _, err := state.GetCurrentPatternIdx(); err != nil {
+		return err
+	}
 	if len(resetRow) > 0 && resetRow[0] {
 		state.currentRow = 0
 	}
+	return nil
 }
 
 // Reset resets a pattern state back to zeroes
@@ -167,45 +186,56 @@ func (state *State) Reset() {
 
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
-func (state *State) nextRow() {
+func (state *State) nextRow() error {
 	state.patternDelay.Reset()
 	state.finePatternDelay = 0
 
 	var patNum = state.GetPatNum()
 	if patNum == intf.InvalidPattern {
-		return
+		return nil
 	}
 
 	if patNum == intf.NextPattern {
-		state.nextOrder(true)
-		return
+		if err := state.nextOrder(true); err != nil {
+			return err
+		}
+		return nil
 	}
 
-	if state.currentRow.Increment(state.GetNumRows()) {
-		state.nextOrder(true)
+	rows, err := state.GetNumRows()
+	if err != nil {
+		return err
 	}
+	if state.currentRow.Increment(rows) {
+		if err := state.nextOrder(true); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() intf.Rows {
+func (state *State) GetRows() (intf.Rows, error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()
 		switch patNum {
 		case intf.InvalidPattern:
-			return nil
+			return nil, nil
 		case intf.NextPattern:
-			state.nextRow()
+			if err := state.nextRow(); err != nil {
+				return nil, err
+			}
 			continue nextRow
 		default:
 			if int(patNum) >= len(state.Patterns) {
-				return nil
+				return nil, nil
 			}
 			pattern := state.Patterns[patNum]
-			return pattern.GetRows()
+			return pattern.GetRows(), nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
@@ -216,7 +246,7 @@ func (state *State) NeedResetPatternLoops() bool {
 }
 
 // commitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
-func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) {
+func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 	tempo, tempoSet := txn.Tempo.GetInt()
 	tempoDelta, tempoDeltaSet := txn.TempoDelta.GetInt()
 	if tempoSet || tempoDeltaSet {
@@ -245,7 +275,9 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) {
 	}
 
 	if txn.BreakOrder {
-		state.nextOrder(true)
+		if err := state.nextOrder(true); err != nil {
+			return err
+		}
 	}
 
 	orderIdx, orderIdxSet := txn.GetOrderIdx()
@@ -255,18 +287,27 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) {
 		if orderIdxSet {
 			state.setCurrentOrder(orderIdx)
 			if !rowIdxSet {
-				state.setCurrentRow(0)
+				if err := state.setCurrentRow(0); err != nil {
+					return err
+				}
 			}
 		}
 		if rowIdxSet {
 			if !orderIdxSet && !txn.RowIdxAllowBacktrack && state.currentRow > rowIdx {
-				state.nextOrder()
+				if err := state.nextOrder(); err != nil {
+					return err
+				}
 			}
-			state.setCurrentRow(rowIdx)
+			if err := state.setCurrentRow(rowIdx); err != nil {
+				return err
+			}
 		}
 	} else if txn.AdvanceRow {
-		state.nextRow()
+		if err := state.nextRow(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // StartTransaction starts a row update transaction

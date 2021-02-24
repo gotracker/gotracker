@@ -16,7 +16,7 @@ const (
 // RowUpdateTransaction is a transactional operation for row/order updates
 type RowUpdateTransaction struct {
 	committed         bool
-	CommitTransaction func(*RowUpdateTransaction)
+	CommitTransaction func(*RowUpdateTransaction) error
 
 	orderIdx         optional.Value //intf.OrderIdx
 	rowIdx           optional.Value //intf.RowIdx
@@ -38,15 +38,15 @@ func (txn *RowUpdateTransaction) Cancel() {
 }
 
 // Commit will update the order and row indexes at once, idempotently.
-func (txn *RowUpdateTransaction) Commit() {
+func (txn *RowUpdateTransaction) Commit() error {
 	if txn.committed {
-		return
+		return nil
 	}
 	if txn.CommitTransaction == nil {
 		panic("cannot commit transaction using unset commit function")
 	}
 	txn.committed = true
-	txn.CommitTransaction(txn)
+	return txn.CommitTransaction(txn)
 }
 
 // SetNextOrder will set the next order index

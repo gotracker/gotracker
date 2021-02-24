@@ -19,10 +19,8 @@ func (e Tremor) Start(cs intf.Channel, p intf.Playback) {
 func (e Tremor) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 	if currentTick != 0 {
 		mem := cs.GetMemory().(*channel.Memory)
-		xy := mem.Tremor(uint8(e))
-		x := int((xy >> 4) + 1)
-		y := int((xy & 0x0f) + 1)
-		doTremor(cs, currentTick, x, y)
+		x, y := mem.Tremor(uint8(e))
+		doTremor(cs, currentTick, int(x)+1, int(y)+1)
 	}
 }
 

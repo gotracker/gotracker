@@ -59,8 +59,9 @@ func (m *Memory) PortaToNote(input uint8) uint8 {
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Vibrato(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.vibrato)
+func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.vibrato)
+	return xy >> 4, xy & 0x0f
 }
 
 // VibratoSpeed gets or sets the most recent non-zero value (or input) for Vibrato Speed
@@ -94,23 +95,27 @@ func (m *Memory) PortaUp(input uint8) uint8 {
 }
 
 // Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
-func (m *Memory) Tremolo(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tremolo)
+func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.tremolo)
+	return xy >> 4, xy & 0x0f
 }
 
 // Tremor gets or sets the most recent non-zero value (or input) for Tremor
-func (m *Memory) Tremor(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tremor)
+func (m *Memory) Tremor(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.tremor)
+	return xy >> 4, xy & 0x0f
 }
 
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
-func (m *Memory) VolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.volumeSlide)
+func (m *Memory) VolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.volumeSlide)
+	return xy >> 4, xy & 0x0f
 }
 
 // GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
-func (m *Memory) GlobalVolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.globalVolumeSlide)
+func (m *Memory) GlobalVolumeSlide(input uint8) (uint8, uint8) {
+	xy := m.getEffectMemory(input, &m.globalVolumeSlide)
+	return xy >> 4, xy & 0x0f
 }
 
 // FinePortaUp gets or sets the most recent non-zero value (or input) for Fine Portamento Up

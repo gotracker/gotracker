@@ -85,6 +85,12 @@ func (m *Memory) LastNonZero(input uint8) uint8 {
 	return m.getEffectMemory(input, &m.lastNonZero)
 }
 
+// LastNonZero gets or sets the most recent non-zero value (or input)
+func (m *Memory) LastNonZeroXY(input uint8) (uint8, uint8) {
+	xy := m.LastNonZero(input)
+	return xy >> 4, xy & 0x0f
+}
+
 // TremorMem returns the Tremor object
 func (m *Memory) TremorMem() *formatutil.Tremor {
 	return &m.tremorMem

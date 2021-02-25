@@ -3,29 +3,30 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
+	"gotracker/internal/format/internal/memory"
 	formatutil "gotracker/internal/format/internal/util"
 	oscillatorImpl "gotracker/internal/oscillator"
 )
 
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
-	volumeSlide        uint8 `usage:"Dxy"`
-	portaDown          uint8 `usage:"Exx"`
-	portaUp            uint8 `usage:"Fxx"`
-	portaToNote        uint8 `usage:"Gxx"`
-	vibrato            uint8 `usage:"Hxy"`
-	tremor             uint8 `usage:"Ixy"`
-	arpeggio           uint8 `usage:"Jxy"`
-	channelVolumeSlide uint8 `usage:"Nxy"`
-	sampleOffset       uint8 `usage:"Oxx"`
-	panningSlide       uint8 `usage:"Pxy"`
-	retrigVolumeSlide  uint8 `usage:"Qxy"`
-	tremolo            uint8 `usage:"Rxy"`
-	tempoDecrease      uint8 `usage:"T0x"`
-	tempoIncrease      uint8 `usage:"T1x"`
-	globalVolumeSlide  uint8 `usage:"Wxy"`
-	panbrello          uint8 `usage:"Yxy"`
-	volChanVolumeSlide uint8 `usage:"vDxy"`
+	volumeSlide        memory.UInt8 `usage:"Dxy"`
+	portaDown          memory.UInt8 `usage:"Exx"`
+	portaUp            memory.UInt8 `usage:"Fxx"`
+	portaToNote        memory.UInt8 `usage:"Gxx"`
+	vibrato            memory.UInt8 `usage:"Hxy"`
+	tremor             memory.UInt8 `usage:"Ixy"`
+	arpeggio           memory.UInt8 `usage:"Jxy"`
+	channelVolumeSlide memory.UInt8 `usage:"Nxy"`
+	sampleOffset       memory.UInt8 `usage:"Oxx"`
+	panningSlide       memory.UInt8 `usage:"Pxy"`
+	retrigVolumeSlide  memory.UInt8 `usage:"Qxy"`
+	tremolo            memory.UInt8 `usage:"Rxy"`
+	tempoDecrease      memory.UInt8 `usage:"T0x"`
+	tempoIncrease      memory.UInt8 `usage:"T1x"`
+	globalVolumeSlide  memory.UInt8 `usage:"Wxy"`
+	panbrello          memory.UInt8 `usage:"Yxy"`
+	volChanVolumeSlide memory.UInt8 `usage:"vDxy"`
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
@@ -55,113 +56,95 @@ func (m *Memory) ResetOscillators() {
 	m.panbrelloOscillator = oscillatorImpl.NewImpulseTrackerOscillator(1)
 }
 
-func (m *Memory) getEffectMemory(input uint8, reg *uint8) uint8 {
-	if input == 0 {
-		return *reg
-	}
-	if input != 0 {
-		*reg = input
-	}
-	return input
-}
-
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
 func (m *Memory) VolumeSlide(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.volumeSlide)
-	return xy >> 4, xy & 0x0f
+	return m.volumeSlide.CoalesceXY(input)
 }
 
 // VolChanVolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide (from the volume channel)
 func (m *Memory) VolChanVolumeSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.volChanVolumeSlide)
+	return m.volChanVolumeSlide.Coalesce(input)
 }
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
 func (m *Memory) PortaDown(input uint8) uint8 {
 	if m.EFGLinkMode {
-		return m.getEffectMemory(input, &m.portaToNote)
+		return m.portaToNote.Coalesce(input)
 	}
-	return m.getEffectMemory(input, &m.portaDown)
+	return m.portaDown.Coalesce(input)
 }
 
 // PortaUp gets or sets the most recent non-zero value (or input) for Portamento Up
 func (m *Memory) PortaUp(input uint8) uint8 {
 	if m.EFGLinkMode {
-		return m.getEffectMemory(input, &m.portaToNote)
+		return m.portaToNote.Coalesce(input)
 	}
-	return m.getEffectMemory(input, &m.portaUp)
+	return m.portaUp.Coalesce(input)
 }
 
 // PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
 func (m *Memory) PortaToNote(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.portaToNote)
+	return m.portaToNote.Coalesce(input)
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
 func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.vibrato)
-	return xy >> 4, xy & 0x0f
+	return m.vibrato.CoalesceXY(input)
 }
 
 // Tremor gets or sets the most recent non-zero value (or input) for Tremor
 func (m *Memory) Tremor(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.tremor)
-	return xy >> 4, xy & 0x0f
+	return m.tremor.CoalesceXY(input)
 }
 
 // Arpeggio gets or sets the most recent non-zero value (or input) for Arpeggio
 func (m *Memory) Arpeggio(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.arpeggio)
-	return xy >> 4, xy & 0x0f
+	return m.arpeggio.CoalesceXY(input)
 }
 
 // ChannelVolumeSlide gets or sets the most recent non-zero value (or input) for Channel Volume Slide
 func (m *Memory) ChannelVolumeSlide(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.channelVolumeSlide)
-	return xy >> 4, xy & 0x0f
+	return m.channelVolumeSlide.CoalesceXY(input)
 }
 
 // SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
 func (m *Memory) SampleOffset(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.sampleOffset)
+	return m.sampleOffset.Coalesce(input)
 }
 
 // PanningSlide gets or sets the most recent non-zero value (or input) for Panning Slide
 func (m *Memory) PanningSlide(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.panningSlide)
+	return m.panningSlide.Coalesce(input)
 }
 
 // RetrigVolumeSlide gets or sets the most recent non-zero value (or input) for Retrigger+VolumeSlide
 func (m *Memory) RetrigVolumeSlide(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.retrigVolumeSlide)
-	return xy >> 4, xy & 0x0f
+	return m.retrigVolumeSlide.CoalesceXY(input)
 }
 
 // Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
 func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.tremolo)
-	return xy >> 4, xy & 0x0f
+	return m.tremolo.CoalesceXY(input)
 }
 
 // TempoDecrease gets or sets the most recent non-zero value (or input) for Tempo Decrease
 func (m *Memory) TempoDecrease(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tempoDecrease)
+	return m.tempoDecrease.Coalesce(input)
 }
 
 // TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
 func (m *Memory) TempoIncrease(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.tempoIncrease)
+	return m.tempoIncrease.Coalesce(input)
 }
 
 // GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
 func (m *Memory) GlobalVolumeSlide(input uint8) (uint8, uint8) {
-	xy := m.getEffectMemory(input, &m.globalVolumeSlide)
-	return xy >> 4, xy & 0x0f
+	return m.globalVolumeSlide.CoalesceXY(input)
 }
 
 // Panbrello gets or sets the most recent non-zero value (or input) for Panbrello
 func (m *Memory) Panbrello(input uint8) uint8 {
-	return m.getEffectMemory(input, &m.panbrello)
+	return m.panbrello.Coalesce(input)
 }
 
 // TremorMem returns the Tremor object

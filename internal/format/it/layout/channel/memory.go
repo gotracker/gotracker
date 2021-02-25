@@ -3,6 +3,7 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
+	"gotracker/internal/format/internal/effect"
 	"gotracker/internal/format/internal/memory"
 	formatutil "gotracker/internal/format/internal/util"
 	oscillatorImpl "gotracker/internal/oscillator"
@@ -41,7 +42,7 @@ type Memory struct {
 	// EFGLinkMode will make effects Exx, Fxx, and Gxx share the same memory
 	EFGLinkMode bool
 
-	tremorMem           formatutil.Tremor
+	tremorMem           effect.Tremor
 	vibratoOscillator   oscillator.Oscillator
 	tremoloOscillator   oscillator.Oscillator
 	panbrelloOscillator oscillator.Oscillator
@@ -148,7 +149,7 @@ func (m *Memory) Panbrello(input uint8) uint8 {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *formatutil.Tremor {
+func (m *Memory) TremorMem() *effect.Tremor {
 	return &m.tremorMem
 }
 

@@ -3,6 +3,7 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
+	"gotracker/internal/format/internal/effect"
 	"gotracker/internal/format/internal/memory"
 	formatutil "gotracker/internal/format/internal/util"
 	oscillatorImpl "gotracker/internal/oscillator"
@@ -32,7 +33,7 @@ type Memory struct {
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
 
-	tremorMem         formatutil.Tremor
+	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
@@ -135,7 +136,7 @@ func (m *Memory) ExtraFinePortaDown(input uint8) uint8 {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *formatutil.Tremor {
+func (m *Memory) TremorMem() *effect.Tremor {
 	return &m.tremorMem
 }
 

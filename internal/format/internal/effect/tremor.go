@@ -1,4 +1,4 @@
-package util
+package effect
 
 // Tremor is the storage object for the tremor values
 type Tremor struct {

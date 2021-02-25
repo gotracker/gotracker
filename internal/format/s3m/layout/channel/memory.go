@@ -3,6 +3,7 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
+	"gotracker/internal/format/internal/effect"
 	"gotracker/internal/format/internal/memory"
 	formatutil "gotracker/internal/format/internal/util"
 	oscillatorImpl "gotracker/internal/oscillator"
@@ -23,7 +24,7 @@ type Memory struct {
 	VolSlideEveryFrame  bool
 	LowPassFilterEnable bool
 
-	tremorMem         formatutil.Tremor
+	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
@@ -83,7 +84,7 @@ func (m *Memory) LastNonZeroXY(input uint8) (uint8, uint8) {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *formatutil.Tremor {
+func (m *Memory) TremorMem() *effect.Tremor {
 	return &m.tremorMem
 }
 

@@ -45,6 +45,7 @@ type Song struct {
 	Patterns          []pattern.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []intf.PatternIdx
+	FilterPlugins     map[int]intf.FilterFactory
 }
 
 // GetOrderList returns the list of all pattern orders for the song

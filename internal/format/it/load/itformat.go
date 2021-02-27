@@ -1,11 +1,17 @@
 package load
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
+	"fmt"
+	"strconv"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
+	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/format/internal/filter"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/it/layout"
 	"gotracker/internal/format/it/layout/channel"
@@ -95,6 +101,18 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
 		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]intf.PatternIdx, int(f.Head.OrderCount)),
+		FilterPlugins:     make(map[int]intf.FilterFactory),
+	}
+
+	for _, block := range f.Blocks {
+		switch t := block.(type) {
+		case *itblock.FX:
+			if filter, err := decodeFilter(t); err == nil {
+				if i, err := strconv.Atoi(string(t.Identifier[2:])); err == nil {
+					song.FilterPlugins[i] = filter
+				}
+			}
+		}
 	}
 
 	for i := 0; i < int(f.Head.OrderCount); i++ {
@@ -115,7 +133,7 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins)
 				if err != nil {
 					return nil, err
 				}
@@ -166,6 +184,22 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 	song.ChannelSettings = channels
 
 	return &song, nil
+}
+
+func decodeFilter(f *itblock.FX) (intf.FilterFactory, error) {
+	lib := f.LibraryName.String()
+	name := f.UserPluginName.String()
+	switch {
+	case lib == "Echo" && name == "Echo":
+		r := bytes.NewReader(f.Data)
+		e := filter.EchoFilterFactory{}
+		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
+			return nil, err
+		}
+		return e.Factory(), nil
+	default:
+		return nil, fmt.Errorf("unhandled fx lib[%s] name[%s]", lib, name)
+	}
 }
 
 type noteRemap struct {

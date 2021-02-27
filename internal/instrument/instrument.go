@@ -23,6 +23,7 @@ type StaticValues struct {
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
 	FilterFactory      intf.FilterFactory
+	PluginFilter       intf.FilterFactory
 }
 
 // Instrument is the mildly-decoded instrument/sample header
@@ -113,6 +114,11 @@ func (inst *Instrument) GetData() intf.InstrumentDataIntf {
 // GetFilterFactory returns the factory for the channel filter
 func (inst *Instrument) GetFilterFactory() intf.FilterFactory {
 	return inst.Static.FilterFactory
+}
+
+// GetPluginFilterFactory returns the factory for the channel plugin filter
+func (inst *Instrument) GetPluginFilterFactory() intf.FilterFactory {
+	return inst.Static.PluginFilter
 }
 
 // GetAutoVibrato returns the settings for the autovibrato system

@@ -41,6 +41,7 @@ type Instrument interface {
 	GetNewNoteAction() note.Action
 	GetData() InstrumentDataIntf
 	GetFilterFactory() FilterFactory
+	GetPluginFilterFactory() FilterFactory
 	GetAutoVibrato() voice.AutoVibrato
 	IsReleaseNote(note.Note) bool
 	IsStopNote(note.Note) bool

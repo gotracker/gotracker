@@ -125,17 +125,26 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]intf.FilterFactory) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
 		return nil, err
 	}
 
-	var channelFilterFactory func(sampleRate float32) intf.Filter
+	var (
+		channelFilterFactory intf.FilterFactory
+		pluginFilterFactory  intf.FilterFactory
+	)
 	if inst.InitialFilterResonance != 0 {
 		channelFilterFactory = func(sampleRate float32) intf.Filter {
 			return filter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
+		}
+	}
+
+	if inst.MidiChannel >= 0x81 {
+		if pf, ok := pluginFilters[int(inst.MidiChannel)-0x81]; ok && pf != nil {
+			pluginFilterFactory = pf
 		}
 	}
 
@@ -151,6 +160,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		ii := instrument.Instrument{
 			Static: instrument.StaticValues{
 				FilterFactory: channelFilterFactory,
+				PluginFilter:  pluginFilterFactory,
 			},
 			Inst: &id,
 		}

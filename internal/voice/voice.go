@@ -11,9 +11,15 @@ import (
 func New(inst intf.Instrument, output *intf.OutputChannel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
-		var voiceFilter intf.Filter
+		var (
+			voiceFilter  intf.Filter
+			pluginFilter intf.Filter
+		)
 		if factory := inst.GetFilterFactory(); factory != nil {
 			voiceFilter = factory(output.Playback.GetSampleRate())
+		}
+		if factory := inst.GetPluginFilterFactory(); factory != nil {
+			pluginFilter = factory(output.Playback.GetSampleRate())
 		}
 		return NewPCM(PCMConfiguration{
 			C2SPD:         inst.GetC2Spd(),
@@ -22,6 +28,7 @@ func New(inst intf.Instrument, output *intf.OutputChannel) voice.Voice {
 			DataIntf:      data,
 			OutputFilter:  output,
 			VoiceFilter:   voiceFilter,
+			PluginFilter:  pluginFilter,
 		})
 	case *instrument.OPL2:
 		return NewOPL2(OPLConfiguration{

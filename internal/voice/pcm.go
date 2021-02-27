@@ -39,6 +39,7 @@ type PCMConfiguration struct {
 	DataIntf      intf.InstrumentDataIntf
 	OutputFilter  voice.FilterApplier
 	VoiceFilter   intf.Filter
+	PluginFilter  intf.Filter
 }
 
 // == the actual pcm voice ==
@@ -48,6 +49,7 @@ type pcmVoice struct {
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
 	voiceFilter   intf.Filter
+	pluginFilter  intf.Filter
 	fadeoutMode   fadeout.Mode
 
 	active    bool
@@ -74,6 +76,7 @@ func NewPCM(config PCMConfiguration) voice.Voice {
 		initialVolume: config.InitialVolume,
 		outputFilter:  config.OutputFilter,
 		voiceFilter:   config.VoiceFilter,
+		pluginFilter:  config.PluginFilter,
 		active:        true,
 	}
 
@@ -160,6 +163,9 @@ func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 	wet := dry.ApplyInSitu(vol)
 	if v.voiceFilter != nil {
 		wet = v.voiceFilter.Filter(wet)
+	}
+	if v.pluginFilter != nil {
+		wet = v.pluginFilter.Filter(wet)
 	}
 	return wet
 }

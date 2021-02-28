@@ -39,7 +39,7 @@ type Manager struct {
 }
 
 // NewManager creates a new manager for an S3M song
-func NewManager(song *layout.Song) *Manager {
+func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
 			BaseClockRate: util.S3MBaseClock,
@@ -102,9 +102,11 @@ func NewManager(song *layout.Song) *Manager {
 	txn.Ticks.Set(song.Head.InitialSpeed)
 	txn.Tempo.Set(song.Head.InitialTempo)
 
-	txn.Commit()
+	if err := txn.Commit(); err != nil {
+		return nil, err
+	}
 
-	return &m
+	return &m, nil
 }
 
 // SetupSampler configures the internal sampler
@@ -145,7 +147,7 @@ func (m *Manager) SetNumChannels(num int) {
 }
 
 // SetNextOrder sets the next order index
-func (m *Manager) SetNextOrder(order intf.OrderIdx) {
+func (m *Manager) SetNextOrder(order intf.OrderIdx) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextOrder(order)
 	} else {
@@ -153,12 +155,15 @@ func (m *Manager) SetNextOrder(order intf.OrderIdx) {
 		defer rowTxn.Cancel()
 
 		rowTxn.SetNextOrder(order)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // SetNextRow sets the next row index
-func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) {
+func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextRow(row, opts...)
 	} else {
@@ -166,8 +171,11 @@ func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) {
 		defer rowTxn.Cancel()
 
 		rowTxn.SetNextRow(row, opts...)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // SetTempo sets the desired tempo for the song

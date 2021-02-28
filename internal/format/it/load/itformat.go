@@ -170,9 +170,10 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 			ChannelVolume:    volume.Volume(f.Head.ChannelVol[chNum].Value()),
 			InitialPanning:   util.PanningFromIt(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
-				LinearFreqSlides: linearFrequencySlides,
-				OldEffectMode:    oldEffectMode,
-				EFGLinkMode:      efgLinkMode,
+				LinearFreqSlides:           linearFrequencySlides,
+				OldEffectMode:              oldEffectMode,
+				EFGLinkMode:                efgLinkMode,
+				ResetMemoryAtStartOfOrder0: true,
 			},
 		}
 

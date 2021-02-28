@@ -19,8 +19,8 @@ type Playback interface {
 
 	GetNumChannels() int
 	GetNumOrders() int
-	SetNextOrder(OrderIdx)
-	SetNextRow(RowIdx, ...bool)
+	SetNextOrder(OrderIdx) error
+	SetNextRow(RowIdx, ...bool) error
 	GetCurrentRow() RowIdx
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)

@@ -21,7 +21,7 @@ func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	y := xy & 0x0f
 	row := intf.RowIdx(x*10 + y)
 	p.BreakOrder()
-	p.SetNextRow(row)
+	_ = p.SetNextRow(row)
 }
 
 func (e RowJump) String() string {

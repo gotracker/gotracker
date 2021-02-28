@@ -75,10 +75,16 @@ func main() {
 		}
 	}
 	if startingOrder != -1 {
-		playback.SetNextOrder(intf.OrderIdx(startingOrder))
+		if err := playback.SetNextOrder(intf.OrderIdx(startingOrder)); err != nil {
+			log.Fatalf("Could not set starting order! err[%v]", err)
+			return
+		}
 	}
 	if startingRow != -1 {
-		playback.SetNextRow(intf.RowIdx(startingRow))
+		if err := playback.SetNextRow(intf.RowIdx(startingRow)); err != nil {
+			log.Fatalf("Could not set starting row! err[%v]", err)
+			return
+		}
 	}
 
 	var (

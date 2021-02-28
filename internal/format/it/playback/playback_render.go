@@ -63,7 +63,10 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 		postMixRowTxn.AdvanceRow = true
 	}
 
-	postMixRowTxn.Commit()
+	if err := postMixRowTxn.Commit(); err != nil {
+		return nil, err
+	}
+
 	return premix, nil
 }
 

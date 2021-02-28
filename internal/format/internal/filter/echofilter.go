@@ -58,25 +58,31 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	}
 
 	for c := range wet {
-		var w volume.Volume
+		var buf []volume.Volume
 		switch c {
 		case 0:
 			if len(e.delayBufL) >= ldelay {
 				pos := len(e.delayBufL) - ldelay
 				e.delayBufL = e.delayBufL[pos:]
-				w = e.delayBufL[0]
 			}
+			buf = e.delayBufL
 		case 1:
 			if len(e.delayBufR) >= rdelay {
 				pos := len(e.delayBufR) - rdelay
 				e.delayBufR = e.delayBufR[pos:]
-				w = e.delayBufR[0]
 			}
+			buf = e.delayBufR
 		}
+		if buf == nil {
+			continue
+		}
+
 		// Calculate the mix
-		wetPre := w * feedback
+		wetPre := buf[0]
 		dryPre := dry[c]
-		wet[c] = dryPre*dryMix + wetPre*wetMix
+		w := dryPre*dryMix + wetPre*wetMix
+		wet[c] = w
+		buf[len(buf)-1] += w * feedback
 	}
 
 	return wet

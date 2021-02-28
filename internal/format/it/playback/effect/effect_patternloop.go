@@ -32,7 +32,7 @@ func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 			pl.Count = 0
 		}
 		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
-			p.SetNextRow(row, true)
+			_ = p.SetNextRow(row, true)
 		}
 	}
 }

@@ -32,6 +32,8 @@ type Memory struct {
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
+	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
+	ResetMemoryAtStartOfOrder0 bool
 
 	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
@@ -160,4 +162,28 @@ func (m *Memory) Retrigger() {
 // GetPatternLoop returns the pattern loop object from the memory
 func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 	return &m.patternLoop
+}
+
+// StartOrder is called when the first order's row at tick 0 is started
+func (m *Memory) StartOrder() {
+	if m.ResetMemoryAtStartOfOrder0 {
+		m.portaToNote = 0
+		m.vibrato = 0
+		m.vibratoSpeed = 0
+		m.sampleOffset = 0
+		m.tempoDecrease = 0
+		m.tempoIncrease = 0
+		m.portaDown = 0
+		m.portaUp = 0
+		m.tremolo = 0
+		m.tremor = 0
+		m.volumeSlide = 0
+		m.globalVolumeSlide = 0
+		m.finePortaUp = 0
+		m.finePortaDown = 0
+		m.fineVolumeSlideUp = 0
+		m.fineVolumeSlideDown = 0
+		m.extraFinePortaUp = 0
+		m.extraFinePortaDown = 0
+	}
 }

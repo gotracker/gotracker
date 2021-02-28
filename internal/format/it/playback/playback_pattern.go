@@ -82,9 +82,20 @@ func (m *Manager) processPatternRow() error {
 		}
 	}
 
+	var resetMemory bool
+	if myCurrentRow == 0 {
+		if myCurrentOrder := m.pattern.GetCurrentOrder(); myCurrentOrder == 0 {
+			resetMemory = true
+		}
+	}
+
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		cs.TrackData = nil
+		if resetMemory {
+			mem := cs.GetMemory()
+			mem.StartOrder()
+		}
 	}
 
 	// generate effects and run prestart
@@ -109,7 +120,9 @@ func (m *Manager) processPatternRow() error {
 		}
 	}
 
-	preMixRowTxn.Commit()
+	if err := preMixRowTxn.Commit(); err != nil {
+		return err
+	}
 
 	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
 

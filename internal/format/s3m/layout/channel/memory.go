@@ -23,6 +23,8 @@ type Memory struct {
 
 	VolSlideEveryFrame  bool
 	LowPassFilterEnable bool
+	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
+	ResetMemoryAtStartOfOrder0 bool
 
 	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
@@ -108,4 +110,19 @@ func (m *Memory) Retrigger() {
 // GetPatternLoop returns the pattern loop object from the memory
 func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 	return &m.patternLoop
+}
+
+// StartOrder is called when the first order's row at tick 0 is started
+func (m *Memory) StartOrder() {
+	if m.ResetMemoryAtStartOfOrder0 {
+		m.portaToNote = 0
+		m.vibratoSpeed = 0
+		m.vibratoDepth = 0
+		m.tremoloSpeed = 0
+		m.tremoloDepth = 0
+		m.sampleOffset = 0
+		m.tempoDecrease = 0
+		m.tempoIncrease = 0
+		m.lastNonZero = 0
+	}
 }

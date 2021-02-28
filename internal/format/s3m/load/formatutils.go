@@ -13,7 +13,7 @@ func load(filename string, reader readerFunc) (*playback.Manager, error) {
 		return nil, err
 	}
 
-	m := playback.NewManager(s3mSong)
+	m, err := playback.NewManager(s3mSong)
 
-	return m, nil
+	return m, err
 }

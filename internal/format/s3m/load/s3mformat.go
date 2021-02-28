@@ -318,8 +318,9 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 			InitialVolume:    util.DefaultVolume,
 			InitialPanning:   util.DefaultPanning,
 			Memory: channel.Memory{
-				VolSlideEveryFrame:  st300volSlides,
-				LowPassFilterEnable: sbFilterEnable,
+				VolSlideEveryFrame:         st300volSlides,
+				LowPassFilterEnable:        sbFilterEnable,
+				ResetMemoryAtStartOfOrder0: true,
 			},
 		}
 

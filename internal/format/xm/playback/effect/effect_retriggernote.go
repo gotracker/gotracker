@@ -12,15 +12,16 @@ import (
 type RetriggerNote uint8 // 'E9x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetriggerNote) Start(cs intf.Channel, p intf.Playback) {
+func (e RetriggerNote) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 // Tick is called on every tick
-func (e RetriggerNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e RetriggerNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	y := uint8(e) & 0x0F
 	if y == 0 {
-		return
+		return nil
 	}
 
 	rt := cs.GetRetriggerCount() + 1
@@ -29,6 +30,7 @@ func (e RetriggerNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
 		cs.SetPos(sampling.Pos{})
 		cs.ResetRetriggerCount()
 	}
+	return nil
 }
 
 func (e RetriggerNote) String() string {

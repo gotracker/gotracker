@@ -11,13 +11,14 @@ import (
 type FinePatternDelay uint8 // 'S6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePatternDelay) Start(cs intf.Channel, p intf.Playback) {
+func (e FinePatternDelay) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
 
 	m := p.(effectIntf.S3M)
 	m.AddRowTicks(int(x))
+	return nil
 }
 
 func (e FinePatternDelay) String() string {

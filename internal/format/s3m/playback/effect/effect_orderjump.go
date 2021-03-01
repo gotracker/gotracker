@@ -10,13 +10,14 @@ import (
 type OrderJump uint8 // 'B'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e OrderJump) Start(cs intf.Channel, p intf.Playback) {
+func (e OrderJump) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e OrderJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
-	_ = p.SetNextOrder(intf.OrderIdx(e))
+func (e OrderJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) error {
+	return p.SetNextOrder(intf.OrderIdx(e))
 }
 
 func (e OrderJump) String() string {

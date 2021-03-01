@@ -11,13 +11,14 @@ import (
 type SetCoarsePanPosition uint8 // 'E8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetCoarsePanPosition) Start(cs intf.Channel, p intf.Playback) {
+func (e SetCoarsePanPosition) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xy := uint8(e)
 	y := xy & 0x0F
 
 	cs.SetPan(util.PanningFromXm(y << 4))
+	return nil
 }
 
 func (e SetCoarsePanPosition) String() string {

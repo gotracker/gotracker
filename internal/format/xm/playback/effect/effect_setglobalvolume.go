@@ -11,14 +11,16 @@ import (
 type SetGlobalVolume uint8 // 'G'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetGlobalVolume) PreStart(cs intf.Channel, p intf.Playback) {
+func (e SetGlobalVolume) PreStart(cs intf.Channel, p intf.Playback) error {
 	v := util.VolumeXM(e)
 	p.SetGlobalVolume(v.Volume())
+	return nil
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetGlobalVolume) Start(cs intf.Channel, p intf.Playback) {
+func (e SetGlobalVolume) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 func (e SetGlobalVolume) String() string {

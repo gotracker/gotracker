@@ -10,13 +10,15 @@ import (
 type NoteDelay uint8 // 'EDx'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e NoteDelay) PreStart(cs intf.Channel, p intf.Playback) {
+func (e NoteDelay) PreStart(cs intf.Channel, p intf.Playback) error {
 	cs.SetNotePlayTick(true, int(uint8(e)&0x0F))
+	return nil
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NoteDelay) Start(cs intf.Channel, p intf.Playback) {
+func (e NoteDelay) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 func (e NoteDelay) String() string {

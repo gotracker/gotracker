@@ -13,7 +13,7 @@ import (
 type SampleOffset uint8 // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SampleOffset) Start(cs intf.Channel, p intf.Playback) {
+func (e SampleOffset) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.SampleOffset(uint8(e))
@@ -26,6 +26,7 @@ func (e SampleOffset) Start(cs intf.Channel, p intf.Playback) {
 	} else {
 		cs.SetTargetPos(pos)
 	}
+	return nil
 }
 
 func (e SampleOffset) String() string {

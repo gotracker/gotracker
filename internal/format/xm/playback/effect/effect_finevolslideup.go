@@ -11,14 +11,14 @@ import (
 type FineVolumeSlideUp uint8 // 'EAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideUp) Start(cs intf.Channel, p intf.Playback) {
+func (e FineVolumeSlideUp) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory().(*channel.Memory)
 	xy := mem.FineVolumeSlideUp(uint8(e))
 	y := uint8(xy & 0x0F)
 
-	doVolSlide(cs, float32(y), 1.0)
+	return doVolSlide(cs, float32(y), 1.0)
 }
 
 func (e FineVolumeSlideUp) String() string {

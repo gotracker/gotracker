@@ -99,7 +99,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 }
 
 // SetTicks sets the number of ticks the row expects to play for
-func (m *Manager) SetTicks(ticks int) {
+func (m *Manager) SetTicks(ticks int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.Ticks.Set(ticks)
 	} else {
@@ -107,12 +107,16 @@ func (m *Manager) SetTicks(ticks int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.Ticks.Set(ticks)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // AddRowTicks increases the number of ticks the row expects to play for
-func (m *Manager) AddRowTicks(ticks int) {
+func (m *Manager) AddRowTicks(ticks int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.FinePatternDelay.Set(ticks)
 	} else {
@@ -120,13 +124,17 @@ func (m *Manager) AddRowTicks(ticks int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.FinePatternDelay.Set(ticks)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // SetPatternDelay sets the repeat number for the row to `rept`
 // NOTE: this may be set 1 time (first in wins) and will be reset only by the next row being read in
-func (m *Manager) SetPatternDelay(rept int) {
+func (m *Manager) SetPatternDelay(rept int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.SetPatternDelay(rept)
 	} else {
@@ -134,6 +142,10 @@ func (m *Manager) SetPatternDelay(rept int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.SetPatternDelay(rept)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }

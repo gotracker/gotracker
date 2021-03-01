@@ -285,7 +285,9 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 					return err
 				}
 			}
-			state.setCurrentRow(rowIdx)
+			if err := state.setCurrentRow(rowIdx); err != nil {
+				return err
+			}
 		}
 	} else if txn.BreakOrder {
 		if err := state.nextOrder(true); err != nil {

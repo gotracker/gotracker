@@ -179,7 +179,7 @@ func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) error {
 }
 
 // SetTempo sets the desired tempo for the song
-func (m *Manager) SetTempo(tempo int) {
+func (m *Manager) SetTempo(tempo int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.Tempo.Set(tempo)
 	} else {
@@ -187,12 +187,16 @@ func (m *Manager) SetTempo(tempo int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.Tempo.Set(tempo)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // DecreaseTempo reduces the tempo by the `delta` value
-func (m *Manager) DecreaseTempo(delta int) {
+func (m *Manager) DecreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(-delta)
 	} else {
@@ -200,12 +204,16 @@ func (m *Manager) DecreaseTempo(delta int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.AccTempoDelta(-delta)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // IncreaseTempo increases the tempo by the `delta` value
-func (m *Manager) IncreaseTempo(delta int) {
+func (m *Manager) IncreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(delta)
 	} else {
@@ -213,8 +221,12 @@ func (m *Manager) IncreaseTempo(delta int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.AccTempoDelta(delta)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // Configure sets specified features

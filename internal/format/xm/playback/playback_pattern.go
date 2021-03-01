@@ -120,7 +120,9 @@ func (m *Manager) processPatternRow() error {
 		}
 	}
 
-	preMixRowTxn.Commit()
+	if err := preMixRowTxn.Commit(); err != nil {
+		return err
+	}
 
 	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
 

@@ -11,7 +11,7 @@ import (
 type StereoControl uint8 // 'SAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e StereoControl) Start(cs intf.Channel, p intf.Playback) {
+func (e StereoControl) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -21,6 +21,7 @@ func (e StereoControl) Start(cs intf.Channel, p intf.Playback) {
 	} else {
 		cs.SetPan(util.PanningFromS3M(x + 8))
 	}
+	return nil
 }
 
 func (e StereoControl) String() string {

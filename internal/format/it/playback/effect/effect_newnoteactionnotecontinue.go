@@ -11,8 +11,9 @@ import (
 type NewNoteActionNoteContinue uint8 // 'S74'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NewNoteActionNoteContinue) Start(cs intf.Channel, p intf.Playback) {
+func (e NewNoteActionNoteContinue) Start(cs intf.Channel, p intf.Playback) error {
 	cs.SetNewNoteAction(note.ActionContinue)
+	return nil
 }
 
 func (e NewNoteActionNoteContinue) String() string {

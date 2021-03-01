@@ -10,10 +10,11 @@ import (
 type PitchEnvelopeOn uint8 // 'S7C'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PitchEnvelopeOn) Start(cs intf.Channel, p intf.Playback) {
+func (e PitchEnvelopeOn) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetPitchEnvelopeEnable(true)
+	return nil
 }
 
 func (e PitchEnvelopeOn) String() string {

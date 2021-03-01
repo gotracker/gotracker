@@ -10,12 +10,13 @@ import (
 type SetEnvelopePosition uint8 // 'Lxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetEnvelopePosition) Start(cs intf.Channel, p intf.Playback) {
+func (e SetEnvelopePosition) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)
 
 	cs.SetEnvelopePosition(int(xx))
+	return nil
 }
 
 func (e SetEnvelopePosition) String() string {

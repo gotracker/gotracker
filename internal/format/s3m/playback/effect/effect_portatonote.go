@@ -13,34 +13,36 @@ import (
 type PortaToNote uint8 // 'G'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) {
+func (e PortaToNote) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd, ok := cs.GetData().(*channel.Data); ok && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetNotePlayTick(false, 0)
 	}
+	return nil
 }
 
 // Tick is called on every tick
-func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e PortaToNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory().(*channel.Memory)
 	xx := mem.PortaToNote(uint8(e))
 
 	// vibrato modifies current period for portamento
 	period := cs.GetPeriod()
 	if period == nil {
-		return
+		return nil
 	}
 	period = period.AddDelta(cs.GetPeriodDelta()).(note.Period)
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
-			doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
+			return doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
-			doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
+			return doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
 		}
 	}
+	return nil
 }
 
 func (e PortaToNote) String() string {

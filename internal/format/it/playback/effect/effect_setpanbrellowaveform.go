@@ -13,7 +13,7 @@ import (
 type SetPanbrelloWaveform uint8 // 'S5x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanbrelloWaveform) Start(cs intf.Channel, p intf.Playback) {
+func (e SetPanbrelloWaveform) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf
@@ -21,6 +21,7 @@ func (e SetPanbrelloWaveform) Start(cs intf.Channel, p intf.Playback) {
 	mem := cs.GetMemory().(*channel.Memory)
 	panb := mem.PanbrelloOscillator()
 	panb.SetWaveform(oscillator.WaveTableSelect(x))
+	return nil
 }
 
 func (e SetPanbrelloWaveform) String() string {

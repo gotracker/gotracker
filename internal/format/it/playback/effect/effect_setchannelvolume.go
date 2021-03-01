@@ -13,7 +13,7 @@ import (
 type SetChannelVolume uint8 // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetChannelVolume) Start(cs intf.Channel, p intf.Playback) {
+func (e SetChannelVolume) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)
@@ -26,6 +26,7 @@ func (e SetChannelVolume) Start(cs intf.Channel, p intf.Playback) {
 	}
 
 	cs.SetChannelVolume(vol)
+	return nil
 }
 
 func (e SetChannelVolume) String() string {

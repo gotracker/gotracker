@@ -11,7 +11,7 @@ import (
 type PanSlide uint8 // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide) Start(cs intf.Channel, p intf.Playback) {
+func (e PanSlide) Start(cs intf.Channel, p intf.Playback) error {
 	xx := uint8(e)
 	x := xx >> 4
 	y := xx & 0x0F
@@ -33,6 +33,7 @@ func (e PanSlide) Start(cs intf.Channel, p intf.Playback) {
 		}
 	}
 	cs.SetPan(util.PanningFromXm(xp))
+	return nil
 }
 
 func (e PanSlide) String() string {

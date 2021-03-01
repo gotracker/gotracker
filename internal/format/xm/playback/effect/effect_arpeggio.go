@@ -10,22 +10,23 @@ import (
 type Arpeggio uint8 // '0'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) {
+func (e Arpeggio) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	cs.SetPos(cs.GetTargetPos())
+	return nil
 }
 
 // Tick is called on every tick
-func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e Arpeggio) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	xy := uint8(e)
 	if xy == 0 {
-		return
+		return nil
 	}
 
 	x := int8(xy >> 4)
 	y := int8(xy & 0x0f)
-	doArpeggio(cs, currentTick, x, y)
+	return doArpeggio(cs, currentTick, x, y)
 }
 
 func (e Arpeggio) String() string {

@@ -11,7 +11,7 @@ import (
 type PatternLoop uint8 // 'E6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
+func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xF
@@ -29,9 +29,10 @@ func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
 			pl.Count = 0
 		}
 		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
-			_ = p.SetNextRow(row, true)
+			return p.SetNextRow(row, true)
 		}
 	}
+	return nil
 }
 
 func (e PatternLoop) String() string {

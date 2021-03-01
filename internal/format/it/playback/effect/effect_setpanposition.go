@@ -13,7 +13,7 @@ import (
 type SetPanPosition uint8 // 'Xxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs intf.Channel, p intf.Playback) {
+func (e SetPanPosition) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e)
@@ -21,6 +21,7 @@ func (e SetPanPosition) Start(cs intf.Channel, p intf.Playback) {
 	pan := itfile.PanValue(x)
 
 	cs.SetPan(util.PanningFromIt(pan))
+	return nil
 }
 
 func (e SetPanPosition) String() string {

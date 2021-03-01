@@ -10,10 +10,11 @@ import (
 type VolumeEnvelopeOff uint8 // 'S77'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeEnvelopeOff) Start(cs intf.Channel, p intf.Playback) {
+func (e VolumeEnvelopeOff) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetVolumeEnvelopeEnable(false)
+	return nil
 }
 
 func (e VolumeEnvelopeOff) String() string {

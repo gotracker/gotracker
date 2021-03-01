@@ -11,12 +11,13 @@ import (
 type PatternLoop uint8 // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) {
+func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
+func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) error {
 	x := uint8(e) & 0xF
 
 	mem := cs.GetMemory().(*channel.Memory)
@@ -32,9 +33,10 @@ func (e PatternLoop) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 			pl.Count = 0
 		}
 		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
-			_ = p.SetNextRow(row, true)
+			return p.SetNextRow(row, true)
 		}
 	}
+	return nil
 }
 
 func (e PatternLoop) String() string {

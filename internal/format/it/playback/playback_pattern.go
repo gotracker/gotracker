@@ -116,7 +116,9 @@ func (m *Manager) processPatternRow() error {
 			if m.OnEffect != nil {
 				m.OnEffect(cs.ActiveEffect)
 			}
-			intf.EffectPreStart(cs.ActiveEffect, cs, m)
+			if err := intf.EffectPreStart(cs.ActiveEffect, cs, m); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -10,13 +10,13 @@ import (
 type ExtraFinePortaDown uint8 // 'EEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaDown) Start(cs intf.Channel, p intf.Playback) {
+func (e ExtraFinePortaDown) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
 	y := uint8(e) & 0x0F
 
-	doPortaDown(cs, float32(y), 1)
+	return doPortaDown(cs, float32(y), 1)
 }
 
 func (e ExtraFinePortaDown) String() string {

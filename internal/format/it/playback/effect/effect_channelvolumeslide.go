@@ -13,7 +13,7 @@ import (
 type ChannelVolumeSlide uint8 // 'Nxy'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ChannelVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
+func (e ChannelVolumeSlide) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory().(*channel.Memory)
@@ -35,10 +35,11 @@ func (e ChannelVolumeSlide) Start(cs intf.Channel, p intf.Playback) {
 		}
 		cs.SetChannelVolume(vol)
 	}
+	return nil
 }
 
 // Tick is called on every tick
-func (e ChannelVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e ChannelVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory().(*channel.Memory)
 	x, y := mem.ChannelVolumeSlide(uint8(e))
 
@@ -59,6 +60,7 @@ func (e ChannelVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick i
 	case y == 0xF, x == 0xF:
 		// nothing
 	}
+	return nil
 }
 
 func (e ChannelVolumeSlide) String() string {

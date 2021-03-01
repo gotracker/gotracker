@@ -11,26 +11,28 @@ import (
 type VolumeSlide uint8 // 'A'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlide) Start(cs intf.Channel, p intf.Playback) {
+func (e VolumeSlide) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
+	return nil
 }
 
 // Tick is called on every tick
-func (e VolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) {
+func (e VolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory().(*channel.Memory)
 	x, y := mem.VolumeSlide(uint8(e))
 
 	if currentTick == 0 {
-		return
+		return nil
 	}
 
 	if x == 0 {
 		// vol slide down
-		doVolSlide(cs, -float32(y), 1.0)
+		return doVolSlide(cs, -float32(y), 1.0)
 	} else if y == 0 {
 		// vol slide up
-		doVolSlide(cs, float32(y), 1.0)
+		return doVolSlide(cs, float32(y), 1.0)
 	}
+	return nil
 }
 
 func (e VolumeSlide) String() string {

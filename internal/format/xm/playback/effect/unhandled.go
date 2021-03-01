@@ -14,10 +14,11 @@ type UnhandledCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand) PreStart(cs intf.Channel, p intf.Playback) {
+func (e UnhandledCommand) PreStart(cs intf.Channel, p intf.Playback) error {
 	if !p.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
+	return nil
 }
 
 func (e UnhandledCommand) String() string {
@@ -37,10 +38,11 @@ type UnhandledVolCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand) PreStart(cs intf.Channel, p intf.Playback) {
+func (e UnhandledVolCommand) PreStart(cs intf.Channel, p intf.Playback) error {
 	if !p.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
+	return nil
 }
 
 func (e UnhandledVolCommand) String() string {

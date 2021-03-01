@@ -11,14 +11,14 @@ import (
 type ExtraFinePortaUp uint8 // 'FEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) {
+func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
 	mem := cs.GetMemory().(*channel.Memory)
 	y := mem.PortaUp(uint8(e)) & 0x0F
 
-	doPortaUp(cs, float32(y), 1, mem.LinearFreqSlides)
+	return doPortaUp(cs, float32(y), 1, mem.LinearFreqSlides)
 }
 
 func (e ExtraFinePortaUp) String() string {

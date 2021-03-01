@@ -19,7 +19,7 @@ func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	r := uint8(e)
 	rowIdx := intf.RowIdx((r >> 4) * 10)
 	rowIdx += intf.RowIdx(r & 0xf)
-	p.SetNextRow(rowIdx)
+	_ = p.SetNextRow(rowIdx)
 }
 
 func (e RowJump) String() string {

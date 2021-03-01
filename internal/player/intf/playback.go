@@ -27,7 +27,7 @@ type Playback interface {
 	Configure([]feature.Feature)
 	GetName() string
 	CanOrderLoop() bool
-	BreakOrder()
+	BreakOrder() error
 	SetOnEffect(func(Effect))
 	IgnoreUnknownEffect() bool
 

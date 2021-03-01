@@ -20,7 +20,7 @@ func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) {
 	x := xy >> 4
 	y := xy & 0x0f
 	row := intf.RowIdx(x*10 + y)
-	p.BreakOrder()
+	_ = p.BreakOrder()
 	_ = p.SetNextRow(row)
 }
 

@@ -34,7 +34,7 @@ type Manager struct {
 }
 
 // NewManager creates a new manager for an XM song
-func NewManager(song *layout.Song) *Manager {
+func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
 			BaseClockRate: util.XMBaseClock,
@@ -72,9 +72,11 @@ func NewManager(song *layout.Song) *Manager {
 	txn.Ticks.Set(song.Head.InitialSpeed)
 	txn.Tempo.Set(song.Head.InitialTempo)
 
-	txn.Commit()
+	if err := txn.Commit(); err != nil {
+		return nil, err
+	}
 
-	return &m
+	return &m, nil
 }
 
 // GetNumChannels returns the number of channels
@@ -134,7 +136,7 @@ func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) error {
 }
 
 // BreakOrder breaks to the next pattern in the order
-func (m *Manager) BreakOrder() {
+func (m *Manager) BreakOrder() error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.BreakOrder = true
 	} else {
@@ -142,12 +144,16 @@ func (m *Manager) BreakOrder() {
 		defer rowTxn.Cancel()
 
 		rowTxn.BreakOrder = true
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // SetTempo sets the desired tempo for the song
-func (m *Manager) SetTempo(tempo int) {
+func (m *Manager) SetTempo(tempo int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.Tempo.Set(tempo)
 	} else {
@@ -155,12 +161,16 @@ func (m *Manager) SetTempo(tempo int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.Tempo.Set(tempo)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // DecreaseTempo reduces the tempo by the `delta` value
-func (m *Manager) DecreaseTempo(delta int) {
+func (m *Manager) DecreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(-delta)
 	} else {
@@ -168,12 +178,16 @@ func (m *Manager) DecreaseTempo(delta int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.AccTempoDelta(-delta)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // IncreaseTempo increases the tempo by the `delta` value
-func (m *Manager) IncreaseTempo(delta int) {
+func (m *Manager) IncreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(delta)
 	} else {
@@ -181,8 +195,12 @@ func (m *Manager) IncreaseTempo(delta int) {
 		defer rowTxn.Cancel()
 
 		rowTxn.AccTempoDelta(delta)
-		rowTxn.Commit()
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // Configure sets specified features

@@ -48,6 +48,8 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 
 	feedback := volume.Volume(e.Feedback)
 
+	crossEcho := e.PanDelay >= 0.5
+
 	for c, s := range dry {
 		switch c {
 		case 0:
@@ -59,14 +61,14 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 
 	for c := range wet {
 		var buf []volume.Volume
-		switch c {
-		case 0:
+		switch {
+		case (c == 0) || (crossEcho && c == 1):
 			if len(e.delayBufL) >= ldelay {
 				pos := len(e.delayBufL) - ldelay
 				e.delayBufL = e.delayBufL[pos:]
 			}
 			buf = e.delayBufL
-		case 1:
+		case (c == 1) || (crossEcho && c == 0):
 			if len(e.delayBufR) >= rdelay {
 				pos := len(e.delayBufR) - rdelay
 				e.delayBufR = e.delayBufR[pos:]

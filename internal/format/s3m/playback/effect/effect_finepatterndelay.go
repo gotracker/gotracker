@@ -17,8 +17,7 @@ func (e FinePatternDelay) Start(cs intf.Channel, p intf.Playback) error {
 	x := uint8(e) & 0xf
 
 	m := p.(effectIntf.S3M)
-	m.AddRowTicks(int(x))
-	return nil
+	return m.AddRowTicks(int(x))
 }
 
 func (e FinePatternDelay) String() string {

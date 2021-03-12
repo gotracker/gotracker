@@ -15,7 +15,9 @@ type SetTempo uint8 // 'T'
 func (e SetTempo) PreStart(cs intf.Channel, p intf.Playback) error {
 	if e > 0x20 {
 		m := p.(effectIntf.IT)
-		m.SetTempo(int(e))
+		if err := m.SetTempo(int(e)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -34,16 +36,22 @@ func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) error 
 		if currentTick != 0 {
 			mem := cs.GetMemory().(*channel.Memory)
 			val := int(mem.TempoDecrease(uint8(e & 0x0F)))
-			m.DecreaseTempo(val)
+			if err := m.DecreaseTempo(val); err != nil {
+				return err
+			}
 		}
 	case 1: // increase tempo
 		if currentTick != 0 {
 			mem := cs.GetMemory().(*channel.Memory)
 			val := int(mem.TempoIncrease(uint8(e & 0x0F)))
-			m.IncreaseTempo(val)
+			if err := m.IncreaseTempo(val); err != nil {
+				return err
+			}
 		}
 	default:
-		m.SetTempo(int(e))
+		if err := m.SetTempo(int(e)); err != nil {
+			return err
+		}
 	}
 	return nil
 }

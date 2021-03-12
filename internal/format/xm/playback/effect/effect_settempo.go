@@ -14,7 +14,9 @@ type SetTempo uint8 // 'F'
 func (e SetTempo) PreStart(cs intf.Channel, p intf.Playback) error {
 	if e > 0x20 {
 		m := p.(effectIntf.XM)
-		m.SetTempo(int(e))
+		if err := m.SetTempo(int(e)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -28,8 +30,7 @@ func (e SetTempo) Start(cs intf.Channel, p intf.Playback) error {
 // Tick is called on every tick
 func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
 	m := p.(effectIntf.XM)
-	m.SetTempo(int(e))
-	return nil
+	return m.SetTempo(int(e))
 }
 
 func (e SetTempo) String() string {

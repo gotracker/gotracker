@@ -14,7 +14,9 @@ type SetSpeed uint8 // 'A'
 func (e SetSpeed) PreStart(cs intf.Channel, p intf.Playback) error {
 	if e != 0 {
 		m := p.(effectIntf.IT)
-		m.SetTicks(int(e))
+		if err := m.SetTicks(int(e)); err != nil {
+			return err
+		}
 	}
 	return nil
 }

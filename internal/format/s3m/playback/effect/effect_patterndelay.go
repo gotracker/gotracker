@@ -13,8 +13,7 @@ type PatternDelay uint8 // 'SEx'
 // PreStart triggers when the effect enters onto the channel state
 func (e PatternDelay) PreStart(cs intf.Channel, p intf.Playback) error {
 	m := p.(effectIntf.S3M)
-	m.SetPatternDelay(int(uint8(e) & 0x0F))
-	return nil
+	return m.SetPatternDelay(int(uint8(e) & 0x0F))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called

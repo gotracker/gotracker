@@ -27,10 +27,12 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 	}
 }
 
-func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int, lastTick bool) {
+func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	intf.DoEffect(cs.ActiveEffect, cs, m, currentTick, lastTick)
+	if err := intf.DoEffect(cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+		return err
+	}
 	// post-effect
 	m.doNoteVolCalcs(cs)
 
@@ -80,6 +82,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			cs.SetPeriod(nil)
 		}
 	}
+	return nil
 }
 
 // SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments

@@ -88,7 +88,9 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 		cs := &m.channels[ch]
 		if m.song.IsChannelEnabled(ch) {
 
-			m.processEffect(ch, cs, tick, lastTick)
+			if err := m.processEffect(ch, cs, tick, lastTick); err != nil {
+				return err
+			}
 
 			rr, err := cs.RenderRowTick(m.rowRenderState.mix,
 				m.rowRenderState.panmixer,

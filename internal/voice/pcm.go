@@ -17,7 +17,7 @@ import (
 	"gotracker/internal/player/note"
 )
 
-// PCM is an PCM voice interface
+// PCM is a PCM voice interface
 type PCM interface {
 	voice.Voice
 	voice.Positioner

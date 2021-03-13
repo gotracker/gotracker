@@ -43,26 +43,28 @@ For a Windows build, we recommend the following:
 * Windows 2000 (or newer) - we used Windows 10 Pro (Windows 10 Version 20H2)
 * Visual Studio Code
   * Go extension for VSCode v0.19.0 (or newer) 
-  * Go v1.15.2 (though it will probably compile with Go v1.05 or newer)
+  * Go v1.16.2 (or newer)
 
 For a non-Windows (e.g.: Linux) build, we recommend the following:
 * Ubuntu 20.04 (or newer) - we used Ubuntu 20.04.1 LTS running in WSL2
-* Go v1.15.2 (or newer)
+* Go v1.16.2 (or newer)
 
 ### How to build (on Windows)
 
 1. First, load the project folder in VSCode.  If this is the first time you've ever opened a Go project, VSCode will splash up a thousand alerts asking to install various things for Go. Allow it to install them before continuing on.
 2. Next, open a Terminal for `powershell`.
-3. Enter the following command
+3. Enter the following commands
    ```powershell
+   go mod download
    go build
    ```
    When the command completes, you should now have the gotracker.exe file. Drag an .S3M file on top of it!
 
 ### How to build (on Linux)
 
-1. Build the player with the following command
+1. Build the player with the following commands
    ```bash
+   go mod download
    go build
    ```
 

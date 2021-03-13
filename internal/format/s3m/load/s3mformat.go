@@ -249,7 +249,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 	return pat, int(maxCh)
 }
 
-func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8) (*layout.Song, error) {
+func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8)
 	return &song, nil
 }
 
-func readS3M(filename string) (*layout.Song, error) {
+func readS3M(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -364,5 +364,5 @@ func readS3M(filename string) (*layout.Song, error) {
 
 	return convertS3MFileToSong(s, func(patNum int) uint8 {
 		return 64
-	})
+	}, preferredSampleFormat...)
 }

@@ -4,6 +4,8 @@ package s3m
 import (
 	"gotracker/internal/format/s3m/load"
 	"gotracker/internal/player/intf"
+
+	"github.com/gotracker/voice/pcm"
 )
 
 type format struct {
@@ -16,11 +18,11 @@ var (
 )
 
 // LoadMOD loads a MOD file and upgrades it into an S3M file internally
-func LoadMOD(filename string) (intf.Playback, error) {
-	return load.MOD(filename)
+func LoadMOD(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
+	return load.MOD(filename, preferredSampleFormat...)
 }
 
 // Load loads an S3M file into a playback system
-func (f format) Load(filename string) (intf.Playback, error) {
-	return load.S3M(filename)
+func (f format) Load(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
+	return load.S3M(filename, preferredSampleFormat...)
 }

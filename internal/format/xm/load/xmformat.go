@@ -256,7 +256,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
 	return pat, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -343,7 +343,7 @@ func convertXmFileToSong(f *xmfile.File) (*layout.Song, error) {
 	return &song, nil
 }
 
-func readXM(filename string) (*layout.Song, error) {
+func readXM(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -354,5 +354,5 @@ func readXM(filename string) (*layout.Song, error) {
 		return nil, err
 	}
 
-	return convertXmFileToSong(s)
+	return convertXmFileToSong(s, preferredSampleFormat...)
 }

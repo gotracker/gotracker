@@ -4,6 +4,8 @@ package it
 import (
 	"gotracker/internal/format/it/load"
 	"gotracker/internal/player/intf"
+
+	"github.com/gotracker/voice/pcm"
 )
 
 type format struct {
@@ -16,6 +18,6 @@ var (
 )
 
 // Load loads an IT file into a playback system
-func (f format) Load(filename string) (intf.Playback, error) {
-	return load.IT(filename)
+func (f format) Load(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
+	return load.IT(filename, preferredSampleFormat...)
 }

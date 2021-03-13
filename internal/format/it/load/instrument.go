@@ -31,7 +31,7 @@ type convInst struct {
 	NR   []noteRemap
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool) (map[int]*convInst, error) {
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool, preferredSampleFormat ...pcm.SampleDataFormat) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -80,7 +80,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides, preferredSampleFormat...); err != nil {
 			return nil, err
 		}
 
@@ -125,7 +125,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]intf.FilterFactory) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]intf.FilterFactory, preferredSampleFormat ...pcm.SampleDataFormat) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -181,7 +181,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		mixVol := volume.Volume(inst.GlobalVolume.Value())
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides, preferredSampleFormat...); err != nil {
 			return nil, err
 		}
 
@@ -321,7 +321,7 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDa
 	return pcm.SampleDataFormat8BitUnsigned
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool) error {
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool, preferredSampleFormat ...pcm.SampleDataFormat) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
 
@@ -418,7 +418,20 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		data = buf.Bytes()
 	}
 
-	id.Sample = pcm.NewSample(data, instLen, numChannels, format)
+	sf := format
+	if len(preferredSampleFormat) > 0 {
+		sf = preferredSampleFormat[0]
+	}
+	if sf == format {
+		id.Sample = pcm.NewSample(data, instLen, numChannels, format)
+	} else {
+		inSample := pcm.NewSample(data, instLen, numChannels, format)
+		outSample, err := pcm.ConvertTo(inSample, sf)
+		if err != nil {
+			return err
+		}
+		id.Sample = outSample
+	}
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()

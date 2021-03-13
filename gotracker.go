@@ -14,6 +14,7 @@ import (
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/voice/pcm"
 
 	"gotracker/internal/format"
 	itEffect "gotracker/internal/format/it/playback/effect"
@@ -28,13 +29,14 @@ import (
 
 // flags
 var (
-	outputSettings         device.Settings
-	startingOrder          int
-	startingRow            int
-	canLoop                bool
-	effectCoverage         bool
-	panicOnUnhandledEffect bool
-	profiler               bool
+	outputSettings           device.Settings
+	startingOrder            int
+	startingRow              int
+	canLoop                  bool
+	effectCoverage           bool
+	panicOnUnhandledEffect   bool
+	profiler                 bool
+	disablePreconvertSamples bool
 )
 
 func main() {
@@ -51,6 +53,7 @@ func main() {
 	flag.BoolVar(&effectCoverage, "E", false, "gather and display effect coverage data")
 	flag.BoolVar(&panicOnUnhandledEffect, "P", false, "panic when an unhandled effect is encountered")
 	flag.BoolVar(&profiler, "p", false, "enable profiler (and supporting http server)")
+	flag.BoolVar(&disablePreconvertSamples, "S", false, "disable preconversion of samples to 32-bit floats")
 
 	flag.Parse()
 
@@ -64,7 +67,12 @@ func main() {
 		return
 	}
 
-	playback, songFmt, err := format.Load(fn)
+	var preferredSampleFormat []pcm.SampleDataFormat
+	if !disablePreconvertSamples {
+		preferredSampleFormat = []pcm.SampleDataFormat{pcm.SampleDataFormat32BitLEFloat}
+	}
+
+	playback, songFmt, err := format.Load(fn, preferredSampleFormat...)
 	if err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
@@ -125,12 +133,8 @@ func main() {
 	}
 	defer waveOut.Close()
 
-	if !canLoop {
-		configuration = append(configuration, feature.SongLoop{Enabled: false})
-	}
-	if panicOnUnhandledEffect {
-		configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: true})
-	}
+	configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
+	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
 	playback.Configure(configuration)
 
 	var effectMap map[string]int

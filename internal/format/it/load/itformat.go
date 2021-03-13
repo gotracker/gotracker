@@ -86,7 +86,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern,
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, options *itFormatOptions) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func convertItFileToSong(f *itfile.File, preferredSampleFormat ...pcm.SampleData
 		for instNum, inst := range f.Instruments {
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, preferredSampleFormat...)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, options)
 				if err != nil {
 					return nil, err
 				}
@@ -134,7 +134,7 @@ func convertItFileToSong(f *itfile.File, preferredSampleFormat ...pcm.SampleData
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, preferredSampleFormat...)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, options)
 				if err != nil {
 					return nil, err
 				}
@@ -247,5 +247,11 @@ func readIT(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*la
 		return nil, err
 	}
 
-	return convertItFileToSong(s, preferredSampleFormat...)
+	options := itFormatOptions{}
+
+	if len(preferredSampleFormat) > 0 {
+		options.preferredSampleFormat.Set(preferredSampleFormat[0])
+	}
+
+	return convertItFileToSong(s, &options)
 }

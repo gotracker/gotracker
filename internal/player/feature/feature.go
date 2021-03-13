@@ -20,3 +20,7 @@ type PlayerSleepInterval struct {
 type IgnoreUnknownEffect struct {
 	Enabled bool
 }
+
+type PreConvertSamples struct {
+	Enabled bool
+}

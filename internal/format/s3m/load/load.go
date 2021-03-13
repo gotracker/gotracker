@@ -5,9 +5,11 @@ import (
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/load/modconv"
 	"gotracker/internal/player/intf"
+
+	"github.com/gotracker/voice/pcm"
 )
 
-func readMOD(filename string) (*layout.Song, error) {
+func readMOD(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -20,15 +22,15 @@ func readMOD(filename string) (*layout.Song, error) {
 
 	return convertS3MFileToSong(f, func(patNum int) uint8 {
 		return 64
-	})
+	}, preferredSampleFormat...)
 }
 
 // MOD loads a MOD file and upgrades it into an S3M file internally
-func MOD(filename string) (intf.Playback, error) {
-	return load(filename, readMOD)
+func MOD(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
+	return load(filename, readMOD, preferredSampleFormat...)
 }
 
 // S3M loads an S3M file into a new Playback object
-func S3M(filename string) (intf.Playback, error) {
-	return load(filename, readS3M)
+func S3M(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
+	return load(filename, readS3M, preferredSampleFormat...)
 }

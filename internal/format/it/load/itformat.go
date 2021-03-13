@@ -10,6 +10,7 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice/pcm"
 
 	"gotracker/internal/format/internal/filter"
 	formatutil "gotracker/internal/format/internal/util"
@@ -85,7 +86,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern,
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -123,7 +124,7 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 		for instNum, inst := range f.Instruments {
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, preferredSampleFormat...)
 				if err != nil {
 					return nil, err
 				}
@@ -133,7 +134,7 @@ func convertItFileToSong(f *itfile.File) (*layout.Song, error) {
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, preferredSampleFormat...)
 				if err != nil {
 					return nil, err
 				}
@@ -235,7 +236,7 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(filename string) (*layout.Song, error) {
+func readIT(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -246,5 +247,5 @@ func readIT(filename string) (*layout.Song, error) {
 		return nil, err
 	}
 
-	return convertItFileToSong(s)
+	return convertItFileToSong(s, preferredSampleFormat...)
 }

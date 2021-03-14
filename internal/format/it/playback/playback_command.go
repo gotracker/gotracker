@@ -5,8 +5,8 @@ import (
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
+	"gotracker/internal/song/note"
 )
 
 func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {

@@ -5,13 +5,13 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 // Playback is the information needed to make an instrument play
 type Playback struct {
-	Instrument intf.Instrument
+	Instrument song.Instrument
 	Period     note.Period
 	Volume     volume.Volume
 	Pos        sampling.Pos

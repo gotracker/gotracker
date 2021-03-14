@@ -1,11 +1,11 @@
-package intf
+package song
 
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // InstrumentID is an identifier for an instrument/sample that means something to the format

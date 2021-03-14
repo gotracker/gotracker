@@ -1,8 +1,8 @@
-package intf
+package song
 
 import (
 	"errors"
-	"gotracker/internal/index"
+	"gotracker/internal/song/index"
 )
 
 var (

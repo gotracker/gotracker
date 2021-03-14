@@ -7,7 +7,7 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel, delta float32, multiplier float32) error {

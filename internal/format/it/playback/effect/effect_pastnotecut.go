@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // PastNoteCut defines a past note cut effect

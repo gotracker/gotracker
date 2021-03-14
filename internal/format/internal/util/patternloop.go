@@ -1,6 +1,6 @@
 package util
 
-import "gotracker/internal/index"
+import "gotracker/internal/song/index"
 
 // PatternLoop is a state machine for pattern loops
 type PatternLoop struct {

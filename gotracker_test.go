@@ -9,6 +9,7 @@ import (
 	"gotracker/internal/format"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 
 	"github.com/gotracker/gosound"
 )
@@ -38,7 +39,7 @@ func BenchmarkPlayerS3M(b *testing.B) {
 			var premix *gosound.PremixData
 			premix, err = playback.Generate(now.Sub(lastTime))
 			if err != nil {
-				if !errors.Is(err, intf.ErrStopSong) {
+				if !errors.Is(err, song.ErrStopSong) {
 					b.Error(err)
 				}
 				return

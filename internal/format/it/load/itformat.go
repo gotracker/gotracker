@@ -17,11 +17,11 @@ import (
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/index"
 	"gotracker/internal/instrument"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/pattern"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
+	"gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -54,7 +54,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern,
 	for rowNum := 0; rowNum < int(pkt.Rows); rowNum++ {
 		pat.Rows = append(pat.Rows, pattern.RowData{})
 		row := &pat.Rows[rowNum]
-		row.Channels = make([]intf.ChannelData, channels)
+		row.Channels = make([]song.ChannelData, channels)
 	channelLoop:
 		for {
 			sz, chn, err := pkt.ReadChannelData(pos, channelMem)
@@ -103,7 +103,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
 		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
-		FilterPlugins:     make(map[int]intf.FilterFactory),
+		FilterPlugins:     make(map[int]song.FilterFactory),
 	}
 
 	for _, block := range f.Blocks {
@@ -189,7 +189,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 	return &song, nil
 }
 
-func decodeFilter(f *itblock.FX) (intf.FilterFactory, error) {
+func decodeFilter(f *itblock.FX) (song.FilterFactory, error) {
 	lib := f.LibraryName.String()
 	name := f.UserPluginName.String()
 	switch {

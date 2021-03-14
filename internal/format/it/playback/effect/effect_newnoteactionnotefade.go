@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // NewNoteActionNoteFade defines a NewNoteAction: Note Fade effect

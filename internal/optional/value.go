@@ -1,8 +1,8 @@
 package optional
 
 import (
-	"gotracker/internal/index"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
 
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"

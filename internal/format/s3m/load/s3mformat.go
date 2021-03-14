@@ -17,10 +17,10 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/index"
 	"gotracker/internal/instrument"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/pattern"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
+	"gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {

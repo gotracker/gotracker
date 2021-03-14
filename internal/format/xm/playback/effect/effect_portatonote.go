@@ -6,7 +6,7 @@ import (
 	"gotracker/internal/comparison"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // PortaToNote defines a portamento-to-note effect

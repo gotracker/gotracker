@@ -10,8 +10,9 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/effect"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 const (
@@ -35,7 +36,7 @@ func (m *Manager) processPatternRow() error {
 
 	pat := m.song.GetPattern(patIdx)
 	if pat == nil {
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	}
 
 	withinPatternLoop := false

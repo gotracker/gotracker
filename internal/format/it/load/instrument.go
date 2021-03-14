@@ -23,8 +23,8 @@ import (
 	"gotracker/internal/format/settings"
 	"gotracker/internal/instrument"
 	oscillatorImpl "gotracker/internal/oscillator"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 type convInst struct {
@@ -126,7 +126,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]intf.FilterFactory, s *settings.Settings) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]song.FilterFactory, s *settings.Settings) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -134,11 +134,11 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	}
 
 	var (
-		channelFilterFactory intf.FilterFactory
-		pluginFilterFactory  intf.FilterFactory
+		channelFilterFactory song.FilterFactory
+		pluginFilterFactory  song.FilterFactory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(sampleRate float32) intf.Filter {
+		channelFilterFactory = func(sampleRate float32) song.Filter {
 			return filter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
 		}
 	}

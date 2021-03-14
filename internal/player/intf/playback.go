@@ -7,8 +7,9 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/index"
 	"gotracker/internal/player/feature"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
 )
 
 // Playback is an interface for rendering a song to output data
@@ -16,7 +17,7 @@ type Playback interface {
 	Update(time.Duration, chan<- *device.PremixData) error
 	Generate(time.Duration) (*device.PremixData, error)
 
-	GetSongData() SongData
+	GetSongData() song.Data
 
 	GetNumChannels() int
 	GetNumOrders() int

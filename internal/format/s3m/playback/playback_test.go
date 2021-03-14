@@ -10,7 +10,7 @@ import (
 	"gotracker/internal/format/s3m"
 	"gotracker/internal/format/settings"
 	"gotracker/internal/player/feature"
-	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 )
 
 var (
@@ -109,7 +109,7 @@ func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels
 	for {
 		premixData, err := playback.Generate(time.Duration(0))
 		if err != nil {
-			if err == intf.ErrStopSong {
+			if err == song.ErrStopSong {
 				break
 			}
 			t.Fatal(err)
@@ -173,7 +173,7 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 	for {
 		premixData, err := playback.Generate(time.Duration(0))
 		if err != nil {
-			if err == intf.ErrStopSong {
+			if err == song.ErrStopSong {
 				break
 			}
 			t.Fatal(err)

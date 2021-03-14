@@ -8,28 +8,28 @@ import (
 	"github.com/gotracker/voice"
 
 	"gotracker/internal/optional"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 // StaticValues are the static values associated with an instrument
 type StaticValues struct {
 	Filename           string
 	Name               string
-	ID                 intf.InstrumentID
+	ID                 song.InstrumentID
 	Volume             volume.Volume
 	RelativeNoteNumber int8
 	AutoVibrato        voice.AutoVibrato
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
-	FilterFactory      intf.FilterFactory
-	PluginFilter       intf.FilterFactory
+	FilterFactory      song.FilterFactory
+	PluginFilter       song.FilterFactory
 }
 
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
 	Static   StaticValues
-	Inst     intf.InstrumentDataIntf
+	Inst     song.InstrumentDataIntf
 	C2Spd    note.C2SPD
 	Finetune optional.Value //note.Finetune
 }
@@ -81,7 +81,7 @@ func (inst *Instrument) GetFinetune() note.Finetune {
 }
 
 // GetID returns the instrument number (1-based)
-func (inst *Instrument) GetID() intf.InstrumentID {
+func (inst *Instrument) GetID() song.InstrumentID {
 	return inst.Static.ID
 }
 
@@ -91,14 +91,14 @@ func (inst *Instrument) GetSemitoneShift() int8 {
 }
 
 // GetKind returns the kind of the instrument
-func (inst *Instrument) GetKind() intf.InstrumentKind {
+func (inst *Instrument) GetKind() song.InstrumentKind {
 	switch inst.Inst.(type) {
 	case *PCM:
-		return intf.InstrumentKindPCM
+		return song.InstrumentKindPCM
 	case *OPL2:
-		return intf.InstrumentKindOPL2
+		return song.InstrumentKindOPL2
 	}
-	return intf.InstrumentKindPCM
+	return song.InstrumentKindPCM
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
@@ -107,17 +107,17 @@ func (inst *Instrument) GetNewNoteAction() note.Action {
 }
 
 // GetData returns the instrument-specific data interface
-func (inst *Instrument) GetData() intf.InstrumentDataIntf {
+func (inst *Instrument) GetData() song.InstrumentDataIntf {
 	return inst.Inst
 }
 
 // GetFilterFactory returns the factory for the channel filter
-func (inst *Instrument) GetFilterFactory() intf.FilterFactory {
+func (inst *Instrument) GetFilterFactory() song.FilterFactory {
 	return inst.Static.FilterFactory
 }
 
 // GetPluginFilterFactory returns the factory for the channel plugin filter
-func (inst *Instrument) GetPluginFilterFactory() intf.FilterFactory {
+func (inst *Instrument) GetPluginFilterFactory() song.FilterFactory {
 	return inst.Static.PluginFilter
 }
 
@@ -130,7 +130,7 @@ func (inst *Instrument) GetAutoVibrato() voice.AutoVibrato {
 func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == intf.InstrumentKindOPL2
+		return inst.GetKind() == song.InstrumentKindOPL2
 	}
 	return note.IsRelease(n)
 }
@@ -139,7 +139,7 @@ func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 func (inst *Instrument) IsStopNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == intf.InstrumentKindPCM
+		return inst.GetKind() == song.InstrumentKindPCM
 	}
 	return note.IsRelease(n)
 }

@@ -7,13 +7,14 @@ import (
 	effectIntf "gotracker/internal/format/it/playback/effect/intf"
 	"gotracker/internal/format/it/playback/state/pattern"
 	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/index"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	playpattern "gotracker/internal/player/pattern"
 	"gotracker/internal/player/state"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
+	playpattern "gotracker/internal/song/pattern"
 )
 
 // Manager is a playback manager for IT music
@@ -222,7 +223,7 @@ func (m *Manager) CanOrderLoop() bool {
 }
 
 // GetSongData gets the song data object
-func (m *Manager) GetSongData() intf.SongData {
+func (m *Manager) GetSongData() song.Data {
 	return m.song
 }
 

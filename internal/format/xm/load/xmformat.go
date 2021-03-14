@@ -17,12 +17,12 @@ import (
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/index"
 	"gotracker/internal/instrument"
 	"gotracker/internal/oscillator"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/pattern"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
+	"gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
@@ -253,7 +253,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
 	for rowNum, drow := range pkt.Data {
 		pat.Rows = append(pat.Rows, pattern.RowData{})
 		row := &pat.Rows[rowNum]
-		row.Channels = make([]intf.ChannelData, len(drow))
+		row.Channels = make([]song.ChannelData, len(drow))
 		for channelNum, chn := range drow {
 			cd := channel.Data{
 				What:            chn.Flags,

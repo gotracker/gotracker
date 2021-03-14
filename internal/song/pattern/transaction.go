@@ -1,8 +1,8 @@
 package pattern
 
 import (
-	"gotracker/internal/index"
 	"gotracker/internal/optional"
+	"gotracker/internal/song/index"
 )
 
 type WhoJumpedFirst uint8

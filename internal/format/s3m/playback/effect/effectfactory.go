@@ -3,10 +3,11 @@ package effect
 import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 )
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mi intf.Memory, data intf.ChannelData) intf.Effect {
+func Factory(mi intf.Memory, data song.ChannelData) intf.Effect {
 	cd, ok := data.(*channel.Data)
 	if !ok {
 		return nil

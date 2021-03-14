@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"gotracker/internal/comparison"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 
 	"github.com/gotracker/voice/period"
 )

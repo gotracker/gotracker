@@ -5,6 +5,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/song/note"
 )
 
@@ -40,8 +41,8 @@ type Instrument interface {
 	GetLength() sampling.Pos
 	GetNewNoteAction() note.Action
 	GetData() InstrumentDataIntf
-	GetFilterFactory() FilterFactory
-	GetPluginFilterFactory() FilterFactory
+	GetFilterFactory() filter.Factory
+	GetPluginFilterFactory() filter.Factory
 	GetAutoVibrato() voice.AutoVibrato
 	IsReleaseNote(note.Note) bool
 	IsStopNote(note.Note) bool

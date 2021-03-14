@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/song"
 )
 
 type channelData struct {
@@ -31,7 +31,7 @@ type ResonantFilter struct {
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
-func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate float32) song.Filter {
+func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate float32) filter.Filter {
 	rf := &ResonantFilter{
 		f2: float64(playbackRate) / 2.0,
 		rf: rfPeriodResonanceFactor * float64(resonance),

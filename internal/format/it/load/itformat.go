@@ -12,7 +12,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/filter"
-	itfilter "gotracker/internal/format/internal/filter"
+	fmtfilter "gotracker/internal/format/internal/filter"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/it/layout"
 	"gotracker/internal/format/it/layout/channel"
@@ -196,7 +196,7 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 	switch {
 	case lib == "Echo" && name == "Echo":
 		r := bytes.NewReader(f.Data)
-		e := itfilter.EchoFilterFactory{}
+		e := fmtfilter.EchoFilterFactory{}
 		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
 			return nil, err
 		}

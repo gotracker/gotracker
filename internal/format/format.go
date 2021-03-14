@@ -7,10 +7,9 @@ import (
 	"gotracker/internal/format/it"
 	"gotracker/internal/format/mod"
 	"gotracker/internal/format/s3m"
+	"gotracker/internal/format/settings"
 	"gotracker/internal/format/xm"
 	"gotracker/internal/player/intf"
-
-	"github.com/gotracker/voice/pcm"
 )
 
 var (
@@ -18,9 +17,16 @@ var (
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, intf.Format, error) {
+func Load(filename string, options ...settings.OptionFunc) (intf.Playback, intf.Format, error) {
+	s := &settings.Settings{}
+	for _, opt := range options {
+		if err := opt(s); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	for _, f := range supportedFormats {
-		if playback, err := f.Load(filename, preferredSampleFormat...); err == nil {
+		if playback, err := f.Load(filename, s); err == nil {
 			return playback, f, nil
 		} else if os.IsNotExist(err) {
 			return nil, nil, err

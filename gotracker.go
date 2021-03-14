@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"time"
+	"unsafe"
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
@@ -19,7 +20,9 @@ import (
 	"gotracker/internal/format"
 	itEffect "gotracker/internal/format/it/playback/effect"
 	s3mEffect "gotracker/internal/format/s3m/playback/effect"
+	"gotracker/internal/format/settings"
 	xmEffect "gotracker/internal/format/xm/playback/effect"
+	"gotracker/internal/index"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
@@ -67,12 +70,17 @@ func main() {
 		return
 	}
 
-	var preferredSampleFormat []pcm.SampleDataFormat
+	var options []settings.OptionFunc
 	if !disablePreconvertSamples {
-		preferredSampleFormat = []pcm.SampleDataFormat{pcm.SampleDataFormat32BitLEFloat}
+		var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
+		// HACK: I wish we had access to the `sys.BigEndian` bool
+		if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
+			preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
+		}
+		options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
 	}
 
-	playback, songFmt, err := format.Load(fn, preferredSampleFormat...)
+	playback, songFmt, err := format.Load(fn, options...)
 	if err != nil {
 		log.Fatalf("Could not create song state! err[%v]", err)
 		return
@@ -83,13 +91,13 @@ func main() {
 		}
 	}
 	if startingOrder != -1 {
-		if err := playback.SetNextOrder(intf.OrderIdx(startingOrder)); err != nil {
+		if err := playback.SetNextOrder(index.Order(startingOrder)); err != nil {
 			log.Fatalf("Could not set starting order! err[%v]", err)
 			return
 		}
 	}
 	if startingRow != -1 {
-		if err := playback.SetNextRow(intf.RowIdx(startingRow)); err != nil {
+		if err := playback.SetNextRow(index.Row(startingRow)); err != nil {
 			log.Fatalf("Could not set starting row! err[%v]", err)
 			return
 		}

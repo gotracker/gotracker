@@ -5,6 +5,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/xm/layout/channel"
+	"gotracker/internal/index"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -37,16 +38,16 @@ type Song struct {
 	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
 	Patterns          []pattern.Pattern
 	ChannelSettings   []ChannelSetting
-	OrderList         []intf.PatternIdx
+	OrderList         []index.Pattern
 }
 
 // GetOrderList returns the list of all pattern orders for the song
-func (s *Song) GetOrderList() []intf.PatternIdx {
+func (s *Song) GetOrderList() []index.Pattern {
 	return s.OrderList
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s *Song) GetPattern(patNum intf.PatternIdx) intf.Pattern {
+func (s *Song) GetPattern(patNum index.Pattern) intf.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}

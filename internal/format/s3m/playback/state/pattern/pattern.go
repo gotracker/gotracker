@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	formatutil "gotracker/internal/format/internal/util"
+	"gotracker/internal/index"
 	"gotracker/internal/optional"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
@@ -12,8 +13,8 @@ import (
 
 // State is the current pattern state
 type State struct {
-	currentOrder      intf.OrderIdx
-	currentRow        intf.RowIdx
+	currentOrder      index.Order
+	currentRow        index.Row
 	ticks             int
 	tempo             int
 	patternDelay      optional.Value //int
@@ -24,7 +25,7 @@ type State struct {
 	loopDetect formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 
 	Patterns []pattern.Pattern
-	Orders   []intf.PatternIdx
+	Orders   []index.Pattern
 }
 
 // GetTempo returns the tempo of the current state
@@ -50,9 +51,9 @@ func (state *State) GetTicksThisRow() int {
 }
 
 // GetPatNum returns the current pattern number
-func (state *State) GetPatNum() intf.PatternIdx {
+func (state *State) GetPatNum() index.Pattern {
 	if int(state.currentOrder) >= len(state.Orders) {
-		return intf.InvalidPattern
+		return index.InvalidPattern
 	}
 	return state.Orders[state.currentOrder]
 }
@@ -71,11 +72,11 @@ func (state *State) GetNumRows() int {
 
 // WantsStop returns true when the current pattern wants to end the song
 func (state *State) WantsStop() bool {
-	return state.GetPatNum() == intf.InvalidPattern
+	return state.GetPatNum() == index.InvalidPattern
 }
 
 // setCurrentOrder sets the current order index
-func (state *State) setCurrentOrder(order intf.OrderIdx) {
+func (state *State) setCurrentOrder(order index.Order) {
 	state.currentOrder = order
 	state.resetPatternLoops = true
 }
@@ -85,7 +86,7 @@ func (state *State) advanceOrder() {
 }
 
 // GetCurrentOrder returns the current order
-func (state *State) GetCurrentOrder() intf.OrderIdx {
+func (state *State) GetCurrentOrder() index.Order {
 	return state.currentOrder
 }
 
@@ -102,7 +103,7 @@ func (state *State) NeedResetPatternLoops() bool {
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list
-func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
+func (state *State) GetCurrentPatternIdx() (index.Pattern, error) {
 	ordLen := len(state.Orders)
 
 	if ordLen == 0 {
@@ -121,14 +122,14 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 		}
 
 		patIdx := state.Orders[ordIdx]
-		if patIdx == intf.NextPattern {
+		if patIdx == index.NextPattern {
 			if err := state.nextOrder(true); err != nil {
 				return 0, err
 			}
 			continue
 		}
 
-		if patIdx == intf.InvalidPattern {
+		if patIdx == index.InvalidPattern {
 			if err := state.nextOrder(true); err != nil {
 				return 0, err
 			}
@@ -141,12 +142,12 @@ func (state *State) GetCurrentPatternIdx() (intf.PatternIdx, error) {
 }
 
 // GetCurrentRow returns the current row
-func (state *State) GetCurrentRow() intf.RowIdx {
+func (state *State) GetCurrentRow() index.Row {
 	return state.currentRow
 }
 
 // setCurrentRow sets the current row
-func (state *State) setCurrentRow(row intf.RowIdx) error {
+func (state *State) setCurrentRow(row index.Row) error {
 	state.currentRow = row
 	if int(state.GetCurrentRow()) >= state.GetNumRows() {
 		if err := state.nextOrder(true); err != nil {
@@ -195,11 +196,11 @@ func (state *State) nextRow() error {
 	state.finePatternDelay = 0
 
 	var patNum = state.GetPatNum()
-	if patNum == intf.InvalidPattern {
+	if patNum == index.InvalidPattern {
 		return nil
 	}
 
-	if patNum == intf.NextPattern {
+	if patNum == index.NextPattern {
 		if err := state.nextOrder(true); err != nil {
 			return err
 		}
@@ -220,9 +221,9 @@ nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()
 		switch patNum {
-		case intf.InvalidPattern:
+		case index.InvalidPattern:
 			return nil, nil
-		case intf.NextPattern:
+		case index.NextPattern:
 			if err := state.nextRow(); err != nil {
 				return nil, err
 			}

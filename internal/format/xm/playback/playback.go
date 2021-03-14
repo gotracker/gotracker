@@ -7,6 +7,7 @@ import (
 	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
 	"gotracker/internal/format/xm/playback/state/pattern"
 	"gotracker/internal/format/xm/playback/util"
+	"gotracker/internal/index"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
@@ -102,7 +103,7 @@ func (m *Manager) SetNumChannels(num int) {
 }
 
 // SetNextOrder sets the next order index
-func (m *Manager) SetNextOrder(order intf.OrderIdx) error {
+func (m *Manager) SetNextOrder(order index.Order) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextOrder(order)
 	} else {
@@ -119,7 +120,7 @@ func (m *Manager) SetNextOrder(order intf.OrderIdx) error {
 }
 
 // SetNextRow sets the next row index
-func (m *Manager) SetNextRow(row intf.RowIdx, opts ...bool) error {
+func (m *Manager) SetNextRow(row index.Row, opts ...bool) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextRow(row, opts...)
 	} else {
@@ -230,7 +231,7 @@ func (m *Manager) GetChannel(ch int) intf.Channel {
 }
 
 // GetCurrentOrder returns the current order
-func (m *Manager) GetCurrentOrder() intf.OrderIdx {
+func (m *Manager) GetCurrentOrder() index.Order {
 	return m.pattern.GetCurrentOrder()
 }
 
@@ -240,7 +241,7 @@ func (m *Manager) GetNumOrders() int {
 }
 
 // GetCurrentRow returns the current row
-func (m *Manager) GetCurrentRow() intf.RowIdx {
+func (m *Manager) GetCurrentRow() index.Row {
 	return m.pattern.GetCurrentRow()
 }
 

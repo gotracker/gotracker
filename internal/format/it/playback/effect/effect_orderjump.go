@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/index"
 	"gotracker/internal/player/intf"
 )
 
@@ -17,7 +18,7 @@ func (e OrderJump) Start(cs intf.Channel, p intf.Playback) error {
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
 func (e OrderJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) error {
-	return p.SetNextOrder(intf.OrderIdx(e))
+	return p.SetNextOrder(index.Order(e))
 }
 
 func (e OrderJump) String() string {

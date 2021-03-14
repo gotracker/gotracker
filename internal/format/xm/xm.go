@@ -2,10 +2,9 @@
 package xm
 
 import (
+	"gotracker/internal/format/settings"
 	"gotracker/internal/format/xm/load"
 	"gotracker/internal/player/intf"
-
-	"github.com/gotracker/voice/pcm"
 )
 
 type format struct {
@@ -18,6 +17,6 @@ var (
 )
 
 // Load loads an XM file into a playback system
-func (f format) Load(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
-	return load.XM(filename, preferredSampleFormat...)
+func (f format) Load(filename string, s *settings.Settings) (intf.Playback, error) {
+	return load.XM(filename, s)
 }

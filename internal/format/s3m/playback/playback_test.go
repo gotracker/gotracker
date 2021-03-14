@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gotracker/internal/format/s3m"
+	"gotracker/internal/format/settings"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 )
@@ -93,7 +94,8 @@ func TestVibratoTypeChange(t *testing.T) {
 func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels int, bitsPerSample int) {
 	t.Helper()
 
-	playback, err := s3m.S3M.Load(fn)
+	s := &settings.Settings{}
+	playback, err := s3m.S3M.Load(fn, s)
 	if err != nil {
 		t.Fatalf("Could not create song state! err[%v]", err)
 	}
@@ -156,7 +158,8 @@ func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels
 func performChannelComparison(t *testing.T, fn string, sampleRate int, channels int, bitsPerSample int) {
 	t.Helper()
 
-	playback, err := s3m.S3M.Load(fn)
+	s := &settings.Settings{}
+	playback, err := s3m.S3M.Load(fn, s)
 	if err != nil {
 		t.Fatalf("Could not create song state! err[%v]", err)
 	}

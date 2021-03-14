@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/index"
 	"gotracker/internal/player/intf"
 )
 
@@ -18,8 +19,8 @@ func (e RowJump) Start(cs intf.Channel, p intf.Playback) error {
 // Stop is called on the last tick of the row, but after the Tick() function is called
 func (e RowJump) Stop(cs intf.Channel, p intf.Playback, lastTick int) error {
 	r := uint8(e)
-	rowIdx := intf.RowIdx((r >> 4) * 10)
-	rowIdx += intf.RowIdx(r & 0xf)
+	rowIdx := index.Row((r >> 4) * 10)
+	rowIdx += index.Row(r & 0xf)
 	return p.SetNextRow(rowIdx)
 }
 

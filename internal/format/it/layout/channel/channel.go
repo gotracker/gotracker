@@ -5,13 +5,13 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 // SampleID is an InstrumentID that is a combination of InstID and SampID
 type SampleID struct {
-	intf.InstrumentID
+	song.InstrumentID
 	InstID   uint8
 	Semitone note.Semitone
 }
@@ -47,7 +47,7 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument(stmem note.Semitone) intf.InstrumentID {
+func (d *Data) GetInstrument(stmem note.Semitone) song.InstrumentID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()

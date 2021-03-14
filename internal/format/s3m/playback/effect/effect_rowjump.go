@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/index"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song/index"
 )
 
 // RowJump defines a row jump effect

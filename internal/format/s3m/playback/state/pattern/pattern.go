@@ -4,11 +4,11 @@ import (
 	"errors"
 
 	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/index"
 	"gotracker/internal/optional"
 	"gotracker/internal/player/feature"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/pattern"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/pattern"
 )
 
 // State is the current pattern state
@@ -108,14 +108,14 @@ func (state *State) GetCurrentPatternIdx() (index.Pattern, error) {
 
 	if ordLen == 0 {
 		// nothing to play, don't even try
-		return 0, intf.ErrStopSong
+		return 0, song.ErrStopSong
 	}
 
 	for loopCount := 0; loopCount < ordLen; loopCount++ {
 		ordIdx := int(state.GetCurrentOrder())
 		if ordIdx >= ordLen {
 			if !state.SongLoop.Enabled {
-				return 0, intf.ErrStopSong
+				return 0, song.ErrStopSong
 			}
 			state.setCurrentOrder(0)
 			continue
@@ -160,7 +160,7 @@ func (state *State) setCurrentRow(row index.Row) error {
 // Observe will attempt to detect a song loop
 func (state *State) Observe() error {
 	if !state.SongLoop.Enabled && state.loopDetect.Observe(state.currentOrder, state.currentRow) {
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	}
 	return nil
 }
@@ -216,7 +216,7 @@ func (state *State) nextRow() error {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() (intf.Rows, error) {
+func (state *State) GetRows() (song.Rows, error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()

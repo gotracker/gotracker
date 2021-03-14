@@ -13,8 +13,8 @@ import (
 
 	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 // PCM is a PCM voice interface
@@ -36,10 +36,10 @@ type PCMConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      intf.InstrumentDataIntf
+	DataIntf      song.InstrumentDataIntf
 	OutputFilter  voice.FilterApplier
-	VoiceFilter   intf.Filter
-	PluginFilter  intf.Filter
+	VoiceFilter   song.Filter
+	PluginFilter  song.Filter
 }
 
 // == the actual pcm voice ==
@@ -48,8 +48,8 @@ type pcmVoice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
-	voiceFilter   intf.Filter
-	pluginFilter  intf.Filter
+	voiceFilter   song.Filter
+	pluginFilter  song.Filter
 	fadeoutMode   fadeout.Mode
 
 	active    bool

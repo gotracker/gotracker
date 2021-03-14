@@ -6,24 +6,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
-
-// ChannelData is an interface for channel data
-type ChannelData interface {
-	HasNote() bool
-	GetNote() note.Note
-
-	HasInstrument() bool
-	GetInstrument(note.Semitone) InstrumentID
-
-	HasVolume() bool
-	GetVolume() volume.Volume
-
-	HasCommand() bool
-
-	Channel() uint8
-}
 
 // Channel is an interface for channel state
 type Channel interface {
@@ -34,7 +19,7 @@ type Channel interface {
 	SetActiveVolume(volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
-	GetData() ChannelData
+	GetData() song.ChannelData
 	GetPortaTargetPeriod() note.Period
 	SetPortaTargetPeriod(note.Period)
 	GetTargetPeriod() note.Period
@@ -43,12 +28,12 @@ type Channel interface {
 	SetPeriod(note.Period)
 	SetPeriodDelta(note.PeriodDelta)
 	GetPeriodDelta() note.PeriodDelta
-	SetInstrument(Instrument)
-	GetInstrument() Instrument
+	SetInstrument(song.Instrument)
+	GetInstrument() song.Instrument
 	GetVoice() voice.Voice
-	GetTargetInst() Instrument
-	SetTargetInst(Instrument)
-	GetPrevInst() Instrument
+	GetTargetInst() song.Instrument
+	SetTargetInst(song.Instrument)
+	GetPrevInst() song.Instrument
 	GetPrevVoice() voice.Voice
 	GetNoteSemitone() note.Semitone
 	SetStoredSemitone(note.Semitone)

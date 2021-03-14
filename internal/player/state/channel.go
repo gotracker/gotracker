@@ -10,7 +10,8 @@ import (
 	"github.com/gotracker/voice"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 	voiceImpl "gotracker/internal/voice"
 )
 
@@ -34,7 +35,7 @@ type ChannelState struct {
 	Trigger           *NoteTriggerDetails
 	RetriggerCount    uint8
 	Memory            intf.Memory
-	TrackData         intf.ChannelData
+	TrackData         song.ChannelData
 	freezePlayback    bool
 	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
 	WantNoteCalc      bool
@@ -140,7 +141,7 @@ func (cs *ChannelState) SetActiveVolume(vol volume.Volume) {
 }
 
 // GetData returns the interface to the current channel song pattern data
-func (cs *ChannelState) GetData() intf.ChannelData {
+func (cs *ChannelState) GetData() song.ChannelData {
 	return cs.TrackData
 }
 
@@ -180,12 +181,12 @@ func (cs *ChannelState) SetVolumeActive(on bool) {
 }
 
 // GetInstrument returns the interface to the active instrument
-func (cs *ChannelState) GetInstrument() intf.Instrument {
+func (cs *ChannelState) GetInstrument() song.Instrument {
 	return cs.activeState.Instrument
 }
 
 // SetInstrument sets the interface to the active instrument
-func (cs *ChannelState) SetInstrument(inst intf.Instrument) {
+func (cs *ChannelState) SetInstrument(inst song.Instrument) {
 	cs.activeState.Instrument = inst
 	if cs.prevState.Instrument != inst {
 		if prevVoice := cs.prevState.Voice; prevVoice != nil && prevVoice.IsKeyOn() {
@@ -207,17 +208,17 @@ func (cs *ChannelState) GetVoice() voice.Voice {
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState) GetTargetInst() intf.Instrument {
+func (cs *ChannelState) GetTargetInst() song.Instrument {
 	return cs.targetState.Instrument
 }
 
 // SetTargetInst sets the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState) SetTargetInst(inst intf.Instrument) {
+func (cs *ChannelState) SetTargetInst(inst song.Instrument) {
 	cs.targetState.Instrument = inst
 }
 
 // GetPrevInst returns the interface to the last row's active instrument
-func (cs *ChannelState) GetPrevInst() intf.Instrument {
+func (cs *ChannelState) GetPrevInst() song.Instrument {
 	return cs.prevState.Instrument
 }
 

@@ -1,12 +1,12 @@
-package intf
+package song
 
 import (
-	"gotracker/internal/index"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
 )
 
-// SongData is an interface to the song data
-type SongData interface {
+// Data is an interface to the song data
+type Data interface {
 	GetOrderList() []index.Pattern
 	GetPattern(index.Pattern) Pattern
 	IsChannelEnabled(int) bool

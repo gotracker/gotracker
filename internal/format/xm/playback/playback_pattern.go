@@ -7,8 +7,9 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/effect"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
 	"gotracker/internal/player/state"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
@@ -35,7 +36,7 @@ func (m *Manager) processPatternRow() error {
 
 	pat := m.song.GetPattern(patIdx)
 	if pat == nil {
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	}
 
 	withinPatternLoop := false

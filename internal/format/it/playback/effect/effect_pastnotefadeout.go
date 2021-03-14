@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // PastNoteFade defines a past note fadeout effect

@@ -12,8 +12,8 @@ import (
 	"github.com/gotracker/voice/render"
 
 	"gotracker/internal/instrument"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song"
+	"gotracker/internal/song/note"
 )
 
 // OPL2 is an OPL2 voice interface
@@ -36,7 +36,7 @@ type OPLConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      intf.InstrumentDataIntf
+	DataIntf      song.InstrumentDataIntf
 }
 
 // == the actual opl2 voice ==

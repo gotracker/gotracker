@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 // PastNoteOff defines a past note off effect

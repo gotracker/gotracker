@@ -9,6 +9,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 )
 
 type playerState int
@@ -80,7 +81,7 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, tickInterv
 	go func() {
 		defer p.cancel()
 		if err := p.runStateMachine(); err != nil {
-			if err != intf.ErrStopSong {
+			if err != song.ErrStopSong {
 				log.Fatalln(err)
 			}
 		}
@@ -141,10 +142,10 @@ func (p *Player) runStateMachine() error {
 		case playerStatePaused:
 			stateFunc = p.runStatePaused
 		default:
-			return intf.ErrStopSong
+			return song.ErrStopSong
 		}
 		if stateFunc == nil {
-			return intf.ErrStopSong
+			return song.ErrStopSong
 		}
 		if err := stateFunc(); err != nil {
 			return err
@@ -168,7 +169,7 @@ func (p *Player) runStateIdle() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	}
 	return nil
 }
@@ -188,7 +189,7 @@ func (p *Player) runStatePaused() error {
 		p.state = playerStatePlaying
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	}
 	return nil
 }
@@ -209,7 +210,7 @@ func (p *Player) runStatePlaying() error {
 		p.resumeRespCh <- nil
 	case <-p.stopCh:
 		p.stopRespCh <- nil
-		return intf.ErrStopSong
+		return song.ErrStopSong
 	case <-p.tickerCh:
 		if p.ticker == nil {
 			// give ourselves something to hit the next time through

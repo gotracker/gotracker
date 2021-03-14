@@ -7,7 +7,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/player/note"
+	"gotracker/internal/song/note"
 )
 
 const (

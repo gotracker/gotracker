@@ -5,15 +5,16 @@ import (
 
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 )
 
 // New returns a new Voice from the instrument and output channel provided
-func New(inst intf.Instrument, output *intf.OutputChannel) voice.Voice {
+func New(inst song.Instrument, output *intf.OutputChannel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (
-			voiceFilter  intf.Filter
-			pluginFilter intf.Filter
+			voiceFilter  song.Filter
+			pluginFilter song.Filter
 		)
 		if factory := inst.GetFilterFactory(); factory != nil {
 			voiceFilter = factory(output.Playback.GetSampleRate())

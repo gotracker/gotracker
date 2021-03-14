@@ -1,13 +1,15 @@
 package intf
 
 import (
+	"gotracker/internal/song"
+
 	"github.com/gotracker/gomixing/volume"
 )
 
 // OutputChannel is the important bits to make output to a particular downmixing channel work
 type OutputChannel struct {
 	ChannelNum    int
-	Filter        Filter
+	Filter        song.Filter
 	Playback      Playback
 	GlobalVolume  volume.Volume
 	ChannelVolume volume.Volume

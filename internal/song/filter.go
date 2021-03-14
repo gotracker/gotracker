@@ -1,4 +1,4 @@
-package intf
+package song
 
 import (
 	"github.com/gotracker/gomixing/volume"

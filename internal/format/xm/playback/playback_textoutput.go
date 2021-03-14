@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/note"
 	"gotracker/internal/player/render"
+	"gotracker/internal/song/note"
 )
 
 func xmChannelRender(cdata render.ChannelData) string {

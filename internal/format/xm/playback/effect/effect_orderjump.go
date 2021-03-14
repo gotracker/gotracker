@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/index"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song/index"
 )
 
 // OrderJump defines an order jump effect

@@ -6,11 +6,11 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/index"
 	"gotracker/internal/instrument"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/note"
-	"gotracker/internal/player/pattern"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
+	"gotracker/internal/song/note"
+	"gotracker/internal/song/pattern"
 )
 
 // Header is a mildly-decoded S3M header definition
@@ -35,7 +35,7 @@ type ChannelSetting struct {
 
 // Song is the full definition of the song data of an Song file
 type Song struct {
-	intf.SongData
+	song.Data
 	Head            Header
 	Instruments     []instrument.Instrument
 	Patterns        []pattern.Pattern
@@ -49,7 +49,7 @@ func (s *Song) GetOrderList() []index.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s *Song) GetPattern(patNum index.Pattern) intf.Pattern {
+func (s *Song) GetPattern(patNum index.Pattern) song.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (s *Song) NumInstruments() int {
 }
 
 // IsValidInstrumentID returns true if the instrument exists
-func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
+func (s *Song) IsValidInstrumentID(instNum song.InstrumentID) bool {
 	if instNum.IsEmpty() {
 		return false
 	}
@@ -85,7 +85,7 @@ func (s *Song) IsValidInstrumentID(instNum intf.InstrumentID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instID intf.InstrumentID) (intf.Instrument, note.Semitone) {
+func (s *Song) GetInstrument(instID song.InstrumentID) (song.Instrument, note.Semitone) {
 	if instID.IsEmpty() {
 		return nil, note.UnchangedSemitone
 	}

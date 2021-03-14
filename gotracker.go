@@ -22,12 +22,13 @@ import (
 	s3mEffect "gotracker/internal/format/s3m/playback/effect"
 	"gotracker/internal/format/settings"
 	xmEffect "gotracker/internal/format/xm/playback/effect"
-	"gotracker/internal/index"
 	"gotracker/internal/output"
 	"gotracker/internal/player"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/render"
+	"gotracker/internal/song"
+	"gotracker/internal/song/index"
 )
 
 // flags
@@ -220,7 +221,7 @@ func main() {
 		defer close(outBufs)
 		if err := p.WaitUntilDone(); err != nil {
 			switch {
-			case errors.Is(err, intf.ErrStopSong):
+			case errors.Is(err, song.ErrStopSong):
 			case errors.Is(err, context.Canceled):
 
 			default:
@@ -231,7 +232,7 @@ func main() {
 
 	if err := waveOut.Play(outBufs); err != nil {
 		switch {
-		case errors.Is(err, intf.ErrStopSong):
+		case errors.Is(err, song.ErrStopSong):
 		case errors.Is(err, context.Canceled):
 
 		default:

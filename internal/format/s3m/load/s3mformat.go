@@ -16,8 +16,9 @@ import (
 	"gotracker/internal/format/s3m/layout"
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
+	"gotracker/internal/format/settings"
+	"gotracker/internal/index"
 	"gotracker/internal/instrument"
-	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
 	"gotracker/internal/player/pattern"
 )
@@ -55,7 +56,7 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 	return &sample, nil
 }
 
-func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool) (*instrument.Instrument, error) {
+func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool, s *settings.Settings) (*instrument.Instrument, error) {
 	sample := instrument.Instrument{
 		Static: instrument.StaticValues{
 			Filename: scrs.Head.GetFilename(),
@@ -106,9 +107,22 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 
 	idata.SustainLoop = loop.NewLoop(sustainMode, sustainSettings)
 
-	idata.Sample = pcm.NewSample(scrs.Sample, instLen, numChannels, format)
-
-	//idata.Sample = scrs.Sample
+	sf := format
+	if v, ok := s.Get(settings.NamePreferredSampleFormat); ok {
+		if val, ok := v.(pcm.SampleDataFormat); ok {
+			sf = val
+		}
+	}
+	if sf == format {
+		idata.Sample = pcm.NewSample(scrs.Sample, instLen, numChannels, format)
+	} else {
+		inSample := pcm.NewSample(scrs.Sample, instLen, numChannels, format)
+		outSample, err := pcm.ConvertTo(inSample, sf)
+		if err != nil {
+			return nil, err
+		}
+		idata.Sample = outSample
+	}
 
 	sample.Inst = &idata
 	return &sample, nil
@@ -161,20 +175,20 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 	return &inst, nil
 }
 
-func convertSCRSFullToInstrument(s *s3mfile.SCRSFull, signedSamples bool) (*instrument.Instrument, error) {
+func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, s *settings.Settings) (*instrument.Instrument, error) {
 	if s == nil {
 		return nil, errors.New("scrs is nil")
 	}
 
-	switch si := s.Ancillary.(type) {
+	switch si := scrs.Ancillary.(type) {
 	case nil:
 		return nil, errors.New("scrs ancillary is nil")
 	case *s3mfile.SCRSNoneHeader:
-		return scrsNoneToInstrument(s, si)
+		return scrsNoneToInstrument(scrs, si)
 	case *s3mfile.SCRSDigiplayerHeader:
-		return scrsDp30ToInstrument(s, si, signedSamples)
+		return scrsDp30ToInstrument(scrs, si, signedSamples, s)
 	case *s3mfile.SCRSAdlibHeader:
-		return scrsOpl2ToInstrument(s, si)
+		return scrsOpl2ToInstrument(scrs, si)
 	default:
 	}
 
@@ -249,7 +263,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 	return pat, int(maxCh)
 }
 
-func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, s *settings.Settings) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -258,7 +272,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	song := layout.Song{
 		Head:        *h,
 		Instruments: make([]instrument.Instrument, len(f.InstrumentPointers)),
-		OrderList:   make([]intf.PatternIdx, len(f.OrderList)),
+		OrderList:   make([]index.Pattern, len(f.OrderList)),
 	}
 
 	signedSamples := false
@@ -279,12 +293,12 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	//ptrSpecialIsValid := (f.Head.Flags & 0x0080) != 0
 
 	for i, o := range f.OrderList {
-		song.OrderList[i] = intf.PatternIdx(o)
+		song.OrderList[i] = index.Pattern(o)
 	}
 
 	song.Instruments = make([]instrument.Instrument, len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
-		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples)
+		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples, s)
 		if err != nil {
 			return nil, err
 		}
@@ -351,18 +365,18 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	return &song, nil
 }
 
-func readS3M(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func readS3M(filename string, s *settings.Settings) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := s3mfile.Read(buffer)
+	f, err := s3mfile.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertS3MFileToSong(s, func(patNum int) uint8 {
+	return convertS3MFileToSong(f, func(patNum int) uint8 {
 		return 64
-	}, preferredSampleFormat...)
+	}, s)
 }

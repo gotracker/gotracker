@@ -1,12 +1,11 @@
 package load
 
 import (
+	"gotracker/internal/format/settings"
 	"gotracker/internal/player/intf"
-
-	"github.com/gotracker/voice/pcm"
 )
 
 // XM loads an XM file and upgrades it into an XM file internally
-func XM(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
-	return load(filename, readXM, preferredSampleFormat...)
+func XM(filename string, s *settings.Settings) (intf.Playback, error) {
+	return load(filename, readXM, s)
 }

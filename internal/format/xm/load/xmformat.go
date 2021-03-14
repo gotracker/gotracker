@@ -13,9 +13,11 @@ import (
 	"github.com/gotracker/voice/pcm"
 
 	formatutil "gotracker/internal/format/internal/util"
+	"gotracker/internal/format/settings"
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
+	"gotracker/internal/index"
 	"gotracker/internal/instrument"
 	"gotracker/internal/oscillator"
 	"gotracker/internal/player/intf"
@@ -37,7 +39,7 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, s *settings.Settings) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
 	var instruments []*instrument.Instrument
@@ -190,7 +192,22 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii.PanEnv.Loop = loop.NewLoop(panEnvLoopMode, panEnvLoopSettings)
 		ii.PanEnv.Sustain = loop.NewLoop(panEnvSustainMode, panEnvSustainSettings)
 
-		ii.Sample = pcm.NewSample(si.SampleData, instLen, numChannels, format)
+		sf := format
+		if v, ok := s.Get(settings.NamePreferredSampleFormat); ok {
+			if val, ok := v.(pcm.SampleDataFormat); ok {
+				sf = val
+			}
+		}
+		if sf == format {
+			ii.Sample = pcm.NewSample(si.SampleData, instLen, numChannels, format)
+		} else {
+			inSample := pcm.NewSample(si.SampleData, instLen, numChannels, format)
+			outSample, err := pcm.ConvertTo(inSample, sf)
+			if err != nil {
+				return nil, nil, err
+			}
+			ii.Sample = outSample
+		}
 
 		sample.Inst = &ii
 		instruments = append(instruments, &sample)
@@ -219,12 +236,12 @@ func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) loop.Mode {
 	}
 }
 
-func convertXMInstrumentToInstrument(s *xmfile.InstrumentHeader, linearFrequencySlides bool) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
-	if s == nil {
+func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, s *settings.Settings) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+	if ih == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
 
-	return xmInstrumentToInstrument(s, linearFrequencySlides)
+	return xmInstrumentToInstrument(ih, linearFrequencySlides, s)
 }
 
 func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
@@ -256,7 +273,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
 	return pat, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -269,15 +286,15 @@ func convertXmFileToSong(f *xmfile.File, preferredSampleFormat ...pcm.SampleData
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
 		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
-		OrderList:         make([]intf.PatternIdx, int(f.Head.SongLength)),
+		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
-		song.OrderList[i] = intf.PatternIdx(f.Head.OrderTable[i])
+		song.OrderList[i] = index.Pattern(f.Head.OrderTable[i])
 	}
 
-	for instNum, scrs := range f.Instruments {
-		samples, noteMap, err := convertXMInstrumentToInstrument(&scrs, linearFrequencySlides)
+	for instNum, ih := range f.Instruments {
+		samples, noteMap, err := convertXMInstrumentToInstrument(&ih, linearFrequencySlides, s)
 		if err != nil {
 			return nil, err
 		}
@@ -343,16 +360,16 @@ func convertXmFileToSong(f *xmfile.File, preferredSampleFormat ...pcm.SampleData
 	return &song, nil
 }
 
-func readXM(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func readXM(filename string, s *settings.Settings) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := xmfile.Read(buffer)
+	f, err := xmfile.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertXmFileToSong(s, preferredSampleFormat...)
+	return convertXmFileToSong(f, s)
 }

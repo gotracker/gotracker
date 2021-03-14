@@ -7,6 +7,7 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/gotracker/voice/render"
 
+	"gotracker/internal/index"
 	"gotracker/internal/player/feature"
 )
 
@@ -19,9 +20,9 @@ type Playback interface {
 
 	GetNumChannels() int
 	GetNumOrders() int
-	SetNextOrder(OrderIdx) error
-	SetNextRow(RowIdx, ...bool) error
-	GetCurrentRow() RowIdx
+	SetNextOrder(index.Order) error
+	SetNextRow(index.Row, ...bool) error
+	GetCurrentRow() index.Row
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
 	Configure([]feature.Feature)

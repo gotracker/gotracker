@@ -1,6 +1,7 @@
 package pattern
 
 import (
+	"gotracker/internal/index"
 	"gotracker/internal/player/intf"
 )
 
@@ -18,7 +19,7 @@ func (r RowData) GetChannels() []intf.ChannelData {
 type Rows []RowData
 
 // GetRow returns the row at the specified row index from the list of rows
-func (r Rows) GetRow(idx intf.RowIdx) intf.Row {
+func (r Rows) GetRow(idx index.Row) intf.Row {
 	return &r[int(idx)]
 }
 
@@ -34,7 +35,7 @@ type Pattern struct {
 }
 
 // GetRow returns the interface to the row at index `row`
-func (p Pattern) GetRow(row intf.RowIdx) intf.Row {
+func (p Pattern) GetRow(row index.Row) intf.Row {
 	return &p.Rows[row]
 }
 

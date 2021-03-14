@@ -1,7 +1,7 @@
 package optional
 
 import (
-	"gotracker/internal/player/intf"
+	"gotracker/internal/index"
 	"gotracker/internal/player/note"
 
 	"github.com/gotracker/gomixing/panning"
@@ -93,19 +93,19 @@ func (o *Value) GetPosition() (sampling.Pos, bool) {
 }
 
 // GetOrderIdx returns the stored value as an order index and if it has been set
-func (o *Value) GetOrderIdx() (intf.OrderIdx, bool) {
-	if v, ok := o.value.(intf.OrderIdx); ok {
+func (o *Value) GetOrderIdx() (index.Order, bool) {
+	if v, ok := o.value.(index.Order); ok {
 		return v, o.set
 	}
-	return intf.OrderIdx(0), false
+	return index.Order(0), false
 }
 
 // GetRowIdx returns the stored value as a row index and if it has been set
-func (o *Value) GetRowIdx() (intf.RowIdx, bool) {
-	if v, ok := o.value.(intf.RowIdx); ok {
+func (o *Value) GetRowIdx() (index.Row, bool) {
+	if v, ok := o.value.(index.Row); ok {
 		return v, o.set
 	}
-	return intf.RowIdx(0), false
+	return index.Row(0), false
 }
 
 // GetFinetune returns the stored value as a finetune value and if it has been set

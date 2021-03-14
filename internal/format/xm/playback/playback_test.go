@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"gotracker/internal/format/settings"
 	"gotracker/internal/format/xm"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/player/intf"
@@ -48,7 +49,8 @@ func TestPortaLinkMem(t *testing.T) {
 func performChannelComparison(t *testing.T, fn string, sampleRate int, channels int, bitsPerSample int) {
 	t.Helper()
 
-	playback, err := xm.XM.Load(fn)
+	s := &settings.Settings{}
+	playback, err := xm.XM.Load(fn, s)
 	if err != nil {
 		t.Fatalf("Could not create song state! err[%v]", err)
 	}

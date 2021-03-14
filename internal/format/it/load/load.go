@@ -1,12 +1,11 @@
 package load
 
 import (
+	"gotracker/internal/format/settings"
 	"gotracker/internal/player/intf"
-
-	"github.com/gotracker/voice/pcm"
 )
 
 // IT loads an IT file
-func IT(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (intf.Playback, error) {
-	return load(filename, readIT, preferredSampleFormat...)
+func IT(filename string, s *settings.Settings) (intf.Playback, error) {
+	return load(filename, readIT, s)
 }

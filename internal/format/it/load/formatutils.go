@@ -3,14 +3,13 @@ package load
 import (
 	"gotracker/internal/format/it/layout"
 	"gotracker/internal/format/it/playback"
-
-	"github.com/gotracker/voice/pcm"
+	"gotracker/internal/format/settings"
 )
 
-type readerFunc func(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error)
+type readerFunc func(filename string, s *settings.Settings) (*layout.Song, error)
 
-func load(filename string, reader readerFunc, preferredSampleFormat ...pcm.SampleDataFormat) (*playback.Manager, error) {
-	itSong, err := reader(filename, preferredSampleFormat...)
+func load(filename string, reader readerFunc, s *settings.Settings) (*playback.Manager, error) {
+	itSong, err := reader(filename, s)
 	if err != nil {
 		return nil, err
 	}

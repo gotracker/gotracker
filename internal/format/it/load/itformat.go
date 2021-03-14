@@ -10,13 +10,14 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice/pcm"
 
 	"gotracker/internal/format/internal/filter"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/it/layout"
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/format/it/playback/util"
+	"gotracker/internal/format/settings"
+	"gotracker/internal/index"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/note"
@@ -86,7 +87,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern,
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, options *itFormatOptions) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -101,7 +102,7 @@ func convertItFileToSong(f *itfile.File, options *itFormatOptions) (*layout.Song
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
 		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
-		OrderList:         make([]intf.PatternIdx, int(f.Head.OrderCount)),
+		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]intf.FilterFactory),
 	}
 
@@ -117,14 +118,14 @@ func convertItFileToSong(f *itfile.File, options *itFormatOptions) (*layout.Song
 	}
 
 	for i := 0; i < int(f.Head.OrderCount); i++ {
-		song.OrderList[i] = intf.PatternIdx(f.OrderList[i])
+		song.OrderList[i] = index.Pattern(f.OrderList[i])
 	}
 
 	if f.Head.Flags.IsUseInstruments() {
 		for instNum, inst := range f.Instruments {
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, options)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, s)
 				if err != nil {
 					return nil, err
 				}
@@ -134,7 +135,7 @@ func convertItFileToSong(f *itfile.File, options *itFormatOptions) (*layout.Song
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, options)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, s)
 				if err != nil {
 					return nil, err
 				}
@@ -236,22 +237,16 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(filename string, preferredSampleFormat ...pcm.SampleDataFormat) (*layout.Song, error) {
+func readIT(filename string, s *settings.Settings) (*layout.Song, error) {
 	buffer, err := formatutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	s, err := itfile.Read(buffer)
+	f, err := itfile.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
 
-	options := itFormatOptions{}
-
-	if len(preferredSampleFormat) > 0 {
-		options.preferredSampleFormat.Set(preferredSampleFormat[0])
-	}
-
-	return convertItFileToSong(s, &options)
+	return convertItFileToSong(f, s)
 }

@@ -1,8 +1,8 @@
 package pattern
 
 import (
+	"gotracker/internal/index"
 	"gotracker/internal/optional"
-	"gotracker/internal/player/intf"
 )
 
 type WhoJumpedFirst uint8
@@ -18,8 +18,8 @@ type RowUpdateTransaction struct {
 	committed         bool
 	CommitTransaction func(*RowUpdateTransaction) error
 
-	orderIdx         optional.Value //intf.OrderIdx
-	rowIdx           optional.Value //intf.RowIdx
+	orderIdx         optional.Value //index.OrderIdx
+	rowIdx           optional.Value //index.RowIdx
 	patternDelay     optional.Value //int
 	FinePatternDelay optional.Value //int
 	Tempo            optional.Value //int
@@ -50,7 +50,7 @@ func (txn *RowUpdateTransaction) Commit() error {
 }
 
 // SetNextOrder will set the next order index
-func (txn *RowUpdateTransaction) SetNextOrder(ordIdx intf.OrderIdx) {
+func (txn *RowUpdateTransaction) SetNextOrder(ordIdx index.Order) {
 	if !txn.orderIdx.IsSet() {
 		txn.orderIdx.Set(ordIdx)
 		if txn.WhoJumpedFirst == WhoJumpedFirstNone {
@@ -60,12 +60,12 @@ func (txn *RowUpdateTransaction) SetNextOrder(ordIdx intf.OrderIdx) {
 }
 
 // GetOrderIdx gets the order index and a flag for if it is valid/set
-func (txn *RowUpdateTransaction) GetOrderIdx() (intf.OrderIdx, bool) {
+func (txn *RowUpdateTransaction) GetOrderIdx() (index.Order, bool) {
 	return txn.orderIdx.GetOrderIdx()
 }
 
 // SetNextRow will set the next row index
-func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx, opts ...bool) {
+func (txn *RowUpdateTransaction) SetNextRow(rowIdx index.Row, opts ...bool) {
 	if !txn.rowIdx.IsSet() {
 		txn.rowIdx.Set(rowIdx)
 		if txn.WhoJumpedFirst == WhoJumpedFirstNone {
@@ -78,7 +78,7 @@ func (txn *RowUpdateTransaction) SetNextRow(rowIdx intf.RowIdx, opts ...bool) {
 }
 
 // GetOrderIdx gets the row index and a flag for if it is valid/set
-func (txn *RowUpdateTransaction) GetRowIdx() (intf.RowIdx, bool) {
+func (txn *RowUpdateTransaction) GetRowIdx() (index.Row, bool) {
 	return txn.rowIdx.GetRowIdx()
 }
 

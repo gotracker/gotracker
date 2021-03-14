@@ -1,4 +1,4 @@
-package song
+package filter
 
 import (
 	"github.com/gotracker/gomixing/volume"
@@ -10,5 +10,5 @@ type Filter interface {
 	UpdateEnv(float32)
 }
 
-// FilterFactory is a function type that builds a filter with an input parameter taking a value between 0 and 1
-type FilterFactory func(float32) Filter
+// Factory is a function type that builds a filter with an input parameter taking a value between 0 and 1
+type Factory func(float32) Filter

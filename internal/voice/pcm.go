@@ -11,6 +11,7 @@ import (
 	"github.com/gotracker/voice/fadeout"
 	"github.com/gotracker/voice/period"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
 	"gotracker/internal/song"
@@ -38,8 +39,8 @@ type PCMConfiguration struct {
 	AutoVibrato   voice.AutoVibrato
 	DataIntf      song.InstrumentDataIntf
 	OutputFilter  voice.FilterApplier
-	VoiceFilter   song.Filter
-	PluginFilter  song.Filter
+	VoiceFilter   filter.Filter
+	PluginFilter  filter.Filter
 }
 
 // == the actual pcm voice ==
@@ -48,8 +49,8 @@ type pcmVoice struct {
 	c2spd         note.C2SPD
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
-	voiceFilter   song.Filter
-	pluginFilter  song.Filter
+	voiceFilter   filter.Filter
+	pluginFilter  filter.Filter
 	fadeoutMode   fadeout.Mode
 
 	active    bool

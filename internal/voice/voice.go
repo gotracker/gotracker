@@ -3,6 +3,7 @@ package voice
 import (
 	"github.com/gotracker/voice"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/song"
@@ -13,8 +14,8 @@ func New(inst song.Instrument, output *intf.OutputChannel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (
-			voiceFilter  song.Filter
-			pluginFilter song.Filter
+			voiceFilter  filter.Filter
+			pluginFilter filter.Filter
 		)
 		if factory := inst.GetFilterFactory(); factory != nil {
 			voiceFilter = factory(output.Playback.GetSampleRate())

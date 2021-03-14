@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/optional"
 	"gotracker/internal/song"
 	"gotracker/internal/song/note"
@@ -22,8 +23,8 @@ type StaticValues struct {
 	AutoVibrato        voice.AutoVibrato
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
-	FilterFactory      song.FilterFactory
-	PluginFilter       song.FilterFactory
+	FilterFactory      filter.Factory
+	PluginFilter       filter.Factory
 }
 
 // Instrument is the mildly-decoded instrument/sample header
@@ -112,12 +113,12 @@ func (inst *Instrument) GetData() song.InstrumentDataIntf {
 }
 
 // GetFilterFactory returns the factory for the channel filter
-func (inst *Instrument) GetFilterFactory() song.FilterFactory {
+func (inst *Instrument) GetFilterFactory() filter.Factory {
 	return inst.Static.FilterFactory
 }
 
 // GetPluginFilterFactory returns the factory for the channel plugin filter
-func (inst *Instrument) GetPluginFilterFactory() song.FilterFactory {
+func (inst *Instrument) GetPluginFilterFactory() filter.Factory {
 	return inst.Static.PluginFilter
 }
 

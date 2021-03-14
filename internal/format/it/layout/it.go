@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/filter"
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/instrument"
 	"gotracker/internal/song"
@@ -46,7 +47,7 @@ type Song struct {
 	Patterns          []pattern.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
-	FilterPlugins     map[int]song.FilterFactory
+	FilterPlugins     map[int]filter.Factory
 }
 
 // GetOrderList returns the list of all pattern orders for the song

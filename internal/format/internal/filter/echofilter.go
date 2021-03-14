@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"gotracker/internal/song"
+	"gotracker/internal/filter"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -19,8 +19,8 @@ type EchoFilterFactory struct {
 	EchoFilterSettings
 }
 
-func (e *EchoFilterFactory) Factory() song.FilterFactory {
-	return func(sampleRate float32) song.Filter {
+func (e *EchoFilterFactory) Factory() filter.Factory {
+	return func(sampleRate float32) filter.Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
 			sampleRate:         sampleRate,

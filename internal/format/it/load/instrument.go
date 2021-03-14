@@ -18,12 +18,12 @@ import (
 	"github.com/gotracker/voice/oscillator"
 	"github.com/gotracker/voice/pcm"
 
-	"gotracker/internal/format/it/playback/filter"
+	"gotracker/internal/filter"
+	itfilter "gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/format/settings"
 	"gotracker/internal/instrument"
 	oscillatorImpl "gotracker/internal/oscillator"
-	"gotracker/internal/song"
 	"gotracker/internal/song/note"
 )
 
@@ -126,7 +126,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]song.FilterFactory, s *settings.Settings) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]filter.Factory, s *settings.Settings) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -134,12 +134,12 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	}
 
 	var (
-		channelFilterFactory song.FilterFactory
-		pluginFilterFactory  song.FilterFactory
+		channelFilterFactory filter.Factory
+		pluginFilterFactory  filter.Factory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(sampleRate float32) song.Filter {
-			return filter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
+		channelFilterFactory = func(sampleRate float32) filter.Filter {
+			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
 		}
 	}
 

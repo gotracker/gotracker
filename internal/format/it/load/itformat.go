@@ -11,7 +11,8 @@ import (
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/internal/filter"
+	"gotracker/internal/filter"
+	itfilter "gotracker/internal/format/internal/filter"
 	formatutil "gotracker/internal/format/internal/util"
 	"gotracker/internal/format/it/layout"
 	"gotracker/internal/format/it/layout/channel"
@@ -103,7 +104,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
 		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
-		FilterPlugins:     make(map[int]song.FilterFactory),
+		FilterPlugins:     make(map[int]filter.Factory),
 	}
 
 	for _, block := range f.Blocks {
@@ -189,13 +190,13 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 	return &song, nil
 }
 
-func decodeFilter(f *itblock.FX) (song.FilterFactory, error) {
+func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 	lib := f.LibraryName.String()
 	name := f.UserPluginName.String()
 	switch {
 	case lib == "Echo" && name == "Echo":
 		r := bytes.NewReader(f.Data)
-		e := filter.EchoFilterFactory{}
+		e := itfilter.EchoFilterFactory{}
 		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
 			return nil, err
 		}

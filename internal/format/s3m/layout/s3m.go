@@ -6,9 +6,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/instrument"
 	"gotracker/internal/song"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	"gotracker/internal/song/pattern"
 )
@@ -37,7 +37,7 @@ type ChannelSetting struct {
 type Song struct {
 	song.Data
 	Head            Header
-	Instruments     []instrument.Instrument
+	Instruments     []*instrument.Instrument
 	Patterns        []pattern.Pattern
 	ChannelSettings []ChannelSetting
 	OrderList       []index.Pattern
@@ -72,7 +72,7 @@ func (s *Song) NumInstruments() int {
 }
 
 // IsValidInstrumentID returns true if the instrument exists
-func (s *Song) IsValidInstrumentID(instNum song.InstrumentID) bool {
+func (s *Song) IsValidInstrumentID(instNum instrument.InstrumentID) bool {
 	if instNum.IsEmpty() {
 		return false
 	}
@@ -85,13 +85,13 @@ func (s *Song) IsValidInstrumentID(instNum song.InstrumentID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instID song.InstrumentID) (song.Instrument, note.Semitone) {
+func (s *Song) GetInstrument(instID instrument.InstrumentID) (*instrument.Instrument, note.Semitone) {
 	if instID.IsEmpty() {
 		return nil, note.UnchangedSemitone
 	}
 	switch id := instID.(type) {
 	case channel.S3MInstrumentID:
-		return &s.Instruments[int(id)-1], note.UnchangedSemitone
+		return s.Instruments[int(id)-1], note.UnchangedSemitone
 	}
 
 	return nil, note.UnchangedSemitone

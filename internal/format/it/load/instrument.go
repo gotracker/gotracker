@@ -22,8 +22,8 @@ import (
 	itfilter "gotracker/internal/format/it/playback/filter"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/instrument"
 	oscillatorImpl "gotracker/internal/oscillator"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 

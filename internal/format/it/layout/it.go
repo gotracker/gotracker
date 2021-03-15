@@ -6,9 +6,9 @@ import (
 
 	"gotracker/internal/filter"
 	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/instrument"
 	"gotracker/internal/song"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	"gotracker/internal/song/pattern"
 )
@@ -79,7 +79,7 @@ func (s *Song) NumInstruments() int {
 }
 
 // IsValidInstrumentID returns true if the instrument exists
-func (s *Song) IsValidInstrumentID(instNum song.InstrumentID) bool {
+func (s *Song) IsValidInstrumentID(instNum instrument.InstrumentID) bool {
 	if instNum.IsEmpty() {
 		return false
 	}
@@ -92,7 +92,7 @@ func (s *Song) IsValidInstrumentID(instNum song.InstrumentID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s *Song) GetInstrument(instNum song.InstrumentID) (song.Instrument, note.Semitone) {
+func (s *Song) GetInstrument(instNum instrument.InstrumentID) (*instrument.Instrument, note.Semitone) {
 	if instNum.IsEmpty() {
 		return nil, note.UnchangedSemitone
 	}

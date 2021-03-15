@@ -3,6 +3,7 @@ package song
 import (
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -12,7 +13,7 @@ type ChannelData interface {
 	GetNote() note.Note
 
 	HasInstrument() bool
-	GetInstrument(note.Semitone) InstrumentID
+	GetInstrument(note.Semitone) instrument.InstrumentID
 
 	HasVolume() bool
 	GetVolume() volume.Volume

@@ -17,10 +17,10 @@ import (
 	"gotracker/internal/format/xm/layout"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/instrument"
 	"gotracker/internal/oscillator"
 	"gotracker/internal/song"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	"gotracker/internal/song/pattern"
 )

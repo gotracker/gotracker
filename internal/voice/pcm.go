@@ -12,9 +12,8 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"gotracker/internal/filter"
-	"gotracker/internal/instrument"
 	"gotracker/internal/pan"
-	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -37,7 +36,7 @@ type PCMConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      song.InstrumentDataIntf
+	DataIntf      instrument.InstrumentDataIntf
 	OutputFilter  voice.FilterApplier
 	VoiceFilter   filter.Filter
 	PluginFilter  filter.Filter

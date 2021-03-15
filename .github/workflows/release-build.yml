@@ -36,8 +36,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            dist/gotracker-linux-amd64.tar.gz
-            dist/gotracker-windows-amd64.tar.gz
+          files: "dist/*"
+          prerelease: ${{ contains(github.ref, '-beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

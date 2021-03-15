@@ -35,7 +35,7 @@ type OPLConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      instrument.InstrumentDataIntf
+	DataIntf      instrument.DataIntf
 }
 
 // == the actual opl2 voice ==

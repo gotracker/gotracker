@@ -1,19 +1,19 @@
 package instrument
 
-// InstrumentID is an identifier for an instrument/sample that means something to the format
-type InstrumentID interface {
+// ID is an identifier for an instrument/sample that means something to the format
+type ID interface {
 	IsEmpty() bool
 }
 
-// InstrumentDataIntf is the interface to implementation-specific functions on an instrument
-type InstrumentDataIntf interface{}
+// DataIntf is the interface to implementation-specific functions on an instrument
+type DataIntf interface{}
 
-// InstrumentKind defines the kind of instrument
-type InstrumentKind int
+// Kind defines the kind of instrument
+type Kind int
 
 const (
-	// InstrumentKindPCM defines a PCM instrument
-	InstrumentKindPCM = InstrumentKind(iota)
-	// InstrumentKindOPL2 defines an OPL2 instrument
-	InstrumentKindOPL2
+	// KindPCM defines a PCM instrument
+	KindPCM = Kind(iota)
+	// KindOPL2 defines an OPL2 instrument
+	KindOPL2
 )

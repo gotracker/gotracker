@@ -13,13 +13,6 @@ jobs:
     name: Generate cross-platform builds
     runs-on: ubuntu-latest
     steps:
-      - name: Extract tag name
-        id: tag
-        uses: actions/github-script@0.2.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            return context.payload.ref.replace(/\/refs\/tags\//, '');
       - name: Checkout the repository
         uses: actions/checkout@v2
       - name: go-cross-build
@@ -38,7 +31,7 @@ jobs:
           # Destination directory inside workspace to output build-artifacts.
           dest: 'dist'
           # Flags to pass to the Go linker.
-          ldflags: -X gotracker/internal/command.Version=${{ steps.release-build.outputs.tag }} -X gotracker/internal/command.GitHash=${{ github.sha }}
+          ldflags: -X gotracker/internal/command.Version=${{ github.event.release.tag_name }} -X gotracker/internal/command.GitHash=${{ github.sha }}
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

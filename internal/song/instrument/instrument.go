@@ -16,7 +16,7 @@ import (
 type StaticValues struct {
 	Filename           string
 	Name               string
-	ID                 InstrumentID
+	ID                 ID
 	Volume             volume.Volume
 	RelativeNoteNumber int8
 	AutoVibrato        voice.AutoVibrato
@@ -29,7 +29,7 @@ type StaticValues struct {
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
 	Static   StaticValues
-	Inst     InstrumentDataIntf
+	Inst     DataIntf
 	C2Spd    note.C2SPD
 	Finetune optional.Value //note.Finetune
 }
@@ -81,7 +81,7 @@ func (inst *Instrument) GetFinetune() note.Finetune {
 }
 
 // GetID returns the instrument number (1-based)
-func (inst *Instrument) GetID() InstrumentID {
+func (inst *Instrument) GetID() ID {
 	return inst.Static.ID
 }
 
@@ -91,14 +91,14 @@ func (inst *Instrument) GetSemitoneShift() int8 {
 }
 
 // GetKind returns the kind of the instrument
-func (inst *Instrument) GetKind() InstrumentKind {
+func (inst *Instrument) GetKind() Kind {
 	switch inst.Inst.(type) {
 	case *PCM:
-		return InstrumentKindPCM
+		return KindPCM
 	case *OPL2:
-		return InstrumentKindOPL2
+		return KindOPL2
 	}
-	return InstrumentKindPCM
+	return KindPCM
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
@@ -107,7 +107,7 @@ func (inst *Instrument) GetNewNoteAction() note.Action {
 }
 
 // GetData returns the instrument-specific data interface
-func (inst *Instrument) GetData() InstrumentDataIntf {
+func (inst *Instrument) GetData() DataIntf {
 	return inst.Inst
 }
 
@@ -130,7 +130,7 @@ func (inst *Instrument) GetAutoVibrato() voice.AutoVibrato {
 func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == InstrumentKindOPL2
+		return inst.GetKind() == KindOPL2
 	}
 	return note.IsRelease(n)
 }
@@ -139,7 +139,7 @@ func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 func (inst *Instrument) IsStopNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == InstrumentKindPCM
+		return inst.GetKind() == KindPCM
 	}
 	return note.IsRelease(n)
 }

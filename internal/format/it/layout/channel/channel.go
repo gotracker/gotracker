@@ -11,7 +11,7 @@ import (
 
 // SampleID is an InstrumentID that is a combination of InstID and SampID
 type SampleID struct {
-	instrument.InstrumentID
+	instrument.ID
 	InstID   uint8
 	Semitone note.Semitone
 }
@@ -47,7 +47,7 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument(stmem note.Semitone) instrument.InstrumentID {
+func (d *Data) GetInstrument(stmem note.Semitone) instrument.ID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()

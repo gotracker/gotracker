@@ -36,7 +36,7 @@ type PCMConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      instrument.InstrumentDataIntf
+	DataIntf      instrument.DataIntf
 	OutputFilter  voice.FilterApplier
 	VoiceFilter   filter.Filter
 	PluginFilter  filter.Filter

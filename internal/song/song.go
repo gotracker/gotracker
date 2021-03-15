@@ -13,7 +13,7 @@ type Data interface {
 	IsChannelEnabled(int) bool
 	GetOutputChannel(int) int
 	NumInstruments() int
-	IsValidInstrumentID(instrument.InstrumentID) bool
-	GetInstrument(instrument.InstrumentID) (*instrument.Instrument, note.Semitone)
+	IsValidInstrumentID(instrument.ID) bool
+	GetInstrument(instrument.ID) (*instrument.Instrument, note.Semitone)
 	GetName() string
 }

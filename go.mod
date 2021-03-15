@@ -9,4 +9,5 @@ require (
 	github.com/gotracker/gosound v1.0.12
 	github.com/gotracker/opl2 v1.0.1
 	github.com/gotracker/voice v1.0.4
+	github.com/spf13/cobra v1.1.3
 )

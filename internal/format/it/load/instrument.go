@@ -419,22 +419,11 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		data = buf.Bytes()
 	}
 
-	sf := format
-	if v, ok := s.Get(settings.NamePreferredSampleFormat); ok {
-		if val, ok := v.(pcm.SampleDataFormat); ok {
-			sf = val
-		}
+	samp, err := instrument.NewSample(data, instLen, numChannels, format, s)
+	if err != nil {
+		return err
 	}
-	if sf == format {
-		id.Sample = pcm.NewSample(data, instLen, numChannels, format)
-	} else {
-		inSample := pcm.NewSample(data, instLen, numChannels, format)
-		outSample, err := pcm.ConvertTo(inSample, sf)
-		if err != nil {
-			return err
-		}
-		id.Sample = outSample
-	}
+	id.Sample = samp
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()

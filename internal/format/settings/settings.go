@@ -9,6 +9,7 @@ import (
 
 const (
 	NamePreferredSampleFormat string = "PreferredSampleFormat"
+	NameUseNativeSampleFormat string = "UseNativeSampleFormat"
 )
 
 type Settings struct {
@@ -56,5 +57,14 @@ func PreferredSampleFormat(format pcm.SampleDataFormat) OptionFunc {
 			return errors.New("settings is nil")
 		}
 		return s.Set(NamePreferredSampleFormat, format)
+	}
+}
+
+func UseNativeSampleFormat() OptionFunc {
+	return func(s *Settings) error {
+		if s == nil {
+			return errors.New("settings is nil")
+		}
+		return s.Set(NameUseNativeSampleFormat, true)
 	}
 }

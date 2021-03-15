@@ -19,18 +19,20 @@ var rootCmd = &cobra.Command{
 	Use:   "gotracker",
 	Short: "Gotracker is a tracked music player",
 	Long:  `Gotracker is a tracked music player written entirely in Go`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if profiler {
+			go func() {
+				log.Println(http.ListenAndServe("localhost:6060", nil))
+			}()
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return playCmd.RunE(playCmd, args)
 	},
 }
 
 func Execute() {
-	if profiler {
-		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
-		}()
-	}
-
 	args := os.Args[1:]
 	cmd, _, err := rootCmd.Find(args)
 	if err != nil || cmd == rootCmd {

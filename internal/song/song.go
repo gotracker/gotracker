@@ -2,6 +2,7 @@ package song
 
 import (
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -12,7 +13,7 @@ type Data interface {
 	IsChannelEnabled(int) bool
 	GetOutputChannel(int) int
 	NumInstruments() int
-	IsValidInstrumentID(InstrumentID) bool
-	GetInstrument(InstrumentID) (Instrument, note.Semitone)
+	IsValidInstrumentID(instrument.InstrumentID) bool
+	GetInstrument(instrument.InstrumentID) (*instrument.Instrument, note.Semitone)
 	GetName() string
 }

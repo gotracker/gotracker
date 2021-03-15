@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/voice"
 
 	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -28,12 +29,12 @@ type Channel interface {
 	SetPeriod(note.Period)
 	SetPeriodDelta(note.PeriodDelta)
 	GetPeriodDelta() note.PeriodDelta
-	SetInstrument(song.Instrument)
-	GetInstrument() song.Instrument
+	SetInstrument(*instrument.Instrument)
+	GetInstrument() *instrument.Instrument
 	GetVoice() voice.Voice
-	GetTargetInst() song.Instrument
-	SetTargetInst(song.Instrument)
-	GetPrevInst() song.Instrument
+	GetTargetInst() *instrument.Instrument
+	SetTargetInst(*instrument.Instrument)
+	GetPrevInst() *instrument.Instrument
 	GetPrevVoice() voice.Voice
 	GetNoteSemitone() note.Semitone
 	SetStoredSemitone(note.Semitone)

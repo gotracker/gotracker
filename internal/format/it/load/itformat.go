@@ -18,9 +18,9 @@ import (
 	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/instrument"
 	"gotracker/internal/song"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	"gotracker/internal/song/pattern"
 )

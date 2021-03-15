@@ -11,6 +11,7 @@ import (
 
 	"gotracker/internal/player/intf"
 	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	voiceImpl "gotracker/internal/voice"
 )
@@ -181,12 +182,12 @@ func (cs *ChannelState) SetVolumeActive(on bool) {
 }
 
 // GetInstrument returns the interface to the active instrument
-func (cs *ChannelState) GetInstrument() song.Instrument {
+func (cs *ChannelState) GetInstrument() *instrument.Instrument {
 	return cs.activeState.Instrument
 }
 
 // SetInstrument sets the interface to the active instrument
-func (cs *ChannelState) SetInstrument(inst song.Instrument) {
+func (cs *ChannelState) SetInstrument(inst *instrument.Instrument) {
 	cs.activeState.Instrument = inst
 	if cs.prevState.Instrument != inst {
 		if prevVoice := cs.prevState.Voice; prevVoice != nil && prevVoice.IsKeyOn() {
@@ -208,17 +209,17 @@ func (cs *ChannelState) GetVoice() voice.Voice {
 }
 
 // GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState) GetTargetInst() song.Instrument {
+func (cs *ChannelState) GetTargetInst() *instrument.Instrument {
 	return cs.targetState.Instrument
 }
 
 // SetTargetInst sets the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState) SetTargetInst(inst song.Instrument) {
+func (cs *ChannelState) SetTargetInst(inst *instrument.Instrument) {
 	cs.targetState.Instrument = inst
 }
 
 // GetPrevInst returns the interface to the last row's active instrument
-func (cs *ChannelState) GetPrevInst() song.Instrument {
+func (cs *ChannelState) GetPrevInst() *instrument.Instrument {
 	return cs.prevState.Instrument
 }
 

@@ -17,8 +17,8 @@ import (
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/instrument"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	"gotracker/internal/song/pattern"
 )
@@ -271,7 +271,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 
 	song := layout.Song{
 		Head:        *h,
-		Instruments: make([]instrument.Instrument, len(f.InstrumentPointers)),
+		Instruments: make([]*instrument.Instrument, len(f.InstrumentPointers)),
 		OrderList:   make([]index.Pattern, len(f.OrderList)),
 	}
 
@@ -296,7 +296,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		song.OrderList[i] = index.Pattern(o)
 	}
 
-	song.Instruments = make([]instrument.Instrument, len(f.Instruments))
+	song.Instruments = make([]*instrument.Instrument, len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
 		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples, s)
 		if err != nil {
@@ -306,7 +306,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			continue
 		}
 		sample.Static.ID = channel.S3MInstrumentID(uint8(instNum + 1))
-		song.Instruments[instNum] = *sample
+		song.Instruments[instNum] = sample
 	}
 
 	lastEnabledChannel := 0

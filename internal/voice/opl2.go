@@ -11,8 +11,7 @@ import (
 	"github.com/gotracker/voice/period"
 	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/instrument"
-	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -36,7 +35,7 @@ type OPLConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      song.InstrumentDataIntf
+	DataIntf      instrument.InstrumentDataIntf
 }
 
 // == the actual opl2 voice ==

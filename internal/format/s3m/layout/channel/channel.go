@@ -5,7 +5,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
 
@@ -43,7 +43,7 @@ func (d *Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument(stmem note.Semitone) song.InstrumentID {
+func (d *Data) GetInstrument(stmem note.Semitone) instrument.InstrumentID {
 	return d.Instrument
 }
 

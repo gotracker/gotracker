@@ -4,13 +4,12 @@ import (
 	"github.com/gotracker/voice"
 
 	"gotracker/internal/filter"
-	"gotracker/internal/instrument"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/song"
+	"gotracker/internal/song/instrument"
 )
 
 // New returns a new Voice from the instrument and output channel provided
-func New(inst song.Instrument, output *intf.OutputChannel) voice.Voice {
+func New(inst *instrument.Instrument, output *intf.OutputChannel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (

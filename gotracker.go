@@ -11,11 +11,9 @@ import (
 	"reflect"
 	"sort"
 	"time"
-	"unsafe"
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
-	"github.com/gotracker/voice/pcm"
 
 	"gotracker/internal/format"
 	itEffect "gotracker/internal/format/it/playback/effect"
@@ -33,14 +31,15 @@ import (
 
 // flags
 var (
-	outputSettings           device.Settings
-	startingOrder            int
-	startingRow              int
-	canLoop                  bool
-	effectCoverage           bool
-	panicOnUnhandledEffect   bool
-	profiler                 bool
-	disablePreconvertSamples bool
+	outputSettings         device.Settings
+	startingOrder          int
+	startingRow            int
+	canLoop                bool
+	effectCoverage         bool
+	panicOnUnhandledEffect bool
+	profiler               bool
+	disableNativeSamples   bool
+	//disablePreconvertSamples bool
 )
 
 func main() {
@@ -57,7 +56,8 @@ func main() {
 	flag.BoolVar(&effectCoverage, "E", false, "gather and display effect coverage data")
 	flag.BoolVar(&panicOnUnhandledEffect, "P", false, "panic when an unhandled effect is encountered")
 	flag.BoolVar(&profiler, "p", false, "enable profiler (and supporting http server)")
-	flag.BoolVar(&disablePreconvertSamples, "S", false, "disable preconversion of samples to 32-bit floats")
+	flag.BoolVar(&disableNativeSamples, "N", false, "disable preconversion of samples to native sampling format")
+	//flag.BoolVar(&disablePreconvertSamples, "S", false, "disable preconversion of samples to 32-bit floats")
 
 	flag.Parse()
 
@@ -72,13 +72,18 @@ func main() {
 	}
 
 	var options []settings.OptionFunc
-	if !disablePreconvertSamples {
-		var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
-		// HACK: I wish we had access to the `sys.BigEndian` bool
-		if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
-			preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
-		}
-		options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
+	// NOTE: JBC - disabled because Native Samples are working now :)
+	// leaving this code here so down-rezing of samples can be added later.
+	//if !disablePreconvertSamples {
+	//	var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
+	//	// HACK: I wish we had access to the `sys.BigEndian` bool
+	//	if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
+	//		preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
+	//	}
+	//	options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
+	//}
+	if !disableNativeSamples {
+		options = append(options, settings.UseNativeSampleFormat())
 	}
 
 	playback, songFmt, err := format.Load(fn, options...)

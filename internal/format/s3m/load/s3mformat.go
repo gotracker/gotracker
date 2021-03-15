@@ -107,22 +107,11 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 
 	idata.SustainLoop = loop.NewLoop(sustainMode, sustainSettings)
 
-	sf := format
-	if v, ok := s.Get(settings.NamePreferredSampleFormat); ok {
-		if val, ok := v.(pcm.SampleDataFormat); ok {
-			sf = val
-		}
+	samp, err := instrument.NewSample(scrs.Sample, instLen, numChannels, format, s)
+	if err != nil {
+		return nil, err
 	}
-	if sf == format {
-		idata.Sample = pcm.NewSample(scrs.Sample, instLen, numChannels, format)
-	} else {
-		inSample := pcm.NewSample(scrs.Sample, instLen, numChannels, format)
-		outSample, err := pcm.ConvertTo(inSample, sf)
-		if err != nil {
-			return nil, err
-		}
-		idata.Sample = outSample
-	}
+	idata.Sample = samp
 
 	sample.Inst = &idata
 	return &sample, nil

@@ -192,22 +192,11 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii.PanEnv.Loop = loop.NewLoop(panEnvLoopMode, panEnvLoopSettings)
 		ii.PanEnv.Sustain = loop.NewLoop(panEnvSustainMode, panEnvSustainSettings)
 
-		sf := format
-		if v, ok := s.Get(settings.NamePreferredSampleFormat); ok {
-			if val, ok := v.(pcm.SampleDataFormat); ok {
-				sf = val
-			}
+		samp, err := instrument.NewSample(si.SampleData, instLen, numChannels, format, s)
+		if err != nil {
+			return nil, nil, err
 		}
-		if sf == format {
-			ii.Sample = pcm.NewSample(si.SampleData, instLen, numChannels, format)
-		} else {
-			inSample := pcm.NewSample(si.SampleData, instLen, numChannels, format)
-			outSample, err := pcm.ConvertTo(inSample, sf)
-			if err != nil {
-				return nil, nil, err
-			}
-			ii.Sample = outSample
-		}
+		ii.Sample = samp
 
 		sample.Inst = &ii
 		instruments = append(instruments, &sample)

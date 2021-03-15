@@ -31,7 +31,7 @@ jobs:
           # Destination directory inside workspace to output build-artifacts.
           dest: 'dist'
           # Flags to pass to the Go linker.
-          # ldflags: # optional, default is 
+          ldflags: "-X command.Version=${GITHUB_REF##*/} -X command.GitHash=${GITHUB_SHA}"
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

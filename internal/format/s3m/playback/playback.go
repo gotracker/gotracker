@@ -111,6 +111,11 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	return &m, nil
 }
 
+// StartPatternTransaction returns a new row update transaction for the pattern system
+func (m *Manager) StartPatternTransaction() *playpattern.RowUpdateTransaction {
+	return m.pattern.StartTransaction()
+}
+
 // SetupSampler configures the internal sampler
 func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
 	if err := m.Tracker.SetupSampler(samplesPerSecond, channels, bitsPerSample); err != nil {
@@ -238,6 +243,8 @@ func (m *Manager) Configure(features []feature.Feature) {
 		switch f := feat.(type) {
 		case feature.SongLoop:
 			m.pattern.SongLoop = f
+		case feature.PlayUntilOrderAndRow:
+			m.pattern.PlayUntilOrderAndRow = f
 		}
 	}
 }

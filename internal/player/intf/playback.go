@@ -10,6 +10,7 @@ import (
 	"gotracker/internal/player/feature"
 	"gotracker/internal/song"
 	"gotracker/internal/song/index"
+	"gotracker/internal/song/pattern"
 )
 
 // Playback is an interface for rendering a song to output data
@@ -32,6 +33,8 @@ type Playback interface {
 	BreakOrder() error
 	SetOnEffect(func(Effect))
 	IgnoreUnknownEffect() bool
+
+	StartPatternTransaction() *pattern.RowUpdateTransaction
 
 	SetupSampler(int, int, int) error
 	GetSampleRate() float32

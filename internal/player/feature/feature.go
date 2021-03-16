@@ -24,3 +24,8 @@ type IgnoreUnknownEffect struct {
 type PreConvertSamples struct {
 	Enabled bool
 }
+
+type PlayUntilOrderAndRow struct {
+	Order int
+	Row   int
+}

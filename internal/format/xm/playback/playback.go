@@ -81,6 +81,11 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	return &m, nil
 }
 
+// StartPatternTransaction returns a new row update transaction for the pattern system
+func (m *Manager) StartPatternTransaction() *playpattern.RowUpdateTransaction {
+	return m.pattern.StartTransaction()
+}
+
 // GetNumChannels returns the number of channels
 func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
@@ -212,6 +217,8 @@ func (m *Manager) Configure(features []feature.Feature) {
 		switch f := feat.(type) {
 		case feature.SongLoop:
 			m.pattern.SongLoop = f
+		case feature.PlayUntilOrderAndRow:
+			m.pattern.PlayUntilOrderAndRow = f
 		}
 	}
 }

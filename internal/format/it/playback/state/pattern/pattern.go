@@ -21,8 +21,9 @@ type State struct {
 	finePatternDelay  int
 	resetPatternLoops bool
 
-	SongLoop   feature.SongLoop
-	loopDetect formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
+	SongLoop             feature.SongLoop
+	PlayUntilOrderAndRow feature.PlayUntilOrderAndRow
+	loopDetect           formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 
 	Patterns []pattern.Pattern
 	Orders   []index.Pattern
@@ -155,8 +156,13 @@ func (state *State) setCurrentRow(row index.Row) error {
 
 // Observe will attempt to detect a song loop
 func (state *State) Observe() error {
-	if !state.SongLoop.Enabled && state.loopDetect.Observe(state.currentOrder, state.currentRow) {
-		return song.ErrStopSong
+	if !state.SongLoop.Enabled {
+		if state.loopDetect.Observe(state.currentOrder, state.currentRow) {
+			return song.ErrStopSong
+		}
+		if state.currentOrder == index.Order(state.PlayUntilOrderAndRow.Order) && state.currentRow == index.Row(state.PlayUntilOrderAndRow.Row) {
+			return song.ErrStopSong
+		}
 	}
 	return nil
 }
@@ -181,6 +187,10 @@ func (state *State) Reset() {
 	*state = State{
 		SongLoop: feature.SongLoop{
 			Enabled: true,
+		},
+		PlayUntilOrderAndRow: feature.PlayUntilOrderAndRow{
+			Order: -1,
+			Row:   -1,
 		},
 	}
 }

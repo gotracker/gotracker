@@ -65,143 +65,22 @@ var playCmd = &cobra.Command{
 	Long:  "Play one or more tracked music file(s) using Gotracker.",
 	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return cmd.Usage()
+		var songs []songDetails
+		for _, fn := range args {
+			songs = append(songs, songDetails{
+				fn: fn,
+				start: orderDetails{
+					order: startingOrder,
+					row:   startingRow,
+				},
+				end: orderDetails{
+					order: -1,
+					row:   -1,
+				},
+			})
 		}
 
-		var options []settings.OptionFunc
-		// NOTE: JBC - disabled because Native Samples are working now :)
-		// leaving this code here so down-rezing of samples can be added later.
-		//if !disablePreconvertSamples {
-		//	var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
-		//	// HACK: I wish we had access to the `sys.BigEndian` bool
-		//	if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
-		//		preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
-		//	}
-		//	options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
-		//}
-		if !disableNativeSamples {
-			options = append(options, settings.UseNativeSampleFormat())
-		}
-
-		var (
-			playback  intf.Playback
-			progress  *progressBar.ProgressBar
-			lastOrder int
-		)
-
-		outputSettings.OnRowOutput = func(deviceKind device.Kind, premix *device.PremixData) {
-			row := premix.Userdata.(*render.RowRender)
-			switch deviceKind {
-			case device.KindSoundCard:
-				if row.RowText != nil {
-					fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
-				}
-			case device.KindFile:
-				if progress == nil {
-					progress = progressBar.StartNew(playback.GetNumOrders())
-					lastOrder = row.Order
-				}
-				if lastOrder != row.Order {
-					progress.Increment()
-					lastOrder = row.Order
-				}
-			}
-		}
-
-		waveOut, configuration, err := output.CreateOutputDevice(outputSettings)
-		if err != nil {
-			return err
-		}
-		defer waveOut.Close()
-
-		outBufs := make(chan *device.PremixData, 64)
-
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := waveOut.Play(outBufs); err != nil {
-				switch {
-				case errors.Is(err, song.ErrStopSong):
-				case errors.Is(err, context.Canceled):
-
-				default:
-					log.Fatalln(err)
-				}
-			}
-		}()
-
-		if len(args) != 1 {
-			canLoop = false
-		}
-		configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
-		configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
-
-		fmt.Printf("Output device: %s\n", waveOut.Name())
-
-		playedAtLeastOne, err := playSongs(args, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
-			playback = pb
-			defer func() {
-				if progress != nil {
-					progress.Set64(progress.Total)
-					progress.Finish()
-				}
-			}()
-
-			var effectMap map[string]int
-			if effectCoverage {
-				effectMap = make(map[string]int)
-				playback.SetOnEffect(func(e intf.Effect) {
-					var name string
-					switch t := e.(type) {
-					case *xmEffect.VolEff:
-						for _, eff := range t.Effects {
-							typ := reflect.TypeOf(eff)
-							name = typ.Name()
-							effectMap[name]++
-						}
-					case *itEffect.VolEff:
-						for _, eff := range t.Effects {
-							typ := reflect.TypeOf(eff)
-							name = typ.Name()
-							effectMap[name]++
-						}
-					case *s3mEffect.UnhandledCommand:
-						name = fmt.Sprintf("UnhandledCommand(%c)", t.Command+'@')
-						effectMap[name]++
-					default:
-						typ := reflect.TypeOf(t)
-						name = typ.Name()
-						effectMap[name]++
-					}
-				})
-			}
-
-			fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
-			fmt.Printf("Song: %s\n", playback.GetName())
-
-			p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
-			if err != nil {
-				return err
-			}
-
-			if err := p.Play(playback); err != nil {
-				return err
-			}
-
-			if err := p.WaitUntilDone(); err != nil {
-				switch {
-				case errors.Is(err, song.ErrStopSong):
-				case errors.Is(err, context.Canceled):
-
-				default:
-					return err
-				}
-			}
-
-			return nil
-		})
+		playedAtLeastOne, err := playSongs(songs)
 		if err != nil {
 			return err
 		}
@@ -210,16 +89,168 @@ var playCmd = &cobra.Command{
 			return cmd.Usage()
 		}
 
-		wg.Wait()
-
-		fmt.Println()
-		fmt.Println("done!")
-
 		return nil
 	},
 }
 
-func playSongs(songs []string, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
+type orderDetails struct {
+	order int
+	row   int
+}
+
+type songDetails struct {
+	fn    string
+	start orderDetails
+	end   orderDetails
+}
+
+func playSongs(songs []songDetails) (bool, error) {
+	var options []settings.OptionFunc
+	// NOTE: JBC - disabled because Native Samples are working now :)
+	// leaving this code here so down-rezing of samples can be added later.
+	//if !disablePreconvertSamples {
+	//	var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
+	//	// HACK: I wish we had access to the `sys.BigEndian` bool
+	//	if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
+	//		preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
+	//	}
+	//	options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
+	//}
+	if !disableNativeSamples {
+		options = append(options, settings.UseNativeSampleFormat())
+	}
+
+	var (
+		playback  intf.Playback
+		progress  *progressBar.ProgressBar
+		lastOrder int
+	)
+
+	outputSettings.OnRowOutput = func(deviceKind device.Kind, premix *device.PremixData) {
+		row := premix.Userdata.(*render.RowRender)
+		switch deviceKind {
+		case device.KindSoundCard:
+			if row.RowText != nil {
+				fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
+			}
+		case device.KindFile:
+			if progress == nil {
+				progress = progressBar.StartNew(playback.GetNumOrders())
+				lastOrder = row.Order
+			}
+			if lastOrder != row.Order {
+				progress.Increment()
+				lastOrder = row.Order
+			}
+		}
+	}
+
+	waveOut, configuration, err := output.CreateOutputDevice(outputSettings)
+	if err != nil {
+		return false, err
+	}
+	defer waveOut.Close()
+
+	outBufs := make(chan *device.PremixData, 64)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := waveOut.Play(outBufs); err != nil {
+			switch {
+			case errors.Is(err, song.ErrStopSong):
+			case errors.Is(err, context.Canceled):
+
+			default:
+				log.Fatalln(err)
+			}
+		}
+	}()
+
+	if len(songs) != 1 {
+		canLoop = false
+	}
+	configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
+	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
+
+	fmt.Printf("Output device: %s\n", waveOut.Name())
+
+	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
+		playback = pb
+		defer func() {
+			if progress != nil {
+				progress.Set64(progress.Total)
+				progress.Finish()
+			}
+		}()
+
+		var effectMap map[string]int
+		if effectCoverage {
+			effectMap = make(map[string]int)
+			playback.SetOnEffect(func(e intf.Effect) {
+				var name string
+				switch t := e.(type) {
+				case *xmEffect.VolEff:
+					for _, eff := range t.Effects {
+						typ := reflect.TypeOf(eff)
+						name = typ.Name()
+						effectMap[name]++
+					}
+				case *itEffect.VolEff:
+					for _, eff := range t.Effects {
+						typ := reflect.TypeOf(eff)
+						name = typ.Name()
+						effectMap[name]++
+					}
+				case *s3mEffect.UnhandledCommand:
+					name = fmt.Sprintf("UnhandledCommand(%c)", t.Command+'@')
+					effectMap[name]++
+				default:
+					typ := reflect.TypeOf(t)
+					name = typ.Name()
+					effectMap[name]++
+				}
+			})
+		}
+
+		fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
+		fmt.Printf("Song: %s\n", playback.GetName())
+
+		p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
+		if err != nil {
+			return err
+		}
+
+		if err := p.Play(playback); err != nil {
+			return err
+		}
+
+		if err := p.WaitUntilDone(); err != nil {
+			switch {
+			case errors.Is(err, song.ErrStopSong):
+			case errors.Is(err, context.Canceled):
+
+			default:
+				return err
+			}
+		}
+
+		return nil
+	})
+	if !playedAtLeastOne || err != nil {
+		return playedAtLeastOne, err
+	}
+
+	wg.Wait()
+
+	fmt.Println()
+	fmt.Println("done!")
+
+	return true, nil
+}
+
+func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
@@ -243,8 +274,8 @@ func playSongs(songs []string, outBufs chan<- *device.PremixData, options []sett
 	}
 
 	var playedAtLeastOne bool
-	for _, fn := range songs {
-		playback, songFmt, err := format.Load(fn, options...)
+	for _, song := range songs {
+		playback, songFmt, err := format.Load(song.fn, options...)
 		if err != nil {
 			return playedAtLeastOne, fmt.Errorf("Could not create song state! err[%v]", err)
 		} else if songFmt != nil {
@@ -252,18 +283,29 @@ func playSongs(songs []string, outBufs chan<- *device.PremixData, options []sett
 				return playedAtLeastOne, fmt.Errorf("Could not setup playback sampler! err[%v]", err)
 			}
 		}
-		if startingOrder != -1 {
-			if err := playback.SetNextOrder(index.Order(startingOrder)); err != nil {
-				return playedAtLeastOne, fmt.Errorf("Could not set starting order! err[%v]", err)
+		if song.start.order != -1 || song.start.row != -1 {
+			txn := playback.StartPatternTransaction()
+			defer txn.Cancel()
+			if song.start.order != -1 {
+				txn.SetNextOrder(index.Order(song.start.order))
 			}
-		}
-		if startingRow != -1 {
-			if err := playback.SetNextRow(index.Row(startingRow)); err != nil {
-				return playedAtLeastOne, fmt.Errorf("Could not set starting row! err[%v]", err)
+			if song.start.row != -1 {
+				txn.SetNextRow(index.Row(song.start.row))
+			}
+			if err := txn.Commit(); err != nil {
+				return playedAtLeastOne, err
 			}
 		}
 
-		playback.Configure(configuration)
+		cfg := append([]feature.Feature{}, configuration...)
+		if song.end.order != -1 && song.end.row != -1 {
+			cfg = append(cfg, feature.PlayUntilOrderAndRow{
+				Order: song.end.order,
+				Row:   song.end.row,
+			})
+		}
+
+		playback.Configure(cfg)
 
 		if err = startPlayingCB(playback, tickInterval); err != nil {
 			continue

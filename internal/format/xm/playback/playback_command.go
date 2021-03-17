@@ -63,7 +63,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 				}
 			}
 			cs.SetPeriod(targetPeriod)
-			cs.PortaTargetPeriod = targetPeriod
+			cs.SetPortaTargetPeriod(targetPeriod)
 		}
 		cs.SetPos(cs.GetTargetPos())
 	}

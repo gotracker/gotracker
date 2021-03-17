@@ -363,7 +363,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 	}
 
 	// TODO: This code should be active, but right now it's chewing CPU like mad
-	/*
+	if false {
 		pn := cs.activeState.Clone()
 
 		switch cs.NewNoteAction {
@@ -371,12 +371,12 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		//	pn.Enabled = false
 		case note.ActionContinue:
 			// nothing
-		case note.ActionNoteOff:
-			if nc := pn.NoteControl; nc != nil {
+		case note.ActionRelease:
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 			}
 		case note.ActionFadeout:
-			if nc := pn.NoteControl; nc != nil {
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 				nc.Fadeout()
 			}
@@ -385,7 +385,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		if len(cs.pastNote) > 2 {
 			cs.pastNote = cs.pastNote[len(cs.pastNote)-2:]
 		}
-	*/
+	}
 }
 
 // DoPastNoteEffect performs an action on all past-note playbacks associated with the channel

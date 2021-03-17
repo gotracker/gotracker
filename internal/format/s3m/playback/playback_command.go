@@ -57,7 +57,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 				nc.Fadeout()
 			}
 			cs.SetPeriod(targetPeriod)
-			cs.PortaTargetPeriod = targetPeriod
+			cs.SetPortaTargetPeriod(targetPeriod)
 		}
 		cs.SetPos(cs.GetTargetPos())
 	}

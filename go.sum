@@ -75,10 +75,11 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORR
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gotracker/goaudiofile v1.0.13-2 h1:FtsIqmKXenCun1p+MDnQsdKWKHwNXAS0WYoG4ZHX+LU=
 github.com/gotracker/goaudiofile v1.0.13-2/go.mod h1:uBhmICiUsS/CtpUF116m3GYY/yIP4WPnNVoUc9MZi+E=
-github.com/gotracker/gomixing v1.0.12 h1:mdLkhMbnw2kpc7tOkBIYyJEyznp9RdcEC41BggrcZHY=
 github.com/gotracker/gomixing v1.0.12/go.mod h1:orU2G///ovcRkt4bdNZMhOPvHW0vl5yebXaLKqQcHWw=
-github.com/gotracker/gosound v1.0.12 h1:JmR4awoYDe2YXFu2ErHm13XhFzqTxWk+60B1UNfTykM=
-github.com/gotracker/gosound v1.0.12/go.mod h1:0OaIV2RtKRC7KIhMRJYStPutjSoyGRVeqbMSSKoGz6U=
+github.com/gotracker/gomixing v1.0.13 h1:m3W9UDLjUyb0I+Ua2Odz2w4rr3JZ9eKGVKJGlpT1gYA=
+github.com/gotracker/gomixing v1.0.13/go.mod h1:orU2G///ovcRkt4bdNZMhOPvHW0vl5yebXaLKqQcHWw=
+github.com/gotracker/gosound v1.0.13 h1:Uhtq39KT0R4CRDS7ChKs/onWeyy28xR87YhVtIKHim4=
+github.com/gotracker/gosound v1.0.13/go.mod h1:0OaIV2RtKRC7KIhMRJYStPutjSoyGRVeqbMSSKoGz6U=
 github.com/gotracker/opl2 v1.0.1 h1:1PVNs0dXqEAQxdws7fz2WEE3nSKkMb1osTTT7KgEi5g=
 github.com/gotracker/opl2 v1.0.1/go.mod h1:lW1WbZlh7svEMpurp9LLYWSyf1WPAb750cQ7xGIhCnY=
 github.com/gotracker/voice v1.0.4 h1:6BGUfB1dHiqAlixON7ZZ9oHMDHv4gSymvIqpsYwkFSc=

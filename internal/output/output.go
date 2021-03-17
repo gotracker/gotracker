@@ -69,6 +69,25 @@ func Setup() {
 	DefaultOutputDeviceName = calculateOptimalDefaultOutputDeviceName()
 }
 
+// DeviceInfo returns information about a device
+type DeviceInfo struct {
+	Priority int
+	Kind     device.Kind
+}
+
+func GetOutputDevices() map[string]DeviceInfo {
+	m := make(map[string]DeviceInfo)
+	for k, v := range devicePriorityMap {
+		if d, ok := device.Map[k]; ok {
+			m[k] = DeviceInfo{
+				Priority: int(v),
+				Kind:     d.Kind,
+			}
+		}
+	}
+	return m
+}
+
 func init() {
 	_ = devicePriorityNone // lint
 	devicePriorityMap["file"] = devicePriorityFile

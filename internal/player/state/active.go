@@ -37,8 +37,6 @@ func (a *Active) Clone() Active {
 
 // RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
 func RenderStatesTogether(states []*Active, mix *mixing.Mixer, panmixer mixing.PanMixer, samplerSpeed float32, samples int, duration time.Duration) ([]mixing.Data, []*Active) {
-	data := mix.NewMixBuffer(samples)
-
 	mixData := []mixing.Data{}
 
 	centerAheadPan := panmixer.GetMixingMatrix(panning.CenterAhead)
@@ -81,16 +79,16 @@ func RenderStatesTogether(states []*Active, mix *mixing.Mixer, panmixer mixing.P
 				MixLen:    samples,
 			}
 			if sampleData.Sample != nil {
+				data := mix.NewMixBuffer(samples)
 				data.MixInSample(sampleData)
+				mixData = append(mixData, mixing.Data{
+					Data:       data,
+					Pan:        pan,
+					Volume:     volume.Volume(1.0),
+					SamplesLen: samples,
+				})
 			}
 		}
-
-		mixData = append(mixData, mixing.Data{
-			Data:       data,
-			Pan:        pan,
-			Volume:     volume.Volume(1.0),
-			SamplesLen: samples,
-		})
 
 		a.Pos = voice.GetPos(ncv)
 		a.Pos.Add(samplerAdd * float32(samples))

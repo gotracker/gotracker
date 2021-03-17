@@ -9,17 +9,13 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
+	"gotracker/internal/optional"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/song"
 	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 	voiceImpl "gotracker/internal/voice"
 )
-
-// NoteTriggerDetails is for when a note needs to be played
-type NoteTriggerDetails struct {
-	Tick int
-}
 
 // ChannelState is the state of a single channel
 type ChannelState struct {
@@ -31,9 +27,9 @@ type ChannelState struct {
 
 	TargetSemitone note.Semitone // from pattern, modified
 
-	StoredSemitone    note.Semitone // from pattern, unmodified, current note
-	PortaTargetPeriod note.Period
-	Trigger           *NoteTriggerDetails
+	StoredSemitone    note.Semitone  // from pattern, unmodified, current note
+	PortaTargetPeriod optional.Value // note.Period
+	Trigger           optional.Value // int
 	RetriggerCount    uint8
 	Memory            intf.Memory
 	TrackData         song.ChannelData
@@ -52,18 +48,18 @@ type ChannelState struct {
 
 // WillTriggerOn returns true if a note will trigger on the tick specified
 func (cs *ChannelState) WillTriggerOn(tick int) bool {
-	if cs.Trigger == nil {
-		return false
+	if triggerTick, ok := cs.Trigger.GetInt(); ok {
+		return triggerTick == tick
 	}
 
-	return cs.Trigger.Tick == tick
+	return false
 }
 
 // AdvanceRow will update the current state to make room for the next row's state data
 func (cs *ChannelState) AdvanceRow() {
 	cs.prevState = cs.activeState
 	cs.targetState = cs.activeState.Playback
-	cs.Trigger = nil
+	cs.Trigger.Reset()
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
 
@@ -148,12 +144,19 @@ func (cs *ChannelState) GetData() song.ChannelData {
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period
 func (cs *ChannelState) GetPortaTargetPeriod() note.Period {
-	return cs.PortaTargetPeriod
+	if p, ok := cs.PortaTargetPeriod.GetPeriod(); ok {
+		return p
+	}
+	return nil
 }
 
 // SetPortaTargetPeriod sets the current target portamento (to note) sampler period
 func (cs *ChannelState) SetPortaTargetPeriod(period note.Period) {
-	cs.PortaTargetPeriod = period
+	if period != nil {
+		cs.PortaTargetPeriod.Set(period)
+	} else {
+		cs.PortaTargetPeriod.Reset()
+	}
 }
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
@@ -265,15 +268,11 @@ func (cs *ChannelState) SetPos(pos sampling.Pos) {
 
 // SetNotePlayTick sets the tick on which the note will retrigger
 func (cs *ChannelState) SetNotePlayTick(enabled bool, tick int) {
-	if !enabled {
-		cs.Trigger = nil
-		return
+	if enabled {
+		cs.Trigger.Set(tick)
+	} else {
+		cs.Trigger.Reset()
 	}
-
-	if cs.Trigger == nil {
-		cs.Trigger = &NoteTriggerDetails{}
-	}
-	cs.Trigger.Tick = tick
 }
 
 // GetRetriggerCount returns the current count of the retrigger counter
@@ -364,7 +363,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 	}
 
 	// TODO: This code should be active, but right now it's chewing CPU like mad
-	/*
+	if false {
 		pn := cs.activeState.Clone()
 
 		switch cs.NewNoteAction {
@@ -372,12 +371,12 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		//	pn.Enabled = false
 		case note.ActionContinue:
 			// nothing
-		case note.ActionNoteOff:
-			if nc := pn.NoteControl; nc != nil {
+		case note.ActionRelease:
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 			}
 		case note.ActionFadeout:
-			if nc := pn.NoteControl; nc != nil {
+			if nc := pn.Voice; nc != nil {
 				nc.Release()
 				nc.Fadeout()
 			}
@@ -386,7 +385,7 @@ func (cs *ChannelState) TransitionActiveToPastState() {
 		if len(cs.pastNote) > 2 {
 			cs.pastNote = cs.pastNote[len(cs.pastNote)-2:]
 		}
-	*/
+	}
 }
 
 // DoPastNoteEffect performs an action on all past-note playbacks associated with the channel

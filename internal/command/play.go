@@ -30,31 +30,63 @@ import (
 
 // flags
 var (
-	outputSettings         device.Settings
-	startingOrder          int
-	startingRow            int
-	canLoop                bool
-	effectCoverage         bool
-	panicOnUnhandledEffect bool
-	disableNativeSamples   bool
-	//disablePreconvertSamples bool
+	outputSettings = device.Settings{
+		Channels:         2,
+		SamplesPerSecond: 44100,
+		BitsPerSample:    16,
+		Filepath:         "output.wav",
+	}
+	startingOrder          int  = -1
+	startingRow            int  = -1
+	numPremixBuffers       int  = 64
+	canLoop                bool = false
+	silent                 bool = false
+	effectCoverage         bool = false
+	panicOnUnhandledEffect bool = false
+	disableNativeSamples   bool = false
+	//disablePreconvertSamples bool = false
 )
+
+func loggingf(format string, args ...interface{}) {
+	if silent {
+		return
+	}
+	fmt.Printf(format, args...)
+}
+
+func loggingln(args ...interface{}) {
+	if silent {
+		return
+	}
+	fmt.Println(args...)
+}
+
+// func logging(args ...interface{}) {
+// 	if silent {
+// 		return
+// 	}
+// 	fmt.Print(args...)
+// }
 
 func init() {
 	output.Setup()
 
-	playCmd.PersistentFlags().IntVarP(&outputSettings.SamplesPerSecond, "sample-rate", "s", 44100, "sample rate")
-	playCmd.PersistentFlags().IntVarP(&outputSettings.Channels, "channels", "c", 2, "channels")
-	playCmd.PersistentFlags().IntVarP(&outputSettings.BitsPerSample, "bits-per-sample", "b", 16, "bits per sample")
-	playCmd.PersistentFlags().IntVarP(&startingOrder, "starting-order", "o", -1, "starting order")
-	playCmd.PersistentFlags().IntVarP(&startingRow, "starting-row", "r", -1, "starting row")
-	playCmd.PersistentFlags().BoolVarP(&canLoop, "can-loop", "l", false, "enable pattern loop (only works in single-song mode)")
-	playCmd.PersistentFlags().StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
-	playCmd.PersistentFlags().StringVarP(&outputSettings.Filepath, "output-file", "f", "output.wav", "output filepath")
-	playCmd.PersistentFlags().BoolVarP(&effectCoverage, "gather-effect-coverage", "E", false, "gather and display effect coverage data")
-	playCmd.PersistentFlags().BoolVarP(&panicOnUnhandledEffect, "unhandled-effect-panic", "P", false, "panic when an unhandled effect is encountered")
-	playCmd.PersistentFlags().BoolVarP(&disableNativeSamples, "disable-native-samples", "N", false, "disable preconversion of samples to native sampling format")
-	//playCmd.PersistentFlags().BoolVarP(&disablePreconvertSamples, "disable-preconvert-samples", "S", false, "disable preconversion of samples to 32-bit floats")
+	if persistFlags := playCmd.PersistentFlags(); persistFlags != nil {
+		persistFlags.IntVarP(&outputSettings.SamplesPerSecond, "sample-rate", "s", outputSettings.SamplesPerSecond, "sample rate")
+		persistFlags.IntVarP(&outputSettings.Channels, "channels", "c", outputSettings.Channels, "channels")
+		persistFlags.IntVarP(&outputSettings.BitsPerSample, "bits-per-sample", "b", outputSettings.BitsPerSample, "bits per sample")
+		persistFlags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
+		persistFlags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
+		persistFlags.IntVarP(&numPremixBuffers, "num-buffers", "B", numPremixBuffers, "number of premixed buffers")
+		persistFlags.BoolVarP(&canLoop, "can-loop", "l", canLoop, "enable pattern loop (only works in single-song mode)")
+		persistFlags.BoolVarP(&silent, "silent", "q", silent, "disable non-error logging")
+		persistFlags.StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
+		persistFlags.StringVarP(&outputSettings.Filepath, "output-file", "f", outputSettings.Filepath, "output filepath")
+		persistFlags.BoolVarP(&effectCoverage, "gather-effect-coverage", "E", effectCoverage, "gather and display effect coverage data")
+		persistFlags.BoolVarP(&panicOnUnhandledEffect, "unhandled-effect-panic", "P", panicOnUnhandledEffect, "panic when an unhandled effect is encountered")
+		persistFlags.BoolVarP(&disableNativeSamples, "disable-native-samples", "N", disableNativeSamples, "disable preconversion of samples to native sampling format")
+		//persistFlags.BoolVarP(&disablePreconvertSamples, "disable-preconvert-samples", "S", disablePreconvertSamples, "disable preconversion of samples to 32-bit floats")
+	}
 
 	rootCmd.AddCommand(playCmd)
 }
@@ -131,7 +163,7 @@ func playSongs(songs []songDetails) (bool, error) {
 		switch deviceKind {
 		case device.KindSoundCard:
 			if row.RowText != nil {
-				fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
+				loggingf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
 			}
 		case device.KindFile:
 			if progress == nil {
@@ -151,7 +183,7 @@ func playSongs(songs []songDetails) (bool, error) {
 	}
 	defer waveOut.Close()
 
-	outBufs := make(chan *device.PremixData, 64)
+	outBufs := make(chan *device.PremixData, numPremixBuffers)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -174,7 +206,7 @@ func playSongs(songs []songDetails) (bool, error) {
 	configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
 	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
 
-	fmt.Printf("Output device: %s\n", waveOut.Name())
+	loggingf("Output device: %s\n", waveOut.Name())
 
 	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
 		playback = pb
@@ -214,8 +246,8 @@ func playSongs(songs []songDetails) (bool, error) {
 			})
 		}
 
-		fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
-		fmt.Printf("Song: %s\n", playback.GetName())
+		loggingf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
+		loggingf("Song: %s\n", playback.GetName())
 
 		p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
 		if err != nil {
@@ -244,8 +276,8 @@ func playSongs(songs []songDetails) (bool, error) {
 
 	wg.Wait()
 
-	fmt.Println()
-	fmt.Println("done!")
+	loggingln()
+	loggingln("done!")
 
 	return true, nil
 }

@@ -52,23 +52,17 @@ func (p *Playlist) MarkPlayed(s *Song) {
 func (p *Playlist) GetPlaylist(randomized bool) []int {
 	if randomized {
 		rand.Seed(time.Now().Unix())
+	randomize:
 		rand.Shuffle(len(p.currentPlayOrder), func(i, j int) {
 			p.currentPlayOrder[j], p.currentPlayOrder[i] = p.currentPlayOrder[i], p.currentPlayOrder[j]
 		})
-	randomize:
 		if len(p.currentPlayOrder) > p.lastPlayedMaxSize && p.lastPlayedMaxSize >= 1 {
-			same := false
-		lastLoop:
 			for _, lastIdx := range p.lastPlayed {
 				for _, curIdx := range p.currentPlayOrder[:p.lastPlayedMaxSize] {
 					if curIdx == lastIdx {
-						same = true
-						break lastLoop
+						goto randomize
 					}
 				}
-			}
-			if same {
-				goto randomize
 			}
 		}
 	}

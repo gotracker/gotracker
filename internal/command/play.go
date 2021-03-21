@@ -3,6 +3,7 @@ package command
 import (
 	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"gotracker/internal/command/internal/logging"
 	"gotracker/internal/command/internal/play"
@@ -46,25 +47,28 @@ func init() {
 		persistFlags.IntVarP(&playSettings.Output.SamplesPerSecond, "sample-rate", "s", playSettings.Output.SamplesPerSecond, "sample rate")
 		persistFlags.IntVarP(&playSettings.Output.Channels, "channels", "c", playSettings.Output.Channels, "channels")
 		persistFlags.IntVarP(&playSettings.Output.BitsPerSample, "bits-per-sample", "b", playSettings.Output.BitsPerSample, "bits per sample")
-		persistFlags.IntVarP(&playSettings.NumPremixBuffers, "num-buffers", "B", playSettings.NumPremixBuffers, "number of premixed buffers")
+		persistFlags.IntVar(&playSettings.NumPremixBuffers, "num-buffers", playSettings.NumPremixBuffers, "number of premixed buffers")
 		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
 		persistFlags.BoolVarP(&logger.Squelch, "silent", "q", logger.Squelch, "disable non-error logging")
 		persistFlags.StringVarP(&playSettings.Output.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
 		persistFlags.StringVarP(&playSettings.Output.Filepath, "output-file", "f", playSettings.Output.Filepath, "output filepath")
-		persistFlags.BoolVarP(&playSettings.GatherEffectCoverage, "gather-effect-coverage", "E", playSettings.GatherEffectCoverage, "gather and display effect coverage data")
-		persistFlags.BoolVarP(&playSettings.PanicOnUnhandledEffect, "unhandled-effect-panic", "P", playSettings.PanicOnUnhandledEffect, "panic when an unhandled effect is encountered")
-		persistFlags.BoolVarP(&disableNativeSamples, "disable-native-samples", "N", disableNativeSamples, "disable preconversion of samples to native sampling format")
-		//persistFlags.BoolVarP(&disablePreconvertSamples, "disable-preconvert-samples", "S", disablePreconvertSamples, "disable preconversion of samples to 32-bit floats")
+		persistFlags.BoolVar(&disableNativeSamples, "disable-native-samples", disableNativeSamples, "disable preconversion of samples to native sampling format")
+		//persistFlags.BoolVar(&disablePreconvertSamples, "disable-preconvert-samples", disablePreconvertSamples, "disable preconversion of samples to 32-bit floats")
 	}
 
-	if flags := playCmd.Flags(); flags != nil {
-		flags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
-		flags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
-		flags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
-		flags.BoolVarP(&randomized, "random", "R", randomized, "randomize the playlist")
-	}
+	registerPlayFlags(playCmd.Flags())
 
 	rootCmd.AddCommand(playCmd)
+}
+
+func registerPlayFlags(flags *pflag.FlagSet) {
+	if flags == nil {
+		return
+	}
+	flags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
+	flags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
+	flags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
+	flags.BoolVarP(&randomized, "random", "R", randomized, "randomize the playlist")
 }
 
 var playCmd = &cobra.Command{

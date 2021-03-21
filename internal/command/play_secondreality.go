@@ -1,16 +1,18 @@
 package command
 
 import (
-	"gotracker/internal/command/internal/playlist"
-	"gotracker/internal/optional"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"gotracker/internal/command/internal/playlist"
+	"gotracker/internal/optional"
 )
 
 // flags
 var (
-	pmPath   string = "2nd_pm.s3m"
-	skavPath string = "2nd_skav.s3m"
+	pmPath   string = filepath.Join(".", "2nd_pm.s3m")
+	skavPath string = filepath.Join(".", "2nd_skav.s3m")
 )
 
 func init() {

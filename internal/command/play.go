@@ -207,8 +207,7 @@ func playSongs(songs []songDetails, loopListDesired bool) (bool, error) {
 
 	loggingf("Output device: %s\n", waveOut.Name())
 
-playlistLoop:
-	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
+	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, loopListDesired, func(pb intf.Playback, tickInterval time.Duration) error {
 		playback = pb
 		defer func() {
 			if progress != nil {
@@ -273,9 +272,6 @@ playlistLoop:
 	if !playedAtLeastOne || err != nil {
 		return playedAtLeastOne, err
 	}
-	if loopPlaylist && loopListDesired {
-		goto playlistLoop
-	}
 
 	wg.Wait()
 
@@ -295,7 +291,7 @@ func findFeatureByName(configuration []feature.Feature, name string) (feature.Fe
 	return nil, false
 }
 
-func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
+func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, loopListDesired bool, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
@@ -317,6 +313,7 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 	}
 
 	var playedAtLeastOne bool
+playlistLoop:
 	for _, song := range songs {
 		playback, songFmt, err := format.Load(song.fn, options...)
 		if err != nil {
@@ -358,6 +355,10 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 		}
 
 		playedAtLeastOne = true
+	}
+
+	if loopPlaylist && loopListDesired {
+		goto playlistLoop
 	}
 
 	return playedAtLeastOne, nil

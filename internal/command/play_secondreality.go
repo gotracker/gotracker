@@ -1,6 +1,8 @@
 package command
 
 import (
+	"gotracker/internal/command/internal/playlist"
+
 	"github.com/spf13/cobra"
 )
 
@@ -29,42 +31,43 @@ var secondRealityCmd = &cobra.Command{
 			return cmd.Usage()
 		}
 
-		songs := []songDetails{
-			{
-				fn: skavPath,
-				start: orderDetails{
-					order: 0,
-					row:   0,
-				},
-				end: orderDetails{
-					order: 15,
-					row:   0,
-				},
+		songs := playlist.New()
+		songs.Add(playlist.Song{
+			Filepath: skavPath,
+			Start: playlist.Position{
+				Order: 0,
+				Row:   0,
 			},
-			{
-				fn: pmPath,
-				start: orderDetails{
-					order: -1,
-					row:   -1,
-				},
-				end: orderDetails{
-					order: 83,
-					row:   56,
-				},
+			End: playlist.Position{
+				Order: 15,
+				Row:   0,
 			},
-			{
-				fn: skavPath,
-				start: orderDetails{
-					order: 18,
-					row:   0,
-				},
-				end: orderDetails{
-					order: -1,
-					row:   -1,
-				},
-				loopEnabled: loopSong,
+		})
+		songs.Add(playlist.Song{
+			Filepath: pmPath,
+			Start: playlist.Position{
+				Order: -1,
+				Row:   -1,
 			},
-		}
+			End: playlist.Position{
+				Order: 83,
+				Row:   56,
+			},
+		})
+		songs.Add(playlist.Song{
+			Filepath: skavPath,
+			Start: playlist.Position{
+				Order: 18,
+				Row:   0,
+			},
+			End: playlist.Position{
+				Order: -1,
+				Row:   -1,
+			},
+			Loop: loopSong,
+		})
+
+		randomized = false
 
 		playedAtLeastOne, err := playSongs(songs, loopPlaylist)
 		if err != nil {

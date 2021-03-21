@@ -13,6 +13,7 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
 
+	"gotracker/internal/command/internal/playlist"
 	"gotracker/internal/format"
 	itEffect "gotracker/internal/format/it/playback/effect"
 	s3mEffect "gotracker/internal/format/s3m/playback/effect"
@@ -44,6 +45,7 @@ var (
 	effectCoverage         bool = false
 	panicOnUnhandledEffect bool = false
 	disableNativeSamples   bool = false
+	randomized             bool = false
 	//disablePreconvertSamples bool = false
 )
 
@@ -81,6 +83,7 @@ func init() {
 		persistFlags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
 		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
 		persistFlags.BoolVarP(&silent, "silent", "q", silent, "disable non-error logging")
+		persistFlags.BoolVarP(&randomized, "random", "R", randomized, "randomize the playlist")
 		persistFlags.StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
 		persistFlags.StringVarP(&outputSettings.Filepath, "output-file", "f", outputSettings.Filepath, "output filepath")
 		persistFlags.BoolVarP(&effectCoverage, "gather-effect-coverage", "E", effectCoverage, "gather and display effect coverage data")
@@ -98,23 +101,23 @@ var playCmd = &cobra.Command{
 	Long:  "Play one or more tracked music file(s) using Gotracker.",
 	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var songs []songDetails
+		pl := playlist.New()
 		for _, fn := range args {
-			songs = append(songs, songDetails{
-				fn: fn,
-				start: orderDetails{
-					order: startingOrder,
-					row:   startingRow,
+			pl.Add(playlist.Song{
+				Filepath: fn,
+				Start: playlist.Position{
+					Order: startingOrder,
+					Row:   startingRow,
 				},
-				end: orderDetails{
-					order: -1,
-					row:   -1,
+				End: playlist.Position{
+					Order: -1,
+					Row:   -1,
 				},
-				loopEnabled: loopSong,
+				Loop: loopSong,
 			})
 		}
 
-		playedAtLeastOne, err := playSongs(songs, loopPlaylist)
+		playedAtLeastOne, err := playSongs(pl, loopPlaylist)
 		if err != nil {
 			return err
 		}
@@ -127,19 +130,7 @@ var playCmd = &cobra.Command{
 	},
 }
 
-type orderDetails struct {
-	order int
-	row   int
-}
-
-type songDetails struct {
-	fn          string
-	start       orderDetails
-	end         orderDetails
-	loopEnabled bool
-}
-
-func playSongs(songs []songDetails, loopListDesired bool) (bool, error) {
+func playSongs(pl *playlist.Playlist, loopListDesired bool) (bool, error) {
 	var options []settings.OptionFunc
 	// NOTE: JBC - disabled because Native Samples are working now :)
 	// leaving this code here so down-rezing of samples can be added later.
@@ -207,7 +198,7 @@ func playSongs(songs []songDetails, loopListDesired bool) (bool, error) {
 
 	loggingf("Output device: %s\n", waveOut.Name())
 
-	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, loopListDesired, func(pb intf.Playback, tickInterval time.Duration) error {
+	playedAtLeastOne, err := renderSongs(pl, outBufs, options, configuration, loopListDesired, func(pb intf.Playback, tickInterval time.Duration) error {
 		playback = pb
 		defer func() {
 			if progress != nil {
@@ -291,7 +282,7 @@ func findFeatureByName(configuration []feature.Feature, name string) (feature.Fe
 	return nil, false
 }
 
-func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, loopListDesired bool, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
+func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, loopListDesired bool, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
@@ -314,8 +305,12 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 
 	var playedAtLeastOne bool
 playlistLoop:
-	for _, song := range songs {
-		playback, songFmt, err := format.Load(song.fn, options...)
+	for _, songIdx := range pl.GetPlaylist(randomized) {
+		song := pl.GetSong(songIdx)
+		if song == nil {
+			continue
+		}
+		playback, songFmt, err := format.Load(song.Filepath, options...)
 		if err != nil {
 			return playedAtLeastOne, fmt.Errorf("Could not create song state! err[%v]", err)
 		} else if songFmt != nil {
@@ -323,14 +318,14 @@ playlistLoop:
 				return playedAtLeastOne, fmt.Errorf("Could not setup playback sampler! err[%v]", err)
 			}
 		}
-		if song.start.order != -1 || song.start.row != -1 {
+		if song.Start.Order != -1 || song.Start.Row != -1 {
 			txn := playback.StartPatternTransaction()
 			defer txn.Cancel()
-			if song.start.order != -1 {
-				txn.SetNextOrder(index.Order(song.start.order))
+			if song.Start.Order != -1 {
+				txn.SetNextOrder(index.Order(song.Start.Order))
 			}
-			if song.start.row != -1 {
-				txn.SetNextRow(index.Row(song.start.row))
+			if song.Start.Row != -1 {
+				txn.SetNextRow(index.Row(song.Start.Row))
 			}
 			if err := txn.Commit(); err != nil {
 				return playedAtLeastOne, err
@@ -338,14 +333,14 @@ playlistLoop:
 		}
 
 		cfg := append([]feature.Feature{}, configuration...)
-		if song.end.order != -1 && song.end.row != -1 {
+		if song.End.Order != -1 && song.End.Row != -1 {
 			cfg = append(cfg, feature.PlayUntilOrderAndRow{
-				Order: song.end.order,
-				Row:   song.end.row,
+				Order: song.End.Order,
+				Row:   song.End.Row,
 			})
 		}
 		if canPossiblyLoop {
-			cfg = append(cfg, feature.SongLoop{Enabled: song.loopEnabled})
+			cfg = append(cfg, feature.SongLoop{Enabled: song.Loop})
 		}
 
 		playback.Configure(cfg)

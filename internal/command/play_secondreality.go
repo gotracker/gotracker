@@ -11,8 +11,10 @@ var (
 )
 
 func init() {
-	secondRealityCmd.Flags().StringVar(&pmPath, "pm", pmPath, "path to 2nd_pm.s3m")
-	secondRealityCmd.Flags().StringVar(&skavPath, "skav", skavPath, "path to 2nd_skav.s3m")
+	if flags := secondRealityCmd.Flags(); flags != nil {
+		flags.StringVar(&pmPath, "pm", pmPath, "path to 2nd_pm.s3m")
+		flags.StringVar(&skavPath, "skav", skavPath, "path to 2nd_skav.s3m")
+	}
 
 	playCmd.AddCommand(secondRealityCmd)
 }
@@ -46,8 +48,8 @@ var secondRealityCmd = &cobra.Command{
 					row:   -1,
 				},
 				end: orderDetails{
-					order: -1,
-					row:   -1,
+					order: 83,
+					row:   56,
 				},
 			},
 			{
@@ -60,10 +62,11 @@ var secondRealityCmd = &cobra.Command{
 					order: -1,
 					row:   -1,
 				},
+				loopEnabled: loopSong,
 			},
 		}
 
-		playedAtLeastOne, err := playSongs(songs)
+		playedAtLeastOne, err := playSongs(songs, loopPlaylist)
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"sort"
 	"sync"
 	"time"
 
@@ -39,7 +38,8 @@ var (
 	startingOrder          int  = -1
 	startingRow            int  = -1
 	numPremixBuffers       int  = 64
-	canLoop                bool = false
+	loopSong               bool = false
+	loopPlaylist           bool = false
 	silent                 bool = false
 	effectCoverage         bool = false
 	panicOnUnhandledEffect bool = false
@@ -78,7 +78,8 @@ func init() {
 		persistFlags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
 		persistFlags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
 		persistFlags.IntVarP(&numPremixBuffers, "num-buffers", "B", numPremixBuffers, "number of premixed buffers")
-		persistFlags.BoolVarP(&canLoop, "can-loop", "l", canLoop, "enable pattern loop (only works in single-song mode)")
+		persistFlags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
+		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
 		persistFlags.BoolVarP(&silent, "silent", "q", silent, "disable non-error logging")
 		persistFlags.StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
 		persistFlags.StringVarP(&outputSettings.Filepath, "output-file", "f", outputSettings.Filepath, "output filepath")
@@ -109,10 +110,11 @@ var playCmd = &cobra.Command{
 					order: -1,
 					row:   -1,
 				},
+				loopEnabled: loopSong,
 			})
 		}
 
-		playedAtLeastOne, err := playSongs(songs)
+		playedAtLeastOne, err := playSongs(songs, loopPlaylist)
 		if err != nil {
 			return err
 		}
@@ -131,12 +133,13 @@ type orderDetails struct {
 }
 
 type songDetails struct {
-	fn    string
-	start orderDetails
-	end   orderDetails
+	fn          string
+	start       orderDetails
+	end         orderDetails
+	loopEnabled bool
 }
 
-func playSongs(songs []songDetails) (bool, error) {
+func playSongs(songs []songDetails, loopListDesired bool) (bool, error) {
 	var options []settings.OptionFunc
 	// NOTE: JBC - disabled because Native Samples are working now :)
 	// leaving this code here so down-rezing of samples can be added later.
@@ -200,14 +203,11 @@ func playSongs(songs []songDetails) (bool, error) {
 		}
 	}()
 
-	if len(songs) != 1 {
-		canLoop = false
-	}
-	configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
 	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
 
 	loggingf("Output device: %s\n", waveOut.Name())
 
+playlistLoop:
 	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
 		playback = pb
 		defer func() {
@@ -273,6 +273,9 @@ func playSongs(songs []songDetails) (bool, error) {
 	if !playedAtLeastOne || err != nil {
 		return playedAtLeastOne, err
 	}
+	if loopPlaylist && loopListDesired {
+		goto playlistLoop
+	}
 
 	wg.Wait()
 
@@ -282,26 +285,34 @@ func playSongs(songs []songDetails) (bool, error) {
 	return true, nil
 }
 
+func findFeatureByName(configuration []feature.Feature, name string) (feature.Feature, bool) {
+	for _, feature := range configuration {
+		tf := reflect.TypeOf(feature)
+		if tf.Name() == name {
+			return feature, true
+		}
+	}
+	return nil, false
+}
+
 func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
-	disableSleepIdx := sort.Search(len(configuration), func(i int) bool {
-		switch configuration[i].(type) {
-		case feature.PlayerSleepInterval:
-			return true
-		}
-		return false
-	})
-	if disableSleepIdx < len(configuration) {
-		feat := configuration[disableSleepIdx]
-		switch f := feat.(type) {
-		case feature.PlayerSleepInterval:
+	if feat, found := findFeatureByName(configuration, "PlayerSleepInterval"); found {
+		if f, ok := feat.(feature.PlayerSleepInterval); ok {
 			if f.Enabled {
 				tickInterval = f.Interval
 			} else {
 				tickInterval = time.Duration(0)
 			}
+		}
+	}
+
+	canPossiblyLoop := true
+	if feat, found := findFeatureByName(configuration, "SongLoop"); found {
+		if f, ok := feat.(feature.SongLoop); ok {
+			canPossiblyLoop = f.Enabled
 		}
 	}
 
@@ -335,6 +346,9 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 				Order: song.end.order,
 				Row:   song.end.row,
 			})
+		}
+		if canPossiblyLoop {
+			cfg = append(cfg, feature.SongLoop{Enabled: song.loopEnabled})
 		}
 
 		playback.Configure(cfg)

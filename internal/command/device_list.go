@@ -19,8 +19,10 @@ var (
 )
 
 func init() {
-	deviceListCmd.Flags().BoolVarP(&deviceListAddHeader, "add-header", "H", deviceListAddHeader, "add header row(s) for formats that support it")
-	deviceListCmd.Flags().StringVarP(&deviceListFormat, "format", "f", deviceListFormat, "format of output {human, csv, json}")
+	if flags := deviceListCmd.Flags(); flags != nil {
+		flags.BoolVarP(&deviceListAddHeader, "add-header", "H", deviceListAddHeader, "add header row(s) for formats that support it")
+		flags.StringVarP(&deviceListFormat, "format", "f", deviceListFormat, "format of output {human, csv, json}")
+	}
 
 	deviceCmd.AddCommand(deviceListCmd)
 }

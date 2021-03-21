@@ -1,28 +1,19 @@
 package playlist
 
 import (
+	"gotracker/internal/optional"
 	"math"
 	"math/rand"
 	"time"
 )
-
-type Position struct {
-	Order int
-	Row   int
-}
-
-type Song struct {
-	Filepath string
-	Start    Position
-	End      Position
-	Loop     bool
-}
 
 type Playlist struct {
 	songs             []Song
 	currentPlayOrder  []int
 	lastPlayed        []int
 	lastPlayedMaxSize int
+	loop              optional.Value //bool
+	randomized        optional.Value //bool
 }
 
 func New() *Playlist {
@@ -34,6 +25,28 @@ func (p *Playlist) Add(s Song) {
 	p.songs = append(p.songs, s)
 	p.currentPlayOrder = append(p.currentPlayOrder, len(p.songs)-1)
 	p.lastPlayedMaxSize = int(math.Floor(float64(len(p.songs)) / math.Sqrt2))
+}
+
+func (p *Playlist) SetLooping(value bool) {
+	p.loop.Set(value)
+}
+
+func (p *Playlist) IsLooping() bool {
+	if v, ok := p.loop.GetBool(); ok {
+		return v
+	}
+	return false
+}
+
+func (p *Playlist) SetRandomized(value bool) {
+	p.randomized.Set(value)
+}
+
+func (p *Playlist) IsRandomized() bool {
+	if v, ok := p.randomized.GetBool(); ok {
+		return v
+	}
+	return false
 }
 
 func (p *Playlist) MarkPlayed(s *Song) {
@@ -49,8 +62,8 @@ func (p *Playlist) MarkPlayed(s *Song) {
 	}
 }
 
-func (p *Playlist) GetPlaylist(randomized bool) []int {
-	if randomized {
+func (p *Playlist) GetPlaylist() []int {
+	if p.IsRandomized() {
 		rand.Seed(time.Now().Unix())
 	randomize:
 		rand.Shuffle(len(p.currentPlayOrder), func(i, j int) {

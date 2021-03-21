@@ -15,6 +15,13 @@ type Value struct {
 	value interface{}
 }
 
+// NewValue constructs a Value structure with a value already set into it
+func NewValue(value interface{}) Value {
+	var v Value
+	v.Set(value)
+	return v
+}
+
 // Reset clears the memory on the value
 func (o *Value) Reset() {
 	o.value = nil

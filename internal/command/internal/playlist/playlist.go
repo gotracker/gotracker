@@ -60,9 +60,8 @@ func (p *Playlist) GetPlaylist(randomized bool) []int {
 			same := false
 		lastLoop:
 			for _, lastIdx := range p.lastPlayed {
-				for i := 0; i < p.lastPlayedMaxSize; i++ {
-					curIdx := p.currentPlayOrder[i]
-					if curIdx != lastIdx {
+				for _, curIdx := range p.currentPlayOrder[:p.lastPlayedMaxSize] {
+					if curIdx == lastIdx {
 						same = true
 						break lastLoop
 					}

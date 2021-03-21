@@ -12,7 +12,8 @@ import (
 
 // flags
 var (
-	profiler bool
+	profiler            bool   = false
+	profilerBindAddress string = "localhost:6060"
 )
 
 var rootCmd = &cobra.Command{
@@ -22,7 +23,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if profiler {
 			go func() {
-				log.Println(http.ListenAndServe("localhost:6060", nil))
+				log.Println(http.ListenAndServe(profilerBindAddress, nil))
 			}()
 		}
 		return nil
@@ -47,5 +48,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&profiler, "profiler", "p", false, "enable profiler (and supporting http server)")
+	if persistFlags := rootCmd.PersistentFlags(); persistFlags != nil {
+		persistFlags.BoolVar(&profiler, "profiler", profiler, "enable profiler (and supporting http server)")
+		persistFlags.StringVar(&profilerBindAddress, "profiler-bind-addr", profilerBindAddress, "profiler bind address (if enabled)")
+	}
 }

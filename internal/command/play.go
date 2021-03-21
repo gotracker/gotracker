@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"sort"
 	"sync"
 	"time"
 
@@ -30,31 +29,65 @@ import (
 
 // flags
 var (
-	outputSettings         device.Settings
-	startingOrder          int
-	startingRow            int
-	canLoop                bool
-	effectCoverage         bool
-	panicOnUnhandledEffect bool
-	disableNativeSamples   bool
-	//disablePreconvertSamples bool
+	outputSettings = device.Settings{
+		Channels:         2,
+		SamplesPerSecond: 44100,
+		BitsPerSample:    16,
+		Filepath:         "output.wav",
+	}
+	startingOrder          int  = -1
+	startingRow            int  = -1
+	numPremixBuffers       int  = 64
+	loopSong               bool = false
+	loopPlaylist           bool = false
+	silent                 bool = false
+	effectCoverage         bool = false
+	panicOnUnhandledEffect bool = false
+	disableNativeSamples   bool = false
+	//disablePreconvertSamples bool = false
 )
+
+func loggingf(format string, args ...interface{}) {
+	if silent {
+		return
+	}
+	fmt.Printf(format, args...)
+}
+
+func loggingln(args ...interface{}) {
+	if silent {
+		return
+	}
+	fmt.Println(args...)
+}
+
+// func logging(args ...interface{}) {
+// 	if silent {
+// 		return
+// 	}
+// 	fmt.Print(args...)
+// }
 
 func init() {
 	output.Setup()
 
-	playCmd.PersistentFlags().IntVarP(&outputSettings.SamplesPerSecond, "sample-rate", "s", 44100, "sample rate")
-	playCmd.PersistentFlags().IntVarP(&outputSettings.Channels, "channels", "c", 2, "channels")
-	playCmd.PersistentFlags().IntVarP(&outputSettings.BitsPerSample, "bits-per-sample", "b", 16, "bits per sample")
-	playCmd.PersistentFlags().IntVarP(&startingOrder, "starting-order", "o", -1, "starting order")
-	playCmd.PersistentFlags().IntVarP(&startingRow, "starting-row", "r", -1, "starting row")
-	playCmd.PersistentFlags().BoolVarP(&canLoop, "can-loop", "l", false, "enable pattern loop (only works in single-song mode)")
-	playCmd.PersistentFlags().StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
-	playCmd.PersistentFlags().StringVarP(&outputSettings.Filepath, "output-file", "f", "output.wav", "output filepath")
-	playCmd.PersistentFlags().BoolVarP(&effectCoverage, "gather-effect-coverage", "E", false, "gather and display effect coverage data")
-	playCmd.PersistentFlags().BoolVarP(&panicOnUnhandledEffect, "unhandled-effect-panic", "P", false, "panic when an unhandled effect is encountered")
-	playCmd.PersistentFlags().BoolVarP(&disableNativeSamples, "disable-native-samples", "N", false, "disable preconversion of samples to native sampling format")
-	//playCmd.PersistentFlags().BoolVarP(&disablePreconvertSamples, "disable-preconvert-samples", "S", false, "disable preconversion of samples to 32-bit floats")
+	if persistFlags := playCmd.PersistentFlags(); persistFlags != nil {
+		persistFlags.IntVarP(&outputSettings.SamplesPerSecond, "sample-rate", "s", outputSettings.SamplesPerSecond, "sample rate")
+		persistFlags.IntVarP(&outputSettings.Channels, "channels", "c", outputSettings.Channels, "channels")
+		persistFlags.IntVarP(&outputSettings.BitsPerSample, "bits-per-sample", "b", outputSettings.BitsPerSample, "bits per sample")
+		persistFlags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
+		persistFlags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
+		persistFlags.IntVarP(&numPremixBuffers, "num-buffers", "B", numPremixBuffers, "number of premixed buffers")
+		persistFlags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
+		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
+		persistFlags.BoolVarP(&silent, "silent", "q", silent, "disable non-error logging")
+		persistFlags.StringVarP(&outputSettings.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
+		persistFlags.StringVarP(&outputSettings.Filepath, "output-file", "f", outputSettings.Filepath, "output filepath")
+		persistFlags.BoolVarP(&effectCoverage, "gather-effect-coverage", "E", effectCoverage, "gather and display effect coverage data")
+		persistFlags.BoolVarP(&panicOnUnhandledEffect, "unhandled-effect-panic", "P", panicOnUnhandledEffect, "panic when an unhandled effect is encountered")
+		persistFlags.BoolVarP(&disableNativeSamples, "disable-native-samples", "N", disableNativeSamples, "disable preconversion of samples to native sampling format")
+		//persistFlags.BoolVarP(&disablePreconvertSamples, "disable-preconvert-samples", "S", disablePreconvertSamples, "disable preconversion of samples to 32-bit floats")
+	}
 
 	rootCmd.AddCommand(playCmd)
 }
@@ -77,10 +110,11 @@ var playCmd = &cobra.Command{
 					order: -1,
 					row:   -1,
 				},
+				loopEnabled: loopSong,
 			})
 		}
 
-		playedAtLeastOne, err := playSongs(songs)
+		playedAtLeastOne, err := playSongs(songs, loopPlaylist)
 		if err != nil {
 			return err
 		}
@@ -99,12 +133,13 @@ type orderDetails struct {
 }
 
 type songDetails struct {
-	fn    string
-	start orderDetails
-	end   orderDetails
+	fn          string
+	start       orderDetails
+	end         orderDetails
+	loopEnabled bool
 }
 
-func playSongs(songs []songDetails) (bool, error) {
+func playSongs(songs []songDetails, loopListDesired bool) (bool, error) {
 	var options []settings.OptionFunc
 	// NOTE: JBC - disabled because Native Samples are working now :)
 	// leaving this code here so down-rezing of samples can be added later.
@@ -131,7 +166,7 @@ func playSongs(songs []songDetails) (bool, error) {
 		switch deviceKind {
 		case device.KindSoundCard:
 			if row.RowText != nil {
-				fmt.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
+				loggingf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
 			}
 		case device.KindFile:
 			if progress == nil {
@@ -151,7 +186,7 @@ func playSongs(songs []songDetails) (bool, error) {
 	}
 	defer waveOut.Close()
 
-	outBufs := make(chan *device.PremixData, 64)
+	outBufs := make(chan *device.PremixData, numPremixBuffers)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -168,15 +203,11 @@ func playSongs(songs []songDetails) (bool, error) {
 		}
 	}()
 
-	if len(songs) != 1 {
-		canLoop = false
-	}
-	configuration = append(configuration, feature.SongLoop{Enabled: canLoop})
 	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !panicOnUnhandledEffect})
 
-	fmt.Printf("Output device: %s\n", waveOut.Name())
+	loggingf("Output device: %s\n", waveOut.Name())
 
-	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, func(pb intf.Playback, tickInterval time.Duration) error {
+	playedAtLeastOne, err := renderSongs(songs, outBufs, options, configuration, loopListDesired, func(pb intf.Playback, tickInterval time.Duration) error {
 		playback = pb
 		defer func() {
 			if progress != nil {
@@ -214,8 +245,8 @@ func playSongs(songs []songDetails) (bool, error) {
 			})
 		}
 
-		fmt.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
-		fmt.Printf("Song: %s\n", playback.GetName())
+		loggingf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
+		loggingf("Song: %s\n", playback.GetName())
 
 		p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
 		if err != nil {
@@ -244,27 +275,28 @@ func playSongs(songs []songDetails) (bool, error) {
 
 	wg.Wait()
 
-	fmt.Println()
-	fmt.Println("done!")
+	loggingln()
+	loggingln("done!")
 
 	return true, nil
 }
 
-func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
+func findFeatureByName(configuration []feature.Feature, name string) (feature.Feature, bool) {
+	for _, feature := range configuration {
+		tf := reflect.TypeOf(feature)
+		if tf.Name() == name {
+			return feature, true
+		}
+	}
+	return nil, false
+}
+
+func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, loopListDesired bool, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
-	disableSleepIdx := sort.Search(len(configuration), func(i int) bool {
-		switch configuration[i].(type) {
-		case feature.PlayerSleepInterval:
-			return true
-		}
-		return false
-	})
-	if disableSleepIdx < len(configuration) {
-		feat := configuration[disableSleepIdx]
-		switch f := feat.(type) {
-		case feature.PlayerSleepInterval:
+	if feat, found := findFeatureByName(configuration, "PlayerSleepInterval"); found {
+		if f, ok := feat.(feature.PlayerSleepInterval); ok {
 			if f.Enabled {
 				tickInterval = f.Interval
 			} else {
@@ -273,7 +305,15 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 		}
 	}
 
+	canPossiblyLoop := true
+	if feat, found := findFeatureByName(configuration, "SongLoop"); found {
+		if f, ok := feat.(feature.SongLoop); ok {
+			canPossiblyLoop = f.Enabled
+		}
+	}
+
 	var playedAtLeastOne bool
+playlistLoop:
 	for _, song := range songs {
 		playback, songFmt, err := format.Load(song.fn, options...)
 		if err != nil {
@@ -304,6 +344,9 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 				Row:   song.end.row,
 			})
 		}
+		if canPossiblyLoop {
+			cfg = append(cfg, feature.SongLoop{Enabled: song.loopEnabled})
+		}
 
 		playback.Configure(cfg)
 
@@ -312,6 +355,10 @@ func renderSongs(songs []songDetails, outBufs chan<- *device.PremixData, options
 		}
 
 		playedAtLeastOne = true
+	}
+
+	if loopPlaylist && loopListDesired {
+		goto playlistLoop
 	}
 
 	return playedAtLeastOne, nil

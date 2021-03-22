@@ -240,6 +240,8 @@ playlistLoop:
 			continue
 		}
 
+		pl.MarkPlayed(song)
+
 		playedAtLeastOne = true
 	}
 

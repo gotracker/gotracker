@@ -75,7 +75,7 @@ var playCmd = &cobra.Command{
 	Use:   "play [flags] <file(s)>",
 	Short: "Play a tracked music file using Gotracker",
 	Long:  "Play one or more tracked music file(s) using Gotracker.",
-	Args:  cobra.ArbitraryArgs,
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pl := playlist.New()
 		for _, fn := range args {

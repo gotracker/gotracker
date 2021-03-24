@@ -1,6 +1,9 @@
 package command
 
 import (
+	"os"
+	"path/filepath"
+
 	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -9,7 +12,6 @@ import (
 	"gotracker/internal/command/internal/play"
 	"gotracker/internal/command/internal/playlist"
 	"gotracker/internal/format/settings"
-	"gotracker/internal/optional"
 	"gotracker/internal/output"
 )
 
@@ -77,23 +79,10 @@ var playCmd = &cobra.Command{
 	Long:  "Play one or more tracked music file(s) using Gotracker.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		pl := playlist.New()
-		for _, fn := range args {
-			song := playlist.Song{
-				Filepath: fn,
-				Start: playlist.Position{
-					Order: optional.NewValue(startingOrder),
-					Row:   optional.NewValue(startingRow),
-				},
-			}
-			if len(args) == 1 {
-				song.Loop.Set(loopSong)
-			}
-			pl.Add(song)
+		pl, err := getPlaylist(args)
+		if err != nil {
+			return err
 		}
-
-		pl.SetLooping(loopPlaylist)
-		pl.SetRandomized(randomized)
 
 		playedAtLeastOne, err := playSongs(pl)
 		if err != nil {
@@ -106,6 +95,55 @@ var playCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func getPlaylist(args []string) (*playlist.Playlist, error) {
+	if len(args) == 1 {
+		pl, err := getPlaylistFromYaml(args[0])
+		if err == nil && pl != nil {
+			return pl, nil
+		}
+	}
+
+	return getPlaylistFromArgList(args)
+}
+
+func getPlaylistFromYaml(fn string) (*playlist.Playlist, error) {
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	pl, err := playlist.ReadYAML(f, filepath.Dir(fn))
+	if err != nil {
+		return nil, err
+	}
+
+	return pl, nil
+}
+
+func getPlaylistFromArgList(args []string) (*playlist.Playlist, error) {
+	pl := playlist.New()
+	for _, fn := range args {
+		song := playlist.Song{
+			Filepath: fn,
+		}
+		if startingOrder >= 0 {
+			song.Start.Order.Set(startingOrder)
+		}
+		if startingRow >= 0 {
+			song.Start.Row.Set(startingRow)
+		}
+		if len(args) == 1 {
+			song.Loop.Set(loopSong)
+		}
+		pl.Add(song)
+	}
+
+	pl.SetLooping(loopPlaylist)
+	pl.SetRandomized(randomized)
+	return pl, nil
 }
 
 func playSongs(pl *playlist.Playlist) (bool, error) {

@@ -1,15 +1,17 @@
 package playlist
 
-import "gotracker/internal/optional"
+import (
+	"gotracker/internal/optional"
+)
 
 type Position struct {
-	Order optional.Value //int
-	Row   optional.Value //int
+	Order optional.Value `yaml:"order,omitempty"` //int
+	Row   optional.Value `yaml:"row,omitempty"`   //int
 }
 
 type Song struct {
-	Filepath string
-	Start    Position
-	End      Position
-	Loop     optional.Value //bool
+	Filepath string         `yaml:"file,omitempty"`
+	Start    Position       `yaml:"start,omitempty"`
+	End      Position       `yaml:"end,omitempty"`
+	Loop     optional.Value `yaml:"loop,omitempty"` //bool
 }

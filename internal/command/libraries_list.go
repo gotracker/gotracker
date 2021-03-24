@@ -33,6 +33,36 @@ var librariesList = []libraryInfo{
 		Homepage: "",
 	},
 	{
+		Name:     "yaml",
+		Package:  "gopkg.in/yaml.v2",
+		License:  "Apache-2.0",
+		Homepage: "https://github.com/go-yaml/yaml",
+	},
+	{
+		Name:     "go-md2man",
+		Package:  "github.com/cpuguy83/go-md2man/v2/md2man",
+		License:  "MIT",
+		Homepage: "https://github.com/cpuguy83/go-md2man",
+	},
+	{
+		Name:     "sanitized_anchor_name",
+		Package:  "github.com/shurcooL/sanitized_anchor_name",
+		License:  "MIT",
+		Homepage: "https://github.com/shurcooL/sanitized_anchor_name",
+	},
+	{
+		Name:     "Blackfriday",
+		Package:  "github.com/russross/blackfriday/v2",
+		License:  "BSD-2-Clause",
+		Homepage: "https://github.com/russross/blackfriday",
+	},
+	{
+		Name:     "SemVer",
+		Package:  "github.com/Masterminds/semver",
+		License:  "MIT",
+		Homepage: "https://github.com/Masterminds/semver",
+	},
+	{
 		Name:     "mousetrap",
 		Package:  "github.com/inconshreveable/mousetrap",
 		License:  "Apache-2.0",

@@ -1,10 +1,18 @@
 package playlist
 
 import (
-	"gotracker/internal/optional"
+	"fmt"
+	"io"
 	"math"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/Masterminds/semver"
+	"gopkg.in/yaml.v2"
+
+	"gotracker/internal/optional"
 )
 
 type Playlist struct {
@@ -19,6 +27,65 @@ type Playlist struct {
 func New() *Playlist {
 	p := Playlist{}
 	return &p
+}
+
+func (p *Playlist) Reset() {
+	*p = *New()
+}
+
+type yamlPlaylist struct {
+	Version string `yaml:"version,omitempty"`
+	Songs   []Song `yaml:"list,omitempty"`
+}
+
+const yamlPlaylistCurrentVersion string = "1.0"
+
+func ReadYAML(r io.Reader, basepath string) (*Playlist, error) {
+	y := yaml.NewDecoder(r)
+
+	pl := yamlPlaylist{}
+
+	if err := y.Decode(&pl); err != nil {
+		return nil, err
+	}
+
+	c, _ := semver.NewConstraint("<= " + yamlPlaylistCurrentVersion)
+	if ver, err := semver.NewVersion(pl.Version); err == nil {
+		valid, msgs := c.Validate(ver)
+		if !valid {
+			for e := range msgs {
+				fmt.Fprintln(os.Stderr, e)
+			}
+			if len(msgs) > 0 {
+				return nil, msgs[0]
+			}
+		}
+	}
+
+	p := New()
+	for _, s := range pl.Songs {
+		s.Filepath = filepath.Join(basepath, s.Filepath)
+		if s.End.Order.IsSet() {
+			if !s.End.Row.IsSet() {
+				s.End.Row.Set(0) // assume first row of order
+			}
+		}
+		p.Add(s)
+	}
+
+	return p, nil
+}
+
+func (p *Playlist) WriteYAML(w io.Writer) error {
+	y := yaml.NewEncoder(w)
+	defer y.Close()
+
+	pl := yamlPlaylist{
+		Version: yamlPlaylistCurrentVersion,
+		Songs:   p.songs,
+	}
+
+	return y.Encode(&pl)
 }
 
 func (p *Playlist) Add(s Song) {

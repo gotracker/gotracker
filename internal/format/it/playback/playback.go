@@ -31,8 +31,9 @@ type Manager struct {
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *device.PremixData
 
-	rowRenderState *rowRenderState
-	OnEffect       func(intf.Effect)
+	rowRenderState    *rowRenderState
+	OnEffect          func(intf.Effect)
+	longChannelOutput bool
 }
 
 // NewManager creates a new manager for an IT song
@@ -220,6 +221,8 @@ func (m *Manager) Configure(features []feature.Feature) {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
+		case feature.ITLongChannelOutput:
+			m.longChannelOutput = f.Enabled
 		}
 	}
 }

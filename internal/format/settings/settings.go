@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	NamePreferredSampleFormat string = "PreferredSampleFormat"
-	NameUseNativeSampleFormat string = "UseNativeSampleFormat"
+	NamePreferredSampleFormat      string = "PreferredSampleFormat"
+	NameUseNativeSampleFormat      string = "UseNativeSampleFormat"
+	NameDisplayITLongChannelOutput string = "DisplayITLongChannelOutput"
 )
 
 type Settings struct {
@@ -60,11 +61,11 @@ func PreferredSampleFormat(format pcm.SampleDataFormat) OptionFunc {
 	}
 }
 
-func UseNativeSampleFormat() OptionFunc {
+func UseNativeSampleFormat(enabled bool) OptionFunc {
 	return func(s *Settings) error {
 		if s == nil {
 			return errors.New("settings is nil")
 		}
-		return s.Set(NameUseNativeSampleFormat, true)
+		return s.Set(NameUseNativeSampleFormat, enabled)
 	}
 }

@@ -232,7 +232,9 @@ playlistLoop:
 				looping = l
 			}
 		}
-		cfg = append(cfg, feature.SongLoop{Enabled: looping})
+		cfg = append(cfg,
+			feature.SongLoop{Enabled: looping},
+			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput})
 
 		playback.Configure(cfg)
 

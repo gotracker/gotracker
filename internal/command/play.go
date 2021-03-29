@@ -27,6 +27,7 @@ var (
 		NumPremixBuffers:       64,
 		PanicOnUnhandledEffect: false,
 		GatherEffectCoverage:   false,
+		ITLongChannelOutput:    false,
 	}
 	loopPlaylist         bool = false
 	logger               logging.Squelchable
@@ -51,6 +52,7 @@ func init() {
 		persistFlags.IntVarP(&playSettings.Output.BitsPerSample, "bits-per-sample", "b", playSettings.Output.BitsPerSample, "bits per sample")
 		persistFlags.IntVar(&playSettings.NumPremixBuffers, "num-buffers", playSettings.NumPremixBuffers, "number of premixed buffers")
 		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
+		persistFlags.BoolVar(&playSettings.ITLongChannelOutput, "it-long", playSettings.ITLongChannelOutput, "enable long channel display")
 		persistFlags.BoolVarP(&logger.Squelch, "silent", "q", logger.Squelch, "disable non-error logging")
 		persistFlags.StringVarP(&playSettings.Output.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
 		persistFlags.StringVarP(&playSettings.Output.Filepath, "output-file", "f", playSettings.Output.Filepath, "output filepath")
@@ -158,9 +160,7 @@ func playSongs(pl *playlist.Playlist) (bool, error) {
 	//	}
 	//	options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
 	//}
-	if !disableNativeSamples {
-		options = append(options, settings.UseNativeSampleFormat())
-	}
+	options = append(options, settings.UseNativeSampleFormat(!disableNativeSamples))
 
 	return play.Playlist(pl, options, &playSettings, &logger)
 }

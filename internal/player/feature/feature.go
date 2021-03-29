@@ -29,3 +29,7 @@ type PlayUntilOrderAndRow struct {
 	Order int
 	Row   int
 }
+
+type ITLongChannelOutput struct {
+	Enabled bool
+}

@@ -8,19 +8,21 @@ import (
 type ChannelData interface{}
 
 // ChannelFormatterFunc takes the data from a channel and converts it to a string
-type ChannelFormatterFunc func(ChannelData) string
+type ChannelFormatterFunc func(ChannelData, bool) string
 
 // RowDisplay is an array of ChannelDisplays
 type RowDisplay struct {
-	Channels  []ChannelData
-	formatter ChannelFormatterFunc
+	Channels   []ChannelData
+	formatter  ChannelFormatterFunc
+	longFormat bool
 }
 
 // NewRowText creates an array of ChannelDisplay information
-func NewRowText(channels int, channelFmtFunc ChannelFormatterFunc) RowDisplay {
+func NewRowText(channels int, longFormat bool, channelFmtFunc ChannelFormatterFunc) RowDisplay {
 	rd := RowDisplay{
-		Channels:  make([]ChannelData, channels),
-		formatter: channelFmtFunc,
+		Channels:   make([]ChannelData, channels),
+		formatter:  channelFmtFunc,
+		longFormat: longFormat,
 	}
 	return rd
 }
@@ -35,7 +37,7 @@ func (rt RowDisplay) String(options ...interface{}) string {
 		if maxChannels >= 0 && i >= maxChannels {
 			break
 		}
-		str += fmt.Sprintf("|%s", rt.formatter(c))
+		str += fmt.Sprintf("|%s", rt.formatter(c, rt.longFormat))
 	}
 	return str + "|"
 }

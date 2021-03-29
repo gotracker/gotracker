@@ -9,4 +9,5 @@ type Settings struct {
 	NumPremixBuffers       int
 	PanicOnUnhandledEffect bool
 	GatherEffectCoverage   bool
+	ITLongChannelOutput    bool
 }

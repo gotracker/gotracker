@@ -138,7 +138,11 @@ func getPlaylistFromArgList(args []string) (*playlist.Playlist, error) {
 			song.Start.Row.Set(startingRow)
 		}
 		if len(args) == 1 {
-			song.Loop.Set(loopSong)
+			if loopSong {
+				song.Loop.Count = playlist.NewLoopForever()
+			} else {
+				song.Loop.Count = playlist.NewLoopCount(0)
+			}
 		}
 		pl.Add(song)
 	}

@@ -52,7 +52,9 @@ var (
 					Order: optional.NewValue(18),
 					//Row:   optional.NewValue(0),
 				},
-				Loop: optional.NewValue(true),
+				Loop: playlist.Loop{
+					Count: playlist.NewLoopForever(),
+				},
 			})
 
 			var ow io.Writer = os.Stdout

@@ -182,7 +182,7 @@ func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, optio
 	canPossiblyLoop := true
 	if feat, found := findFeatureByName(configuration, "SongLoop"); found {
 		if f, ok := feat.(feature.SongLoop); ok {
-			canPossiblyLoop = f.Enabled
+			canPossiblyLoop = (f.Count != 0)
 		}
 	}
 
@@ -226,14 +226,14 @@ playlistLoop:
 				Row:   endRow,
 			})
 		}
-		var looping bool
+		var loopCount int
 		if canPossiblyLoop {
-			if l, ok := song.Loop.GetBool(); ok {
-				looping = l
+			if l, ok := song.Loop.Count.GetInt(); ok {
+				loopCount = l
 			}
 		}
 		cfg = append(cfg,
-			feature.SongLoop{Enabled: looping},
+			feature.SongLoop{Count: loopCount},
 			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput})
 
 		playback.Configure(cfg)

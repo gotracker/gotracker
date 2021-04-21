@@ -251,7 +251,7 @@ func (m *Manager) Configure(features []feature.Feature) {
 
 // CanOrderLoop returns true if the song is allowed to order loop
 func (m *Manager) CanOrderLoop() bool {
-	return m.pattern.SongLoop.Enabled
+	return (m.pattern.SongLoop.Count != 0)
 }
 
 // GetSongData gets the song data object

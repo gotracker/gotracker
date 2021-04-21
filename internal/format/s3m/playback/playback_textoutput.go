@@ -10,7 +10,7 @@ import (
 	"gotracker/internal/player/render"
 )
 
-func s3mChannelRender(cdata render.ChannelData) string {
+func s3mChannelRender(cdata render.ChannelData, longChannelOutput bool) string {
 	n := "..."
 	i := ".."
 	v := ".."
@@ -49,7 +49,7 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		}
 		nCh++
 	}
-	rowText := render.NewRowText(nCh, s3mChannelRender)
+	rowText := render.NewRowText(nCh, true, s3mChannelRender)
 	for ch, cs := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue

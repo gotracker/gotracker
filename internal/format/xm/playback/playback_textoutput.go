@@ -9,7 +9,7 @@ import (
 	"gotracker/internal/song/note"
 )
 
-func xmChannelRender(cdata render.ChannelData) string {
+func xmChannelRender(cdata render.ChannelData, longChannelOutput bool) string {
 	n := "..."
 	i := "  "
 	v := ".."
@@ -66,7 +66,7 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		}
 		nCh++
 	}
-	rowText := render.NewRowText(nCh, xmChannelRender)
+	rowText := render.NewRowText(nCh, true, xmChannelRender)
 	for ch, cs := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue

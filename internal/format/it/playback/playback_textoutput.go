@@ -9,7 +9,7 @@ import (
 	"gotracker/internal/song/note"
 )
 
-func xmChannelRender(cdata render.ChannelData) string {
+func itChannelRender(cdata render.ChannelData, longChannelOutput bool) string {
 	n := "..."
 	i := ".."
 	v := ".."
@@ -30,30 +30,37 @@ func xmChannelRender(cdata render.ChannelData) string {
 			}
 		}
 
-		if data.HasInstrument() {
-			if inst := data.Instrument; inst != 0 {
-				i = fmt.Sprintf("%0.2X", inst)
+		if longChannelOutput {
+			if data.HasInstrument() {
+				if inst := data.Instrument; inst != 0 {
+					i = fmt.Sprintf("%0.2X", inst)
+				}
 			}
-		}
 
-		if data.HasVolume() {
-			vol := data.VolPan
-			v = fmt.Sprintf("%0.2X", vol)
-		}
-
-		if data.HasCommand() {
-			var c uint8
-			switch {
-			case data.Effect <= 26:
-				c = '@' + data.Effect
-			default:
-				panic("effect out of range")
+			if data.HasVolume() {
+				vol := data.VolPan
+				v = fmt.Sprintf("%0.2X", vol)
 			}
-			e = fmt.Sprintf("%c%0.2X", c, data.EffectParameter)
+
+			if data.HasCommand() {
+				var c uint8
+				switch {
+				case data.Effect <= 26:
+					c = '@' + data.Effect
+				default:
+					panic("effect out of range")
+				}
+				e = fmt.Sprintf("%c%0.2X", c, data.EffectParameter)
+			}
 		}
 	}
 
-	return strings.Join([]string{n, i, v, e}, " ")
+	if longChannelOutput {
+		return strings.Join([]string{n, i, v, e}, " ")
+
+	}
+
+	return n
 }
 
 func (m *Manager) getRowText() *render.RowDisplay {
@@ -64,7 +71,7 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		}
 		nCh++
 	}
-	rowText := render.NewRowText(nCh, xmChannelRender)
+	rowText := render.NewRowText(nCh, m.longChannelOutput, itChannelRender)
 	for ch, cs := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue

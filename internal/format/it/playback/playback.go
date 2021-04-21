@@ -31,8 +31,9 @@ type Manager struct {
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *device.PremixData
 
-	rowRenderState *rowRenderState
-	OnEffect       func(intf.Effect)
+	rowRenderState    *rowRenderState
+	OnEffect          func(intf.Effect)
+	longChannelOutput bool
 }
 
 // NewManager creates a new manager for an IT song
@@ -220,13 +221,15 @@ func (m *Manager) Configure(features []feature.Feature) {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
+		case feature.ITLongChannelOutput:
+			m.longChannelOutput = f.Enabled
 		}
 	}
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop
 func (m *Manager) CanOrderLoop() bool {
-	return m.pattern.SongLoop.Enabled
+	return (m.pattern.SongLoop.Count != 0)
 }
 
 // GetSongData gets the song data object

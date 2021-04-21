@@ -59,7 +59,7 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 		t.Fatalf("Could not setup playback sampler! err[%v]", err)
 	}
 
-	playback.Configure([]feature.Feature{feature.SongLoop{Enabled: false}})
+	playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}})
 
 	for {
 		premixData, err := playback.Generate(time.Duration(0))

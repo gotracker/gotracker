@@ -26,6 +26,10 @@ func (ld *LoopDetect) Observe(ord index.Order, row index.Row) bool {
 	return false
 }
 
+func (ld *LoopDetect) Reset() {
+	ld.orders = nil
+}
+
 func (ld *LoopDetect) findOrAddOrder(ord index.Order) *loopDetectNode {
 	if ld.orders == nil {
 		ld.orders = make(map[index.Order]*loopDetectNode)

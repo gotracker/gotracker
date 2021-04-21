@@ -7,7 +7,7 @@ type Feature interface{}
 
 // SongLoop is a setting for enabling or disabling the song looping
 type SongLoop struct {
-	Enabled bool
+	Count int
 }
 
 // PlayerSleepInterval describes the player sleep feature
@@ -28,4 +28,8 @@ type PreConvertSamples struct {
 type PlayUntilOrderAndRow struct {
 	Order int
 	Row   int
+}
+
+type ITLongChannelOutput struct {
+	Enabled bool
 }

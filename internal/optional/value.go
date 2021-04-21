@@ -15,6 +15,38 @@ type Value struct {
 	value interface{}
 }
 
+// NewValue constructs a Value structure with a value already set into it
+func NewValue(value interface{}) Value {
+	var v Value
+	v.Set(value)
+	return v
+}
+
+// IsZero is used by the yaml marshaller to determine "zero"-ness for omitempty
+// we're using it for the `set` bool
+func (o Value) IsZero() bool {
+	return !o.set
+}
+
+// MarshalYAML outputs the value of the Value, if `set` is set.
+// otherwise, it returns nil
+func (o Value) MarshalYAML() (interface{}, error) {
+	if o.set {
+		return o.value, nil
+	}
+	return nil, nil
+}
+
+// UnmarshalYAML unmarshals a value out of yaml and safely into our struct
+func (o *Value) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var val interface{}
+	if err := unmarshal(&val); err != nil {
+		return err
+	}
+	o.Set(val)
+	return nil
+}
+
 // Reset clears the memory on the value
 func (o *Value) Reset() {
 	o.value = nil

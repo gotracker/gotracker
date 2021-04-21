@@ -24,6 +24,7 @@ type State struct {
 	SongLoop             feature.SongLoop
 	PlayUntilOrderAndRow feature.PlayUntilOrderAndRow
 	loopDetect           formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
+	loopCount            int
 
 	Patterns []pattern.Pattern
 	Orders   []index.Pattern
@@ -115,7 +116,7 @@ func (state *State) GetCurrentPatternIdx() (index.Pattern, error) {
 	for loopCount := 0; loopCount < ordLen; loopCount++ {
 		ordIdx := int(state.GetCurrentOrder())
 		if ordIdx >= ordLen {
-			if !state.SongLoop.Enabled {
+			if !(state.SongLoop.Count < 0 || state.loopCount < state.SongLoop.Count) {
 				return 0, song.ErrStopSong
 			}
 			state.setCurrentOrder(0)
@@ -160,11 +161,17 @@ func (state *State) setCurrentRow(row index.Row) error {
 
 // Observe will attempt to detect a song loop
 func (state *State) Observe() error {
-	if !state.SongLoop.Enabled {
+	if state.SongLoop.Count >= 0 {
 		if state.loopDetect.Observe(state.currentOrder, state.currentRow) {
-			return song.ErrStopSong
+			if state.SongLoop.Count > 0 && state.loopCount >= state.SongLoop.Count {
+				return song.ErrStopSong
+			}
+			state.loopCount += 1
+			state.loopDetect.Reset()
 		}
-		if state.currentOrder == index.Order(state.PlayUntilOrderAndRow.Order) && state.currentRow == index.Row(state.PlayUntilOrderAndRow.Row) {
+	}
+	if state.currentOrder == index.Order(state.PlayUntilOrderAndRow.Order) && state.currentRow == index.Row(state.PlayUntilOrderAndRow.Row) {
+		if state.SongLoop.Count >= 0 && state.loopCount >= state.SongLoop.Count {
 			return song.ErrStopSong
 		}
 	}
@@ -190,7 +197,7 @@ func (state *State) nextOrder(resetRow ...bool) error {
 func (state *State) Reset() {
 	*state = State{
 		SongLoop: feature.SongLoop{
-			Enabled: true,
+			Count: 0,
 		},
 		PlayUntilOrderAndRow: feature.PlayUntilOrderAndRow{
 			Order: -1,

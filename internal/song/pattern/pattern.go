@@ -31,7 +31,7 @@ func (r Rows) NumRows() int {
 // Pattern is the data for each pattern
 type Pattern struct {
 	Rows Rows
-	Orig interface{}
+	Orig any
 }
 
 // GetRow returns the interface to the row at index `row`

@@ -5,7 +5,7 @@ import (
 )
 
 // ChannelData is the data used by the ChannelFormatterFunc to render the source data from a tracker channel
-type ChannelData interface{}
+type ChannelData any
 
 // ChannelFormatterFunc takes the data from a channel and converts it to a string
 type ChannelFormatterFunc func(ChannelData, bool) string
@@ -27,7 +27,7 @@ func NewRowText(channels int, longFormat bool, channelFmtFunc ChannelFormatterFu
 	return rd
 }
 
-func (rt RowDisplay) String(options ...interface{}) string {
+func (rt RowDisplay) String(options ...any) string {
 	maxChannels := -1
 	if len(options) > 0 {
 		maxChannels = options[0].(int)

@@ -3,7 +3,7 @@ package feature
 import "time"
 
 // Feature is an interface for player features that can be optionally modified by the user and/or disabled by an output device
-type Feature interface{}
+type Feature any
 
 // SongLoop is a setting for enabling or disabling the song looping
 type SongLoop struct {

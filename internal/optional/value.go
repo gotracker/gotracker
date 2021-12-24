@@ -12,11 +12,11 @@ import (
 // Value is an optional value
 type Value struct {
 	set   bool
-	value interface{}
+	value any
 }
 
 // NewValue constructs a Value structure with a value already set into it
-func NewValue(value interface{}) Value {
+func NewValue(value any) Value {
 	var v Value
 	v.Set(value)
 	return v
@@ -30,7 +30,7 @@ func (o Value) IsZero() bool {
 
 // MarshalYAML outputs the value of the Value, if `set` is set.
 // otherwise, it returns nil
-func (o Value) MarshalYAML() (interface{}, error) {
+func (o Value) MarshalYAML() (any, error) {
 	if o.set {
 		return o.value, nil
 	}
@@ -38,8 +38,8 @@ func (o Value) MarshalYAML() (interface{}, error) {
 }
 
 // UnmarshalYAML unmarshals a value out of yaml and safely into our struct
-func (o *Value) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var val interface{}
+func (o *Value) UnmarshalYAML(unmarshal func(any) error) error {
+	var val any
 	if err := unmarshal(&val); err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (o *Value) Reset() {
 }
 
 // Set updates the value and sets the set flag
-func (o *Value) Set(value interface{}) {
+func (o *Value) Set(value any) {
 	o.value = value
 	o.set = true
 }
@@ -64,7 +64,7 @@ func (o *Value) IsSet() bool {
 }
 
 // Get returns the value and its set flag
-func (o *Value) Get() (interface{}, bool) {
+func (o *Value) Get() (any, bool) {
 	return o.value, o.set
 }
 

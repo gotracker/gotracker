@@ -45,8 +45,9 @@ var (
 			switch deviceListFormat {
 			case "json":
 				jw := json.NewEncoder(os.Stdout)
-				list := []map[string]interface{}{}
-				if err = deviceListSerialized(pmap, func(vals map[string]interface{}) error {
+				// actually construct an empty list so the encoded list is non-nil
+				list := []map[string]any{}
+				if err = deviceListSerialized(pmap, func(vals map[string]any) error {
 					list = append(list, vals)
 					return nil
 				}); err != nil {
@@ -61,7 +62,7 @@ var (
 						break
 					}
 				}
-				if err = deviceListSerialized(pmap, func(vals map[string]interface{}) error {
+				if err = deviceListSerialized(pmap, func(vals map[string]any) error {
 					var fields []string
 					for _, f := range fieldOrder {
 						fields = append(fields, fmt.Sprintf("%v", vals[f]))
@@ -80,7 +81,7 @@ var (
 	}
 )
 
-type recordFunc func(vals map[string]interface{}) error
+type recordFunc func(vals map[string]any) error
 
 func deviceListSerialized(pmap []map[string]output.DeviceInfo, recordFunc recordFunc) error {
 	for _, m := range pmap {
@@ -96,7 +97,7 @@ func deviceListSerialized(pmap []map[string]output.DeviceInfo, recordFunc record
 			default:
 				kind = "unknown"
 			}
-			vals := make(map[string]interface{})
+			vals := make(map[string]any)
 			vals["device"] = k
 			vals["kind"] = kind
 			vals["priority"] = v.Priority
@@ -123,7 +124,7 @@ func deviceListHuman(pmap []map[string]output.DeviceInfo) error {
 		fmt.Fprintln(tw, "DEVICE\tKind\tPriority\tDefault?")
 		fmt.Fprintln(tw, "======\t====\t========\t========")
 	}
-	if err := deviceListSerialized(pmap, func(vals map[string]interface{}) error {
+	if err := deviceListSerialized(pmap, func(vals map[string]any) error {
 		name := vals["device"].(string)
 		kind := vals["kind"].(string)
 		priority := vals["priority"].(int)

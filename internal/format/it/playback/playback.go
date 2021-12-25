@@ -4,7 +4,6 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/it/layout"
-	effectIntf "gotracker/internal/format/it/playback/effect/intf"
 	"gotracker/internal/format/it/playback/state/pattern"
 	"gotracker/internal/format/it/playback/util"
 	"gotracker/internal/player"
@@ -20,7 +19,6 @@ import (
 // Manager is a playback manager for IT music
 type Manager struct {
 	player.Tracker
-	effectIntf.IT
 
 	song *layout.Song
 
@@ -265,4 +263,7 @@ func (m *Manager) GetName() string {
 // SetOnEffect sets the callback for an effect being generated for a channel
 func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
+}
+
+func (m *Manager) SetEnvelopePosition(v uint8) {
 }

@@ -6,7 +6,6 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/s3m/layout"
-	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
 	"gotracker/internal/format/s3m/playback/state/pattern"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player"
@@ -22,7 +21,6 @@ import (
 // Manager is a playback manager for S3M music
 type Manager struct {
 	player.Tracker
-	effectIntf.S3M
 
 	song *layout.Song
 

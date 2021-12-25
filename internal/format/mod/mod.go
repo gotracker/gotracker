@@ -6,9 +6,7 @@ import (
 	"gotracker/internal/player/intf"
 )
 
-type format struct {
-	intf.Format
-}
+type format struct{}
 
 var (
 	// MOD is the exported interface to the MOD file loader

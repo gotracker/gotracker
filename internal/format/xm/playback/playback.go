@@ -4,7 +4,6 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/xm/layout"
-	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
 	"gotracker/internal/format/xm/playback/state/pattern"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player"
@@ -20,7 +19,6 @@ import (
 // Manager is a playback manager for XM music
 type Manager struct {
 	player.Tracker
-	effectIntf.XM
 
 	song *layout.Song
 
@@ -261,4 +259,7 @@ func (m *Manager) GetName() string {
 // SetOnEffect sets the callback for an effect being generated for a channel
 func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
+}
+
+func (m *Manager) SetEnvelopePosition(v uint8) {
 }

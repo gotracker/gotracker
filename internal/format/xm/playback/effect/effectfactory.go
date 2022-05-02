@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
-	"gotracker/internal/song"
 )
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
-	intf.CombinedEffect
+	intf.CombinedEffect[channel.Memory, channel.Data]
 	eff intf.Effect
 }
 
@@ -17,29 +16,28 @@ func (e VolEff) String() string {
 	if e.eff == nil {
 		return "..."
 	}
-	return fmt.Sprintf("%v", e.eff)
+	return fmt.Sprint(e.eff)
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mi intf.Memory, data song.ChannelData) intf.Effect {
-	cd, ok := data.(*channel.Data)
-	if !ok {
+func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
+	if data == nil {
 		return nil
 	}
 
-	if !cd.HasEffect() {
+	if !data.HasEffect() {
 		return nil
 	}
 
 	eff := VolEff{}
-	if cd.What.HasVolume() {
-		ve := volumeEffectFactory(mi, cd.Volume)
+	if data.What.HasVolume() {
+		ve := volumeEffectFactory(mem, data.Volume)
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
 		}
 	}
 
-	if e := standardEffectFactory(mi, cd); e != nil {
+	if e := standardEffectFactory(mem, data); e != nil {
 		eff.Effects = append(eff.Effects, e)
 		eff.eff = e
 	}

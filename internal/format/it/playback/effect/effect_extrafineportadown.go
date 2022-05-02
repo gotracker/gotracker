@@ -11,11 +11,11 @@ import (
 type ExtraFinePortaDown uint8 // 'EEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaDown) Start(cs intf.Channel, p intf.Playback) error {
+func (e ExtraFinePortaDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
-	mem := cs.GetMemory().(*channel.Memory)
+	mem := cs.GetMemory()
 	y := mem.PortaDown(uint8(e)) & 0x0F
 
 	return doPortaDown(cs, float32(y), 1, mem.LinearFreqSlides)

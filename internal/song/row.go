@@ -1,6 +1,6 @@
 package song
 
 // Row is an interface to a row
-type Row interface {
-	GetChannels() []ChannelData
+type Row[TChannelData any] interface {
+	GetChannels() []TChannelData
 }

@@ -20,8 +20,8 @@ type Playlist struct {
 	currentPlayOrder  []int
 	lastPlayed        []int
 	lastPlayedMaxSize int
-	loop              optional.Value //bool
-	randomized        optional.Value //bool
+	loop              optional.Value[bool]
+	randomized        optional.Value[bool]
 }
 
 func New() *Playlist {
@@ -99,7 +99,7 @@ func (p *Playlist) SetLooping(value bool) {
 }
 
 func (p *Playlist) IsLooping() bool {
-	if v, ok := p.loop.GetBool(); ok {
+	if v, ok := p.loop.Get(); ok {
 		return v
 	}
 	return false
@@ -110,7 +110,7 @@ func (p *Playlist) SetRandomized(value bool) {
 }
 
 func (p *Playlist) IsRandomized() bool {
-	if v, ok := p.randomized.GetBool(); ok {
+	if v, ok := p.randomized.Get(); ok {
 		return v
 	}
 	return false

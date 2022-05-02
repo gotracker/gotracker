@@ -32,11 +32,10 @@ type ChannelSetting struct {
 
 // Song is the full definition of the song data of an Song file
 type Song struct {
-	song.Data
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument
 	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
-	Patterns          []pattern.Pattern
+	Patterns          []pattern.Pattern[channel.Data]
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
 }
@@ -47,7 +46,7 @@ func (s *Song) GetOrderList() []index.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s *Song) GetPattern(patNum index.Pattern) song.Pattern {
+func (s *Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}

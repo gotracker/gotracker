@@ -18,13 +18,13 @@ type RowUpdateTransaction struct {
 	committed         bool
 	CommitTransaction func(*RowUpdateTransaction) error
 
-	orderIdx         optional.Value //index.OrderIdx
-	rowIdx           optional.Value //index.RowIdx
-	patternDelay     optional.Value //int
-	FinePatternDelay optional.Value //int
-	Tempo            optional.Value //int
-	Ticks            optional.Value //int
-	TempoDelta       optional.Value //int
+	orderIdx         optional.Value[index.Order]
+	rowIdx           optional.Value[index.Row]
+	patternDelay     optional.Value[int]
+	FinePatternDelay optional.Value[int]
+	Tempo            optional.Value[int]
+	Ticks            optional.Value[int]
+	TempoDelta       optional.Value[int]
 
 	RowIdxAllowBacktrack bool
 	WhoJumpedFirst       WhoJumpedFirst
@@ -61,7 +61,7 @@ func (txn *RowUpdateTransaction) SetNextOrder(ordIdx index.Order) {
 
 // GetOrderIdx gets the order index and a flag for if it is valid/set
 func (txn *RowUpdateTransaction) GetOrderIdx() (index.Order, bool) {
-	return txn.orderIdx.GetOrderIdx()
+	return txn.orderIdx.Get()
 }
 
 // SetNextRow will set the next row index
@@ -79,7 +79,7 @@ func (txn *RowUpdateTransaction) SetNextRow(rowIdx index.Row, opts ...bool) {
 
 // GetOrderIdx gets the row index and a flag for if it is valid/set
 func (txn *RowUpdateTransaction) GetRowIdx() (index.Row, bool) {
-	return txn.rowIdx.GetRowIdx()
+	return txn.rowIdx.Get()
 }
 
 // SetPatternDelay sets the row pattern delay
@@ -91,13 +91,13 @@ func (txn *RowUpdateTransaction) SetPatternDelay(patternDelay int) {
 
 // GetPatternDelay gets the row pattern delay and a flag for if it is valid/set
 func (txn *RowUpdateTransaction) GetPatternDelay() (int, bool) {
-	return txn.patternDelay.GetInt()
+	return txn.patternDelay.Get()
 }
 
 // AccTempoDelta accumulates the amount of tempo delta
 func (txn *RowUpdateTransaction) AccTempoDelta(delta int) {
 	tempoDelta := delta
-	if d, ok := txn.TempoDelta.GetInt(); ok {
+	if d, ok := txn.TempoDelta.Get(); ok {
 		tempoDelta += d
 	}
 	txn.TempoDelta.Set(tempoDelta)

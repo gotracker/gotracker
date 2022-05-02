@@ -5,8 +5,8 @@ import (
 )
 
 type Position struct {
-	Order optional.Value `yaml:"order,omitempty"` //int
-	Row   optional.Value `yaml:"row,omitempty"`   //int
+	Order optional.Value[int] `yaml:"order,omitempty"`
+	Row   optional.Value[int] `yaml:"row,omitempty"`
 }
 
 type Song struct {
@@ -18,17 +18,17 @@ type Song struct {
 }
 
 type Loop struct {
-	Count optional.Value `yaml:"count,omitempty" default:"0"` //int  :: 0 = play 1 time / no looping; 1 = play 2 times, etc.; <0 = play indefinitely
+	Count optional.Value[int] `yaml:"count,omitempty" default:"0"` // 0 = play 1 time / no looping; 1 = play 2 times, etc.; <0 = play indefinitely
 }
 
-func NewLoopCount(loops int) optional.Value {
+func NewLoopCount(loops int) optional.Value[int] {
 	return optional.NewValue(loops)
 }
 
-func NewLoopForever() optional.Value {
+func NewLoopForever() optional.Value[int] {
 	return NewLoopCount(-1)
 }
 
 type Fadeout struct {
-	Length optional.Value `yaml:"length,omitempty" default:"0"` // int  :: when Song.End (and Loop.Count) is reached, this is the number of ticks to fadeout over
+	Length optional.Value[int] `yaml:"length,omitempty" default:"0"` // when Song.End (and Loop.Count) is reached, this is the number of ticks to fadeout over
 }

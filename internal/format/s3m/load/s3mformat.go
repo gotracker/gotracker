@@ -184,8 +184,8 @@ func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, s *
 	return nil, errors.New("unhandled scrs ancillary type")
 }
 
-func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern.Pattern, int) {
-	pat := &pattern.Pattern{
+func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern.Pattern[channel.Data], int) {
+	pat := &pattern.Pattern[channel.Data]{
 		Orig: pkt,
 	}
 
@@ -194,7 +194,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 	rowNum := uint8(0)
 	maxCh := uint8(0)
 	for rowNum < numRows {
-		pat.Rows = append(pat.Rows, pattern.RowData{})
+		pat.Rows = append(pat.Rows, pattern.RowData[channel.Data]{})
 		row := &pat.Rows[rowNum]
 		for {
 			var what s3mfile.PatternFlags
@@ -209,9 +209,9 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 
 			channelNum := what.Channel()
 			for len(row.Channels) <= int(channelNum) {
-				row.Channels = append(row.Channels, &channel.Data{})
+				row.Channels = append(row.Channels, channel.Data{})
 			}
-			temp := row.Channels[channelNum].(*channel.Data)
+			temp := row.Channels[channelNum]
 			if maxCh < channelNum {
 				maxCh = channelNum
 			}
@@ -299,7 +299,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern[channel.Data], len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {

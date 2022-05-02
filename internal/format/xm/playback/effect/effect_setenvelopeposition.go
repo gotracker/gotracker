@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -10,7 +11,7 @@ import (
 type SetEnvelopePosition uint8 // 'Lxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetEnvelopePosition) Start(cs intf.Channel, p intf.Playback) error {
+func (e SetEnvelopePosition) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)

@@ -14,11 +14,11 @@ const (
 )
 
 type Settings struct {
-	Values map[string]optional.Value
+	Values map[string]optional.Value[any]
 }
 
 // GetOption returns the current option by name
-func (s *Settings) GetOption(name string) *optional.Value {
+func (s *Settings) GetOption(name string) *optional.Value[any] {
 	if s.Values == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (s *Settings) GetOption(name string) *optional.Value {
 }
 
 // Get returns the current value by name
-func (s *Settings) Get(name string) (interface{}, bool) {
+func (s *Settings) Get(name string) (any, bool) {
 	if v := s.GetOption(name); v != nil {
 		return v.Get()
 	}
@@ -37,11 +37,11 @@ func (s *Settings) Get(name string) (interface{}, bool) {
 }
 
 // Set sets a value by name
-func (s *Settings) Set(name string, value interface{}) error {
+func (s *Settings) Set(name string, value any) error {
 	if s.Values == nil {
-		s.Values = make(map[string]optional.Value)
+		s.Values = make(map[string]optional.Value[any])
 	}
-	v := optional.Value{}
+	var v optional.Value[any]
 	v.Set(value)
 	s.Values[name] = v
 	return nil

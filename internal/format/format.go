@@ -10,14 +10,15 @@ import (
 	"gotracker/internal/format/settings"
 	"gotracker/internal/format/xm"
 	"gotracker/internal/player/intf"
+	"gotracker/internal/song"
 )
 
 var (
-	supportedFormats = make(map[string]intf.Format)
+	supportedFormats = make(map[string]intf.Format[song.ChannelData])
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, options ...settings.OptionFunc) (intf.Playback, intf.Format, error) {
+func Load(filename string, options ...settings.OptionFunc) (intf.Playback, intf.Format[song.ChannelData], error) {
 	s := &settings.Settings{}
 	for _, opt := range options {
 		if err := opt(s); err != nil {

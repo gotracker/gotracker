@@ -6,6 +6,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/s3m/layout"
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/state/pattern"
 	"gotracker/internal/format/s3m/playback/util"
 	"gotracker/internal/player"
@@ -20,11 +21,11 @@ import (
 
 // Manager is a playback manager for S3M music
 type Manager struct {
-	player.Tracker
+	player.Tracker[channel.Data]
 
 	song *layout.Song
 
-	channels []state.ChannelState
+	channels []state.ChannelState[channel.Memory, channel.Data]
 	pattern  pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
@@ -35,13 +36,13 @@ type Manager struct {
 	rowRenderState *rowRenderState
 	OnEffect       func(intf.Effect)
 
-	chOrder [4][]intf.Channel
+	chOrder [4][]intf.Channel[channel.Memory, channel.Data]
 }
 
 // NewManager creates a new manager for an S3M song
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
-		Tracker: player.Tracker{
+		Tracker: player.Tracker[channel.Data]{
 			BaseClockRate: util.S3MBaseClock,
 		},
 		song: song,
@@ -62,7 +63,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	for i, ch := range song.ChannelSettings {
 		oc := m.GetOutputChannel(ch.OutputChannelNum, &m)
 
-		cs := m.GetChannel(i).(*state.ChannelState)
+		cs := m.GetChannel(i)
 		cs.SetOutputChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
@@ -136,7 +137,7 @@ func (m *Manager) GetNumChannels() int {
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
-	m.channels = make([]state.ChannelState, num)
+	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -258,7 +259,7 @@ func (m *Manager) GetSongData() song.Data {
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *Manager) GetChannel(ch int) intf.Channel {
+func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory, channel.Data] {
 	return &m.channels[ch]
 }
 
@@ -285,4 +286,21 @@ func (m *Manager) GetName() string {
 // SetOnEffect sets the callback for an effect being generated for a channel
 func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
+}
+
+// BreakOrder breaks to the next pattern in the order
+func (m *Manager) BreakOrder() error {
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.BreakOrder = true
+	} else {
+		rowTxn := m.pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.BreakOrder = true
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

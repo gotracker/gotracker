@@ -11,12 +11,12 @@ import (
 type PatternLoop uint8 // 'E6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs intf.Channel, p intf.Playback) error {
+func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xF
 
-	mem := cs.GetMemory().(*channel.Memory)
+	mem := cs.GetMemory()
 	pl := mem.GetPatternLoop()
 	if x == 0 {
 		// set loop

@@ -8,15 +8,16 @@ import (
 
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/render"
+	"gotracker/internal/song"
 )
 
-func s3mChannelRender(cdata render.ChannelData, longChannelOutput bool) string {
+func s3mChannelRender(cdata song.ChannelData, longChannelOutput bool) string {
 	n := "..."
 	i := ".."
 	v := ".."
 	e := "..."
 
-	if data, ok := cdata.(*channel.Data); ok && data != nil {
+	if data, _ := cdata.(*channel.Data); data != nil {
 		if data.HasNote() {
 			n = data.GetNote().String()
 		}

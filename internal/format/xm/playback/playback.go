@@ -4,6 +4,7 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"gotracker/internal/format/xm/layout"
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/state/pattern"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/player"
@@ -18,11 +19,11 @@ import (
 
 // Manager is a playback manager for XM music
 type Manager struct {
-	player.Tracker
+	player.Tracker[channel.Data]
 
 	song *layout.Song
 
-	channels []state.ChannelState
+	channels []state.ChannelState[channel.Memory, channel.Data]
 	pattern  pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
@@ -36,7 +37,7 @@ type Manager struct {
 // NewManager creates a new manager for an XM song
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
-		Tracker: player.Tracker{
+		Tracker: player.Tracker[channel.Data]{
 			BaseClockRate: util.XMBaseClock,
 		},
 		song: song,
@@ -91,7 +92,7 @@ func (m *Manager) GetNumChannels() int {
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
-	m.channels = make([]state.ChannelState, num)
+	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -232,7 +233,7 @@ func (m *Manager) GetSongData() song.Data {
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *Manager) GetChannel(ch int) intf.Channel {
+func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory, channel.Data] {
 	return &m.channels[ch]
 }
 

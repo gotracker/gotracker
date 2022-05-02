@@ -31,7 +31,7 @@ type Instrument struct {
 	Static   StaticValues
 	Inst     DataIntf
 	C2Spd    note.C2SPD
-	Finetune optional.Value //note.Finetune
+	Finetune optional.Value[note.Finetune]
 }
 
 // IsInvalid always returns false (valid)
@@ -74,7 +74,7 @@ func (inst *Instrument) SetFinetune(ft note.Finetune) {
 
 // GetFinetune returns the finetune value on the instrument
 func (inst *Instrument) GetFinetune() note.Finetune {
-	if ft, ok := inst.Finetune.GetFinetune(); ok {
+	if ft, ok := inst.Finetune.Get(); ok {
 		return ft
 	}
 	return inst.Static.Finetune

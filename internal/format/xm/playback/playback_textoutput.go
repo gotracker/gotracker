@@ -6,16 +6,17 @@ import (
 
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/render"
+	"gotracker/internal/song"
 	"gotracker/internal/song/note"
 )
 
-func xmChannelRender(cdata render.ChannelData, longChannelOutput bool) string {
+func xmChannelRender(cdata song.ChannelData, longChannelOutput bool) string {
 	n := "..."
 	i := "  "
 	v := ".."
 	e := "..."
 
-	if data, ok := cdata.(*channel.Data); ok && data != nil {
+	if data, _ := cdata.(*channel.Data); data != nil {
 		if data.HasNote() {
 			nt := data.GetNote()
 			switch note.Type(nt) {

@@ -11,7 +11,7 @@ import (
 	"gotracker/internal/song/note"
 )
 
-func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
+func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {
 	inst := cs.GetTargetInst()
 	if inst == nil {
 		return
@@ -24,16 +24,16 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.(*channel.Memory).LinearFreqSlides
+		linearFreqSlides := cs.Memory.LinearFreqSlides
 		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
 		cs.SetTargetPeriod(period)
 	}
 }
 
-func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int, lastTick bool) error {
+func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect(cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
@@ -75,7 +75,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState, currentTick int,
 	if nc := cs.GetVoice(); nc != nil {
 		if keyOn {
 			nc.Attack()
-			mem := cs.GetMemory().(*channel.Memory)
+			mem := cs.GetMemory()
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()

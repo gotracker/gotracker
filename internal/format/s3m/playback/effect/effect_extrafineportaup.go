@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -10,7 +11,7 @@ import (
 type ExtraFinePortaUp uint8 // 'FEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaUp) Start(cs intf.Channel, p intf.Playback) error {
+func (e ExtraFinePortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

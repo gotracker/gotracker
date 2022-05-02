@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/song/note"
 )
@@ -11,7 +12,7 @@ import (
 type SetFinetune uint8 // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetFinetune) PreStart(cs intf.Channel, p intf.Playback) error {
+func (e SetFinetune) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	x := uint8(e) & 0xf
 
 	inst := cs.GetTargetInst()
@@ -23,7 +24,7 @@ func (e SetFinetune) PreStart(cs intf.Channel, p intf.Playback) error {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetFinetune) Start(cs intf.Channel, p intf.Playback) error {
+func (e SetFinetune) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

@@ -201,8 +201,8 @@ playlistLoop:
 				return playedAtLeastOne, fmt.Errorf("Could not setup playback sampler! err[%v]", err)
 			}
 		}
-		startOrder, startOrderSet := song.Start.Order.GetInt()
-		startRow, startRowSet := song.Start.Row.GetInt()
+		startOrder, startOrderSet := song.Start.Order.Get()
+		startRow, startRowSet := song.Start.Row.Get()
 		if startOrderSet || startRowSet {
 			txn := playback.StartPatternTransaction()
 			defer txn.Cancel()
@@ -218,8 +218,8 @@ playlistLoop:
 		}
 
 		cfg := append([]feature.Feature{}, configuration...)
-		endOrder, endOrderSet := song.End.Order.GetInt()
-		endRow, endRowSet := song.End.Row.GetInt()
+		endOrder, endOrderSet := song.End.Order.Get()
+		endRow, endRowSet := song.End.Row.Get()
 		if endOrderSet && endRowSet && endOrder >= 0 && endRow >= 0 {
 			cfg = append(cfg, feature.PlayUntilOrderAndRow{
 				Order: endOrder,
@@ -228,7 +228,7 @@ playlistLoop:
 		}
 		var loopCount int
 		if canPossiblyLoop {
-			if l, ok := song.Loop.Count.GetInt(); ok {
+			if l, ok := song.Loop.Count.Get(); ok {
 				loopCount = l
 			}
 		}

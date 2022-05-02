@@ -9,7 +9,7 @@ import (
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide struct { // 'K'
-	intf.CombinedEffect
+	intf.CombinedEffect[channel.Memory, channel.Data]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object

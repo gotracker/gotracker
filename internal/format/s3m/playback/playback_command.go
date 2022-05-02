@@ -9,7 +9,7 @@ import (
 	"gotracker/internal/song/note"
 )
 
-func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
+func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {
 	inst := cs.GetTargetInst()
 	if inst == nil {
 		return
@@ -27,10 +27,10 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState) {
 	}
 }
 
-func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int, lastTick bool) error {
+func (m *Manager) processCommand(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect(cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
@@ -71,7 +71,7 @@ func (m *Manager) processCommand(ch int, cs *state.ChannelState, currentTick int
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())
 			nc.Attack()
-			mem := cs.GetMemory().(*channel.Memory)
+			mem := cs.GetMemory()
 			mem.Retrigger()
 		} else if keyOff {
 			nc.Release()

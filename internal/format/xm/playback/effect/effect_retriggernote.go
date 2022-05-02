@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -12,13 +13,13 @@ import (
 type RetriggerNote uint8 // 'E9x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetriggerNote) Start(cs intf.Channel, p intf.Playback) error {
+func (e RetriggerNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetriggerNote) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
+func (e RetriggerNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	y := uint8(e) & 0x0F
 	if y == 0 {
 		return nil

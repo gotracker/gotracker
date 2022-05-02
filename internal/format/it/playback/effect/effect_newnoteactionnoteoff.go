@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/song/note"
 )
@@ -11,7 +12,7 @@ import (
 type NewNoteActionNoteOff uint8 // 'S75'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NewNoteActionNoteOff) Start(cs intf.Channel, p intf.Playback) error {
+func (e NewNoteActionNoteOff) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.SetNewNoteAction(note.ActionRelease)
 	return nil
 }

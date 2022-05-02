@@ -214,7 +214,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	return outInsts, nil
 }
 
-func convertVolEnvValue(v int8) interface{} {
+func convertVolEnvValue(v int8) any {
 	vol := volume.Volume(uint8(v)) / 64
 	if vol > 1 {
 		// NOTE: there might be an incoming Y value == 0xFF, which really
@@ -225,15 +225,15 @@ func convertVolEnvValue(v int8) interface{} {
 	return vol
 }
 
-func convertPanEnvValue(v int8) interface{} {
+func convertPanEnvValue(v int8) any {
 	return panning.MakeStereoPosition(float32(v), -64, 64)
 }
 
-func convertPitchEnvValue(v int8) interface{} {
+func convertPitchEnvValue(v int8) any {
 	return float32(uint8(v))
 }
 
-func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType reflect.Type, convert func(int8) interface{}) error {
+func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType reflect.Type, convert func(int8) any) error {
 	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
 	if !outEnv.Enabled {
 		return nil
@@ -391,7 +391,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	}
 
 	if len(data) < int(si.Header.Length+1)*bytesPerFrame {
-		var value interface{}
+		var value any
 		var order binary.ByteOrder = binary.LittleEndian
 		if is16Bit {
 			if isSigned {

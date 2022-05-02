@@ -3,12 +3,13 @@ package effect
 import (
 	"fmt"
 
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide struct { // '6'
-	intf.CombinedEffect
+	intf.CombinedEffect[channel.Memory, channel.Data]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object

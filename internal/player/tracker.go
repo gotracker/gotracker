@@ -21,8 +21,7 @@ type GetPremixDataIntf interface {
 }
 
 // Tracker is an extensible music tracker
-type Tracker struct {
-	intf.Playback
+type Tracker[TChannelData any] struct {
 	render.OPL2Intf
 
 	BaseClockRate float32
@@ -36,11 +35,11 @@ type Tracker struct {
 	mixerVolume  volume.Volume
 
 	ignoreUnknownEffect feature.IgnoreUnknownEffect
-	outputChannels      map[int]*intf.OutputChannel
+	outputChannels      map[int]*intf.OutputChannel[TChannelData]
 }
 
 // Update runs processing on the tracker, producing premixed sound data
-func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
+func (t *Tracker[TChannelData]) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
 	premix, err := t.Generate(deltaTime)
 	if err != nil {
 		return err
@@ -53,7 +52,7 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData)
 }
 
 // Generate runs processing on the tracker, then returns the premixed sound data (if possible)
-func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) {
+func (t *Tracker[TChannelData]) Generate(deltaTime time.Duration) (*device.PremixData, error) {
 	premix, err := t.renderTick()
 	if err != nil {
 		return nil, err
@@ -78,30 +77,30 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) 
 }
 
 // GetOutputChannel returns the output channel for the provided index `ch`
-func (t *Tracker) GetOutputChannel(ch int, pb intf.Playback) *intf.OutputChannel {
+func (t *Tracker[TChannelData]) GetOutputChannel(ch int, pb intf.Playback) *intf.OutputChannel[TChannelData] {
 	if t.outputChannels == nil {
-		t.outputChannels = make(map[int]*intf.OutputChannel)
+		t.outputChannels = make(map[int]*intf.OutputChannel[TChannelData])
 	}
 
-	oc, ok := t.outputChannels[ch]
-	if !ok {
-		oc = &intf.OutputChannel{
-			ChannelNum:    ch,
-			Filter:        nil,
-			Playback:      pb,
-			ChannelVolume: volume.Volume(1),
-		}
-		t.outputChannels[ch] = oc
+	if oc, ok := t.outputChannels[ch]; ok {
+		return oc
 	}
+	oc := &intf.OutputChannel[TChannelData]{
+		ChannelNum:    ch,
+		Filter:        nil,
+		Playback:      pb,
+		ChannelVolume: volume.Volume(1),
+	}
+	t.outputChannels[ch] = oc
 	return oc
 }
 
 // GetSampleRate returns the sample rate of the sampler
-func (t *Tracker) GetSampleRate() float32 {
+func (t *Tracker[TChannelData]) GetSampleRate() float32 {
 	return float32(t.GetSampler().SampleRate)
 }
 
-func (t *Tracker) renderTick() (*device.PremixData, error) {
+func (t *Tracker[TChannelData]) renderTick() (*device.PremixData, error) {
 	if err := DoTick(t.Tickable); err != nil {
 		return nil, err
 	}
@@ -132,7 +131,7 @@ func (t *Tracker) renderTick() (*device.PremixData, error) {
 	return premix, nil
 }
 
-func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) {
+func (t *Tracker[TChannelData]) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) {
 	// make a stand-alone data buffer for this channel for this tick
 	data := mix.NewMixBuffer(tickSamples)
 
@@ -157,17 +156,17 @@ func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tick
 }
 
 // GetOPL2Chip returns the current song's OPL2 chip, if it's needed
-func (t *Tracker) GetOPL2Chip() render.OPL2Chip {
+func (t *Tracker[TChannelData]) GetOPL2Chip() render.OPL2Chip {
 	return t.opl2
 }
 
 // SetOPL2Chip sets the current song's OPL2 chip
-func (t *Tracker) SetOPL2Chip(opl2 render.OPL2Chip) {
+func (t *Tracker[TChannelData]) SetOPL2Chip(opl2 render.OPL2Chip) {
 	t.opl2 = opl2
 }
 
 // SetupSampler configures the internal sampler
-func (t *Tracker) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
+func (t *Tracker[TChannelData]) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
 	t.s = sampler.NewSampler(samplesPerSecond, channels, bitsPerSample, t.BaseClockRate)
 	if t.s == nil {
 		return errors.New("NewSampler() returned nil")
@@ -177,37 +176,37 @@ func (t *Tracker) SetupSampler(samplesPerSecond int, channels int, bitsPerSample
 }
 
 // GetSampler returns the current sampler
-func (t *Tracker) GetSampler() *sampler.Sampler {
+func (t *Tracker[TChannelData]) GetSampler() *sampler.Sampler {
 	return t.s
 }
 
 // GetGlobalVolume returns the global volume value
-func (t *Tracker) GetGlobalVolume() volume.Volume {
+func (t *Tracker[TChannelData]) GetGlobalVolume() volume.Volume {
 	return t.globalVolume
 }
 
 // SetGlobalVolume sets the global volume to the specified `vol` value
-func (t *Tracker) SetGlobalVolume(vol volume.Volume) {
+func (t *Tracker[TChannelData]) SetGlobalVolume(vol volume.Volume) {
 	t.globalVolume = vol
 }
 
 // GetMixerVolume returns the mixer volume value
-func (t *Tracker) GetMixerVolume() volume.Volume {
+func (t *Tracker[TChannelData]) GetMixerVolume() volume.Volume {
 	return t.mixerVolume
 }
 
 // SetMixerVolume sets the mixer volume to the specified `vol` value
-func (t *Tracker) SetMixerVolume(vol volume.Volume) {
+func (t *Tracker[TChannelData]) SetMixerVolume(vol volume.Volume) {
 	t.mixerVolume = vol
 }
 
 // IgnoreUnknownEffect returns true if the tracker wants unknown effects to be ignored
-func (t *Tracker) IgnoreUnknownEffect() bool {
+func (t *Tracker[TChannelData]) IgnoreUnknownEffect() bool {
 	return t.ignoreUnknownEffect.Enabled
 }
 
 // Configure sets specified features
-func (t *Tracker) Configure(features []feature.Feature) {
+func (t *Tracker[TChannelData]) Configure(features []feature.Feature) {
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.IgnoreUnknownEffect:

@@ -18,7 +18,6 @@ import (
 	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/format/xm/playback/util"
 	"gotracker/internal/oscillator"
-	"gotracker/internal/song"
 	"gotracker/internal/song/index"
 	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
@@ -233,16 +232,16 @@ func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequenc
 	return xmInstrumentToInstrument(ih, linearFrequencySlides, s)
 }
 
-func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
-	pat := &pattern.Pattern{
+func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) {
+	pat := &pattern.Pattern[channel.Data]{
 		Orig: pkt,
 	}
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		pat.Rows = append(pat.Rows, pattern.RowData{})
+		pat.Rows = append(pat.Rows, pattern.RowData[channel.Data]{})
 		row := &pat.Rows[rowNum]
-		row.Channels = make([]song.ChannelData, len(drow))
+		row.Channels = make([]channel.Data, len(drow))
 		for channelNum, chn := range drow {
 			cd := channel.Data{
 				What:            chn.Flags,
@@ -252,7 +251,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern, int) {
 				Effect:          chn.Effect,
 				EffectParameter: chn.EffectParameter,
 			}
-			row.Channels[channelNum] = &cd
+			row.Channels[channelNum] = cd
 			if maxCh < uint8(channelNum) {
 				maxCh = uint8(channelNum)
 			}
@@ -274,7 +273,7 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
+		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
@@ -315,7 +314,7 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern[channel.Data], len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertXmPattern(pkt)
 		if pattern == nil {

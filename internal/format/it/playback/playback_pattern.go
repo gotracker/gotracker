@@ -27,7 +27,7 @@ func (m *Manager) processPatternRow() error {
 
 	if m.pattern.NeedResetPatternLoops() {
 		for _, cs := range m.channels {
-			mem := cs.GetMemory().(*channel.Memory)
+			mem := cs.GetMemory()
 			pl := mem.GetPatternLoop()
 			pl.Count = 0
 			pl.Enabled = false
@@ -41,7 +41,7 @@ func (m *Manager) processPatternRow() error {
 
 	withinPatternLoop := false
 	for _, cs := range m.channels {
-		mem := cs.GetMemory().(*channel.Memory)
+		mem := cs.GetMemory()
 		pl := mem.GetPatternLoop()
 		if pl.Enabled {
 			withinPatternLoop = true
@@ -100,10 +100,13 @@ func (m *Manager) processPatternRow() error {
 	}
 
 	// generate effects and run prestart
-	for channelNum, cdata := range row.GetChannels() {
+	channels := row.GetChannels()
+	for channelNum := range channels {
 		if channelNum >= m.GetNumChannels() {
 			continue
 		}
+
+		cdata := &channels[channelNum]
 
 		cs := &m.channels[channelNum]
 		cs.TrackData = cdata
@@ -117,7 +120,7 @@ func (m *Manager) processPatternRow() error {
 			if m.OnEffect != nil {
 				m.OnEffect(cs.ActiveEffect)
 			}
-			if err := intf.EffectPreStart(cs.ActiveEffect, cs, m); err != nil {
+			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.ActiveEffect, cs, m); err != nil {
 				return err
 			}
 		}
@@ -149,8 +152,8 @@ func (m *Manager) processPatternRow() error {
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs *state.ChannelState) {
-	mem := cs.GetMemory().(*channel.Memory)
+func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, channel.Data]) {
+	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
 	if cs.TrackData == nil {

@@ -6,6 +6,7 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
+	"gotracker/internal/format/it/layout/channel"
 	"gotracker/internal/player/intf"
 )
 
@@ -13,7 +14,7 @@ import (
 type SetChannelVolume uint8 // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetChannelVolume) Start(cs intf.Channel, p intf.Playback) error {
+func (e SetChannelVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)

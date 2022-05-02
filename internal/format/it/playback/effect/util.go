@@ -11,7 +11,7 @@ import (
 	"gotracker/internal/song/note"
 )
 
-func doVolSlide(cs intf.Channel, delta float32, multiplier float32) error {
+func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
 	v := util.VolumeToIt(av)
 	vol := int16((float32(v-0x10) + delta) * multiplier)
@@ -43,7 +43,7 @@ func doGlobalVolSlide(p intf.Playback, delta float32, multiplier float32) error 
 	return nil
 }
 
-func doPortaByDeltaAmiga(cs intf.Channel, delta int) error {
+func doPortaByDeltaAmiga(cs intf.Channel[channel.Memory, channel.Data], delta int) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -55,7 +55,7 @@ func doPortaByDeltaAmiga(cs intf.Channel, delta int) error {
 	return nil
 }
 
-func doPortaByDeltaLinear(cs intf.Channel, delta int) error {
+func doPortaByDeltaLinear(cs intf.Channel[channel.Memory, channel.Data], delta int) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -67,7 +67,7 @@ func doPortaByDeltaLinear(cs intf.Channel, delta int) error {
 	return nil
 }
 
-func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) error {
+func doPortaUp(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, linearFreqSlides bool) error {
 	delta := int(amount * multiplier)
 	if linearFreqSlides {
 		return doPortaByDeltaLinear(cs, delta)
@@ -75,7 +75,7 @@ func doPortaUp(cs intf.Channel, amount float32, multiplier float32, linearFreqSl
 	return doPortaByDeltaAmiga(cs, -delta)
 }
 
-func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
+func doPortaUpToNote(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
 	if err := doPortaUp(cs, amount, multiplier, linearFreqSlides); err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func doPortaUpToNote(cs intf.Channel, amount float32, multiplier float32, target
 	return nil
 }
 
-func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreqSlides bool) error {
+func doPortaDown(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, linearFreqSlides bool) error {
 	delta := int(amount * multiplier)
 	if linearFreqSlides {
 		return doPortaByDeltaLinear(cs, -delta)
@@ -93,7 +93,7 @@ func doPortaDown(cs intf.Channel, amount float32, multiplier float32, linearFreq
 	return doPortaByDeltaAmiga(cs, delta)
 }
 
-func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
+func doPortaDownToNote(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
 	if err := doPortaDown(cs, amount, multiplier, linearFreqSlides); err != nil {
 		return err
 	}
@@ -103,16 +103,16 @@ func doPortaDownToNote(cs intf.Channel, amount float32, multiplier float32, targ
 	return nil
 }
 
-func doVibrato(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) error {
-	mem := cs.GetMemory().(*channel.Memory)
+func doVibrato(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32) error {
+	mem := cs.GetMemory()
 	vib := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
 	delta := note.PeriodDelta(vib)
 	cs.SetPeriodDelta(delta)
 	return nil
 }
 
-func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) error {
-	mem := cs.GetMemory().(*channel.Memory)
+func doTremor(cs intf.Channel[channel.Memory, channel.Data], currentTick int, onTicks int, offTicks int) error {
+	mem := cs.GetMemory()
 	tremor := mem.TremorMem()
 	if tremor.IsActive() {
 		if tremor.Advance() >= onTicks {
@@ -127,7 +127,7 @@ func doTremor(cs intf.Channel, currentTick int, onTicks int, offTicks int) error
 	return nil
 }
 
-func doArpeggio(cs intf.Channel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
+func doArpeggio(cs intf.Channel[channel.Memory, channel.Data], currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
 	ns := cs.GetNoteSemitone()
 	var arpSemitoneTarget note.Semitone
 	switch currentTick % 3 {
@@ -153,7 +153,7 @@ var (
 	}
 )
 
-func doVolSlideTwoThirds(cs intf.Channel) error {
+func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
 	vol := util.VolumeToIt(cs.GetActiveVolume())
 	if vol >= 0x10 && vol <= 0x50 {
 		vol -= 0x10
@@ -172,13 +172,13 @@ func doVolSlideTwoThirds(cs intf.Channel) error {
 	return nil
 }
 
-func doTremolo(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32) error {
-	mem := cs.GetMemory().(*channel.Memory)
+func doTremolo(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32) error {
+	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.TremoloOscillator())
 	return doVolSlide(cs, delta, 1.0)
 }
 
-func calculateWaveTable(cs intf.Channel, currentTick int, speed uint8, depth uint8, multiplier float32, o oscillator.Oscillator) float32 {
+func calculateWaveTable(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32, o oscillator.Oscillator) float32 {
 	delta := o.GetWave(float32(depth) * multiplier)
 	o.Advance(int(speed))
 	return delta

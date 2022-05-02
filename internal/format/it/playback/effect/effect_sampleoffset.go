@@ -13,9 +13,9 @@ import (
 type SampleOffset uint8 // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SampleOffset) Start(cs intf.Channel, p intf.Playback) error {
+func (e SampleOffset) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
-	mem := cs.GetMemory().(*channel.Memory)
+	mem := cs.GetMemory()
 	xx := mem.SampleOffset(uint8(e))
 
 	pos := sampling.Pos{Pos: mem.HighOffset + int(xx)*0x100}

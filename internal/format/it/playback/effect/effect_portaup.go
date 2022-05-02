@@ -11,15 +11,15 @@ import (
 type PortaUp uint8 // 'F'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaUp) Start(cs intf.Channel, p intf.Playback) error {
+func (e PortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	return nil
 }
 
 // Tick is called on every tick
-func (e PortaUp) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
-	mem := cs.GetMemory().(*channel.Memory)
+func (e PortaUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+	mem := cs.GetMemory()
 	xx := mem.PortaUp(uint8(e))
 
 	if currentTick != 0 {

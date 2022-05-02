@@ -11,8 +11,8 @@ import (
 )
 
 type envSettings struct {
-	enabled optional.Value //bool
-	pos     optional.Value //int
+	enabled optional.Value[bool]
+	pos     optional.Value[int]
 }
 
 type playingMode uint8
@@ -26,14 +26,14 @@ type txn struct {
 	cancelled bool
 	Voice     voice.Voice
 
-	active      optional.Value //bool
-	playing     optional.Value //playingMode
-	fadeout     optional.Value //struct{}
-	period      optional.Value //period.Period
-	periodDelta optional.Value //period.Delta
-	vol         optional.Value //volume.Volume
-	pos         optional.Value //sampling.Pos
-	pan         optional.Value //panning.Position
+	active      optional.Value[bool]
+	playing     optional.Value[playingMode]
+	fadeout     optional.Value[struct{}]
+	period      optional.Value[period.Period]
+	periodDelta optional.Value[period.Delta]
+	vol         optional.Value[volume.Volume]
+	pos         optional.Value[sampling.Pos]
+	pan         optional.Value[panning.Position]
 	volEnv      envSettings
 	pitchEnv    envSettings
 	panEnv      envSettings
@@ -45,7 +45,7 @@ func (t *txn) SetActive(active bool) {
 }
 
 func (t *txn) IsPendingActive() (bool, bool) {
-	return t.active.GetBool()
+	return t.active.Get()
 }
 
 func (t *txn) IsCurrentlyActive() bool {
@@ -73,7 +73,7 @@ func (t *txn) SetPeriod(period period.Period) {
 }
 
 func (t *txn) GetPendingPeriod() (period.Period, bool) {
-	if p, set := t.period.GetPeriod(); set {
+	if p, set := t.period.Get(); set {
 		if pp, ok := p.(period.Period); ok {
 			return pp, set
 		}
@@ -92,7 +92,7 @@ func (t *txn) SetPeriodDelta(delta period.Delta) {
 }
 
 func (t *txn) GetPendingPeriodDelta() (period.Delta, bool) {
-	return t.periodDelta.GetPeriodDelta()
+	return t.periodDelta.Get()
 }
 
 func (t *txn) GetCurrentPeriodDelta() period.Delta {
@@ -105,7 +105,7 @@ func (t *txn) SetVolume(vol volume.Volume) {
 }
 
 func (t *txn) GetPendingVolume() (volume.Volume, bool) {
-	return t.vol.GetVolume()
+	return t.vol.Get()
 }
 
 func (t *txn) GetCurrentVolume() volume.Volume {
@@ -118,7 +118,7 @@ func (t *txn) SetPos(pos sampling.Pos) {
 }
 
 func (t *txn) GetPendingPos() (sampling.Pos, bool) {
-	return t.pos.GetPosition()
+	return t.pos.Get()
 }
 
 func (t *txn) GetCurrentPos() sampling.Pos {
@@ -131,7 +131,7 @@ func (t *txn) SetPan(pan panning.Position) {
 }
 
 func (t *txn) GetPendingPan() (panning.Position, bool) {
-	return t.pan.GetPanning()
+	return t.pan.Get()
 }
 
 func (t *txn) GetCurrentPan() panning.Position {
@@ -149,7 +149,7 @@ func (t *txn) EnableVolumeEnvelope(enabled bool) {
 }
 
 func (t *txn) IsPendingVolumeEnvelopeEnabled() (bool, bool) {
-	return t.volEnv.enabled.GetBool()
+	return t.volEnv.enabled.Get()
 }
 
 func (t *txn) IsCurrentVolumeEnvelopeEnabled() bool {
@@ -213,7 +213,7 @@ func (t *txn) Commit() {
 	}
 
 	if active, ok := t.active.Get(); ok {
-		t.Voice.SetActive(active.(bool))
+		t.Voice.SetActive(active)
 	}
 
 	if p, ok := t.period.Get(); ok {
@@ -225,51 +225,51 @@ func (t *txn) Commit() {
 	}
 
 	if vol, ok := t.vol.Get(); ok {
-		voice.SetVolume(t.Voice, vol.(volume.Volume))
+		voice.SetVolume(t.Voice, vol)
 	}
 
 	if pos, ok := t.pos.Get(); ok {
-		voice.SetPos(t.Voice, pos.(sampling.Pos))
+		voice.SetPos(t.Voice, pos)
 	}
 
 	if pan, ok := t.pan.Get(); ok {
-		voice.SetPan(t.Voice, pan.(panning.Position))
+		voice.SetPan(t.Voice, pan)
 	}
 
 	if pos, ok := t.volEnv.pos.Get(); ok {
-		voice.SetVolumeEnvelopePosition(t.Voice, pos.(int))
+		voice.SetVolumeEnvelopePosition(t.Voice, pos)
 	}
 
 	if enabled, ok := t.volEnv.enabled.Get(); ok {
-		voice.EnableVolumeEnvelope(t.Voice, enabled.(bool))
+		voice.EnableVolumeEnvelope(t.Voice, enabled)
 	}
 
 	if pos, ok := t.pitchEnv.pos.Get(); ok {
-		voice.SetPitchEnvelopePosition(t.Voice, pos.(int))
+		voice.SetPitchEnvelopePosition(t.Voice, pos)
 	}
 
 	if enabled, ok := t.pitchEnv.enabled.Get(); ok {
-		voice.EnablePitchEnvelope(t.Voice, enabled.(bool))
+		voice.EnablePitchEnvelope(t.Voice, enabled)
 	}
 
 	if pos, ok := t.panEnv.pos.Get(); ok {
-		voice.SetPanEnvelopePosition(t.Voice, pos.(int))
+		voice.SetPanEnvelopePosition(t.Voice, pos)
 	}
 
 	if enabled, ok := t.panEnv.enabled.Get(); ok {
-		voice.EnablePanEnvelope(t.Voice, enabled.(bool))
+		voice.EnablePanEnvelope(t.Voice, enabled)
 	}
 
 	if pos, ok := t.filterEnv.pos.Get(); ok {
-		voice.SetFilterEnvelopePosition(t.Voice, pos.(int))
+		voice.SetFilterEnvelopePosition(t.Voice, pos)
 	}
 
 	if enabled, ok := t.filterEnv.enabled.Get(); ok {
-		voice.EnableFilterEnvelope(t.Voice, enabled.(bool))
+		voice.EnableFilterEnvelope(t.Voice, enabled)
 	}
 
 	if mode, ok := t.playing.Get(); ok {
-		switch mode.(playingMode) {
+		switch mode {
 		case playingModeAttack:
 			t.Voice.Attack()
 		case playingModeRelease:

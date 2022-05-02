@@ -12,7 +12,7 @@ import (
 type SetTempo uint8 // 'T'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetTempo) PreStart(cs intf.Channel, p intf.Playback) error {
+func (e SetTempo) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	if e > 0x20 {
 		m := p.(effectIntf.S3M)
 		if err := m.SetTempo(int(e)); err != nil {
@@ -23,18 +23,18 @@ func (e SetTempo) PreStart(cs intf.Channel, p intf.Playback) error {
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetTempo) Start(cs intf.Channel, p intf.Playback) error {
+func (e SetTempo) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
+func (e SetTempo) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	m := p.(effectIntf.S3M)
 	switch uint8(e >> 4) {
 	case 0: // decrease tempo
 		if currentTick != 0 {
-			mem := cs.GetMemory().(*channel.Memory)
+			mem := cs.GetMemory()
 			val := int(mem.TempoDecrease(uint8(e & 0x0F)))
 			if err := m.DecreaseTempo(val); err != nil {
 				return err
@@ -42,7 +42,7 @@ func (e SetTempo) Tick(cs intf.Channel, p intf.Playback, currentTick int) error 
 		}
 	case 1: // increase tempo
 		if currentTick != 0 {
-			mem := cs.GetMemory().(*channel.Memory)
+			mem := cs.GetMemory()
 			val := int(mem.TempoIncrease(uint8(e & 0x0F)))
 			if err := m.IncreaseTempo(val); err != nil {
 				return err

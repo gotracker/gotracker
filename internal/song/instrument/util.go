@@ -6,7 +6,7 @@ type ID interface {
 }
 
 // DataIntf is the interface to implementation-specific functions on an instrument
-type DataIntf interface{}
+type DataIntf any
 
 // Kind defines the kind of instrument
 type Kind int

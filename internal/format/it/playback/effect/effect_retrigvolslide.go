@@ -13,14 +13,14 @@ import (
 type RetrigVolumeSlide uint8 // 'Q'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetrigVolumeSlide) Start(cs intf.Channel, p intf.Playback) error {
+func (e RetrigVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetrigVolumeSlide) Tick(cs intf.Channel, p intf.Playback, currentTick int) error {
-	mem := cs.GetMemory().(*channel.Memory)
+func (e RetrigVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+	mem := cs.GetMemory()
 	x, y := mem.RetrigVolumeSlide(uint8(e))
 	if y == 0 {
 		return nil

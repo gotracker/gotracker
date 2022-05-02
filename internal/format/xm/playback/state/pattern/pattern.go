@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	formatutil "gotracker/internal/format/internal/util"
+	"gotracker/internal/format/xm/layout/channel"
 	"gotracker/internal/optional"
 	"gotracker/internal/player/feature"
 	"gotracker/internal/song"
@@ -17,7 +18,7 @@ type State struct {
 	currentRow        index.Row
 	ticks             int
 	tempo             int
-	patternDelay      optional.Value //int
+	patternDelay      optional.Value[int]
 	finePatternDelay  int
 	resetPatternLoops bool
 
@@ -26,7 +27,7 @@ type State struct {
 	loopDetect           formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 	loopCount            int
 
-	Patterns []pattern.Pattern
+	Patterns []pattern.Pattern[channel.Data]
 	Orders   []index.Pattern
 }
 
@@ -43,7 +44,7 @@ func (state *State) GetSpeed() int {
 // GetTicksThisRow returns the number of ticks in the current row
 func (state *State) GetTicksThisRow() int {
 	rowLoops := 1
-	if patternDelay, ok := state.patternDelay.GetInt(); ok {
+	if patternDelay, ok := state.patternDelay.Get(); ok {
 		rowLoops = patternDelay
 	}
 	extraTicks := state.finePatternDelay
@@ -233,7 +234,7 @@ func (state *State) nextRow() error {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() (song.Rows, error) {
+func (state *State) GetRows() (song.Rows[channel.Data], error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()
@@ -265,8 +266,8 @@ func (state *State) NeedResetPatternLoops() bool {
 
 // commitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
 func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
-	tempo, tempoSet := txn.Tempo.GetInt()
-	tempoDelta, tempoDeltaSet := txn.TempoDelta.GetInt()
+	tempo, tempoSet := txn.Tempo.Get()
+	tempoDelta, tempoDeltaSet := txn.TempoDelta.Get()
 	if tempoSet || tempoDeltaSet {
 		newTempo := state.tempo
 		if tempoSet {
@@ -278,11 +279,11 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 		state.tempo = newTempo
 	}
 
-	if ticks, ok := txn.Ticks.GetInt(); ok {
+	if ticks, ok := txn.Ticks.Get(); ok {
 		state.ticks = ticks
 	}
 
-	if finePatternDelay, ok := txn.FinePatternDelay.GetInt(); ok {
+	if finePatternDelay, ok := txn.FinePatternDelay.Get(); ok {
 		state.finePatternDelay = finePatternDelay
 	}
 

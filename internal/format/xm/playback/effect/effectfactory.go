@@ -25,7 +25,7 @@ func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 		return nil
 	}
 
-	if !data.HasEffect() {
+	if !data.HasCommand() {
 		return nil
 	}
 

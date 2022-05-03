@@ -44,7 +44,7 @@ func xmChannelRender(cdata song.ChannelData, longChannelOutput bool) string {
 			}
 		}
 
-		if data.HasEffect() {
+		if data.HasCommand() {
 			var c uint8
 			switch {
 			case data.Effect <= 9:

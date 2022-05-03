@@ -4,15 +4,15 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
-
 	"gotracker/internal/format/s3m/layout/channel"
 	"gotracker/internal/format/s3m/playback/effect"
 	"gotracker/internal/player/intf"
 	"gotracker/internal/player/state"
 	"gotracker/internal/song"
 	"gotracker/internal/song/note"
+
+	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/gomixing/volume"
 )
 
 const (
@@ -101,14 +101,14 @@ func (m *Manager) processPatternRow() error {
 
 	// generate effects and run prestart
 	channels := row.GetChannels()
-	for ch := range channels {
-		if ch >= m.GetNumChannels() {
+	for channelNum := range channels {
+		if channelNum >= m.GetNumChannels() {
 			continue
 		}
 
-		cdata := &channels[ch]
+		cdata := &channels[channelNum]
 
-		cs := &m.channels[ch]
+		cs := &m.channels[channelNum]
 		cs.TrackData = cdata
 	}
 
@@ -138,9 +138,8 @@ func (m *Manager) processPatternRow() error {
 	m.rowRenderState.currentTick = 0
 
 	for _, order := range m.chOrder {
-		for _, cso := range order {
-			cs, ok := cso.(*state.ChannelState[channel.Memory, channel.Data])
-			if !ok {
+		for _, cs := range order {
+			if cs == nil {
 				continue
 			}
 

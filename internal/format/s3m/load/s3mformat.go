@@ -211,7 +211,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 			for len(row.Channels) <= int(channelNum) {
 				row.Channels = append(row.Channels, channel.Data{})
 			}
-			temp := row.Channels[channelNum]
+			temp := &row.Channels[channelNum]
 			if maxCh < channelNum {
 				maxCh = channelNum
 			}

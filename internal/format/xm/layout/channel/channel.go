@@ -5,7 +5,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/song"
 	"gotracker/internal/song/instrument"
 	"gotracker/internal/song/note"
 )
@@ -24,7 +23,6 @@ func (s SampleID) IsEmpty() bool {
 
 // Data is the data for the channel
 type Data struct {
-	song.ChannelData
 	What            xmfile.ChannelFlags
 	Note            uint8
 	Instrument      uint8
@@ -77,8 +75,8 @@ func (d *Data) GetVolume() volume.Volume {
 	return d.Volume.Volume()
 }
 
-// HasEffect returns true if there exists a effect on the channel
-func (d *Data) HasEffect() bool {
+// HasCommand returns true if there exists a command on the channel
+func (d *Data) HasCommand() bool {
 	if d.What.HasEffect() || d.What.HasEffectParameter() {
 		return true
 	}

@@ -62,15 +62,15 @@ func (state *State) GetPatNum() index.Pattern {
 }
 
 // GetNumRows returns the number of rows in the current pattern
-func (state *State) GetNumRows() int {
+func (state *State) GetNumRows() (int, error) {
 	rows, err := state.GetRows()
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	if rows != nil {
-		return rows.NumRows()
+		return rows.NumRows(), nil
 	}
-	return 0
+	return 0, nil
 }
 
 // WantsStop returns true when the current pattern wants to end the song
@@ -96,13 +96,6 @@ func (state *State) GetCurrentOrder() index.Order {
 // GetNumOrders returns the number of orders in the song
 func (state *State) GetNumOrders() int {
 	return len(state.Orders)
-}
-
-// NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
-func (state *State) NeedResetPatternLoops() bool {
-	rpl := state.resetPatternLoops
-	state.resetPatternLoops = false
-	return rpl
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list
@@ -152,7 +145,11 @@ func (state *State) GetCurrentRow() index.Row {
 // setCurrentRow sets the current row
 func (state *State) setCurrentRow(row index.Row) error {
 	state.currentRow = row
-	if int(state.GetCurrentRow()) >= state.GetNumRows() {
+	rows, err := state.GetNumRows()
+	if err != nil {
+		return err
+	}
+	if int(state.GetCurrentRow()) >= rows {
 		if err := state.nextOrder(true); err != nil {
 			return err
 		}
@@ -225,7 +222,11 @@ func (state *State) nextRow() error {
 		return nil
 	}
 
-	if state.currentRow.Increment(state.GetNumRows()) {
+	rows, err := state.GetNumRows()
+	if err != nil {
+		return err
+	}
+	if state.currentRow.Increment(rows) {
 		if err := state.nextOrder(true); err != nil {
 			return err
 		}
@@ -257,6 +258,13 @@ nextRow:
 	return nil, nil
 }
 
+// NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
+func (state *State) NeedResetPatternLoops() bool {
+	rpl := state.resetPatternLoops
+	state.resetPatternLoops = false
+	return rpl
+}
+
 // commitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
 func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 	tempo, tempoSet := txn.Tempo.Get()
@@ -286,6 +294,12 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 		}
 	}
 
+	if txn.BreakOrder {
+		if err := state.nextOrder(true); err != nil {
+			return err
+		}
+	}
+
 	orderIdx, orderIdxSet := txn.GetOrderIdx()
 	rowIdx, rowIdxSet := txn.GetRowIdx()
 
@@ -299,7 +313,7 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 			}
 		}
 		if rowIdxSet {
-			if !orderIdxSet && !txn.RowIdxAllowBacktrack {
+			if !orderIdxSet && !txn.RowIdxAllowBacktrack && state.currentRow > rowIdx {
 				if err := state.nextOrder(); err != nil {
 					return err
 				}
@@ -307,10 +321,6 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 			if err := state.setCurrentRow(rowIdx); err != nil {
 				return err
 			}
-		}
-	} else if txn.BreakOrder {
-		if err := state.nextOrder(true); err != nil {
-			return err
 		}
 	} else if txn.AdvanceRow {
 		if err := state.nextRow(); err != nil {

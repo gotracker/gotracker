@@ -30,13 +30,12 @@ type Manager struct {
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
 	postMixRowTxn *playpattern.RowUpdateTransaction
-
-	premix *device.PremixData
+	premix        *device.PremixData
 
 	rowRenderState *rowRenderState
 	OnEffect       func(intf.Effect)
 
-	chOrder [4][]intf.Channel[channel.Memory, channel.Data]
+	chOrder [4][]*state.ChannelState[channel.Memory, channel.Data]
 }
 
 // NewManager creates a new manager for an S3M song
@@ -115,21 +114,6 @@ func (m *Manager) StartPatternTransaction() *playpattern.RowUpdateTransaction {
 	return m.pattern.StartTransaction()
 }
 
-// SetupSampler configures the internal sampler
-func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
-	if err := m.Tracker.SetupSampler(samplesPerSecond, channels, bitsPerSample); err != nil {
-		return err
-	}
-
-	oplLen := len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Melody)-1])
-	oplLen += len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Drums)-1])
-
-	if oplLen > 0 {
-		m.ensureOPL2()
-	}
-	return nil
-}
-
 // GetNumChannels returns the number of channels
 func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
@@ -165,6 +149,7 @@ func (m *Manager) SetNextOrder(order index.Order) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -181,6 +166,24 @@ func (m *Manager) SetNextRow(row index.Row, opts ...bool) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+// BreakOrder breaks to the next pattern in the order
+func (m *Manager) BreakOrder() error {
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.BreakOrder = true
+	} else {
+		rowTxn := m.pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.BreakOrder = true
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -288,19 +291,20 @@ func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
 }
 
-// BreakOrder breaks to the next pattern in the order
-func (m *Manager) BreakOrder() error {
-	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.BreakOrder = true
-	} else {
-		rowTxn := m.pattern.StartTransaction()
-		defer rowTxn.Cancel()
+func (m *Manager) SetEnvelopePosition(v uint8) {
+}
 
-		rowTxn.BreakOrder = true
-		if err := rowTxn.Commit(); err != nil {
-			return err
-		}
+// SetupSampler configures the internal sampler
+func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
+	if err := m.Tracker.SetupSampler(samplesPerSecond, channels, bitsPerSample); err != nil {
+		return err
 	}
 
+	oplLen := len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Melody)-1])
+	oplLen += len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Drums)-1])
+
+	if oplLen > 0 {
+		m.ensureOPL2()
+	}
 	return nil
 }

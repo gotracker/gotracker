@@ -27,7 +27,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.
 	}
 }
 
-func (m *Manager) processCommand(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
 	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {

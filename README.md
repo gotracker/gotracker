@@ -43,11 +43,11 @@ For a Windows build, we recommend the following:
 * Windows 2000 (or newer) - we used Windows 10 Pro (Windows 10 Version 20H2)
 * Visual Studio Code
   * Go extension for VSCode v0.19.0 (or newer) 
-  * Go v1.16.2 (or newer)
+  * Go v1.18.1 (or newer)
 
 For a non-Windows (e.g.: Linux) build, we recommend the following:
 * Ubuntu 20.04 (or newer) - we used Ubuntu 20.04.1 LTS running in WSL2
-* Go v1.16.2 (or newer)
+* Go v1.18.1 (or newer)
 
 ### How to build (on Windows)
 

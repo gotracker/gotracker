@@ -10,7 +10,7 @@ import (
 // UnhandledCommand is an unhandled command
 type UnhandledCommand struct {
 	Command uint8
-	Info    uint8
+	Info    channel.DataEffect
 }
 
 // PreStart triggers when the effect enters onto the channel state

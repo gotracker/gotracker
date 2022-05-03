@@ -12,6 +12,7 @@ require (
 	github.com/gotracker/voice v1.0.4
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/exp v0.0.0-20220428152302-39d4317da171
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -29,5 +30,5 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
-	golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 )

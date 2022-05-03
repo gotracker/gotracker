@@ -10,7 +10,7 @@ import (
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect
-type RetrigVolumeSlide uint8 // 'Q'
+type RetrigVolumeSlide ChannelCommand // 'Q'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e RetrigVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -20,15 +20,15 @@ func (e RetrigVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], 
 
 // Tick is called on every tick
 func (e RetrigVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
-	x := uint8(e) >> 4
-	y := uint8(e) & 0x0F
+	x := channel.DataEffect(e) >> 4
+	y := channel.DataEffect(e) & 0x0F
 	if y == 0 {
 		return nil
 	}
 
 	rt := cs.GetRetriggerCount() + 1
 	cs.SetRetriggerCount(rt)
-	if rt >= x {
+	if channel.DataEffect(rt) >= x {
 		cs.SetPos(sampling.Pos{})
 		cs.ResetRetriggerCount()
 		switch x {
@@ -67,5 +67,5 @@ func (e RetrigVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p
 }
 
 func (e RetrigVolumeSlide) String() string {
-	return fmt.Sprintf("Q%0.2x", uint8(e))
+	return fmt.Sprintf("Q%0.2x", channel.DataEffect(e))
 }

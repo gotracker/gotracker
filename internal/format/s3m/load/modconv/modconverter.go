@@ -22,7 +22,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 			sampleNumber := chn.Instrument()
 			samplePeriod := chn.Period()
 			effect := chn.Effect()
-			effectParameter := chn.EffectParameter()
+			effectParameter := channel.DataEffect(chn.EffectParameter())
 
 			u := &unpackedChannels[c]
 			*u = channel.Data{
@@ -31,7 +31,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 				Instrument: channel.S3MInstrumentID(sampleNumber),
 				Volume:     s3mfile.EmptyVolume,
 				Command:    uint8(0),
-				Info:       uint8(0),
+				Info:       channel.DataEffect(0),
 			}
 
 			if samplePeriod != 0 {
@@ -95,67 +95,67 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 					case 0xA: // Fine VolSlide down
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'D' - '@'
-						u.Info = 0xF0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xF0 | (effectParameter & 0x0F))
 					case 0xB: // Fine VolSlide up
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = ((effectParameter & 0x0F) << 4) | 0x0F
+						u.Info = channel.DataEffect(((effectParameter & 0x0F) << 4) | 0x0F)
 					case 0x2: // Fine Porta Down
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'E' - '@'
-						u.Info = 0xF0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xF0 | (effectParameter & 0x0F))
 					case 0x1: // Fine Porta Up
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'F' - '@'
-						u.Info = 0xF0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xF0 | (effectParameter & 0x0F))
 					case 0x9: // Retrig+VolSlide
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'Q' - '@'
-						u.Info = (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(effectParameter & 0x0F)
 					case 0x0: // Set Filter on/off
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x00 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x00 | (effectParameter & 0x0F))
 					case 0x3: // Set Glissando on/off
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x10 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x10 | (effectParameter & 0x0F))
 					case 0x5: // Set FineTune
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x20 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x20 | (effectParameter & 0x0F))
 					case 0x4: // Set Vibrato Waveform
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x30 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x30 | (effectParameter & 0x0F))
 					case 0x7: // Set Tremolo Waveform
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x40 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x40 | (effectParameter & 0x0F))
 					case 0x8: // Set Pan Position
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0x80 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0x80 | (effectParameter & 0x0F))
 					case 0x6: // Pattern Loop
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0xB0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xB0 | (effectParameter & 0x0F))
 					case 0xC: // Note Cut
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0xC0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xC0 | (effectParameter & 0x0F))
 					case 0xD: // Note Delay
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0xD0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xD0 | (effectParameter & 0x0F))
 					case 0xE: // Pattern Delay
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0xE0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xE0 | (effectParameter & 0x0F))
 					case 0xF: // Funk Repeat
 						u.What |= s3mfile.PatternFlagCommand
 						u.Command = 'S' - '@'
-						u.Info = 0xF0 | (effectParameter & 0x0F)
+						u.Info = channel.DataEffect(0xF0 | (effectParameter & 0x0F))
 					}
 				}
 			}

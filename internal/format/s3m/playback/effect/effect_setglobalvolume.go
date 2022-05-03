@@ -11,11 +11,11 @@ import (
 )
 
 // SetGlobalVolume defines a set global volume effect
-type SetGlobalVolume uint8 // 'V'
+type SetGlobalVolume ChannelCommand // 'V'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	p.SetGlobalVolume(util.VolumeFromS3M(s3mfile.Volume(uint8(e))))
+	p.SetGlobalVolume(util.VolumeFromS3M(s3mfile.Volume(channel.DataEffect(e))))
 	return nil
 }
 
@@ -26,5 +26,5 @@ func (e SetGlobalVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p 
 }
 
 func (e SetGlobalVolume) String() string {
-	return fmt.Sprintf("V%0.2x", uint8(e))
+	return fmt.Sprintf("V%0.2x", channel.DataEffect(e))
 }

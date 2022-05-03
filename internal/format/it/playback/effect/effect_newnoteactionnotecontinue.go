@@ -9,7 +9,7 @@ import (
 )
 
 // NewNoteActionNoteContinue defines a NewNoteAction: Note Continue effect
-type NewNoteActionNoteContinue uint8 // 'S74'
+type NewNoteActionNoteContinue channel.DataEffect // 'S74'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e NewNoteActionNoteContinue) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,5 +18,5 @@ func (e NewNoteActionNoteContinue) Start(cs intf.Channel[channel.Memory, channel
 }
 
 func (e NewNoteActionNoteContinue) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

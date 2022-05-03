@@ -9,12 +9,12 @@ import (
 )
 
 // PatternDelay defines a pattern delay effect
-type PatternDelay uint8 // 'SEx'
+type PatternDelay channel.DataEffect // 'SEx'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e PatternDelay) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	m := p.(effectIntf.XM)
-	return m.SetPatternDelay(int(uint8(e) & 0x0F))
+	return m.SetPatternDelay(int(channel.DataEffect(e) & 0x0F))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
@@ -24,5 +24,5 @@ func (e PatternDelay) Start(cs intf.Channel[channel.Memory, channel.Data], p int
 }
 
 func (e PatternDelay) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

@@ -17,6 +17,9 @@ func (s S3MInstrumentID) IsEmpty() bool {
 	return s == 0
 }
 
+// DataEffect is the type of a channel's EffectParameter value
+type DataEffect uint8
+
 // Data is the data for the channel
 type Data struct {
 	What       s3mfile.PatternFlags
@@ -24,7 +27,7 @@ type Data struct {
 	Instrument S3MInstrumentID
 	Volume     s3mfile.Volume
 	Command    uint8
-	Info       uint8
+	Info       DataEffect
 }
 
 // HasNote returns true if there exists a note on the channel

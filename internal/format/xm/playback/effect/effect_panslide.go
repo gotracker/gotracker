@@ -9,15 +9,15 @@ import (
 )
 
 // PanSlide defines a pan slide effect
-type PanSlide uint8 // 'Pxx'
+type PanSlide channel.DataEffect // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PanSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	xx := uint8(e)
+	xx := channel.DataEffect(e)
 	x := xx >> 4
 	y := xx & 0x0F
 
-	xp := util.PanningToXm(cs.GetPan())
+	xp := channel.DataEffect(util.PanningToXm(cs.GetPan()))
 	if x == 0 {
 		// slide left y units
 		if xp < y {
@@ -33,10 +33,10 @@ func (e PanSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 			xp += x
 		}
 	}
-	cs.SetPan(util.PanningFromXm(xp))
+	cs.SetPan(util.PanningFromXm(uint8(xp)))
 	return nil
 }
 
 func (e PanSlide) String() string {
-	return fmt.Sprintf("P%0.2x", uint8(e))
+	return fmt.Sprintf("P%0.2x", channel.DataEffect(e))
 }

@@ -74,7 +74,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 				Instrument:      chn.Instrument,
 				VolPan:          chn.VolPan,
 				Effect:          chn.Command,
-				EffectParameter: chn.CommandData,
+				EffectParameter: channel.DataEffect(chn.CommandData),
 			}
 
 			row.Channels[channelNum] = cd

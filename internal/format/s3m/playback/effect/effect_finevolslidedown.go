@@ -8,7 +8,7 @@ import (
 )
 
 // FineVolumeSlideDown defines a fine volume slide down effect
-type FineVolumeSlideDown uint8 // 'D'
+type FineVolumeSlideDown ChannelCommand // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e FineVolumeSlideDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,7 +18,7 @@ func (e FineVolumeSlideDown) Start(cs intf.Channel[channel.Memory, channel.Data]
 
 // Tick is called on every tick
 func (e FineVolumeSlideDown) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
-	y := uint8(e) & 0x0F
+	y := channel.DataEffect(e) & 0x0F
 
 	if y != 0x0F && currentTick == 0 {
 		return doVolSlide(cs, -float32(y), 1.0)
@@ -27,5 +27,5 @@ func (e FineVolumeSlideDown) Tick(cs intf.Channel[channel.Memory, channel.Data],
 }
 
 func (e FineVolumeSlideDown) String() string {
-	return fmt.Sprintf("D%0.2x", uint8(e))
+	return fmt.Sprintf("D%0.2x", channel.DataEffect(e))
 }

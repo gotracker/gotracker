@@ -9,7 +9,7 @@ import (
 )
 
 // NewNoteActionNoteFade defines a NewNoteAction: Note Fade effect
-type NewNoteActionNoteFade uint8 // 'S76'
+type NewNoteActionNoteFade channel.DataEffect // 'S76'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e NewNoteActionNoteFade) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,5 +18,5 @@ func (e NewNoteActionNoteFade) Start(cs intf.Channel[channel.Memory, channel.Dat
 }
 
 func (e NewNoteActionNoteFade) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

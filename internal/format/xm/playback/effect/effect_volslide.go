@@ -8,7 +8,7 @@ import (
 )
 
 // VolumeSlide defines a volume slide effect
-type VolumeSlide uint8 // 'A'
+type VolumeSlide channel.DataEffect // 'A'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e VolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -19,7 +19,7 @@ func (e VolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 // Tick is called on every tick
 func (e VolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	x, y := mem.VolumeSlide(uint8(e))
+	x, y := mem.VolumeSlide(channel.DataEffect(e))
 
 	if currentTick == 0 {
 		return nil
@@ -36,5 +36,5 @@ func (e VolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.
 }
 
 func (e VolumeSlide) String() string {
-	return fmt.Sprintf("A%0.2x", uint8(e))
+	return fmt.Sprintf("A%0.2x", channel.DataEffect(e))
 }

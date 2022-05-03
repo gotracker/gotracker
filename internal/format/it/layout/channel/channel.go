@@ -9,6 +9,9 @@ import (
 	"gotracker/internal/song/note"
 )
 
+// DataEffect is the type of a channel's EffectParameter value
+type DataEffect uint8
+
 // SampleID is an InstrumentID that is a combination of InstID and SampID
 type SampleID struct {
 	instrument.ID
@@ -28,7 +31,7 @@ type Data struct {
 	Instrument      uint8
 	VolPan          uint8
 	Effect          uint8
-	EffectParameter uint8
+	EffectParameter DataEffect
 }
 
 // HasNote returns true if there exists a note on the channel

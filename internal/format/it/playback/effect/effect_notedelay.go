@@ -8,11 +8,11 @@ import (
 )
 
 // NoteDelay defines a note delay effect
-type NoteDelay uint8 // 'SDx'
+type NoteDelay channel.DataEffect // 'SDx'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e NoteDelay) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	cs.SetNotePlayTick(true, int(uint8(e)&0x0F))
+	cs.SetNotePlayTick(true, int(channel.DataEffect(e)&0x0F))
 	return nil
 }
 
@@ -23,5 +23,5 @@ func (e NoteDelay) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.P
 }
 
 func (e NoteDelay) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

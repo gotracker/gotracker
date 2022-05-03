@@ -249,7 +249,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 				Instrument:      chn.Instrument,
 				Volume:          util.VolEffect(chn.Volume),
 				Effect:          chn.Effect,
-				EffectParameter: chn.EffectParameter,
+				EffectParameter: channel.DataEffect(chn.EffectParameter),
 			}
 			row.Channels[channelNum] = cd
 			if maxCh < uint8(channelNum) {

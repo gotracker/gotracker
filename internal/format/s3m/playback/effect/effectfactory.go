@@ -5,6 +5,8 @@ import (
 	"gotracker/internal/player/intf"
 )
 
+type ChannelCommand channel.DataEffect
+
 // Factory produces an effect for the provided channel pattern data
 func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 	if data == nil {
@@ -28,7 +30,7 @@ func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 	case 'D': // Volume Slide / Fine Volume Slide
 		return volumeSlideFactory(mem, data.Command, data.Info)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		xx := mem.LastNonZero(uint8(data.Info))
+		xx := mem.LastNonZero(data.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaDown(xx)
@@ -37,7 +39,7 @@ func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 		}
 		return PortaDown(data.Info)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		xx := mem.LastNonZero(uint8(data.Info))
+		xx := mem.LastNonZero(data.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaUp(xx)
@@ -119,10 +121,10 @@ func specialEffect(mem *channel.Memory, data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Command, Info: data.Info}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd uint8, ce uint8) intf.Effect {
-	xy := mem.LastNonZero(uint8(ce))
-	x := uint8(xy >> 4)
-	y := uint8(xy & 0x0F)
+func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) intf.Effect {
+	xy := mem.LastNonZero(ce)
+	x := channel.DataEffect(xy >> 4)
+	y := channel.DataEffect(xy & 0x0F)
 	switch {
 	case x == 0:
 		return VolumeSlideDown(xy)

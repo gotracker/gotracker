@@ -11,23 +11,23 @@ import (
 
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
-	volumeSlide        memory.UInt8 `usage:"Dxy"`
-	portaDown          memory.UInt8 `usage:"Exx"`
-	portaUp            memory.UInt8 `usage:"Fxx"`
-	portaToNote        memory.UInt8 `usage:"Gxx"`
-	vibrato            memory.UInt8 `usage:"Hxy"`
-	tremor             memory.UInt8 `usage:"Ixy"`
-	arpeggio           memory.UInt8 `usage:"Jxy"`
-	channelVolumeSlide memory.UInt8 `usage:"Nxy"`
-	sampleOffset       memory.UInt8 `usage:"Oxx"`
-	panningSlide       memory.UInt8 `usage:"Pxy"`
-	retrigVolumeSlide  memory.UInt8 `usage:"Qxy"`
-	tremolo            memory.UInt8 `usage:"Rxy"`
-	tempoDecrease      memory.UInt8 `usage:"T0x"`
-	tempoIncrease      memory.UInt8 `usage:"T1x"`
-	globalVolumeSlide  memory.UInt8 `usage:"Wxy"`
-	panbrello          memory.UInt8 `usage:"Yxy"`
-	volChanVolumeSlide memory.UInt8 `usage:"vDxy"`
+	volumeSlide        memory.Value[DataEffect] `usage:"Dxy"`
+	portaDown          memory.Value[DataEffect] `usage:"Exx"`
+	portaUp            memory.Value[DataEffect] `usage:"Fxx"`
+	portaToNote        memory.Value[DataEffect] `usage:"Gxx"`
+	vibrato            memory.Value[DataEffect] `usage:"Hxy"`
+	tremor             memory.Value[DataEffect] `usage:"Ixy"`
+	arpeggio           memory.Value[DataEffect] `usage:"Jxy"`
+	channelVolumeSlide memory.Value[DataEffect] `usage:"Nxy"`
+	sampleOffset       memory.Value[DataEffect] `usage:"Oxx"`
+	panningSlide       memory.Value[DataEffect] `usage:"Pxy"`
+	retrigVolumeSlide  memory.Value[DataEffect] `usage:"Qxy"`
+	tremolo            memory.Value[DataEffect] `usage:"Rxy"`
+	tempoDecrease      memory.Value[DataEffect] `usage:"T0x"`
+	tempoIncrease      memory.Value[DataEffect] `usage:"T1x"`
+	globalVolumeSlide  memory.Value[DataEffect] `usage:"Wxy"`
+	panbrello          memory.Value[DataEffect] `usage:"Yxy"`
+	volChanVolumeSlide memory.Value[DataEffect] `usage:"vDxy"`
 
 	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
 	LinearFreqSlides bool
@@ -60,17 +60,17 @@ func (m *Memory) ResetOscillators() {
 }
 
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
-func (m *Memory) VolumeSlide(input uint8) (uint8, uint8) {
+func (m *Memory) VolumeSlide(input DataEffect) (DataEffect, DataEffect) {
 	return m.volumeSlide.CoalesceXY(input)
 }
 
 // VolChanVolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide (from the volume channel)
-func (m *Memory) VolChanVolumeSlide(input uint8) uint8 {
+func (m *Memory) VolChanVolumeSlide(input DataEffect) DataEffect {
 	return m.volChanVolumeSlide.Coalesce(input)
 }
 
 // PortaDown gets or sets the most recent non-zero value (or input) for Portamento Down
-func (m *Memory) PortaDown(input uint8) uint8 {
+func (m *Memory) PortaDown(input DataEffect) DataEffect {
 	if m.EFGLinkMode {
 		return m.portaToNote.Coalesce(input)
 	}
@@ -78,7 +78,7 @@ func (m *Memory) PortaDown(input uint8) uint8 {
 }
 
 // PortaUp gets or sets the most recent non-zero value (or input) for Portamento Up
-func (m *Memory) PortaUp(input uint8) uint8 {
+func (m *Memory) PortaUp(input DataEffect) DataEffect {
 	if m.EFGLinkMode {
 		return m.portaToNote.Coalesce(input)
 	}
@@ -86,67 +86,67 @@ func (m *Memory) PortaUp(input uint8) uint8 {
 }
 
 // PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
-func (m *Memory) PortaToNote(input uint8) uint8 {
+func (m *Memory) PortaToNote(input DataEffect) DataEffect {
 	return m.portaToNote.Coalesce(input)
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
+func (m *Memory) Vibrato(input DataEffect) (DataEffect, DataEffect) {
 	return m.vibrato.CoalesceXY(input)
 }
 
 // Tremor gets or sets the most recent non-zero value (or input) for Tremor
-func (m *Memory) Tremor(input uint8) (uint8, uint8) {
+func (m *Memory) Tremor(input DataEffect) (DataEffect, DataEffect) {
 	return m.tremor.CoalesceXY(input)
 }
 
 // Arpeggio gets or sets the most recent non-zero value (or input) for Arpeggio
-func (m *Memory) Arpeggio(input uint8) (uint8, uint8) {
+func (m *Memory) Arpeggio(input DataEffect) (DataEffect, DataEffect) {
 	return m.arpeggio.CoalesceXY(input)
 }
 
 // ChannelVolumeSlide gets or sets the most recent non-zero value (or input) for Channel Volume Slide
-func (m *Memory) ChannelVolumeSlide(input uint8) (uint8, uint8) {
+func (m *Memory) ChannelVolumeSlide(input DataEffect) (DataEffect, DataEffect) {
 	return m.channelVolumeSlide.CoalesceXY(input)
 }
 
 // SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
-func (m *Memory) SampleOffset(input uint8) uint8 {
+func (m *Memory) SampleOffset(input DataEffect) DataEffect {
 	return m.sampleOffset.Coalesce(input)
 }
 
 // PanningSlide gets or sets the most recent non-zero value (or input) for Panning Slide
-func (m *Memory) PanningSlide(input uint8) uint8 {
+func (m *Memory) PanningSlide(input DataEffect) DataEffect {
 	return m.panningSlide.Coalesce(input)
 }
 
 // RetrigVolumeSlide gets or sets the most recent non-zero value (or input) for Retrigger+VolumeSlide
-func (m *Memory) RetrigVolumeSlide(input uint8) (uint8, uint8) {
+func (m *Memory) RetrigVolumeSlide(input DataEffect) (DataEffect, DataEffect) {
 	return m.retrigVolumeSlide.CoalesceXY(input)
 }
 
 // Tremolo gets or sets the most recent non-zero value (or input) for Tremolo
-func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
+func (m *Memory) Tremolo(input DataEffect) (DataEffect, DataEffect) {
 	return m.tremolo.CoalesceXY(input)
 }
 
 // TempoDecrease gets or sets the most recent non-zero value (or input) for Tempo Decrease
-func (m *Memory) TempoDecrease(input uint8) uint8 {
+func (m *Memory) TempoDecrease(input DataEffect) DataEffect {
 	return m.tempoDecrease.Coalesce(input)
 }
 
 // TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
-func (m *Memory) TempoIncrease(input uint8) uint8 {
+func (m *Memory) TempoIncrease(input DataEffect) DataEffect {
 	return m.tempoIncrease.Coalesce(input)
 }
 
 // GlobalVolumeSlide gets or sets the most recent non-zero value (or input) for Global Volume Slide
-func (m *Memory) GlobalVolumeSlide(input uint8) (uint8, uint8) {
+func (m *Memory) GlobalVolumeSlide(input DataEffect) (DataEffect, DataEffect) {
 	return m.globalVolumeSlide.CoalesceXY(input)
 }
 
 // Panbrello gets or sets the most recent non-zero value (or input) for Panbrello
-func (m *Memory) Panbrello(input uint8) uint8 {
+func (m *Memory) Panbrello(input DataEffect) DataEffect {
 	return m.panbrello.Coalesce(input)
 }
 
@@ -185,22 +185,22 @@ func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 // StartOrder is called when the first order's row at tick 0 is started
 func (m *Memory) StartOrder() {
 	if m.ResetMemoryAtStartOfOrder0 {
-		m.volumeSlide = 0
-		m.portaDown = 0
-		m.portaUp = 0
-		m.portaToNote = 0
-		m.vibrato = 0
-		m.tremor = 0
-		m.arpeggio = 0
-		m.channelVolumeSlide = 0
-		m.sampleOffset = 0
-		m.panningSlide = 0
-		m.retrigVolumeSlide = 0
-		m.tremolo = 0
-		m.tempoDecrease = 0
-		m.tempoIncrease = 0
-		m.globalVolumeSlide = 0
-		m.panbrello = 0
-		m.volChanVolumeSlide = 0
+		m.volumeSlide.Reset()
+		m.portaDown.Reset()
+		m.portaUp.Reset()
+		m.portaToNote.Reset()
+		m.vibrato.Reset()
+		m.tremor.Reset()
+		m.arpeggio.Reset()
+		m.channelVolumeSlide.Reset()
+		m.sampleOffset.Reset()
+		m.panningSlide.Reset()
+		m.retrigVolumeSlide.Reset()
+		m.tremolo.Reset()
+		m.tempoDecrease.Reset()
+		m.tempoIncrease.Reset()
+		m.globalVolumeSlide.Reset()
+		m.panbrello.Reset()
+		m.volChanVolumeSlide.Reset()
 	}
 }

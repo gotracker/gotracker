@@ -8,7 +8,7 @@ import (
 )
 
 // Arpeggio defines an arpeggio effect
-type Arpeggio uint8 // '0'
+type Arpeggio channel.DataEffect // '0'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Arpeggio) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -20,7 +20,7 @@ func (e Arpeggio) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 
 // Tick is called on every tick
 func (e Arpeggio) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
-	xy := uint8(e)
+	xy := channel.DataEffect(e)
 	if xy == 0 {
 		return nil
 	}
@@ -31,5 +31,5 @@ func (e Arpeggio) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 }
 
 func (e Arpeggio) String() string {
-	return fmt.Sprintf("0%0.2x", uint8(e))
+	return fmt.Sprintf("0%0.2x", channel.DataEffect(e))
 }

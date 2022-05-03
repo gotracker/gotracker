@@ -10,7 +10,7 @@ import (
 )
 
 // PortaToNote defines a portamento-to-note effect
-type PortaToNote uint8 // '3'
+type PortaToNote channel.DataEffect // '3'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PortaToNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -26,7 +26,7 @@ func (e PortaToNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 // Tick is called on every tick
 func (e PortaToNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	xx := mem.PortaToNote(uint8(e))
+	xx := mem.PortaToNote(channel.DataEffect(e))
 
 	period := cs.GetPeriod()
 	ptp := cs.GetPortaTargetPeriod()
@@ -41,5 +41,5 @@ func (e PortaToNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.
 }
 
 func (e PortaToNote) String() string {
-	return fmt.Sprintf("3%0.2x", uint8(e))
+	return fmt.Sprintf("3%0.2x", channel.DataEffect(e))
 }

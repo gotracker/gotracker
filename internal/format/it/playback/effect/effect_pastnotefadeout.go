@@ -9,7 +9,7 @@ import (
 )
 
 // PastNoteFade defines a past note fadeout effect
-type PastNoteFade uint8 // 'S72'
+type PastNoteFade channel.DataEffect // 'S72'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PastNoteFade) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,5 +18,5 @@ func (e PastNoteFade) Start(cs intf.Channel[channel.Memory, channel.Data], p int
 }
 
 func (e PastNoteFade) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

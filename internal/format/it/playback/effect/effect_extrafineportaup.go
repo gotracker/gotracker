@@ -8,7 +8,7 @@ import (
 )
 
 // ExtraFinePortaUp defines an extra-fine portamento up effect
-type ExtraFinePortaUp uint8 // 'FEx'
+type ExtraFinePortaUp channel.DataEffect // 'FEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e ExtraFinePortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -16,11 +16,11 @@ func (e ExtraFinePortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p
 	cs.UnfreezePlayback()
 
 	mem := cs.GetMemory()
-	y := mem.PortaUp(uint8(e)) & 0x0F
+	y := mem.PortaUp(channel.DataEffect(e)) & 0x0F
 
 	return doPortaUp(cs, float32(y), 1, mem.LinearFreqSlides)
 }
 
 func (e ExtraFinePortaUp) String() string {
-	return fmt.Sprintf("F%0.2x", uint8(e))
+	return fmt.Sprintf("F%0.2x", channel.DataEffect(e))
 }

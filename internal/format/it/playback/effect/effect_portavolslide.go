@@ -13,7 +13,7 @@ type PortaVolumeSlide struct { // 'L'
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object
-func NewPortaVolumeSlide(mem *channel.Memory, cd uint8, val uint8) PortaVolumeSlide {
+func NewPortaVolumeSlide(mem *channel.Memory, cd uint8, val channel.DataEffect) PortaVolumeSlide {
 	pvs := PortaVolumeSlide{}
 	vs := volumeSlideFactory(mem, cd, val)
 	pvs.Effects = append(pvs.Effects, vs, PortaToNote(0x00))
@@ -21,5 +21,5 @@ func NewPortaVolumeSlide(mem *channel.Memory, cd uint8, val uint8) PortaVolumeSl
 }
 
 func (e PortaVolumeSlide) String() string {
-	return fmt.Sprintf("L%0.2x", e.Effects[0].(uint8))
+	return fmt.Sprintf("L%0.2x", e.Effects[0].(channel.DataEffect))
 }

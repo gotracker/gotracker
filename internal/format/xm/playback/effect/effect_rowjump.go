@@ -9,7 +9,7 @@ import (
 )
 
 // RowJump defines a row jump effect
-type RowJump uint8 // 'D'
+type RowJump channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e RowJump) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -19,7 +19,7 @@ func (e RowJump) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
 func (e RowJump) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, lastTick int) error {
-	xy := uint8(e)
+	xy := channel.DataEffect(e)
 	x := xy >> 4
 	y := xy & 0x0f
 	row := index.Row(x*10 + y)
@@ -30,5 +30,5 @@ func (e RowJump) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 }
 
 func (e RowJump) String() string {
-	return fmt.Sprintf("D%0.2x", uint8(e))
+	return fmt.Sprintf("D%0.2x", channel.DataEffect(e))
 }

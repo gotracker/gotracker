@@ -1,6 +1,6 @@
 package intf
 
-import "gotracker/internal/format/settings"
+import "github.com/gotracker/gotracker/internal/format/settings"
 
 // Format is an interface to a music file format loader
 type Format[TChannelData any] interface {

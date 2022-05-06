@@ -6,9 +6,9 @@ import (
 
 	"github.com/gotracker/goaudiofile/music/tracked/s3m"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/render"
-	"gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/render"
+	"github.com/gotracker/gotracker/internal/song"
 )
 
 func s3mChannelRender(cdata song.ChannelData, longChannelOutput bool) string {

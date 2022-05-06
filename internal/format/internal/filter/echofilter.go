@@ -1,7 +1,8 @@
 package filter
 
 import (
-	"gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/format/internal/util"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -25,6 +26,10 @@ func (e *EchoFilterFactory) Factory() filter.Factory {
 			EchoFilterSettings: e.EchoFilterSettings,
 			sampleRate:         sampleRate,
 		}
+		ldelay := int(e.LeftDelay * echo.sampleRate)
+		rdelay := int(e.RightDelay * echo.sampleRate)
+		echo.delayBufL = util.NewRingBuffer[volume.Volume](ldelay * 3)
+		echo.delayBufR = util.NewRingBuffer[volume.Volume](rdelay * 3)
 		return &echo
 	}
 }
@@ -34,11 +39,14 @@ func (e *EchoFilterFactory) Factory() filter.Factory {
 type EchoFilter struct {
 	EchoFilterSettings
 	sampleRate float32
-	delayBufL  []volume.Volume
-	delayBufR  []volume.Volume
+	delayBufL  util.RingBuffer[volume.Volume]
+	delayBufR  util.RingBuffer[volume.Volume]
 }
 
 func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
+	if dry.Channels == 0 {
+		return volume.Matrix{}
+	}
 	wetMix := volume.Volume(e.WetDryMix)
 	dryMix := 1 - wetMix
 	wet := dry
@@ -50,41 +58,53 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 
 	crossEcho := e.PanDelay >= 0.5
 
-	for c, s := range dry {
+	for c := 0; c < dry.Channels; c++ {
+		s := dry.StaticMatrix[c]
 		switch c {
 		case 0:
-			e.delayBufL = append(e.delayBufL, s)
+			e.delayBufL.Write(s)
 		case 1:
-			e.delayBufR = append(e.delayBufR, s)
+			e.delayBufR.Write(s)
 		}
 	}
 
-	for c := range wet {
-		var buf []volume.Volume
-		switch {
-		case (c == 0) || (crossEcho && c == 1):
-			if len(e.delayBufL) >= ldelay {
-				pos := len(e.delayBufL) - ldelay
-				e.delayBufL = e.delayBufL[pos:]
-			}
-			buf = e.delayBufL
-		case (c == 1) || (crossEcho && c == 0):
-			if len(e.delayBufR) >= rdelay {
-				pos := len(e.delayBufR) - rdelay
-				e.delayBufR = e.delayBufR[pos:]
-			}
-			buf = e.delayBufR
-		}
-		if buf == nil {
+	type delayInfo struct {
+		buf   *util.RingBuffer[volume.Volume]
+		delay int
+	}
+
+	var delayBuf [2]delayInfo
+
+	lbuf := 0
+	rbuf := 1
+	if crossEcho {
+		lbuf = 1
+		rbuf = 0
+	}
+
+	delayBuf[lbuf] = delayInfo{
+		buf:   &e.delayBufL,
+		delay: ldelay,
+	}
+	delayBuf[rbuf] = delayInfo{
+		buf:   &e.delayBufR,
+		delay: rdelay,
+	}
+
+	for c := 0; c < dry.Channels; c++ {
+		dryPre := dry.StaticMatrix[c]
+		d := delayBuf[c]
+
+		if d.buf == nil {
 			continue
 		}
 
 		// Calculate the mix
-		wetPre := buf[0]
-		dryPre := dry[c]
-		w := dryPre*dryMix + wetPre*wetMix
-		wet[c] = w
-		buf[len(buf)-1] += w * feedback
+		var wetPre [1]volume.Volume
+		d.buf.ReadFrom(d.delay, wetPre[:])
+		w := dryPre*dryMix + wetPre[0]*wetMix
+		wet.StaticMatrix[c] = w
+		d.buf.Accumulate(w * feedback)
 	}
 
 	return wet

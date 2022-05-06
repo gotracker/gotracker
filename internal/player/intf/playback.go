@@ -7,10 +7,10 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/player/feature"
-	"gotracker/internal/song"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/pattern"
+	"github.com/gotracker/gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 // Playback is an interface for rendering a song to output data

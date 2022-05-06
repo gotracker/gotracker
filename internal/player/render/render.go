@@ -2,8 +2,9 @@ package render
 
 import (
 	"fmt"
-	"gotracker/internal/song"
 	"strings"
+
+	"github.com/gotracker/gotracker/internal/song"
 )
 
 // ChannelData is the data used by the ChannelFormatterFunc to render the source data from a tracker channel

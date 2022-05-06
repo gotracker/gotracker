@@ -3,23 +3,23 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/format/internal/effect"
-	"gotracker/internal/format/internal/memory"
-	formatutil "gotracker/internal/format/internal/util"
-	oscillatorImpl "gotracker/internal/oscillator"
+	"github.com/gotracker/gotracker/internal/format/internal/effect"
+	"github.com/gotracker/gotracker/internal/format/internal/memory"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 )
 
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	portaToNote   memory.UInt8
-	vibratoSpeed  memory.UInt8
-	vibratoDepth  memory.UInt8
-	tremoloSpeed  memory.UInt8
-	tremoloDepth  memory.UInt8
-	sampleOffset  memory.UInt8
-	tempoDecrease memory.UInt8
-	tempoIncrease memory.UInt8
-	lastNonZero   memory.UInt8
+	portaToNote   memory.Value[DataEffect]
+	vibratoSpeed  memory.Value[DataEffect]
+	vibratoDepth  memory.Value[DataEffect]
+	tremoloSpeed  memory.Value[DataEffect]
+	tremoloDepth  memory.Value[DataEffect]
+	sampleOffset  memory.Value[DataEffect]
+	tempoDecrease memory.Value[DataEffect]
+	tempoIncrease memory.Value[DataEffect]
+	lastNonZero   memory.Value[DataEffect]
 
 	VolSlideEveryFrame  bool
 	LowPassFilterEnable bool
@@ -39,12 +39,12 @@ func (m *Memory) ResetOscillators() {
 }
 
 // PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
-func (m *Memory) PortaToNote(input uint8) uint8 {
+func (m *Memory) PortaToNote(input DataEffect) DataEffect {
 	return m.portaToNote.Coalesce(input)
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
+func (m *Memory) Vibrato(input DataEffect) (DataEffect, DataEffect) {
 	// vibrato is unusual, because each nibble is treated uniquely
 	vx := m.vibratoSpeed.Coalesce(input >> 4)
 	vy := m.vibratoDepth.Coalesce(input & 0x0f)
@@ -52,7 +52,7 @@ func (m *Memory) Vibrato(input uint8) (uint8, uint8) {
 }
 
 // Tremolo gets or sets the most recent non-zero value (or input) for Vibrato
-func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
+func (m *Memory) Tremolo(input DataEffect) (DataEffect, DataEffect) {
 	// tremolo is unusual, because each nibble is treated uniquely
 	vx := m.tremoloSpeed.Coalesce(input >> 4)
 	vy := m.tremoloDepth.Coalesce(input & 0x0f)
@@ -60,27 +60,27 @@ func (m *Memory) Tremolo(input uint8) (uint8, uint8) {
 }
 
 // SampleOffset gets or sets the most recent non-zero value (or input) for Sample Offset
-func (m *Memory) SampleOffset(input uint8) uint8 {
+func (m *Memory) SampleOffset(input DataEffect) DataEffect {
 	return m.sampleOffset.Coalesce(input)
 }
 
 // TempoDecrease gets or sets the most recent non-zero value (or input) for Tempo Decrease
-func (m *Memory) TempoDecrease(input uint8) uint8 {
+func (m *Memory) TempoDecrease(input DataEffect) DataEffect {
 	return m.tempoDecrease.Coalesce(input)
 }
 
 // TempoIncrease gets or sets the most recent non-zero value (or input) for Tempo Increase
-func (m *Memory) TempoIncrease(input uint8) uint8 {
+func (m *Memory) TempoIncrease(input DataEffect) DataEffect {
 	return m.tempoIncrease.Coalesce(input)
 }
 
 // LastNonZero gets or sets the most recent non-zero value (or input)
-func (m *Memory) LastNonZero(input uint8) uint8 {
+func (m *Memory) LastNonZero(input DataEffect) DataEffect {
 	return m.lastNonZero.Coalesce(input)
 }
 
 // LastNonZero gets or sets the most recent non-zero value (or input)
-func (m *Memory) LastNonZeroXY(input uint8) (uint8, uint8) {
+func (m *Memory) LastNonZeroXY(input DataEffect) (DataEffect, DataEffect) {
 	xy := m.LastNonZero(input)
 	return xy >> 4, xy & 0x0f
 }
@@ -115,14 +115,14 @@ func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 // StartOrder is called when the first order's row at tick 0 is started
 func (m *Memory) StartOrder() {
 	if m.ResetMemoryAtStartOfOrder0 {
-		m.portaToNote = 0
-		m.vibratoSpeed = 0
-		m.vibratoDepth = 0
-		m.tremoloSpeed = 0
-		m.tremoloDepth = 0
-		m.sampleOffset = 0
-		m.tempoDecrease = 0
-		m.tempoIncrease = 0
-		m.lastNonZero = 0
+		m.portaToNote.Reset()
+		m.vibratoSpeed.Reset()
+		m.vibratoDepth.Reset()
+		m.tremoloSpeed.Reset()
+		m.tremoloDepth.Reset()
+		m.sampleOffset.Reset()
+		m.tempoDecrease.Reset()
+		m.tempoIncrease.Reset()
+		m.lastNonZero.Reset()
 	}
 }

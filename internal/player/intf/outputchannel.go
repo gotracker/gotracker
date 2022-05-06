@@ -1,7 +1,7 @@
 package intf
 
 import (
-	"gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/filter"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -17,11 +17,13 @@ type OutputChannel[TChannelData any] struct {
 
 // ApplyFilter will apply the channel filter, if there is one.
 func (oc *OutputChannel[TChannelData]) ApplyFilter(dry volume.Matrix) volume.Matrix {
+	if dry.Channels == 0 {
+		return volume.Matrix{}
+	}
 	premix := oc.GetPremixVolume()
-	wet := dry.ApplyInSitu(premix)
+	wet := dry.Apply(premix)
 	if oc.Filter != nil {
-		wet = oc.Filter.Filter(wet)
-		return wet
+		return oc.Filter.Filter(wet)
 	}
 	return wet
 }

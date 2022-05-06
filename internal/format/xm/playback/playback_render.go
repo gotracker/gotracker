@@ -6,7 +6,7 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	device "github.com/gotracker/gosound"
 
-	"gotracker/internal/player/render"
+	"github.com/gotracker/gotracker/internal/player/render"
 )
 
 // OnTick runs the XM tick processing

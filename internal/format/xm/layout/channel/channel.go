@@ -4,10 +4,13 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
+
+// DataEffect is the type of a channel's EffectParameter value
+type DataEffect uint8
 
 // SampleID is an InstrumentID that is a combination of InstID and SampID
 type SampleID struct {
@@ -28,7 +31,7 @@ type Data struct {
 	Instrument      uint8
 	Volume          util.VolEffect
 	Effect          uint8
-	EffectParameter uint8
+	EffectParameter DataEffect
 }
 
 // HasNote returns true if there exists a note on the channel

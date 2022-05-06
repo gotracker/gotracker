@@ -5,12 +5,12 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/song"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
-	"gotracker/internal/song/pattern"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 // Header is a mildly-decoded S3M header definition

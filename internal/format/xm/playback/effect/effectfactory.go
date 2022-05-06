@@ -2,8 +2,9 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
+
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // VolEff is a combined effect that includes a volume effect and a standard effect

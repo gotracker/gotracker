@@ -4,11 +4,11 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/comparison"
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/comparison"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
@@ -21,7 +21,7 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 	if vol < 0 {
 		vol = 0
 	}
-	sv := s3mfile.Volume(uint8(vol))
+	sv := s3mfile.Volume(channel.DataEffect(vol))
 	nv := util.VolumeFromS3M(sv)
 	cs.SetActiveVolume(nv)
 	return nil
@@ -85,9 +85,9 @@ func doPortaDownToNote(cs intf.Channel[channel.Memory, channel.Data], amount flo
 	return nil
 }
 
-func doVibrato(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32) error {
+func doVibrato(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
-	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
+	delta := calculateWaveTable(cs, currentTick, channel.DataEffect(speed), channel.DataEffect(depth), multiplier, mem.VibratoOscillator())
 	cs.SetPeriodDelta(note.PeriodDelta(delta))
 	return nil
 }
@@ -143,13 +143,13 @@ func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
 	return nil
 }
 
-func doTremolo(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32) error {
+func doTremolo(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.TremoloOscillator())
 	return doVolSlide(cs, delta, 1.0)
 }
 
-func calculateWaveTable(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed uint8, depth uint8, multiplier float32, o oscillator.Oscillator) float32 {
+func calculateWaveTable(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32, o oscillator.Oscillator) float32 {
 	delta := o.GetWave(float32(depth)) * multiplier
 	o.Advance(int(speed))
 	return delta

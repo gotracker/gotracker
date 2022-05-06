@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // Vibrato defines a vibrato effect
-type Vibrato uint8 // 'H'
+type Vibrato ChannelCommand // 'H'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e Vibrato) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -20,7 +20,7 @@ func (e Vibrato) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 // Tick is called on every tick
 func (e Vibrato) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	x, y := mem.Vibrato(uint8(e))
+	x, y := mem.Vibrato(channel.DataEffect(e))
 	// NOTE: JBC - S3M dos not update on tick 0, but MOD does.
 	// Maybe need to add a flag for converted MOD backward compatibility?
 	if currentTick != 0 {
@@ -30,5 +30,5 @@ func (e Vibrato) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 }
 
 func (e Vibrato) String() string {
-	return fmt.Sprintf("H%0.2x", uint8(e))
+	return fmt.Sprintf("H%0.2x", channel.DataEffect(e))
 }

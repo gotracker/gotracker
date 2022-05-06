@@ -11,10 +11,10 @@ import (
 	"github.com/gotracker/voice/fadeout"
 	"github.com/gotracker/voice/period"
 
-	"gotracker/internal/filter"
-	"gotracker/internal/pan"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/pan"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // PCM is a PCM voice interface
@@ -158,9 +158,9 @@ func (v *pcmVoice) IsDone() bool {
 // == SampleStream ==
 
 func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
-	dry := v.sampler.GetSample(pos)
+	samp := v.sampler.GetSample(pos)
 	vol := v.GetFinalVolume()
-	wet := dry.ApplyInSitu(vol)
+	wet := samp.Apply(vol)
 	if v.voiceFilter != nil {
 		wet = v.voiceFilter.Filter(wet)
 	}

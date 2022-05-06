@@ -11,8 +11,8 @@ import (
 	"github.com/gotracker/voice/period"
 	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // OPL2 is an OPL2 voice interface
@@ -269,7 +269,7 @@ func (v *opl2Voice) Advance(tickDuration time.Duration) {
 }
 
 func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {
-	return nil
+	return volume.Matrix{}
 }
 
 func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {

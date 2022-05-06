@@ -1,8 +1,8 @@
 package pattern
 
 import (
-	"gotracker/internal/song"
-	"gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/index"
 )
 
 // RowData is the data for each row

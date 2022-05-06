@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PatternLoop defines a pattern loop effect
-type PatternLoop uint8 // 'SBx'
+type PatternLoop ChannelCommand // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,7 +18,7 @@ func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
 func (e PatternLoop) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, lastTick int) error {
-	x := uint8(e) & 0xF
+	x := channel.DataEffect(e) & 0xF
 
 	mem := cs.GetMemory()
 	pl := mem.GetPatternLoop()
@@ -28,7 +28,7 @@ func (e PatternLoop) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.
 	} else {
 		if !pl.Enabled {
 			pl.Enabled = true
-			pl.Total = x
+			pl.Total = uint8(x)
 			pl.End = p.GetCurrentRow()
 			pl.Count = 0
 		}
@@ -40,5 +40,5 @@ func (e PatternLoop) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.
 }
 
 func (e PatternLoop) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

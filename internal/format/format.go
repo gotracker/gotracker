@@ -4,13 +4,13 @@ import (
 	"errors"
 	"os"
 
-	"gotracker/internal/format/it"
-	"gotracker/internal/format/mod"
-	"gotracker/internal/format/s3m"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/format/xm"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/format/it"
+	"github.com/gotracker/gotracker/internal/format/mod"
+	"github.com/gotracker/gotracker/internal/format/s3m"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/format/xm"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song"
 )
 
 var (

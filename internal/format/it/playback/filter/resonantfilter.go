@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/filter"
-	"gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 )
 
 type channelData struct {
@@ -44,8 +44,12 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate float32) filt
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result
 func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
+	if dry.Channels == 0 {
+		return volume.Matrix{}
+	}
 	wet := dry // we can update in-situ and be ok
-	for i, s := range dry {
+	for i := 0; i < dry.Channels; i++ {
+		s := dry.StaticMatrix[i]
 		for len(f.channels) <= i {
 			f.channels = append(f.channels, channelData{})
 		}
@@ -55,7 +59,7 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 		yn := (xn*f.a0 + c.ynz1*f.b0 + c.ynz2*f.b1) / 3
 		c.ynz2 = c.ynz1
 		c.ynz1 = yn
-		wet[i] = yn
+		wet.StaticMatrix[i] = yn
 	}
 	return wet
 }

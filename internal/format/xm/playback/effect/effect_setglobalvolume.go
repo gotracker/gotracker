@@ -3,13 +3,13 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetGlobalVolume defines a set global volume effect
-type SetGlobalVolume uint8 // 'G'
+type SetGlobalVolume channel.DataEffect // 'G'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -25,5 +25,5 @@ func (e SetGlobalVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p 
 }
 
 func (e SetGlobalVolume) String() string {
-	return fmt.Sprintf("G%0.2x", uint8(e))
+	return fmt.Sprintf("G%0.2x", channel.DataEffect(e))
 }

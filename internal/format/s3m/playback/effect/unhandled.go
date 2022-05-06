@@ -3,14 +3,14 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // UnhandledCommand is an unhandled command
 type UnhandledCommand struct {
 	Command uint8
-	Info    uint8
+	Info    channel.DataEffect
 }
 
 // PreStart triggers when the effect enters onto the channel state

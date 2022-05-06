@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PortaUp defines a portamento up effect
-type PortaUp uint8 // '1'
+type PortaUp channel.DataEffect // '1'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -20,7 +20,7 @@ func (e PortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 // Tick is called on every tick
 func (e PortaUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	xx := mem.PortaUp(uint8(e))
+	xx := mem.PortaUp(channel.DataEffect(e))
 
 	if currentTick == 0 {
 		return nil
@@ -30,5 +30,5 @@ func (e PortaUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 }
 
 func (e PortaUp) String() string {
-	return fmt.Sprintf("1%0.2x", uint8(e))
+	return fmt.Sprintf("1%0.2x", channel.DataEffect(e))
 }

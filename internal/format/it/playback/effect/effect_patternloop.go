@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PatternLoop defines a pattern loop effect
-type PatternLoop uint8 // 'SBx'
+type PatternLoop channel.DataEffect // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -40,5 +40,5 @@ func (e PatternLoop) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.
 }
 
 func (e PatternLoop) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

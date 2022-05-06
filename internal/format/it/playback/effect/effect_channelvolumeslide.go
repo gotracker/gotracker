@@ -5,19 +5,19 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // ChannelVolumeSlide defines a set channel volume effect
-type ChannelVolumeSlide uint8 // 'Nxy'
+type ChannelVolumeSlide channel.DataEffect // 'Nxy'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e ChannelVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()
-	x, y := mem.ChannelVolumeSlide(uint8(e))
+	x, y := mem.ChannelVolumeSlide(channel.DataEffect(e))
 
 	switch {
 	case y == 0x0 && x != 0xF:
@@ -41,7 +41,7 @@ func (e ChannelVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data],
 // Tick is called on every tick
 func (e ChannelVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	x, y := mem.ChannelVolumeSlide(uint8(e))
+	x, y := mem.ChannelVolumeSlide(channel.DataEffect(e))
 
 	switch {
 	case y == 0x0 && x != 0xF:
@@ -64,5 +64,5 @@ func (e ChannelVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], 
 }
 
 func (e ChannelVolumeSlide) String() string {
-	return fmt.Sprintf("N%0.2x", uint8(e))
+	return fmt.Sprintf("N%0.2x", channel.DataEffect(e))
 }

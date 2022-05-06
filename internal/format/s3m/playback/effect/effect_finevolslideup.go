@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // FineVolumeSlideUp defines a fine volume slide up effect
-type FineVolumeSlideUp uint8 // 'D'
+type FineVolumeSlideUp ChannelCommand // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e FineVolumeSlideUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -18,7 +18,7 @@ func (e FineVolumeSlideUp) Start(cs intf.Channel[channel.Memory, channel.Data], 
 
 // Tick is called on every tick
 func (e FineVolumeSlideUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
-	x := uint8(e) >> 4
+	x := channel.DataEffect(e) >> 4
 
 	if x != 0x0F && currentTick == 0 {
 		return doVolSlide(cs, float32(x), 1.0)
@@ -27,5 +27,5 @@ func (e FineVolumeSlideUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p
 }
 
 func (e FineVolumeSlideUp) String() string {
-	return fmt.Sprintf("D%0.2x", uint8(e))
+	return fmt.Sprintf("D%0.2x", channel.DataEffect(e))
 }

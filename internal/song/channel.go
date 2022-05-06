@@ -3,8 +3,8 @@ package song
 import (
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // ChannelData is an interface for channel data

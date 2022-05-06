@@ -7,7 +7,7 @@ import (
 	"github.com/gotracker/voice"
 	"github.com/gotracker/voice/period"
 
-	"gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/optional"
 )
 
 type envSettings struct {

@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
@@ -69,7 +69,7 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 }
 
-func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp uint8) intf.Effect {
+func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp channel.DataEffect) intf.Effect {
 	switch cp >> 4 {
 	case 0x0: // none
 		return nil
@@ -81,7 +81,7 @@ func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp uint8) intf.Effect
 	return UnhandledCommand{Command: ce, Info: cp}
 }
 
-func specialEffectFactory(mi intf.Memory, ce uint8, cp uint8) intf.Effect {
+func specialEffectFactory(mi intf.Memory, ce uint8, cp channel.DataEffect) intf.Effect {
 	switch cp >> 4 {
 	case 0x1: // Fine porta up
 		return FinePortaUp(cp)

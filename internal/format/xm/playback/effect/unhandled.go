@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // UnhandledCommand is an unhandled command
 type UnhandledCommand struct {
 	Command uint8
-	Info    uint8
+	Info    channel.DataEffect
 }
 
 // PreStart triggers when the effect enters onto the channel state

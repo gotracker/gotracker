@@ -1,9 +1,9 @@
 package load
 
 import (
-	"gotracker/internal/format/settings"
-	"gotracker/internal/format/xm/layout"
-	"gotracker/internal/format/xm/playback"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/format/xm/layout"
+	"github.com/gotracker/gotracker/internal/format/xm/playback"
 )
 
 type readerFunc func(filename string, s *settings.Settings) (*layout.Song, error)

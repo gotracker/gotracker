@@ -2,8 +2,9 @@ package effect
 
 import (
 	"fmt"
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
@@ -65,7 +66,7 @@ func standardEffectFactory(mem *channel.Memory, data *channel.Data) intf.Effect 
 	case 'D': // Volume Slide / Fine Volume Slide
 		return volumeSlideFactory(mem, data.Effect, data.EffectParameter)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		xx := mem.PortaDown(uint8(data.EffectParameter))
+		xx := mem.PortaDown(channel.DataEffect(data.EffectParameter))
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaDown(xx)
@@ -74,7 +75,7 @@ func standardEffectFactory(mem *channel.Memory, data *channel.Data) intf.Effect 
 		}
 		return PortaDown(data.EffectParameter)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		xx := mem.PortaUp(uint8(data.EffectParameter))
+		xx := mem.PortaUp(channel.DataEffect(data.EffectParameter))
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaUp(xx)
@@ -200,8 +201,8 @@ func specialNoteEffects(data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd uint8, ce uint8) intf.Effect {
-	x, y := mem.VolumeSlide(uint8(ce))
+func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) intf.Effect {
+	x, y := mem.VolumeSlide(channel.DataEffect(ce))
 	switch {
 	case x == 0:
 		return VolumeSlideDown(ce)

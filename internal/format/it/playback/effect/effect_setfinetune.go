@@ -3,17 +3,17 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // SetFinetune defines a mod-style set finetune effect
-type SetFinetune uint8 // 'S2x'
+type SetFinetune channel.DataEffect // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetFinetune) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	x := uint8(e) & 0xf
+	x := channel.DataEffect(e) & 0xf
 
 	inst := cs.GetTargetInst()
 	if inst != nil {
@@ -30,5 +30,5 @@ func (e SetFinetune) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 }
 
 func (e SetFinetune) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

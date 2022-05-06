@@ -1,11 +1,12 @@
 package command
 
 import (
-	"gotracker/internal/command/internal/playlist"
-	"gotracker/internal/optional"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/gotracker/gotracker/internal/command/internal/playlist"
+	"github.com/gotracker/gotracker/internal/optional"
 
 	"github.com/spf13/cobra"
 )

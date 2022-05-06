@@ -6,18 +6,18 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetChannelVolume defines a set channel volume effect
-type SetChannelVolume uint8 // 'Mxx'
+type SetChannelVolume channel.DataEffect // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SetChannelVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
-	xx := uint8(e)
+	xx := channel.DataEffect(e)
 
 	cv := itfile.Volume(xx)
 
@@ -31,5 +31,5 @@ func (e SetChannelVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p
 }
 
 func (e SetChannelVolume) String() string {
-	return fmt.Sprintf("M%0.2x", uint8(e))
+	return fmt.Sprintf("M%0.2x", channel.DataEffect(e))
 }

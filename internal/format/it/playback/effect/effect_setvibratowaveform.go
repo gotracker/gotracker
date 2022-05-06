@@ -5,18 +5,18 @@ import (
 
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetVibratoWaveform defines a set vibrato waveform effect
-type SetVibratoWaveform uint8 // 'S3x'
+type SetVibratoWaveform channel.DataEffect // 'S3x'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e SetVibratoWaveform) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
-	x := uint8(e) & 0xf
+	x := channel.DataEffect(e) & 0xf
 
 	mem := cs.GetMemory()
 	vib := mem.VibratoOscillator()
@@ -25,5 +25,5 @@ func (e SetVibratoWaveform) Start(cs intf.Channel[channel.Memory, channel.Data],
 }
 
 func (e SetVibratoWaveform) String() string {
-	return fmt.Sprintf("S%0.2x", uint8(e))
+	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

@@ -7,9 +7,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/filter"
-	"gotracker/internal/optional"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // StaticValues are the static values associated with an instrument

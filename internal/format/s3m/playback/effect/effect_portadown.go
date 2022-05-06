@@ -3,12 +3,12 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PortaDown defines a portamento down effect
-type PortaDown uint8 // 'E'
+type PortaDown ChannelCommand // 'E'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e PortaDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -20,7 +20,7 @@ func (e PortaDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.P
 // Tick is called on every tick
 func (e PortaDown) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
-	xx := mem.LastNonZero(uint8(e))
+	xx := mem.LastNonZero(channel.DataEffect(e))
 
 	if currentTick != 0 {
 		return doPortaDown(cs, float32(xx), 4)
@@ -29,5 +29,5 @@ func (e PortaDown) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 }
 
 func (e PortaDown) String() string {
-	return fmt.Sprintf("E%0.2x", uint8(e))
+	return fmt.Sprintf("E%0.2x", channel.DataEffect(e))
 }

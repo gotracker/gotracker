@@ -1,7 +1,7 @@
 package effect
 
 import (
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 func volPanEffectFactory(mi intf.Memory, v uint8) intf.Effect {

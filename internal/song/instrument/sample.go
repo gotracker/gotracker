@@ -4,7 +4,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice/pcm"
 
-	"gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/format/settings"
 )
 
 func NewSample(data []byte, length int, channels int, format pcm.SampleDataFormat, s *settings.Settings) (pcm.Sample, error) {
@@ -30,14 +30,13 @@ func NewSample(data []byte, length int, channels int, format pcm.SampleDataForma
 	if v, ok := s.Get(settings.NameUseNativeSampleFormat); ok {
 		if val, ok := v.(bool); ok && val {
 			inSample := sample
-			in := make(volume.Matrix, channels)
-			var nativeData []volume.Volume
+			nativeData := make([]volume.Matrix, 0, length)
 			for i := 0; i < length; i++ {
-				d, err := inSample.Read(in)
+				d, err := inSample.Read()
 				if err != nil {
 					return nil, err
 				}
-				nativeData = append(nativeData, d...)
+				nativeData = append(nativeData, d)
 			}
 			sample = pcm.NewSampleNative(nativeData, length, channels)
 		}

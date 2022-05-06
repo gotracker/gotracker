@@ -3,13 +3,13 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
-	effectIntf "gotracker/internal/format/xm/playback/effect/intf"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/xm/playback/effect/intf"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetTempo defines a set tempo effect
-type SetTempo uint8 // 'F'
+type SetTempo channel.DataEffect // 'F'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetTempo) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
@@ -35,5 +35,5 @@ func (e SetTempo) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 }
 
 func (e SetTempo) String() string {
-	return fmt.Sprintf("F%0.2x", uint8(e))
+	return fmt.Sprintf("F%0.2x", channel.DataEffect(e))
 }

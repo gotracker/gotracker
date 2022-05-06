@@ -4,9 +4,9 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // S3MInstrumentID is an instrument ID in S3M world
@@ -17,6 +17,9 @@ func (s S3MInstrumentID) IsEmpty() bool {
 	return s == 0
 }
 
+// DataEffect is the type of a channel's EffectParameter value
+type DataEffect uint8
+
 // Data is the data for the channel
 type Data struct {
 	What       s3mfile.PatternFlags
@@ -24,7 +27,7 @@ type Data struct {
 	Instrument S3MInstrumentID
 	Volume     s3mfile.Volume
 	Command    uint8
-	Info       uint8
+	Info       DataEffect
 }
 
 // HasNote returns true if there exists a note on the channel

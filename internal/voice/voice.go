@@ -3,9 +3,9 @@ package voice
 import (
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/filter"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/instrument"
 )
 
 // New returns a new Voice from the instrument and output channel provided

@@ -42,10 +42,10 @@ jobs:
           go build -v -ldflags "-X \'github.com/gotracker/gotracker/internal/command.Version=${{ github.event.release.tag_name }}\' -X \'github.com/gotracker/gotracker/internal/command.GitHash=${{ github.sha }}\'" -o dist/ .
           zip -r -j out/gotracker_${{ github.event.release.tag_name }}_${{ matrix.goos }}_${{ matrix.goarch }}.zip dist/
       - name: Release
-          uses: softprops/action-gh-release@v1
-          if: startsWith(github.ref, 'refs/tags/')
-          with:
-            files: "dist/*"
-            prerelease: ${{ contains(github.ref, '-beta') }}
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "dist/*"
+          prerelease: ${{ contains(github.ref, '-beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

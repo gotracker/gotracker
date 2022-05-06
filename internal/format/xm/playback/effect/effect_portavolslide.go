@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect

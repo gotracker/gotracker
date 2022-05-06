@@ -1,8 +1,8 @@
 package filter
 
 import (
-	"gotracker/internal/filter"
-	"gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/format/internal/util"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -44,6 +44,9 @@ type EchoFilter struct {
 }
 
 func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
+	if dry.Channels == 0 {
+		return volume.Matrix{}
+	}
 	wetMix := volume.Volume(e.WetDryMix)
 	dryMix := 1 - wetMix
 	wet := dry
@@ -55,40 +58,53 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 
 	crossEcho := e.PanDelay >= 0.5
 
-	for c, s := range dry {
+	for c := 0; c < dry.Channels; c++ {
+		s := dry.StaticMatrix[c]
 		switch c {
 		case 0:
-			e.delayBufL.Write([]volume.Volume{s})
+			e.delayBufL.Write(s)
 		case 1:
-			e.delayBufR.Write([]volume.Volume{s})
+			e.delayBufR.Write(s)
 		}
 	}
 
-	for c := range wet {
-		var (
-			buf   *util.RingBuffer[volume.Volume]
-			delay int
-		)
+	type delayInfo struct {
+		buf   *util.RingBuffer[volume.Volume]
+		delay int
+	}
 
-		switch {
-		case (c == 0) || (crossEcho && c == 1):
-			buf = &e.delayBufL
-			delay = ldelay
-		case (c == 1) || (crossEcho && c == 0):
-			buf = &e.delayBufR
-			delay = rdelay
-		}
-		if buf == nil {
+	var delayBuf [2]delayInfo
+
+	lbuf := 0
+	rbuf := 1
+	if crossEcho {
+		lbuf = 1
+		rbuf = 0
+	}
+
+	delayBuf[lbuf] = delayInfo{
+		buf:   &e.delayBufL,
+		delay: ldelay,
+	}
+	delayBuf[rbuf] = delayInfo{
+		buf:   &e.delayBufR,
+		delay: rdelay,
+	}
+
+	for c := 0; c < dry.Channels; c++ {
+		dryPre := dry.StaticMatrix[c]
+		d := delayBuf[c]
+
+		if d.buf == nil {
 			continue
 		}
 
 		// Calculate the mix
 		var wetPre [1]volume.Volume
-		buf.ReadFrom(delay, wetPre[:])
-		dryPre := dry[c]
+		d.buf.ReadFrom(d.delay, wetPre[:])
 		w := dryPre*dryMix + wetPre[0]*wetMix
-		wet[c] = w
-		buf.Accumulate(w * feedback)
+		wet.StaticMatrix[c] = w
+		d.buf.Accumulate(w * feedback)
 	}
 
 	return wet

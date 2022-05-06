@@ -3,11 +3,11 @@ package effect
 import (
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/comparison"
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/comparison"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {

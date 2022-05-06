@@ -8,8 +8,8 @@ import (
 
 	device "github.com/gotracker/gosound"
 
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song"
 )
 
 type playerState int

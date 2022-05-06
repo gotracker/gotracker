@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetVibratoWaveform defines a set vibrato waveform effect

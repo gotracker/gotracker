@@ -2,7 +2,8 @@ package settings
 
 import (
 	"errors"
-	"gotracker/internal/optional"
+
+	"github.com/gotracker/gotracker/internal/optional"
 
 	"github.com/gotracker/voice/pcm"
 )

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // ChannelVolumeSlide defines a set channel volume effect

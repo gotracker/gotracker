@@ -1,6 +1,6 @@
 package intf
 
-import "gotracker/internal/format/xm/layout/channel"
+import "github.com/gotracker/gotracker/internal/format/xm/layout/channel"
 
 // XM is an interface to XM effect operations
 type XM interface {

@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {

@@ -1,11 +1,11 @@
 package load
 
 import (
-	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/s3m/layout"
-	"gotracker/internal/format/s3m/load/modconv"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/player/intf"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout"
+	"github.com/gotracker/gotracker/internal/format/s3m/load/modconv"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 func readMOD(filename string, s *settings.Settings) (*layout.Song, error) {

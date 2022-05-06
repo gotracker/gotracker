@@ -21,9 +21,18 @@ func NewRingBuffer[T constraints.Ordered](size int) RingBuffer[T] {
 	return r
 }
 
-func (r *RingBuffer[T]) read(idx int, outVals []T) int {
+func (r *RingBuffer[T]) Read(outVals []T) int {
+	n, clearFull := r.ReadFrom(r.r, outVals)
+	r.r = (r.r + n) % len(r.buf)
+	if clearFull {
+		r.full = false
+	}
+	return n
+}
+
+func (r *RingBuffer[T]) ReadFrom(idx int, outVals []T) (int, bool) {
 	if r.w == r.r && !r.full {
-		return 0
+		return 0, false
 	}
 
 	size := len(r.buf)
@@ -35,7 +44,7 @@ func (r *RingBuffer[T]) read(idx int, outVals []T) int {
 			n = len(outVals)
 		}
 		copy(outVals, r.buf[idx:idx+n])
-		return n
+		return n, false
 	}
 
 	n = size - idx + r.w
@@ -52,22 +61,10 @@ func (r *RingBuffer[T]) read(idx int, outVals []T) int {
 		copy(outVals[c1:], r.buf[0:c2])
 	}
 
-	r.full = false
-
-	return n
+	return n, true
 }
 
-func (r *RingBuffer[T]) Read(outVals []T) int {
-	n := r.read(r.r, outVals)
-	r.r = (r.r + n) % len(r.buf)
-	return n
-}
-
-func (r *RingBuffer[T]) ReadFrom(idx int, outVals []T) int {
-	return r.read(idx, outVals)
-}
-
-func (r *RingBuffer[T]) Write(vals []T) {
+func (r *RingBuffer[T]) Write(vals ...T) {
 	size := len(r.buf)
 
 	var avail int

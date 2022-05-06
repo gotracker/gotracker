@@ -10,9 +10,9 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/gotracker/voice/render"
 
-	"gotracker/internal/player/feature"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/sampler"
+	"github.com/gotracker/gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/sampler"
 )
 
 // GetPremixDataIntf is an interface to getting the premix data from the tracker
@@ -143,9 +143,7 @@ func (t *Tracker[TChannelData]) renderOPL2Tick(mixerData *mixing.Data, mix *mixi
 
 	for i, s := range opl2data {
 		sv := volume.Volume(s) / 32768.0
-		for c := range data {
-			data[c][i] = sv
-		}
+		data[i].Assign(1, []volume.Volume{sv})
 	}
 	*mixerData = mixing.Data{
 		Data:       data,

@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // FinePortaUp defines an fine portamento up effect

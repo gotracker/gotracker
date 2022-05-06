@@ -5,7 +5,7 @@ import (
 
 	device "github.com/gotracker/gosound"
 
-	"gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/player/feature"
 )
 
 type devicePriority int

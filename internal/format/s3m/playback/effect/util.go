@@ -4,11 +4,11 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/comparison"
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/comparison"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {

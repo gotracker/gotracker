@@ -3,12 +3,12 @@ package playback
 import (
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/format/internal/filter"
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/state"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {

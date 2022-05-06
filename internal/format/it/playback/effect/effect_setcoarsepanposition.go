@@ -5,9 +5,9 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetCoarsePanPosition defines a set coarse pan position effect

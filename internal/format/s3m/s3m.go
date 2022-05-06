@@ -2,9 +2,9 @@
 package s3m
 
 import (
-	"gotracker/internal/format/s3m/load"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/load"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 type format struct{}

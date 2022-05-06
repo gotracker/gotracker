@@ -1,7 +1,7 @@
 package playlist
 
 import (
-	"gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/optional"
 )
 
 type Position struct {

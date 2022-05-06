@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect

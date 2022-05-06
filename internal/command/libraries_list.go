@@ -111,7 +111,7 @@ var librariesList = []libraryInfo{
 		Homepage: "https://github.com/gotracker/goaudiofile",
 	},
 	{
-		Name:     "gotracker/voice",
+		Name:     "github.com/gotracker/gotracker/voice",
 		Package:  "github.com/gotracker/voice",
 		License:  "Unlicense",
 		Homepage: "https://github.com/gotracker/voice",

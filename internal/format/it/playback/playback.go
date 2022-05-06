@@ -3,18 +3,18 @@ package playback
 import (
 	device "github.com/gotracker/gosound"
 
-	"gotracker/internal/format/it/layout"
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/format/it/playback/state/pattern"
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/player"
-	"gotracker/internal/player/feature"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state"
-	"gotracker/internal/song"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/note"
-	playpattern "gotracker/internal/song/pattern"
+	"github.com/gotracker/gotracker/internal/format/it/layout"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/it/playback/state/pattern"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/player"
+	"github.com/gotracker/gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/state"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/note"
+	playpattern "github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 // Manager is a playback manager for IT music

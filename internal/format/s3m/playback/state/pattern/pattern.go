@@ -3,13 +3,13 @@ package pattern
 import (
 	"errors"
 
-	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/optional"
-	"gotracker/internal/player/feature"
-	"gotracker/internal/song"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/pattern"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 // State is the current pattern state

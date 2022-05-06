@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // PastNoteCut defines a past note cut effect

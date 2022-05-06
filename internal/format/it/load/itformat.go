@@ -11,17 +11,17 @@ import (
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/filter"
-	fmtfilter "gotracker/internal/format/internal/filter"
-	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/it/layout"
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
-	"gotracker/internal/song/pattern"
+	"github.com/gotracker/gotracker/internal/filter"
+	fmtfilter "github.com/gotracker/gotracker/internal/format/internal/filter"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/format/it/layout"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {

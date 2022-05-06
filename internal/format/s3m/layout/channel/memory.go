@@ -3,10 +3,10 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
-	"gotracker/internal/format/internal/effect"
-	"gotracker/internal/format/internal/memory"
-	formatutil "gotracker/internal/format/internal/util"
-	oscillatorImpl "gotracker/internal/oscillator"
+	"github.com/gotracker/gotracker/internal/format/internal/effect"
+	"github.com/gotracker/gotracker/internal/format/internal/memory"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 )
 
 // Memory is the storage object for custom effect/command values

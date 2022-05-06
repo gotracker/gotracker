@@ -4,12 +4,12 @@ import (
 	"errors"
 	"time"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/effect"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state"
-	"gotracker/internal/song"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/effect"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/state"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/note"
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"

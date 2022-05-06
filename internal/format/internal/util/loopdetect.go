@@ -1,6 +1,6 @@
 package util
 
-import "gotracker/internal/song/index"
+import "github.com/gotracker/gotracker/internal/song/index"
 
 type loopDetectNode map[index.Row]struct{}
 

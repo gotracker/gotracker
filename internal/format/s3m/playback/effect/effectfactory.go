@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 type ChannelCommand channel.DataEffect

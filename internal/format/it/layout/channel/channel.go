@@ -4,9 +4,9 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // DataEffect is the type of a channel's EffectParameter value

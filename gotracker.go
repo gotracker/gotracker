@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gotracker/internal/command"
+	"github.com/gotracker/gotracker/internal/command"
 )
 
 func main() {

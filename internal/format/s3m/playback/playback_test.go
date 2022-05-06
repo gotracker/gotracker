@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"gotracker/internal/format/s3m"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/player/feature"
-	"gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/format/s3m"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/player/feature"
+	"github.com/gotracker/gotracker/internal/song"
 )
 
 var (
@@ -145,7 +145,8 @@ func performSilentChannelsTest(t *testing.T, fn string, sampleRate int, channels
 			}
 
 			for _, chdata := range data {
-				for _, s := range chdata {
+				for i := 0; i < chdata.Channels; i++ {
+					s := chdata.StaticMatrix[i]
 					if math.Abs(float64(s)) >= 0.5 {
 						t.Fatal("expected relative silence, got waveform")
 					}
@@ -225,12 +226,13 @@ func performChannelComparison(t *testing.T, fn string, sampleRate int, channels 
 			td := tc.Data[c]
 			cd := cc.Data[c]
 
-			if len(td) != len(cd) {
+			if td.Channels != cd.Channels {
 				t.Fatal("test track premix buffer length is not the same as for the control track")
 			}
 
-			for i, ts := range td {
-				cs := cd[i]
+			for i := 0; i < td.Channels; i++ {
+				ts := td.StaticMatrix[i]
+				cs := cd.StaticMatrix[i]
 				if math.Abs(float64(ts-cs)) >= 0.15 {
 					t.Fatal("test track premix buffer data is not the same as for the control track")
 				}

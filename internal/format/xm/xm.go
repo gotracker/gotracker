@@ -2,9 +2,9 @@
 package xm
 
 import (
-	"gotracker/internal/format/settings"
-	"gotracker/internal/format/xm/load"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/format/xm/load"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 type format struct{}

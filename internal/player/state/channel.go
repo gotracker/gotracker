@@ -9,11 +9,11 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"gotracker/internal/optional"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
-	voiceImpl "gotracker/internal/voice"
+	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
+	voiceImpl "github.com/gotracker/gotracker/internal/voice"
 )
 
 // ChannelState is the state of a single channel

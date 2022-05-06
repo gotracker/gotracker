@@ -1,9 +1,9 @@
 package effect
 
 import (
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 func volumeEffectFactory(mi intf.Memory, v util.VolEffect) intf.Effect {

@@ -2,7 +2,8 @@ package song
 
 import (
 	"errors"
-	"gotracker/internal/song/index"
+
+	"github.com/gotracker/gotracker/internal/song/index"
 )
 
 var (

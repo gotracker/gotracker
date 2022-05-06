@@ -10,7 +10,7 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
 
-	"gotracker/internal/output"
+	"github.com/gotracker/gotracker/internal/output"
 )
 
 var (

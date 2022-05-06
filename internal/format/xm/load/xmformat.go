@@ -12,16 +12,16 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/format/xm/layout"
-	"gotracker/internal/format/xm/layout/channel"
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/oscillator"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
-	"gotracker/internal/song/pattern"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/format/xm/layout"
+	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/oscillator"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {

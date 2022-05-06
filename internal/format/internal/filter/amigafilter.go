@@ -37,8 +37,12 @@ const (
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result
 func (f *AmigaLPF) Filter(dry volume.Matrix) volume.Matrix {
-	wet := dry // we can update in-situ and be ok
-	for i, s := range dry {
+	if dry.Channels == 0 {
+		return volume.Matrix{}
+	}
+	wet := dry
+	for i := 0; i < dry.Channels; i++ {
+		s := dry.StaticMatrix[i]
 		for len(f.channels) <= i {
 			f.channels = append(f.channels, channelData{})
 		}
@@ -51,7 +55,7 @@ func (f *AmigaLPF) Filter(dry volume.Matrix) volume.Matrix {
 		c.xnz1 = xn
 		//c.ynz2 = c.ynz1
 		//c.ynz1 = yn
-		wet[i] = yn
+		wet.StaticMatrix[i] = yn
 	}
 	return wet
 }

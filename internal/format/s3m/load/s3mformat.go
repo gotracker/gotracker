@@ -12,15 +12,15 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "gotracker/internal/format/internal/util"
-	"gotracker/internal/format/s3m/layout"
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/song/index"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
-	"gotracker/internal/song/pattern"
+	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/song/pattern"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {

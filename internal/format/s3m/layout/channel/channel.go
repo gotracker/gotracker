@@ -4,9 +4,9 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // S3MInstrumentID is an instrument ID in S3M world

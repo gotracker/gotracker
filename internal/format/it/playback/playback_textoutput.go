@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/player/render"
-	"gotracker/internal/song"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/render"
+	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func itChannelRender(cdata song.ChannelData, longChannelOutput bool) string {

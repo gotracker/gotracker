@@ -4,9 +4,9 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
-	"gotracker/internal/format/xm/playback/util"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // DataEffect is the type of a channel's EffectParameter value

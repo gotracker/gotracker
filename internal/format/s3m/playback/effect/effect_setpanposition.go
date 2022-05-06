@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/format/s3m/playback/util"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // SetPanPosition defines a set pan position effect

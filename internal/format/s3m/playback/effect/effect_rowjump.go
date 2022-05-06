@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/song/index"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/index"
 )
 
 // RowJump defines a row jump effect

@@ -1,12 +1,12 @@
 package playback
 
 import (
-	"gotracker/internal/format/internal/filter"
-	"gotracker/internal/format/it/layout/channel"
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/player/intf"
-	"gotracker/internal/player/state"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/state"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {

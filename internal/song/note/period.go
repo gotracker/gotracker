@@ -3,7 +3,7 @@ package note
 import (
 	"github.com/gotracker/voice/period"
 
-	"gotracker/internal/comparison"
+	"github.com/gotracker/gotracker/internal/comparison"
 )
 
 // Period is an interface that defines a sampler period

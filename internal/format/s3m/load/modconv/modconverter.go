@@ -9,7 +9,7 @@ import (
 	modfile "github.com/gotracker/goaudiofile/music/tracked/mod"
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
-	"gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
 )
 
 func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error) {

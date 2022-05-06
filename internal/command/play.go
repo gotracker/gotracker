@@ -8,11 +8,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"gotracker/internal/command/internal/logging"
-	"gotracker/internal/command/internal/play"
-	"gotracker/internal/command/internal/playlist"
-	"gotracker/internal/format/settings"
-	"gotracker/internal/output"
+	"github.com/gotracker/gotracker/internal/command/internal/logging"
+	"github.com/gotracker/gotracker/internal/command/internal/play"
+	"github.com/gotracker/gotracker/internal/command/internal/playlist"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	"github.com/gotracker/gotracker/internal/output"
 )
 
 // persistent flags

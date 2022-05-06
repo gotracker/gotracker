@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
-	"gotracker/internal/format/s3m/layout/channel"
-	effectIntf "gotracker/internal/format/s3m/playback/effect/intf"
-	"gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/s3m/playback/effect/intf"
+	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
 // PatternDelay defines a pattern delay effect

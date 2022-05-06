@@ -18,13 +18,13 @@ import (
 	"github.com/gotracker/voice/oscillator"
 	"github.com/gotracker/voice/pcm"
 
-	"gotracker/internal/filter"
-	itfilter "gotracker/internal/format/it/playback/filter"
-	"gotracker/internal/format/it/playback/util"
-	"gotracker/internal/format/settings"
-	oscillatorImpl "gotracker/internal/oscillator"
-	"gotracker/internal/song/instrument"
-	"gotracker/internal/song/note"
+	"github.com/gotracker/gotracker/internal/filter"
+	itfilter "github.com/gotracker/gotracker/internal/format/it/playback/filter"
+	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	"github.com/gotracker/gotracker/internal/format/settings"
+	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
+	"github.com/gotracker/gotracker/internal/song/instrument"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 type convInst struct {

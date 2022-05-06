@@ -73,8 +73,7 @@ func (cs *ChannelState[TMemory, TChannelData]) RenderRowTick(mix *mixing.Mixer, 
 		return nil, nil
 	}
 
-	activeStates := []*Active{&cs.activeState}
-	activeStates = append(activeStates, cs.pastNote...)
+	activeStates := append(cs.pastNote, &cs.activeState)
 	mixData, participatingStates := RenderStatesTogether(activeStates, mix, panmixer, samplerSpeed, tickSamples, tickDuration)
 
 	var uNotes []*Active

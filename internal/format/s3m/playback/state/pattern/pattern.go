@@ -294,12 +294,6 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 		}
 	}
 
-	if txn.BreakOrder {
-		if err := state.nextOrder(true); err != nil {
-			return err
-		}
-	}
-
 	orderIdx, orderIdxSet := txn.GetOrderIdx()
 	rowIdx, rowIdxSet := txn.GetRowIdx()
 
@@ -313,7 +307,7 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 			}
 		}
 		if rowIdxSet {
-			if !orderIdxSet && !txn.RowIdxAllowBacktrack && state.currentRow > rowIdx {
+			if !orderIdxSet && !txn.RowIdxAllowBacktrack { //  && state.currentRow > rowIdx   // QUIRK[S3M/MOD]
 				if err := state.nextOrder(); err != nil {
 					return err
 				}
@@ -321,6 +315,10 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 			if err := state.setCurrentRow(rowIdx); err != nil {
 				return err
 			}
+		}
+	} else if txn.BreakOrder { // QUIRK[S3M/MOD]
+		if err := state.nextOrder(true); err != nil {
+			return err
 		}
 	} else if txn.AdvanceRow {
 		if err := state.nextRow(); err != nil {

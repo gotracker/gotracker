@@ -159,9 +159,6 @@ func (v *pcmVoice) IsDone() bool {
 
 func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 	samp := v.sampler.GetSample(pos)
-	if samp.Channels == 0 {
-		return samp
-	}
 	vol := v.GetFinalVolume()
 	wet := samp.Apply(vol)
 	if v.voiceFilter != nil {

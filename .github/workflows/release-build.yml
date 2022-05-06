@@ -10,33 +10,42 @@ on:
 # workflow tasks
 jobs:
   generate:
-    name: Generate cross-platform builds
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [ linux, windows ]
+        goarch: [ "amd64" ]
+        go: [ "1.18.1" ]
+      fail-fast: true
+    name: Go ${{ matrix.go }} ${{ matrix.goos }} ${{ matrix.goarch }} build
+    env:
+      GOPRIVATE: "github.com/gotracker"
+      GO111MODULE: on
+      LD_FLAGS: "-X \'github.com/gotracker/gotracker/internal/command.Version=${{ github.event.release.tag_name }}\' -X \'github.com/gotracker/gotracker/internal/command.GitHash=${{ github.sha }}\'"
+
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v2
-      - name: go-cross-build
-        # You may pin to the exact commit or the version.
-        # uses: thatisuday/go-cross-build@542468fed9c6be3220a6cead66abff3943e41a5d
-        uses: thatisuday/go-cross-build@v1.1.0
+      - uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
         with:
-          # Comma-separated list of "<kernel>/<arch>" combinations.
-          platforms: 'linux/amd64, windows/amd64'
-          # Package (directory) in the module to build. By default, builds the module directory.
-          # package: # optional, default is 
-          # Compress each build file inside a ".tar.gz" archive.
-          compress: 'true'
-          # Binary executable filename and filenames prefix for the build files.
-          name: 'gotracker'
-          # Destination directory inside workspace to output build-artifacts.
-          dest: 'dist'
-          # Flags to pass to the Go linker.
-          ldflags: -X gotracker/internal/command.Version=${{ github.event.release.tag_name }} -X gotracker/internal/command.GitHash=${{ github.sha }}
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: "dist/*"
-          prerelease: ${{ contains(github.ref, '-beta') }}
+          go-version: ${{ matrix.go }}
+      - name: Setup Git
+        run: git config --global url."https://${{ secrets.ELEVATED_GITHUB_TOKEN }}:@github.com".insteadOf "https://github.com"
+      - name: Go Build
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist out
+          unset GOPATH;
+          go build -v -ldflags "-X \'github.com/gotracker/gotracker/internal/command.Version=${{ github.event.release.tag_name }}\' -X \'github.com/gotracker/gotracker/internal/command.GitHash=${{ github.sha }}\'" -o dist/ .
+          zip -r -j out/gotracker_${{ github.event.release.tag_name }}_${{ matrix.goos }}_${{ matrix.goarch }}.zip dist/
+      - name: Release
+          uses: softprops/action-gh-release@v1
+          if: startsWith(github.ref, 'refs/tags/')
+          with:
+            files: "dist/*"
+            prerelease: ${{ contains(github.ref, '-beta') }}
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

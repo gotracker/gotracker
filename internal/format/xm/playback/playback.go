@@ -262,5 +262,5 @@ func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m *Manager) SetEnvelopePosition(v uint8) {
+func (m *Manager) SetEnvelopePosition(v int) {
 }

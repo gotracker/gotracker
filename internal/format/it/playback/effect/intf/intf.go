@@ -9,5 +9,5 @@ type IT interface {
 	SetTempo(int) error
 	DecreaseTempo(int) error
 	IncreaseTempo(int) error
-	SetEnvelopePosition(uint8)
+	SetEnvelopePosition(int)
 }

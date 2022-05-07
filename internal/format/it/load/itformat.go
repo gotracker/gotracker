@@ -123,9 +123,14 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 
 	if f.Head.Flags.IsUseInstruments() {
 		for instNum, inst := range f.Instruments {
+			convSettings := convertITInstrumentSettings{
+				linearFrequencySlides: linearFrequencySlides,
+				extendedFilterRange:   (f.Head.Flags & 0x1000) != 0, // OpenMPT hack to introduce extended filter ranges
+				useHighPassFilter:     false,
+			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, linearFrequencySlides, s)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, s)
 				if err != nil {
 					return nil, err
 				}
@@ -135,7 +140,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, linearFrequencySlides, song.FilterPlugins, s)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, s)
 				if err != nil {
 					return nil, err
 				}

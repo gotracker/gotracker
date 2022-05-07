@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/it/playback/effect/intf"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -14,8 +15,8 @@ type UnhandledCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	if !p.IgnoreUnknownEffect() {
+func (e UnhandledCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], m effectIntf.IT) error {
+	if !m.IgnoreUnknownEffect() {
 		panic(fmt.Sprintf("unhandled command: ce:%0.2X cp:%0.2X", e.Command, e.Info))
 	}
 	return nil
@@ -38,8 +39,8 @@ type UnhandledVolCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	if !p.IgnoreUnknownEffect() {
+func (e UnhandledVolCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], m effectIntf.IT) error {
+	if !m.IgnoreUnknownEffect() {
 		panic(fmt.Sprintf("unhandled command: volCmd:%0.2X", e.Vol))
 	}
 	return nil

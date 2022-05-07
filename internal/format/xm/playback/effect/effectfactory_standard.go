@@ -2,10 +2,9 @@ package effect
 
 import (
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
-func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
+func standardEffectFactory(mem *channel.Memory, cd *channel.Data) EffectXM {
 	if !cd.What.HasEffect() && !cd.What.HasEffectParameter() {
 		return nil
 	}
@@ -40,7 +39,7 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 	case 0x0D: // Pattern break
 		return RowJump(cd.EffectParameter)
 	case 0x0E: // extra...
-		return specialEffectFactory(mi, cd.Effect, cd.EffectParameter)
+		return specialEffectFactory(mem, cd.Effect, cd.EffectParameter)
 	case 0x0F: // Set tempo/BPM
 		if cd.EffectParameter < 0x20 {
 			return SetSpeed(cd.EffectParameter)
@@ -64,12 +63,12 @@ func standardEffectFactory(mi intf.Memory, cd *channel.Data) intf.Effect {
 		return Tremor(cd.EffectParameter)
 
 	case 0x21: // Extra fine porta commands
-		return extraFinePortaEffectFactory(mi, cd.Effect, cd.EffectParameter)
+		return extraFinePortaEffectFactory(mem, cd.Effect, cd.EffectParameter)
 	}
 	return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 }
 
-func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp channel.DataEffect) intf.Effect {
+func extraFinePortaEffectFactory(mem *channel.Memory, ce uint8, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x0: // none
 		return nil
@@ -81,7 +80,7 @@ func extraFinePortaEffectFactory(mi intf.Memory, ce uint8, cp channel.DataEffect
 	return UnhandledCommand{Command: ce, Info: cp}
 }
 
-func specialEffectFactory(mi intf.Memory, ce uint8, cp channel.DataEffect) intf.Effect {
+func specialEffectFactory(mem *channel.Memory, ce uint8, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x1: // Fine porta up
 		return FinePortaUp(cp)

@@ -6,7 +6,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/gotracker/internal/filter"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 )
 
 type channelData struct {
@@ -14,31 +13,46 @@ type channelData struct {
 	ynz2 volume.Volume
 }
 
-var (
-	rfFreqParamMult         float64 = 128.0 / (24.0 * 256.0)
-	rfPeriodResonanceFactor float64 = 2.0 * math.Pi / float64(util.C5Period)
-)
-
 // ResonantFilter is a modified 2-pole resonant filter
 type ResonantFilter struct {
 	channels []channelData
 	a0       volume.Volume
 	b0       volume.Volume
 	b1       volume.Volume
-	f2       float64
-	rf       float64
-	cm       float64
+
+	enabled      bool
+	resonance    int
+	cutoff       uint8
+	playbackRate int
+	filterRange  float64
+	highpass     bool
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
-func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate float32) filter.Filter {
+func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate int, extendedFilterRange bool, highpass bool) filter.Filter {
+	r := resonance
+	if r&0x80 != 0 {
+		r = 0
+	}
+	c := cutoff
+	if (c & 0x80) != 0 {
+		c = 0x7F
+	}
+	const itFilterRange = 24.0  // standard IT range
+	const extfilterRange = 20.0 // extended OpenMPT range
 	rf := &ResonantFilter{
-		f2: float64(playbackRate) / 2.0,
-		rf: rfPeriodResonanceFactor * float64(resonance),
-		cm: float64(cutoff) * rfFreqParamMult,
+		cutoff:       c,
+		resonance:    int(r),
+		playbackRate: playbackRate,
+		filterRange:  itFilterRange,
+		highpass:     highpass,
 	}
 
-	rf.recalculate(255)
+	if extendedFilterRange {
+		rf.filterRange = extfilterRange
+	}
+
+	rf.recalculate(int8(c))
 	return rf
 }
 
@@ -56,41 +70,89 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 		c := &f.channels[i]
 
 		xn := s
-		yn := (xn*f.a0 + c.ynz1*f.b0 + c.ynz2*f.b1) / 3
+		yn := xn
+		if f.enabled {
+			yn = (xn*f.a0 + c.ynz1*f.b0 + c.ynz2*f.b1)
+		}
 		c.ynz2 = c.ynz1
 		c.ynz1 = yn
+		if f.highpass {
+			c.ynz1 -= s
+		}
 		wet.StaticMatrix[i] = yn
 	}
 	return wet
 }
 
-func (f *ResonantFilter) recalculate(v float32) {
-	co := (f.cm * float64(v+256)) / 256
-	if co > 255 {
-		co = 255
-	}
-	freq := 110.0 * math.Pow(2.0, co+0.25)
-	if freq > f.f2 {
-		freq = f.f2
-	}
-	r := f.f2 / (math.Pi * freq)
+func (f *ResonantFilter) recalculate(v int8) {
+	cutoff := int(v)
+	resonance := f.resonance
 
-	resoFactor := 1.0 - f.rf
-	d := resoFactor*r + resoFactor - 1.0
+	if cutoff < 0 {
+		cutoff = 0
+	} else if cutoff > 127 {
+		cutoff = 127
+	}
+
+	if resonance < 0 {
+		resonance = 0
+	} else if resonance > 127 {
+		resonance = 127
+	}
+
+	f.cutoff = uint8(cutoff)
+	f.resonance = resonance
+
+	computedCutoff := int(cutoff) * 2
+
+	if resonance == 0 || computedCutoff >= 254 {
+		f.enabled = false
+		return
+	}
+
+	f.enabled = true
+
+	const dampingFactorDivisor = ((24.0 / 128.0) / 20.0)
+	dampingFactor := math.Pow(10.0, -float64(resonance)*dampingFactorDivisor)
+
+	fcComputedCutoff := float64(computedCutoff)
+	freq := 110.0 * math.Pow(2.0, 0.25+fcComputedCutoff/f.filterRange)
+	if freq < 120.0 {
+		freq = 120.0
+	} else if freq > 20000 {
+		freq = 20000
+	}
+	f2 := float64(f.playbackRate) / 2.0
+	if freq > f2 {
+		freq = f2
+	}
+
+	fc := freq * 2.0 * math.Pi
+
+	r := float64(f.playbackRate) / fc
+
+	d := dampingFactor*r + dampingFactor - 1.0
 	e := r * r
 
-	de1 := 1.0 + d + e
+	a := 1.0 / (1.0 + d + e)
+	b := (d + e + e) * a
+	c := -e * a
+	if f.highpass {
+		a = 1.0 - a
+	} else {
+		// lowpass
+		if a == 0 {
+			// prevent silence at extremely low cutoff and very high sampling rate
+			a = 1.0
+		}
+	}
 
-	fg := 1.0 / de1
-	fb0 := (d + e + e) / de1
-	fb1 := -e / de1
-
-	f.a0 = volume.Volume(fg)
-	f.b0 = volume.Volume(fb0)
-	f.b1 = volume.Volume(fb1)
+	f.a0 = volume.Volume(a)
+	f.b0 = volume.Volume(b)
+	f.b1 = volume.Volume(c)
 }
 
 // UpdateEnv updates the filter with the value from the filter envelope
-func (f *ResonantFilter) UpdateEnv(v float32) {
-	f.recalculate(v * 255)
+func (f *ResonantFilter) UpdateEnv(cutoff int8) {
+	f.recalculate(cutoff)
 }

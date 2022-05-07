@@ -17,8 +17,8 @@ type PCM struct {
 	Panning       panning.Position
 	MixingVolume  volume.Volume
 	FadeOut       fadeout.Settings
-	VolEnv        envelope.Envelope
-	PanEnv        envelope.Envelope
-	PitchFiltMode bool              // true = filter, false = pitch
-	PitchFiltEnv  envelope.Envelope // this is either pitch or filter
+	VolEnv        envelope.Envelope[volume.Volume]
+	PanEnv        envelope.Envelope[panning.Position]
+	PitchFiltMode bool                    // true = filter, false = pitch
+	PitchFiltEnv  envelope.Envelope[int8] // this is either pitch or filter
 }

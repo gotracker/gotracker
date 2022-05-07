@@ -65,15 +65,23 @@ func (txn *RowUpdateTransaction) GetOrderIdx() (index.Order, bool) {
 }
 
 // SetNextRow will set the next row index
-func (txn *RowUpdateTransaction) SetNextRow(rowIdx index.Row, opts ...bool) {
+func (txn *RowUpdateTransaction) SetNextRow(rowIdx index.Row) {
 	if !txn.rowIdx.IsSet() {
 		txn.rowIdx.Set(rowIdx)
 		if txn.WhoJumpedFirst == WhoJumpedFirstNone {
 			txn.WhoJumpedFirst = WhoJumpedFirstRow
 		}
-		if len(opts) > 0 {
-			txn.RowIdxAllowBacktrack = opts[0]
+	}
+}
+
+// SetNextRowWithBacktrack will set the next row index and backtracing allowance
+func (txn *RowUpdateTransaction) SetNextRowWithBacktrack(rowIdx index.Row, allowBacktrack bool) {
+	if !txn.rowIdx.IsSet() {
+		txn.rowIdx.Set(rowIdx)
+		if txn.WhoJumpedFirst == WhoJumpedFirstNone {
+			txn.WhoJumpedFirst = WhoJumpedFirstRow
 		}
+		txn.RowIdxAllowBacktrack = allowBacktrack
 	}
 }
 

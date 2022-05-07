@@ -7,10 +7,14 @@ import (
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
+type EffectXM interface {
+	intf.Effect
+}
+
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
 	intf.CombinedEffect[channel.Memory, channel.Data]
-	eff intf.Effect
+	eff EffectXM
 }
 
 func (e VolEff) String() string {
@@ -21,7 +25,7 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
+func Factory(mem *channel.Memory, data *channel.Data) EffectXM {
 	if data == nil {
 		return nil
 	}

@@ -1,10 +1,10 @@
 package effect
 
 import (
-	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
 )
 
-func volPanEffectFactory(mi intf.Memory, v uint8) intf.Effect {
+func volPanEffectFactory(mem *channel.Memory, v uint8) EffectIT {
 	switch {
 	case v >= 0x00 && v <= 0x40: // volume set - handled elsewhere
 		return nil
@@ -30,14 +30,14 @@ func volPanEffectFactory(mi intf.Memory, v uint8) intf.Effect {
 	return UnhandledVolCommand{Vol: v}
 }
 
-func volPortaDown(v uint8) intf.Effect {
+func volPortaDown(v uint8) EffectIT {
 	return PortaDown(v * 4)
 }
-func volPortaUp(v uint8) intf.Effect {
+func volPortaUp(v uint8) EffectIT {
 	return PortaUp(v * 4)
 }
 
-func volPortaToNote(v uint8) intf.Effect {
+func volPortaToNote(v uint8) EffectIT {
 	switch v {
 	case 0:
 		return PortaToNote(0x00)

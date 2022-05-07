@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/gotracker/internal/format/xm/layout"
@@ -10,6 +11,7 @@ import (
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"
 	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/output"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song"
 	"github.com/gotracker/gotracker/internal/song/index"
@@ -19,7 +21,7 @@ import (
 
 // Manager is a playback manager for XM music
 type Manager struct {
-	player.Tracker[channel.Data]
+	player.Tracker
 
 	song *layout.Song
 
@@ -37,7 +39,7 @@ type Manager struct {
 // NewManager creates a new manager for an XM song
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
-		Tracker: player.Tracker[channel.Data]{
+		Tracker: player.Tracker{
 			BaseClockRate: util.XMBaseClock,
 		},
 		song: song,
@@ -55,7 +57,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 	m.SetNumChannels(len(song.ChannelSettings))
 	for i, ch := range song.ChannelSettings {
-		oc := m.GetOutputChannel(ch.OutputChannelNum, &m)
+		oc := m.GetOutputChannel(ch.OutputChannelNum, m.channelInit)
 
 		cs := m.GetChannel(i)
 		cs.SetOutputChannel(oc)
@@ -78,6 +80,15 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	}
 
 	return &m, nil
+}
+
+func (m *Manager) channelInit(ch int) *output.Channel {
+	return &output.Channel{
+		ChannelNum:    ch,
+		Filter:        nil,
+		Config:        m,
+		ChannelVolume: volume.Volume(1),
+	}
 }
 
 // StartPatternTransaction returns a new row update transaction for the pattern system
@@ -103,7 +114,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.RetriggerCount = 0
 		cs.TrackData = nil
 		ocNum := m.song.GetOutputChannel(ch)
-		cs.Output = m.GetOutputChannel(ocNum, m)
+		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
 	}
 }
 
@@ -125,14 +136,31 @@ func (m *Manager) SetNextOrder(order index.Order) error {
 }
 
 // SetNextRow sets the next row index
-func (m *Manager) SetNextRow(row index.Row, opts ...bool) error {
+func (m *Manager) SetNextRow(row index.Row) error {
 	if m.postMixRowTxn != nil {
-		m.postMixRowTxn.SetNextRow(row, opts...)
+		m.postMixRowTxn.SetNextRow(row)
 	} else {
 		rowTxn := m.pattern.StartTransaction()
 		defer rowTxn.Cancel()
 
-		rowTxn.SetNextRow(row, opts...)
+		rowTxn.SetNextRow(row)
+		if err := rowTxn.Commit(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SetNextRowWithBacktrack will set the next row index and backtracing allowance
+func (m *Manager) SetNextRowWithBacktrack(row index.Row, allowBacktrack bool) error {
+	if m.postMixRowTxn != nil {
+		m.postMixRowTxn.SetNextRowWithBacktrack(row, allowBacktrack)
+	} else {
+		rowTxn := m.pattern.StartTransaction()
+		defer rowTxn.Cancel()
+
+		rowTxn.SetNextRowWithBacktrack(row, allowBacktrack)
 		if err := rowTxn.Commit(); err != nil {
 			return err
 		}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gotracker/gotracker/internal/optional"
 	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/output"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 	voiceImpl "github.com/gotracker/gotracker/internal/voice"
@@ -42,7 +43,7 @@ type ChannelState[TMemory, TChannelData any] struct {
 	NewNoteAction     note.Action
 	pastNote          []*Active
 
-	Output *intf.OutputChannel[TChannelData]
+	Output *output.Channel
 }
 
 // WillTriggerOn returns true if a note will trigger on the tick specified
@@ -313,18 +314,18 @@ func (cs *ChannelState[TMemory, TChannelData]) SetStoredSemitone(st note.Semiton
 }
 
 // SetOutputChannel sets the output channel for the channel
-func (cs *ChannelState[TMemory, TChannelData]) SetOutputChannel(outputCh *intf.OutputChannel[TChannelData]) {
+func (cs *ChannelState[TMemory, TChannelData]) SetOutputChannel(outputCh *output.Channel) {
 	cs.Output = outputCh
 }
 
 // GetOutputChannel returns the output channel for the channel
-func (cs *ChannelState[TMemory, TChannelData]) GetOutputChannel() *intf.OutputChannel[TChannelData] {
+func (cs *ChannelState[TMemory, TChannelData]) GetOutputChannel() *output.Channel {
 	return cs.Output
 }
 
 // SetGlobalVolume sets the last-known global volume on the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetGlobalVolume(gv volume.Volume) {
-	cs.Output.GlobalVolume = gv
+	cs.Output.Config.SetGlobalVolume(gv)
 }
 
 // SetChannelVolume sets the channel volume on the channel

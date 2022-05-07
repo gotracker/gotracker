@@ -1,4 +1,4 @@
-package intf
+package output
 
 import (
 	"github.com/gotracker/gotracker/internal/filter"
@@ -6,17 +6,16 @@ import (
 	"github.com/gotracker/gomixing/volume"
 )
 
-// OutputChannel is the important bits to make output to a particular downmixing channel work
-type OutputChannel[TChannelData any] struct {
+// Channel is the important bits to make output to a particular downmixing channel work
+type Channel struct {
 	ChannelNum    int
 	Filter        filter.Filter
-	Playback      Playback
-	GlobalVolume  volume.Volume
+	Config        ConfigIntf
 	ChannelVolume volume.Volume
 }
 
 // ApplyFilter will apply the channel filter, if there is one.
-func (oc *OutputChannel[TChannelData]) ApplyFilter(dry volume.Matrix) volume.Matrix {
+func (oc *Channel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 	if dry.Channels == 0 {
 		return volume.Matrix{}
 	}
@@ -29,13 +28,17 @@ func (oc *OutputChannel[TChannelData]) ApplyFilter(dry volume.Matrix) volume.Mat
 }
 
 // GetPremixVolume returns the premix volume of the output channel
-func (oc *OutputChannel[TChannelData]) GetPremixVolume() volume.Volume {
-	return oc.GlobalVolume * oc.ChannelVolume
+func (oc *Channel) GetPremixVolume() volume.Volume {
+	return oc.Config.GetGlobalVolume() * oc.ChannelVolume
 }
 
 // SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
-func (oc *OutputChannel[TChannelData]) SetFilterEnvelopeValue(envVal float32) {
+func (oc *Channel) SetFilterEnvelopeValue(envVal int8) {
 	if oc.Filter != nil {
 		oc.Filter.UpdateEnv(envVal)
 	}
+}
+
+func (oc *Channel) GetSampleRate() int {
+	return oc.Config.GetSampleRate()
 }

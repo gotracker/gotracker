@@ -29,7 +29,7 @@ func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 			pl.Count = 0
 		}
 		if row, ok := pl.ContinueLoop(p.GetCurrentRow()); ok {
-			return p.SetNextRow(row, true)
+			return p.SetNextRowWithBacktrack(row, true)
 		}
 	}
 	return nil

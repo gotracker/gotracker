@@ -21,10 +21,10 @@ type EchoFilterFactory struct {
 }
 
 func (e *EchoFilterFactory) Factory() filter.Factory {
-	return func(sampleRate float32) filter.Filter {
+	return func(sampleRate int) filter.Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         sampleRate,
+			sampleRate:         float32(sampleRate),
 		}
 		ldelay := int(e.LeftDelay * echo.sampleRate)
 		rdelay := int(e.RightDelay * echo.sampleRate)
@@ -110,6 +110,6 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	return wet
 }
 
-func (e *EchoFilter) UpdateEnv(val float32) {
+func (e *EchoFilter) UpdateEnv(val int8) {
 
 }

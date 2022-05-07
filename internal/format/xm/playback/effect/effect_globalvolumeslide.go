@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/xm/playback/effect/intf"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -25,12 +26,14 @@ func (e GlobalVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p
 		return nil
 	}
 
+	m := p.(effectIntf.XM)
+
 	if x == 0 {
 		// global vol slide down
-		return doGlobalVolSlide(p, -float32(y), 1.0)
+		return doGlobalVolSlide(m, -float32(y), 1.0)
 	} else if y == 0 {
 		// global vol slide up
-		return doGlobalVolSlide(p, float32(y), 1.0)
+		return doGlobalVolSlide(m, float32(y), 1.0)
 	}
 	return nil
 }

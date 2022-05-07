@@ -7,10 +7,14 @@ import (
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
+type EffectIT interface {
+	intf.Effect
+}
+
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
 	intf.CombinedEffect[channel.Memory, channel.Data]
-	eff intf.Effect
+	eff EffectIT
 }
 
 func (e VolEff) String() string {
@@ -21,7 +25,7 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
+func Factory(mem *channel.Memory, data *channel.Data) EffectIT {
 	if data == nil {
 		return nil
 	}
@@ -53,7 +57,7 @@ func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 	}
 }
 
-func standardEffectFactory(mem *channel.Memory, data *channel.Data) intf.Effect {
+func standardEffectFactory(mem *channel.Memory, data *channel.Data) EffectIT {
 	switch data.Effect + '@' {
 	case '@': // unused
 		return nil
@@ -128,7 +132,7 @@ func standardEffectFactory(mem *channel.Memory, data *channel.Data) intf.Effect 
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialEffect(data *channel.Data) intf.Effect {
+func specialEffect(data *channel.Data) EffectIT {
 	switch data.EffectParameter >> 4 {
 	case 0x0: // unused
 		return nil
@@ -167,7 +171,7 @@ func specialEffect(data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialNoteEffects(data *channel.Data) intf.Effect {
+func specialNoteEffects(data *channel.Data) EffectIT {
 	switch data.EffectParameter & 0xf {
 	case 0x0: // Past Note Cut
 		return PastNoteCut(data.EffectParameter)
@@ -201,7 +205,7 @@ func specialNoteEffects(data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) intf.Effect {
+func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) EffectIT {
 	x, y := mem.VolumeSlide(channel.DataEffect(ce))
 	switch {
 	case x == 0:
@@ -220,7 +224,7 @@ func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) in
 	return nil
 }
 
-func soundControlEffect(data *channel.Data) intf.Effect {
+func soundControlEffect(data *channel.Data) EffectIT {
 	switch data.EffectParameter & 0xF {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On

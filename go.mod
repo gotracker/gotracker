@@ -9,7 +9,7 @@ require (
 	github.com/gotracker/gomixing v1.1.1
 	github.com/gotracker/gosound v1.1.0
 	github.com/gotracker/opl2 v1.0.1
-	github.com/gotracker/voice v1.1.1
+	github.com/gotracker/voice v1.1.2
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/exp v0.0.0-20220428152302-39d4317da171

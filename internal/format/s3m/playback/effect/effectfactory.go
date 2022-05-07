@@ -5,10 +5,14 @@ import (
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
+type EffectS3M interface {
+	intf.Effect
+}
+
 type ChannelCommand channel.DataEffect
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
+func Factory(mem *channel.Memory, data *channel.Data) EffectS3M {
 	if data == nil {
 		return nil
 	}
@@ -84,7 +88,7 @@ func Factory(mem *channel.Memory, data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Command, Info: data.Info}
 }
 
-func specialEffect(mem *channel.Memory, data *channel.Data) intf.Effect {
+func specialEffect(mem *channel.Memory, data *channel.Data) EffectS3M {
 	var cmd = mem.LastNonZero(data.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
@@ -121,7 +125,7 @@ func specialEffect(mem *channel.Memory, data *channel.Data) intf.Effect {
 	return UnhandledCommand{Command: data.Command, Info: data.Info}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) intf.Effect {
+func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) EffectS3M {
 	xy := mem.LastNonZero(ce)
 	x := channel.DataEffect(xy >> 4)
 	y := channel.DataEffect(xy & 0x0F)

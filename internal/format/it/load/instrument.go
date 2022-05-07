@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"reflect"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
@@ -32,7 +31,13 @@ type convInst struct {
 	NR   []noteRemap
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, linearFrequencySlides bool, s *settings.Settings) (map[int]*convInst, error) {
+type convertITInstrumentSettings struct {
+	linearFrequencySlides bool
+	extendedFilterRange   bool
+	useHighPassFilter     bool
+}
+
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, s *settings.Settings) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -57,9 +62,9 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
 			},
-			VolEnv: envelope.Envelope{
+			VolEnv: envelope.Envelope[volume.Volume]{
 				Enabled: (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
-				Values:  make([]envelope.EnvPoint, 0),
+				Values:  make([]envelope.EnvPoint[volume.Volume], 0),
 			},
 		}
 
@@ -81,7 +86,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), linearFrequencySlides, s); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, s); err != nil {
 			return nil, err
 		}
 
@@ -94,7 +99,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			}
 
 			for i := range inst.VolumeEnvelope {
-				out := envelope.VolumePoint{}
+				var out envelope.EnvPoint[volume.Volume]
 				in1 := inst.VolumeEnvelope[i]
 				vol := volume.Volume(uint8(in1)) / 64
 				if vol > 1 {
@@ -115,7 +120,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 				} else {
 					out.Ticks = math.MaxInt64
 				}
-				id.VolEnv.Values = append(id.VolEnv.Values, &out)
+				id.VolEnv.Values = append(id.VolEnv.Values, out)
 			}
 
 			id.VolEnv.Loop = loop.NewLoop(volEnvLoopMode, volEnvLoopSettings)
@@ -126,7 +131,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, linearFrequencySlides bool, pluginFilters map[int]filter.Factory, s *settings.Settings) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, s *settings.Settings) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -138,8 +143,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		pluginFilterFactory  filter.Factory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(sampleRate float32) filter.Filter {
-			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate)
+		channelFilterFactory = func(sampleRate int) filter.Filter {
+			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
 
@@ -182,12 +187,11 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		mixVol := volume.Volume(inst.GlobalVolume.Value())
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, linearFrequencySlides, s); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, convSettings, s); err != nil {
 			return nil, err
 		}
 
-		var volEnv envelope.VolumePoint
-		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, reflect.TypeOf(volEnv), convertVolEnvValue); err != nil {
+		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, convertVolEnvValue); err != nil {
 			return nil, err
 		}
 		id.VolEnv.OnFinished = func(v voice.Voice) {
@@ -199,14 +203,12 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			a++
 		}
 
-		var panEnv envelope.PanPoint
-		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, reflect.TypeOf(panEnv), convertPanEnvValue); err != nil {
+		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, convertPanEnvValue); err != nil {
 			return nil, err
 		}
 
-		var pitchEnv envelope.PitchPoint
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
-		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, reflect.TypeOf(pitchEnv), convertPitchEnvValue); err != nil {
+		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, convertPitchEnvValue); err != nil {
 			return nil, err
 		}
 	}
@@ -214,7 +216,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	return outInsts, nil
 }
 
-func convertVolEnvValue(v int8) any {
+func convertVolEnvValue(v int8) volume.Volume {
 	vol := volume.Volume(uint8(v)) / 64
 	if vol > 1 {
 		// NOTE: there might be an incoming Y value == 0xFF, which really
@@ -225,15 +227,15 @@ func convertVolEnvValue(v int8) any {
 	return vol
 }
 
-func convertPanEnvValue(v int8) any {
+func convertPanEnvValue(v int8) panning.Position {
 	return panning.MakeStereoPosition(float32(v), -64, 64)
 }
 
-func convertPitchEnvValue(v int8) any {
-	return float32(uint8(v))
+func convertPitchEnvValue(v int8) int8 {
+	return v
 }
 
-func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType reflect.Type, convert func(int8) any) error {
+func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope, convert func(int8) T) error {
 	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
 	if !outEnv.Enabled {
 		return nil
@@ -255,7 +257,7 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType 
 	if enabled := (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0; enabled {
 		envSustainMode = loop.ModeNormal
 	}
-	outEnv.Values = make([]envelope.EnvPoint, int(inEnv.Count))
+	outEnv.Values = make([]envelope.EnvPoint[T], int(inEnv.Count))
 	for i := range outEnv.Values {
 		in1 := inEnv.NodePoints[i]
 		y := convert(in1.Y)
@@ -266,7 +268,7 @@ func convertEnvelope(outEnv *envelope.Envelope, inEnv *itfile.Envelope, envType 
 		} else {
 			ticks = math.MaxInt64
 		}
-		out := reflect.New(envType).Interface().(envelope.EnvPoint)
+		var out envelope.EnvPoint[T]
 		out.Init(ticks, y)
 		outEnv.Values[i] = out
 	}
@@ -322,7 +324,7 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDa
 	return pcm.SampleDataFormat8BitUnsigned
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, linearFrequencySlides bool, s *settings.Settings) error {
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, s *settings.Settings) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
 

@@ -4,12 +4,12 @@ import (
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/gotracker/internal/filter"
-	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/player/output"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 )
 
 // New returns a new Voice from the instrument and output channel provided
-func New[TChannelData any](inst *instrument.Instrument, output *intf.OutputChannel[TChannelData]) voice.Voice {
+func New(inst *instrument.Instrument, output *output.Channel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (
@@ -17,10 +17,10 @@ func New[TChannelData any](inst *instrument.Instrument, output *intf.OutputChann
 			pluginFilter filter.Filter
 		)
 		if factory := inst.GetFilterFactory(); factory != nil {
-			voiceFilter = factory(output.Playback.GetSampleRate())
+			voiceFilter = factory(output.GetSampleRate())
 		}
 		if factory := inst.GetPluginFilterFactory(); factory != nil {
-			pluginFilter = factory(output.Playback.GetSampleRate())
+			pluginFilter = factory(output.GetSampleRate())
 		}
 		return NewPCM(PCMConfiguration{
 			C2SPD:         inst.GetC2Spd(),
@@ -33,7 +33,7 @@ func New[TChannelData any](inst *instrument.Instrument, output *intf.OutputChann
 		})
 	case *instrument.OPL2:
 		return NewOPL2(OPLConfiguration{
-			Chip:          output.Playback.GetOPL2Chip(),
+			Chip:          output.Config.GetOPL2Chip(),
 			Channel:       output.ChannelNum,
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),

@@ -5,6 +5,7 @@ import (
 	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 	"github.com/gotracker/voice/envelope"
@@ -106,10 +107,10 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
 			Panning: util.PanningFromXm(si.Panning),
-			VolEnv: envelope.Envelope{
+			VolEnv: envelope.Envelope[volume.Volume]{
 				Enabled: (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
 			},
-			PanEnv: envelope.Envelope{
+			PanEnv: envelope.Envelope[panning.Position]{
 				Enabled: (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
 			},
 		}
@@ -122,7 +123,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				volEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.VolEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
+			ii.VolEnv.Values = make([]envelope.EnvPoint[volume.Volume], int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
@@ -132,10 +133,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.VolEnv.Values[i] = &envelope.VolumePoint{
-					Ticks: x2 - x1,
-					Y:     util.VolumeXM(y1).Volume(),
-				}
+				ii.VolEnv.Values[i].Init(x2-x1, util.VolumeXM(y1).Volume())
 			}
 		}
 
@@ -147,7 +145,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				panEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.PanEnv.Values = make([]envelope.EnvPoint, int(inst.VolPoints))
+			ii.PanEnv.Values = make([]envelope.EnvPoint[panning.Position], int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
@@ -160,10 +158,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.PanEnv.Values[i] = &envelope.PanPoint{
-					Ticks: x2 - x1,
-					Y:     util.PanningFromXm(y1),
-				}
+				ii.PanEnv.Values[i].Init(x2-x1, util.PanningFromXm(y1))
 			}
 		}
 

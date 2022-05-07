@@ -319,7 +319,7 @@ func (v *pcmVoice) IsFilterEnvelopeEnabled() bool {
 	return v.filterEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentFilterEnvelope() float32 {
+func (v *pcmVoice) GetCurrentFilterEnvelope() int8 {
 	return v.filterEnv.GetCurrentValue()
 }
 

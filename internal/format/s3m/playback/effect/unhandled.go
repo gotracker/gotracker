@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/s3m/playback/effect/intf"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -14,8 +15,8 @@ type UnhandledCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	if !p.IgnoreUnknownEffect() {
+func (e UnhandledCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data], m effectIntf.S3M) error {
+	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
 	return nil

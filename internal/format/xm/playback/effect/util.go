@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/gotracker/internal/comparison"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
+	effectIntf "github.com/gotracker/gotracker/internal/format/xm/playback/effect/intf"
 	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
@@ -25,8 +26,8 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 	return nil
 }
 
-func doGlobalVolSlide(p intf.Playback, delta float32, multiplier float32) error {
-	gv := p.GetGlobalVolume()
+func doGlobalVolSlide(m effectIntf.XM, delta float32, multiplier float32) error {
+	gv := m.GetGlobalVolume()
 	v := util.ToVolumeXM(gv)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
@@ -36,7 +37,7 @@ func doGlobalVolSlide(p intf.Playback, delta float32, multiplier float32) error 
 		vol = 0x00
 	}
 	v = util.VolumeXM(channel.DataEffect(vol))
-	p.SetGlobalVolume(v.Volume())
+	m.SetGlobalVolume(v.Volume())
 	return nil
 }
 

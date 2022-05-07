@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
+	"github.com/gotracker/gotracker/internal/player/output"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
@@ -48,8 +49,8 @@ type Channel[TMemory, TChannelData any] interface {
 	SetPanEnabled(bool)
 	GetPan() panning.Position
 	SetPan(panning.Position)
-	SetOutputChannel(*OutputChannel[TChannelData])
-	GetOutputChannel() *OutputChannel[TChannelData]
+	SetOutputChannel(*output.Channel)
+	GetOutputChannel() *output.Channel
 	SetVolumeActive(bool)
 	SetGlobalVolume(volume.Volume)
 	SetChannelVolume(volume.Volume)

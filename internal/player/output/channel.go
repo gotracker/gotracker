@@ -2,6 +2,7 @@ package output
 
 import (
 	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -39,6 +40,6 @@ func (oc *Channel) SetFilterEnvelopeValue(envVal int8) {
 	}
 }
 
-func (oc *Channel) GetSampleRate() int {
+func (oc *Channel) GetSampleRate() period.Frequency {
 	return oc.Config.GetSampleRate()
 }

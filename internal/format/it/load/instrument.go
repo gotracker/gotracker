@@ -16,6 +16,7 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/oscillator"
 	"github.com/gotracker/voice/pcm"
+	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/filter"
 	itfilter "github.com/gotracker/gotracker/internal/format/it/playback/filter"
@@ -143,8 +144,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		pluginFilterFactory  filter.Factory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(sampleRate int) filter.Filter {
-			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, sampleRate, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
+		channelFilterFactory = func(instrument, playback period.Frequency) filter.Filter {
+			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, instrument, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
 

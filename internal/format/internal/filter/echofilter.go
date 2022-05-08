@@ -3,6 +3,7 @@ package filter
 import (
 	"github.com/gotracker/gotracker/internal/filter"
 	"github.com/gotracker/gotracker/internal/format/internal/util"
+	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -21,10 +22,10 @@ type EchoFilterFactory struct {
 }
 
 func (e *EchoFilterFactory) Factory() filter.Factory {
-	return func(sampleRate int) filter.Filter {
+	return func(instrument, playback period.Frequency) filter.Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         float32(sampleRate),
+			sampleRate:         float32(playback),
 		}
 		ldelay := int(e.LeftDelay * echo.sampleRate)
 		rdelay := int(e.RightDelay * echo.sampleRate)

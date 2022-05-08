@@ -4,8 +4,10 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/filter"
+	"github.com/gotracker/gotracker/internal/optional"
 )
 
 type channelData struct {
@@ -20,36 +22,29 @@ type ResonantFilter struct {
 	b0       volume.Volume
 	b1       volume.Volume
 
-	enabled      bool
-	resonance    int
-	cutoff       uint8
-	playbackRate int
-	filterRange  float64
-	highpass     bool
+	enabled             bool
+	resonance           optional.Value[int]
+	cutoff              optional.Value[uint8]
+	playbackRate        period.Frequency
+	highpass            bool
+	extendedFilterRange bool
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
-func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate int, extendedFilterRange bool, highpass bool) filter.Filter {
-	r := resonance
-	if r&0x80 != 0 {
-		r = 0
-	}
-	c := cutoff
-	if (c & 0x80) != 0 {
-		c = 0x7F
-	}
-	const itFilterRange = 24.0  // standard IT range
-	const extfilterRange = 20.0 // extended OpenMPT range
+func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Frequency, extendedFilterRange bool, highpass bool) filter.Filter {
 	rf := &ResonantFilter{
-		cutoff:       c,
-		resonance:    int(r),
-		playbackRate: playbackRate,
-		filterRange:  itFilterRange,
-		highpass:     highpass,
+		playbackRate:        playbackRate,
+		highpass:            highpass,
+		extendedFilterRange: extendedFilterRange,
 	}
 
-	if extendedFilterRange {
-		rf.filterRange = extfilterRange
+	if resonance&0x80 != 0 {
+		rf.resonance.Set(int(resonance) & 0x7f)
+	}
+	c := uint8(0x7F)
+	if (cutoff & 0x80) != 0 {
+		c = cutoff & 0x7f
+		rf.cutoff.Set(uint8(c))
 	}
 
 	rf.recalculate(int8(c))
@@ -85,38 +80,53 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 }
 
 func (f *ResonantFilter) recalculate(v int8) {
-	cutoff := int(v)
-	resonance := f.resonance
+	cutoff, useCutoff := f.cutoff.Get()
+	resonance, useResonance := f.resonance.Get()
 
-	if cutoff < 0 {
-		cutoff = 0
-	} else if cutoff > 127 {
-		cutoff = 127
-	}
-
-	if resonance < 0 {
+	if !useResonance {
 		resonance = 0
-	} else if resonance > 127 {
-		resonance = 127
 	}
 
-	f.cutoff = uint8(cutoff)
-	f.resonance = resonance
+	if !useCutoff {
+		cutoff = 127
+	} else {
+		cutoff = uint8(v)
+		if cutoff < 0 {
+			cutoff = 0
+		} else if cutoff > 127 {
+			cutoff = 127
+		}
+
+		f.cutoff.Set(uint8(cutoff))
+	}
 
 	computedCutoff := int(cutoff) * 2
 
-	if resonance == 0 || computedCutoff >= 254 {
-		f.enabled = false
+	useFilter := true
+	if computedCutoff >= 254 && resonance == 0 {
+		useFilter = false
+	}
+
+	f.enabled = useFilter
+	if !f.enabled {
 		return
 	}
 
-	f.enabled = true
+	const (
+		itFilterRange  = 24.0 // standard IT range
+		extfilterRange = 20.0 // extended OpenMPT range
+	)
+
+	filterRange := itFilterRange
+	if f.extendedFilterRange {
+		filterRange = extfilterRange
+	}
 
 	const dampingFactorDivisor = ((24.0 / 128.0) / 20.0)
 	dampingFactor := math.Pow(10.0, -float64(resonance)*dampingFactorDivisor)
 
 	fcComputedCutoff := float64(computedCutoff)
-	freq := 110.0 * math.Pow(2.0, 0.25+fcComputedCutoff/f.filterRange)
+	freq := 110.0 * math.Pow(2.0, 0.25+fcComputedCutoff/filterRange)
 	if freq < 120.0 {
 		freq = 120.0
 	} else if freq > 20000 {
@@ -129,10 +139,22 @@ func (f *ResonantFilter) recalculate(v int8) {
 
 	fc := freq * 2.0 * math.Pi
 
-	r := float64(f.playbackRate) / fc
+	var d, e float64
+	if f.extendedFilterRange {
+		r := fc / float64(f.playbackRate)
 
-	d := dampingFactor*r + dampingFactor - 1.0
-	e := r * r
+		d = (1.0 - 2.0*dampingFactor) * r
+		if d > 2.0 {
+			d = 2.0
+		}
+		d = (2.0*dampingFactor - d) / r
+		e = 1.0 / (r * r)
+	} else {
+		r := float64(f.playbackRate) / fc
+
+		d = dampingFactor*r + dampingFactor - 1.0
+		e = r * r
+	}
 
 	a := 1.0 / (1.0 + d + e)
 	b := (d + e + e) * a

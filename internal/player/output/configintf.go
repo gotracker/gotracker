@@ -1,6 +1,7 @@
 package output
 
 import (
+	"github.com/gotracker/voice/period"
 	"github.com/gotracker/voice/render"
 
 	"github.com/gotracker/gomixing/volume"
@@ -8,7 +9,7 @@ import (
 
 type ConfigIntf interface {
 	SetupSampler(int, int, int) error
-	GetSampleRate() int
+	GetSampleRate() period.Frequency
 	GetOPL2Chip() render.OPL2Chip
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)

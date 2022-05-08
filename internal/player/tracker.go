@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/voice/period"
 	"github.com/gotracker/voice/render"
 
 	"github.com/gotracker/gotracker/internal/player/feature"
@@ -91,8 +92,8 @@ func (t *Tracker) GetOutputChannel(ch int, init func(ch int) *output.Channel) *o
 }
 
 // GetSampleRate returns the sample rate of the sampler
-func (t *Tracker) GetSampleRate() int {
-	return t.GetSampler().SampleRate
+func (t *Tracker) GetSampleRate() period.Frequency {
+	return period.Frequency(t.GetSampler().SampleRate)
 }
 
 func (t *Tracker) renderTick() (*device.PremixData, error) {

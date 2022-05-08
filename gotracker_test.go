@@ -99,7 +99,7 @@ func BenchmarkIT(b *testing.B) {
 					return
 				}
 				if premix != nil {
-					step += time.Duration(premix.SamplesLen) / time.Duration(playback.GetSampleRate()*playback.GetNumChannels()*2)
+					step += time.Duration(premix.SamplesLen) / time.Duration(int(playback.GetSampleRate())*playback.GetNumChannels()*2)
 					b.SetBytes(int64(premix.SamplesLen))
 				}
 			}

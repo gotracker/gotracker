@@ -16,7 +16,7 @@ const (
 
 	floatDefaultC2Spd = float32(DefaultC2Spd)
 	// C5Period is the sampler (Amiga-style) period of the C-5 note
-	C5Period = float32(1712)
+	C5Period = float32(428)
 
 	// ITBaseClock is the base clock speed of IT files
 	ITBaseClock = floatDefaultC2Spd * C5Period

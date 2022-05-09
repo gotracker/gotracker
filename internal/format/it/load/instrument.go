@@ -145,7 +145,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	)
 	if inst.InitialFilterResonance != 0 {
 		channelFilterFactory = func(instrument, playback period.Frequency) filter.Filter {
-			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, instrument, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
+			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, playback, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
 
@@ -430,7 +430,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
-	ii.C2Spd = note.C2SPD(si.Header.C5Speed) / note.C2SPD(bytesPerFrame)
+	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,

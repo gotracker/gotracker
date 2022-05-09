@@ -15,7 +15,7 @@ import (
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
 	v := util.VolumeToIt(av)
-	vol := int16((float32(v-0x10) + delta) * multiplier)
+	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
 		vol = 0x40
 	}

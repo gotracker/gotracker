@@ -85,6 +85,7 @@ func RenderStatesTogether(states []*Active, mix *mixing.Mixer, panmixer mixing.P
 					Data:       data,
 					Pan:        pan,
 					Volume:     volume.Volume(1.0),
+					Pos:        0,
 					SamplesLen: samples,
 				})
 			}

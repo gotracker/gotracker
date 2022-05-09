@@ -1,8 +1,9 @@
 package filter
 
 import (
+	"math"
+
 	"github.com/gotracker/gotracker/internal/filter"
-	"github.com/gotracker/gotracker/internal/format/internal/util"
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gomixing/volume"
@@ -25,23 +26,26 @@ func (e *EchoFilterFactory) Factory() filter.Factory {
 	return func(instrument, playback period.Frequency) filter.Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         float32(playback),
+			sampleRate:         instrument,
 		}
-		ldelay := int(e.LeftDelay * echo.sampleRate)
-		rdelay := int(e.RightDelay * echo.sampleRate)
-		echo.delayBufL = util.NewRingBuffer[volume.Volume](ldelay * 3)
-		echo.delayBufR = util.NewRingBuffer[volume.Volume](rdelay * 3)
+		echo.recalculate()
 		return &echo
 	}
+}
+
+type delayInfo struct {
+	buf   []volume.Volume
+	delay int
 }
 
 //===========
 
 type EchoFilter struct {
 	EchoFilterSettings
-	sampleRate float32
-	delayBufL  util.RingBuffer[volume.Volume]
-	delayBufR  util.RingBuffer[volume.Volume]
+	sampleRate      period.Frequency
+	initialFeedback volume.Volume
+	writePos        int
+	delay           [2]delayInfo // L,R
 }
 
 func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
@@ -52,63 +56,54 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	dryMix := 1 - wetMix
 	wet := dry
 
-	ldelay := int(e.LeftDelay * e.sampleRate)
-	rdelay := int(e.RightDelay * e.sampleRate)
-
 	feedback := volume.Volume(e.Feedback)
 
 	crossEcho := e.PanDelay >= 0.5
 
 	for c := 0; c < dry.Channels; c++ {
-		s := dry.StaticMatrix[c]
-		switch c {
-		case 0:
-			e.delayBufL.Write(s)
-		case 1:
-			e.delayBufR.Write(s)
+		readChannel := c
+		if crossEcho {
+			readChannel = 1 - c
 		}
-	}
+		read := &e.delay[readChannel]
+		write := &e.delay[c]
 
-	type delayInfo struct {
-		buf   *util.RingBuffer[volume.Volume]
-		delay int
-	}
-
-	var delayBuf [2]delayInfo
-
-	lbuf := 0
-	rbuf := 1
-	if crossEcho {
-		lbuf = 1
-		rbuf = 0
-	}
-
-	delayBuf[lbuf] = delayInfo{
-		buf:   &e.delayBufL,
-		delay: ldelay,
-	}
-	delayBuf[rbuf] = delayInfo{
-		buf:   &e.delayBufR,
-		delay: rdelay,
-	}
-
-	for c := 0; c < dry.Channels; c++ {
-		dryPre := dry.StaticMatrix[c]
-		d := delayBuf[c]
-
-		if d.buf == nil {
-			continue
+		readPos := e.writePos - read.delay
+		if readPos < 0 {
+			readPos = readPos + len(read.buf)
 		}
 
-		// Calculate the mix
-		var wetPre [1]volume.Volume
-		d.buf.ReadFrom(d.delay, wetPre[:])
-		w := dryPre*dryMix + wetPre[0]*wetMix
-		wet.StaticMatrix[c] = w
-		d.buf.Accumulate(w * feedback)
+		chnInput := dry.StaticMatrix[c]
+		chnDelay := read.buf[readPos]
+
+		chnOutput := chnInput * e.initialFeedback
+		chnOutput += chnDelay * feedback
+
+		write.buf[e.writePos] = chnOutput
+
+		wet.StaticMatrix[c] = chnInput*dryMix + chnDelay*wetMix
+	}
+
+	e.writePos++
+	bufferLen := len(e.delay[0].buf)
+	if e.writePos >= bufferLen {
+		e.writePos -= bufferLen
 	}
 
 	return wet
+}
+
+func (e *EchoFilter) recalculate() {
+	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
+
+	playbackRate := float32(e.sampleRate)
+	bufferSize := int(playbackRate * 2)
+
+	for c, delayMs := range [2]float32{e.LeftDelay, e.RightDelay} {
+		delay := int(delayMs * 2.0 * playbackRate)
+		e.delay[c].delay = delay
+		e.delay[c].buf = make([]volume.Volume, bufferSize)
+	}
 }
 
 func (e *EchoFilter) UpdateEnv(val int8) {

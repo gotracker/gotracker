@@ -17,9 +17,12 @@ import (
 
 // ChannelState is the state of a single channel
 type ChannelState[TMemory, TChannelData any] struct {
-	activeState Active[TChannelData]
+	activeState Active
 	targetState Playback
-	prevState   Active[TChannelData]
+	prevState   Active
+
+	TrackData     *TChannelData
+	PrevTrackData *TChannelData
 
 	TargetSemitone note.Semitone // from pattern, modified
 
@@ -37,7 +40,7 @@ type ChannelState[TMemory, TChannelData any] struct {
 	PanEnabled        bool
 	NewNoteAction     note.Action
 
-	PastNotes *PastNotesProcessor[TChannelData]
+	PastNotes *PastNotesProcessor
 	Output    *output.Channel
 }
 
@@ -64,7 +67,7 @@ func (cs *ChannelState[TMemory, TChannelData]) AdvanceRow() {
 }
 
 // RenderRowTick renders a channel's row data for a single tick
-func (cs *ChannelState[TMemory, TChannelData]) RenderRowTick(details RenderDetails, pastNotes []*Active[TChannelData]) ([]mixing.Data, error) {
+func (cs *ChannelState[TMemory, TChannelData]) RenderRowTick(details RenderDetails, pastNotes []*Active) ([]mixing.Data, error) {
 	if cs.PlaybackFrozen() {
 		return nil, nil
 	}
@@ -137,12 +140,12 @@ func (cs *ChannelState[TMemory, TChannelData]) SetActiveVolume(vol volume.Volume
 
 // GetData returns the interface to the current channel song pattern data
 func (cs *ChannelState[TMemory, TChannelData]) GetData() *TChannelData {
-	return cs.activeState.TrackData
+	return cs.TrackData
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) {
-	cs.activeState.PrevTrackData = cs.activeState.TrackData
-	cs.activeState.TrackData = cdata
+	cs.PrevTrackData = cs.TrackData
+	cs.TrackData = cdata
 }
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period

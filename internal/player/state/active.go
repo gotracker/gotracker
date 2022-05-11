@@ -13,18 +13,16 @@ import (
 )
 
 // Active is the active state of a channel
-type Active[TChannelData any] struct {
+type Active struct {
 	Playback
 	Voice       voice.Voice
 	PeriodDelta note.PeriodDelta
 
-	ActiveEffect  intf.Effect
-	TrackData     *TChannelData
-	PrevTrackData *TChannelData
+	ActiveEffect intf.Effect
 }
 
 // Reset sets the active state to defaults
-func (a *Active[TChannelData]) Reset() {
+func (a *Active) Reset() {
 	if v := a.Voice; v != nil {
 		v.Release()
 		a.Voice = nil
@@ -34,8 +32,8 @@ func (a *Active[TChannelData]) Reset() {
 }
 
 // Clone clones the active state so that various interfaces do not collide
-func (a *Active[TChannelData]) Clone() *Active[TChannelData] {
-	var c Active[TChannelData] = *a
+func (a *Active) Clone() *Active {
+	var c Active = *a
 	if a.Voice != nil {
 		c.Voice = a.Voice.Clone()
 	}
@@ -52,7 +50,7 @@ type RenderDetails struct {
 }
 
 // RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
-func RenderStatesTogether[TChannelData any](activeState *Active[TChannelData], pastNotes []*Active[TChannelData], details RenderDetails) []mixing.Data {
+func RenderStatesTogether(activeState *Active, pastNotes []*Active, details RenderDetails) []mixing.Data {
 	var mixData []mixing.Data
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)
@@ -70,7 +68,7 @@ func RenderStatesTogether[TChannelData any](activeState *Active[TChannelData], p
 	return mixData
 }
 
-func renderState[TChannelData any](a *Active[TChannelData], centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
+func renderState(a *Active, centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
 	if a.Period == nil || a.Volume == 0 {
 		return nil
 	}

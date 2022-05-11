@@ -26,7 +26,7 @@ type Manager struct {
 	song *layout.Song
 
 	channels  []state.ChannelState[channel.Memory, channel.Data]
-	PastNotes state.PastNotesProcessor[channel.Data]
+	PastNotes state.PastNotesProcessor
 	pattern   pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction

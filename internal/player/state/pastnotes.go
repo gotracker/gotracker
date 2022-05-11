@@ -6,11 +6,11 @@ import (
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
-type pastNote[TChannelData any] struct {
-	activeState *Active[TChannelData]
+type pastNote struct {
+	activeState *Active
 }
 
-func (pn pastNote[TChannelData]) IsValid() bool {
+func (pn pastNote) IsValid() bool {
 	if pn.activeState.Voice == nil {
 		return false
 	}
@@ -18,12 +18,12 @@ func (pn pastNote[TChannelData]) IsValid() bool {
 	return !pn.activeState.Voice.IsDone()
 }
 
-type pastNotesForChannel[TChannelData any] struct {
-	pn []*pastNote[TChannelData]
+type pastNotesForChannel struct {
+	pn []*pastNote
 }
 
-func (p *pastNotesForChannel[TChannelData]) Remove(pn *pastNote[TChannelData]) []*pastNote[TChannelData] {
-	var kept, removed []*pastNote[TChannelData]
+func (p *pastNotesForChannel) Remove(pn *pastNote) []*pastNote {
+	var kept, removed []*pastNote
 	for _, a := range p.pn {
 		if a != pn {
 			kept = append(kept, a)
@@ -35,24 +35,24 @@ func (p *pastNotesForChannel[TChannelData]) Remove(pn *pastNote[TChannelData]) [
 	return removed
 }
 
-type pastNoteOnChannel[TChannelData any] struct {
+type pastNoteOnChannel struct {
 	ch int
-	pn *pastNote[TChannelData]
+	pn *pastNote
 }
 
-type PastNotesProcessor[TChannelData any] struct {
-	order []pastNoteOnChannel[TChannelData]
-	ch    map[int]*pastNotesForChannel[TChannelData]
+type PastNotesProcessor struct {
+	order []pastNoteOnChannel
+	ch    map[int]*pastNotesForChannel
 	mu    sync.Mutex
 	max   int
 }
 
-func (p *PastNotesProcessor[TChannelData]) Add(ch int, data *Active[TChannelData]) {
+func (p *PastNotesProcessor) Add(ch int, data *Active) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if p.ch == nil {
-		p.ch = make(map[int]*pastNotesForChannel[TChannelData])
+		p.ch = make(map[int]*pastNotesForChannel)
 	}
 
 	if c := len(p.order) - p.max; c > 0 {
@@ -63,7 +63,7 @@ func (p *PastNotesProcessor[TChannelData]) Add(ch int, data *Active[TChannelData
 			pn.pn.activeState.Reset()
 			pnoc := p.ch[pn.ch]
 			if pnoc == nil {
-				p.ch[pn.ch] = &pastNotesForChannel[TChannelData]{}
+				p.ch[pn.ch] = &pastNotesForChannel{}
 				continue
 			}
 			for _, v := range p.ch[pn.ch].Remove(pn.pn) {
@@ -72,18 +72,18 @@ func (p *PastNotesProcessor[TChannelData]) Add(ch int, data *Active[TChannelData
 		}
 	}
 
-	pn := &pastNote[TChannelData]{
+	pn := &pastNote{
 		activeState: data,
 	}
 
-	cl := pastNoteOnChannel[TChannelData]{
+	cl := pastNoteOnChannel{
 		ch: ch,
 		pn: pn,
 	}
 
 	pnoc := p.ch[ch]
 	if pnoc == nil {
-		pnoc = &pastNotesForChannel[TChannelData]{}
+		pnoc = &pastNotesForChannel{}
 		p.ch[ch] = pnoc
 	}
 
@@ -91,7 +91,7 @@ func (p *PastNotesProcessor[TChannelData]) Add(ch int, data *Active[TChannelData
 	p.order = append(p.order, cl)
 }
 
-func (p *PastNotesProcessor[TChannelData]) Do(ch int, action note.Action) {
+func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 	if action == note.ActionContinue {
 		return
 	}
@@ -120,10 +120,10 @@ func (p *PastNotesProcessor[TChannelData]) Do(ch int, action note.Action) {
 	}
 }
 
-func (p *PastNotesProcessor[TChannelData]) GetNotesForChannel(ch int) []*Active[TChannelData] {
-	var pastNotes []*Active[TChannelData]
+func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {
+	var pastNotes []*Active
 	if pnoc := p.ch[ch]; pnoc != nil {
-		var npns []*pastNote[TChannelData]
+		var npns []*pastNote
 		for _, pn := range pnoc.pn {
 			if !pn.IsValid() {
 				continue
@@ -136,7 +136,7 @@ func (p *PastNotesProcessor[TChannelData]) GetNotesForChannel(ch int) []*Active[
 	return pastNotes
 }
 
-func (p *PastNotesProcessor[TChannelData]) SetMax(max int) {
+func (p *PastNotesProcessor) SetMax(max int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

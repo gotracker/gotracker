@@ -12,7 +12,7 @@ import (
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
-const MaxTotalChannels = 32
+const MaxTotalChannels = 64
 
 // DataEffect is the type of a channel's EffectParameter value
 type DataEffect uint8

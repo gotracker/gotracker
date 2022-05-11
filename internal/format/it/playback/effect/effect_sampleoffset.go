@@ -19,7 +19,7 @@ func (e SampleOffset) Start(cs intf.Channel[channel.Memory, channel.Data], p int
 	xx := mem.SampleOffset(channel.DataEffect(e))
 
 	pos := sampling.Pos{Pos: mem.HighOffset + int(xx)*0x100}
-	if mem.OldEffectMode {
+	if mem.Shared.OldEffectMode {
 		if inst := cs.GetInstrument(); inst != nil && inst.GetLength().Pos < pos.Pos {
 			cs.SetTargetPos(pos)
 		}

@@ -25,7 +25,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.
 	if cs.WantNoteCalc {
 		cs.WantNoteCalc = false
 		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.LinearFreqSlides
+		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
 		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
 		cs.SetTargetPeriod(period)
 	}
@@ -34,7 +34,7 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
@@ -42,8 +42,8 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	cs.SetGlobalVolume(m.GetGlobalVolume())
 
 	var n note.Note = note.EmptyNote{}
-	if cs.TrackData != nil {
-		n = cs.TrackData.GetNote()
+	if cs.GetData() != nil {
+		n = cs.GetData().GetNote()
 	}
 	keyOff := false
 	keyOn := false

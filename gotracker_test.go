@@ -28,7 +28,9 @@ func BenchmarkPlayerS3M(b *testing.B) {
 		b.Error(err)
 	}
 
-	playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}})
+	if err := playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+		b.Error(err)
+	}
 
 	lastTime := time.Now()
 	for err == nil {
@@ -81,7 +83,9 @@ func BenchmarkIT(b *testing.B) {
 		b.Error(err)
 	}
 
-	playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}})
+	if err := playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+		b.Error(err)
+	}
 	playback.SetNextOrder(38)
 
 	var step time.Duration

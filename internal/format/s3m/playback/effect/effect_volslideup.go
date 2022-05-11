@@ -21,7 +21,7 @@ func (e VolumeSlideUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p int
 	mem := cs.GetMemory()
 	x := channel.DataEffect(e) >> 4
 
-	if mem.VolSlideEveryFrame || currentTick != 0 {
+	if mem.Shared.VolSlideEveryFrame || currentTick != 0 {
 		return doVolSlide(cs, float32(x), 1.0)
 	}
 	return nil

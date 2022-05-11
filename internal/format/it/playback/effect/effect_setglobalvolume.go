@@ -18,7 +18,7 @@ func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data],
 	if v > 1 {
 		v = 1
 	}
-	p.SetGlobalVolume(v)
+	cs.SetChannelVolume(v)
 	return nil
 }
 

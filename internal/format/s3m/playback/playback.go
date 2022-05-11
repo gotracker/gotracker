@@ -79,7 +79,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 		cs.SetStoredSemitone(note.UnchangedSemitone)
 		mem := &song.ChannelSettings[i].Memory
 		cs.SetMemory(mem)
-		if mem.LowPassFilterEnable {
+		if mem.Shared.LowPassFilterEnable {
 			lowpassEnabled = true
 		}
 
@@ -141,7 +141,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		cs.TrackData = nil
+		cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
 	}
@@ -267,8 +267,10 @@ func (m *Manager) IncreaseTempo(delta int) error {
 }
 
 // Configure sets specified features
-func (m *Manager) Configure(features []feature.Feature) {
-	m.Tracker.Configure(features)
+func (m *Manager) Configure(features []feature.Feature) error {
+	if err := m.Tracker.Configure(features); err != nil {
+		return err
+	}
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.SongLoop:
@@ -277,6 +279,7 @@ func (m *Manager) Configure(features []feature.Feature) {
 			m.pattern.PlayUntilOrderAndRow = f
 		}
 	}
+	return nil
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop

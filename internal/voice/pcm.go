@@ -399,6 +399,12 @@ func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 
 func (v *pcmVoice) Clone() voice.Voice {
 	p := *v
+	if p.voiceFilter != nil {
+		p.voiceFilter = p.voiceFilter.Clone()
+	}
+	if p.pluginFilter != nil {
+		p.pluginFilter = p.pluginFilter.Clone()
+	}
 	return &p
 }
 

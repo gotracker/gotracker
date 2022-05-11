@@ -25,8 +25,9 @@ type Manager struct {
 
 	song *layout.Song
 
-	channels []state.ChannelState[channel.Memory, channel.Data]
-	pattern  pattern.State
+	channels  []state.ChannelState[channel.Memory, channel.Data]
+	PastNotes state.PastNotesProcessor[channel.Data]
+	pattern   pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
 	postMixRowTxn *playpattern.RowUpdateTransaction
@@ -48,6 +49,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
+	m.Tracker.Traceable = &m
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
@@ -97,6 +99,7 @@ func (m *Manager) GetNumChannels() int {
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
 	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
+	m.PastNotes.SetMax(channel.MaxTotalChannels - num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -105,9 +108,10 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		cs.TrackData = nil
+		cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
+		cs.PastNotes = &m.PastNotes
 	}
 }
 
@@ -240,8 +244,10 @@ func (m *Manager) IncreaseTempo(delta int) error {
 }
 
 // Configure sets specified features
-func (m *Manager) Configure(features []feature.Feature) {
-	m.Tracker.Configure(features)
+func (m *Manager) Configure(features []feature.Feature) error {
+	if err := m.Tracker.Configure(features); err != nil {
+		return err
+	}
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.SongLoop:
@@ -252,6 +258,7 @@ func (m *Manager) Configure(features []feature.Feature) {
 			m.longChannelOutput = f.Enabled
 		}
 	}
+	return nil
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop

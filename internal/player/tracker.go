@@ -2,6 +2,7 @@ package player
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -23,11 +24,10 @@ type GetPremixDataIntf interface {
 
 // Tracker is an extensible music tracker
 type Tracker struct {
-	render.OPL2Intf
-
 	BaseClockRate float32
 	Tickable      TickableIntf
 	Premixable    GetPremixDataIntf
+	Traceable     TraceableIntf
 
 	s    *sampler.Sampler
 	opl2 render.OPL2Chip
@@ -36,7 +36,19 @@ type Tracker struct {
 	mixerVolume  volume.Volume
 
 	ignoreUnknownEffect feature.IgnoreUnknownEffect
+	tracingFile         *os.File
+	tracingState        tracingState
 	outputChannels      map[int]*output.Channel
+}
+
+func (t *Tracker) Close() {
+	if t.tracingState.c != nil {
+		close(t.tracingState.c)
+	}
+	if t.tracingFile != nil {
+		t.tracingFile.Close()
+	}
+	t.tracingState.wg.Wait()
 }
 
 // Update runs processing on the tracker, producing premixed sound data
@@ -45,6 +57,9 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData)
 	if err != nil {
 		return err
 	}
+
+	t.OutputTraces()
+
 	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
 		out <- premix
 	}
@@ -200,11 +215,18 @@ func (t *Tracker) IgnoreUnknownEffect() bool {
 }
 
 // Configure sets specified features
-func (t *Tracker) Configure(features []feature.Feature) {
+func (t *Tracker) Configure(features []feature.Feature) error {
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.IgnoreUnknownEffect:
 			t.ignoreUnknownEffect = f
+		case feature.EnableTracing:
+			var err error
+			t.tracingFile, err = os.Create(f.Filename)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }

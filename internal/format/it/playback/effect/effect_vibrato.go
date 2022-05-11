@@ -21,7 +21,7 @@ func (e Vibrato) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pla
 func (e Vibrato) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.Vibrato(channel.DataEffect(e))
-	if mem.OldEffectMode {
+	if mem.Shared.OldEffectMode {
 		if currentTick != 0 {
 			return doVibrato(cs, currentTick, x, y, 8)
 		}

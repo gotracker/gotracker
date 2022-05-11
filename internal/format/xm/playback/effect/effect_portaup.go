@@ -26,7 +26,7 @@ func (e PortaUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 		return nil
 	}
 
-	return doPortaUp(cs, float32(xx), 4, mem.LinearFreqSlides)
+	return doPortaUp(cs, float32(xx), 4, mem.Shared.LinearFreqSlides)
 }
 
 func (e PortaUp) String() string {

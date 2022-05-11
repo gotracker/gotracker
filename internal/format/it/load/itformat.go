@@ -168,6 +168,13 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 		song.Patterns[patNum] = *pattern
 	}
 
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		OldEffectMode:              oldEffectMode,
+		EFGLinkMode:                efgLinkMode,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
@@ -177,10 +184,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 			ChannelVolume:    volume.Volume(f.Head.ChannelVol[chNum].Value()),
 			InitialPanning:   util.PanningFromIt(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
-				LinearFreqSlides:           linearFrequencySlides,
-				OldEffectMode:              oldEffectMode,
-				EFGLinkMode:                efgLinkMode,
-				ResetMemoryAtStartOfOrder0: true,
+				Shared: &sharedMem,
 			},
 		}
 

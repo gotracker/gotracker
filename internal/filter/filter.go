@@ -9,6 +9,7 @@ import (
 type Filter interface {
 	Filter(volume.Matrix) volume.Matrix
 	UpdateEnv(int8)
+	Clone() Filter
 }
 
 // Factory is a function type that builds a filter with an input parameter taking a value between 0 and 1

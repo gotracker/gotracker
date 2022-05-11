@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/gotracker/internal/filter"
 	"github.com/gotracker/voice/period"
 )
 
@@ -30,6 +31,15 @@ func NewAmigaLPF(instrument, playback period.Frequency) *AmigaLPF {
 	lpf.recalculate()
 
 	return &lpf
+}
+
+func (f *AmigaLPF) Clone() filter.Filter {
+	c := *f
+	c.channels = make([]channelData, len(f.channels))
+	for i := range f.channels {
+		c.channels[i] = f.channels[i]
+	}
+	return &c
 }
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result

@@ -9,6 +9,13 @@ import (
 	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 )
 
+type SharedMemory struct {
+	VolSlideEveryFrame  bool
+	LowPassFilterEnable bool
+	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
+	ResetMemoryAtStartOfOrder0 bool
+}
+
 // Memory is the storage object for custom effect/command values
 type Memory struct {
 	portaToNote   memory.Value[DataEffect]
@@ -21,15 +28,12 @@ type Memory struct {
 	tempoIncrease memory.Value[DataEffect]
 	lastNonZero   memory.Value[DataEffect]
 
-	VolSlideEveryFrame  bool
-	LowPassFilterEnable bool
-	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
-	ResetMemoryAtStartOfOrder0 bool
-
 	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
+
+	Shared *SharedMemory
 }
 
 // ResetOscillators resets the oscillators to defaults
@@ -114,7 +118,7 @@ func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 
 // StartOrder is called when the first order's row at tick 0 is started
 func (m *Memory) StartOrder() {
-	if m.ResetMemoryAtStartOfOrder0 {
+	if m.Shared.ResetMemoryAtStartOfOrder0 {
 		m.portaToNote.Reset()
 		m.vibratoSpeed.Reset()
 		m.vibratoDepth.Reset()

@@ -1,12 +1,10 @@
 package playback
 
 import (
-	"time"
-
-	"github.com/gotracker/gomixing/mixing"
 	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/gotracker/internal/player/render"
+	"github.com/gotracker/gotracker/internal/player/state"
 )
 
 // OnTick runs the S3M tick processing
@@ -44,7 +42,7 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 	finalData := &render.RowRender{}
 	premix := &device.PremixData{
 		Userdata:   finalData,
-		SamplesLen: m.rowRenderState.samplesPerTick,
+		SamplesLen: m.rowRenderState.Samples,
 	}
 
 	if err := m.soundRenderTick(premix); err != nil {
@@ -70,14 +68,10 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 }
 
 type rowRenderState struct {
-	mix            *mixing.Mixer
-	samplerSpeed   float32
-	tickDuration   time.Duration
-	samplesPerTick int
-	ticksThisRow   int
-	panmixer       mixing.PanMixer
+	state.RenderDetails
 
-	currentTick int
+	ticksThisRow int
+	currentTick  int
 }
 
 func (m *Manager) soundRenderTick(premix *device.PremixData) error {
@@ -92,11 +86,7 @@ func (m *Manager) soundRenderTick(premix *device.PremixData) error {
 				return err
 			}
 
-			rr, err := cs.RenderRowTick(m.rowRenderState.mix,
-				m.rowRenderState.panmixer,
-				m.rowRenderState.samplerSpeed,
-				m.rowRenderState.samplesPerTick,
-				m.rowRenderState.tickDuration)
+			rr, err := cs.RenderRowTick(m.rowRenderState.RenderDetails, nil)
 			if err != nil {
 				return err
 			}

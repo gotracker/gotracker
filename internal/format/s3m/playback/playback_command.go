@@ -31,15 +31,15 @@ func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
 	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
 	m.doNoteVolCalcs(cs)
 
 	var n note.Note = note.EmptyNote{}
-	if cs.TrackData != nil {
-		n = cs.TrackData.GetNote()
+	if cs.GetData() != nil {
+		n = cs.GetData().GetNote()
 	}
 	keyOff := false
 	keyOn := false

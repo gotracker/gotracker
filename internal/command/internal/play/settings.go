@@ -10,4 +10,6 @@ type Settings struct {
 	PanicOnUnhandledEffect bool
 	GatherEffectCoverage   bool
 	ITLongChannelOutput    bool
+	Tracing                bool
+	TracingFile            string
 }

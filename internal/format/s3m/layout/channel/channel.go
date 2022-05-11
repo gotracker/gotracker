@@ -1,6 +1,8 @@
 package channel
 
 import (
+	"fmt"
+
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
@@ -15,6 +17,10 @@ type S3MInstrumentID uint8
 // IsEmpty returns true if the instrument ID is 'nothing'
 func (s S3MInstrumentID) IsEmpty() bool {
 	return s == 0
+}
+
+func (s S3MInstrumentID) String() string {
+	return fmt.Sprint(uint8(s))
 }
 
 // DataEffect is the type of a channel's EffectParameter value

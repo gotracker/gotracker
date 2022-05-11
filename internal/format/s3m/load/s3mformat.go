@@ -311,6 +311,12 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		song.Patterns[patNum] = *pattern
 	}
 
+	sharedMem := channel.SharedMemory{
+		VolSlideEveryFrame:         st300volSlides,
+		LowPassFilterEnable:        sbFilterEnable,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
 	channels := make([]layout.ChannelSetting, 0)
 	for chNum, ch := range f.ChannelSettings {
 		chn := ch.GetChannel()
@@ -321,9 +327,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			InitialVolume:    util.DefaultVolume,
 			InitialPanning:   util.DefaultPanning,
 			Memory: channel.Memory{
-				VolSlideEveryFrame:         st300volSlides,
-				LowPassFilterEnable:        sbFilterEnable,
-				ResetMemoryAtStartOfOrder0: true,
+				Shared: &sharedMem,
 			},
 		}
 

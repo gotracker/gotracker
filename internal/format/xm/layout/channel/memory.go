@@ -9,6 +9,13 @@ import (
 	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 )
 
+type SharedMemory struct {
+	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
+	LinearFreqSlides bool
+	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
+	ResetMemoryAtStartOfOrder0 bool
+}
+
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
 	portaToNote         memory.Value[DataEffect]
@@ -30,15 +37,12 @@ type Memory struct {
 	extraFinePortaUp    memory.Value[DataEffect]
 	extraFinePortaDown  memory.Value[DataEffect]
 
-	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
-	LinearFreqSlides bool
-	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
-	ResetMemoryAtStartOfOrder0 bool
-
 	tremorMem         effect.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
+
+	Shared *SharedMemory
 }
 
 // ResetOscillators resets the oscillators to defaults
@@ -166,7 +170,7 @@ func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 
 // StartOrder is called when the first order's row at tick 0 is started
 func (m *Memory) StartOrder() {
-	if m.ResetMemoryAtStartOfOrder0 {
+	if m.Shared.ResetMemoryAtStartOfOrder0 {
 		m.portaToNote.Reset()
 		m.vibrato.Reset()
 		m.vibratoSpeed.Reset()

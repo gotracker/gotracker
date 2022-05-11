@@ -77,9 +77,11 @@ func (m *Manager) processPatternRow() error {
 		panmixer := s.GetPanMixer()
 
 		m.rowRenderState = &rowRenderState{
-			mix:          s.Mixer(),
-			samplerSpeed: s.GetSamplerSpeed(),
-			panmixer:     panmixer,
+			RenderDetails: state.RenderDetails{
+				Mix:          s.Mixer(),
+				SamplerSpeed: s.GetSamplerSpeed(),
+				Panmixer:     panmixer,
+			},
 		}
 	}
 
@@ -92,7 +94,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.TrackData = nil
+		cs.SetData(nil)
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -109,18 +111,18 @@ func (m *Manager) processPatternRow() error {
 		cdata := &channels[channelNum]
 
 		cs := &m.channels[channelNum]
-		cs.TrackData = cdata
+		cs.SetData(cdata)
 	}
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 
-		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.TrackData)
-		if cs.ActiveEffect != nil {
+		cs.SetActiveEffect(effect.Factory(cs.GetMemory(), cs.GetData()))
+		if cs.GetActiveEffect() != nil {
 			if m.OnEffect != nil {
-				m.OnEffect(cs.ActiveEffect)
+				m.OnEffect(cs.GetActiveEffect())
 			}
-			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.ActiveEffect, cs, m); err != nil {
+			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m); err != nil {
 				return err
 			}
 		}
@@ -132,8 +134,8 @@ func (m *Manager) processPatternRow() error {
 
 	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
 
-	m.rowRenderState.tickDuration = tickDuration
-	m.rowRenderState.samplesPerTick = int(tickDuration.Seconds() * float64(s.SampleRate))
+	m.rowRenderState.Duration = tickDuration
+	m.rowRenderState.Samples = int(tickDuration.Seconds() * float64(s.SampleRate))
 	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
 	m.rowRenderState.currentTick = 0
 
@@ -156,17 +158,17 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	if cs.TrackData == nil {
+	if cs.GetData() == nil {
 		return
 	}
 
 	// this can probably just be assumed to be false
 	willTrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
 
-	if cs.TrackData.HasNote() || cs.TrackData.HasInstrument() {
+	if cs.GetData().HasNote() || cs.GetData().HasInstrument() {
 		cs.UseTargetPeriod = true
-		instID := cs.TrackData.GetInstrument(cs.StoredSemitone)
-		n := cs.TrackData.GetNote()
+		instID := cs.GetData().GetInstrument(cs.StoredSemitone)
+		n := cs.GetData().GetNote()
 		if instID.IsEmpty() {
 			// use current
 			cs.SetTargetPos(sampling.Pos{})
@@ -184,7 +186,7 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 
 		if note.IsEmpty(n) {
 			cs.WantNoteCalc = false
-			willTrigger = cs.TrackData.HasInstrument()
+			willTrigger = cs.GetData().HasInstrument()
 			if willTrigger {
 				cs.SetTargetPos(sampling.Pos{})
 			}
@@ -219,9 +221,9 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	cs.UseTargetPeriod = willTrigger
 	cs.SetNotePlayTick(willTrigger, m.rowRenderState.currentTick)
 
-	if cs.TrackData.HasVolume() {
+	if cs.GetData().HasVolume() {
 		cs.WantVolCalc = false
-		v := cs.TrackData.GetVolume()
+		v := cs.GetData().GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if cs.GetTargetInst() != nil {
 				cs.WantVolCalc = true

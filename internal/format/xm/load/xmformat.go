@@ -321,6 +321,11 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 		song.Patterns[patNum] = *pattern
 	}
 
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
@@ -328,8 +333,7 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 			InitialVolume:  util.DefaultVolume,
 			InitialPanning: util.DefaultPanning,
 			Memory: channel.Memory{
-				LinearFreqSlides:           linearFrequencySlides,
-				ResetMemoryAtStartOfOrder0: true,
+				Shared: &sharedMem,
 			},
 		}
 

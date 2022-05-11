@@ -19,7 +19,7 @@ func (e FinePortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 	xy := mem.FinePortaUp(channel.DataEffect(e))
 	y := xy & 0x0F
 
-	return doPortaUp(cs, float32(y), 4, mem.LinearFreqSlides)
+	return doPortaUp(cs, float32(y), 4, mem.Shared.LinearFreqSlides)
 }
 
 func (e FinePortaUp) String() string {

@@ -1,8 +1,11 @@
 package instrument
 
+import "fmt"
+
 // ID is an identifier for an instrument/sample that means something to the format
 type ID interface {
 	IsEmpty() bool
+	fmt.Stringer
 }
 
 // DataIntf is the interface to implementation-specific functions on an instrument

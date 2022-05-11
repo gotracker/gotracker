@@ -23,7 +23,7 @@ func (e PortaUp) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 	xx := mem.PortaUp(channel.DataEffect(e))
 
 	if currentTick != 0 {
-		return doPortaUp(cs, float32(xx), 4, mem.LinearFreqSlides)
+		return doPortaUp(cs, float32(xx), 4, mem.Shared.LinearFreqSlides)
 	}
 	return nil
 }

@@ -49,12 +49,16 @@ type EchoFilter struct {
 }
 
 func (e *EchoFilter) Clone() filter.Filter {
-	c := *e
-	c.recalculate()
-	for i := range c.delay {
-		copy(c.delay[i].buf, e.delay[i].buf)
+	clone := EchoFilter{
+		EchoFilterSettings: e.EchoFilterSettings,
+		sampleRate:         e.sampleRate,
+		writePos:           e.writePos,
 	}
-	return &c
+	clone.recalculate()
+	for i := range clone.delay {
+		copy(clone.delay[i].buf, e.delay[i].buf)
+	}
+	return &clone
 }
 
 func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
@@ -70,6 +74,13 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	crossEcho := e.PanDelay >= 0.5
 
 	bufferLen := len(e.delay[0].buf)
+
+	for e.writePos >= bufferLen {
+		e.writePos -= bufferLen
+	}
+	for e.writePos < 0 {
+		e.writePos += bufferLen
+	}
 
 	for c := 0; c < dry.Channels; c++ {
 		readChannel := c
@@ -99,9 +110,6 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	}
 
 	e.writePos++
-	if e.writePos >= bufferLen {
-		e.writePos -= bufferLen
-	}
 
 	return wet
 }

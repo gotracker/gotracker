@@ -1,16 +1,15 @@
 package state
 
 import (
-	"sync"
-
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 type pastNote struct {
+	ch          int
 	activeState *Active
 }
 
-func (pn pastNote) IsValid() bool {
+func (pn *pastNote) IsValid() bool {
 	if pn.activeState.Voice == nil {
 		return false
 	}
@@ -18,76 +17,26 @@ func (pn pastNote) IsValid() bool {
 	return !pn.activeState.Voice.IsDone()
 }
 
-type pastNotesForChannel struct {
-	pn []*pastNote
-}
-
-func (p *pastNotesForChannel) Remove(pn *pastNote) []*pastNote {
-	var kept, removed []*pastNote
-	for _, a := range p.pn {
-		if a != pn {
-			kept = append(kept, a)
-		} else {
-			removed = append(removed, a)
-		}
-	}
-	p.pn = kept
-	return removed
-}
-
-type pastNoteOnChannel struct {
-	ch int
-	pn *pastNote
-}
-
 type PastNotesProcessor struct {
-	order []pastNoteOnChannel
-	ch    map[int]*pastNotesForChannel
-	mu    sync.Mutex
+	order []*pastNote
 	max   int
 }
 
 func (p *PastNotesProcessor) Add(ch int, data *Active) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.ch == nil {
-		p.ch = make(map[int]*pastNotesForChannel)
-	}
-
 	if c := len(p.order) - p.max; c > 0 {
 		o := p.order[0:c]
 		p.order = p.order[c:]
 
 		for _, pn := range o {
-			pn.pn.activeState.Reset()
-			pnoc := p.ch[pn.ch]
-			if pnoc == nil {
-				p.ch[pn.ch] = &pastNotesForChannel{}
-				continue
-			}
-			for _, v := range p.ch[pn.ch].Remove(pn.pn) {
-				v.activeState.Reset()
-			}
+			pn.activeState.Reset()
 		}
 	}
 
-	pn := &pastNote{
+	cl := &pastNote{
+		ch:          ch,
 		activeState: data,
 	}
 
-	cl := pastNoteOnChannel{
-		ch: ch,
-		pn: pn,
-	}
-
-	pnoc := p.ch[ch]
-	if pnoc == nil {
-		pnoc = &pastNotesForChannel{}
-		p.ch[ch] = pnoc
-	}
-
-	pnoc.pn = append(pnoc.pn, pn)
 	p.order = append(p.order, cl)
 }
 
@@ -96,17 +45,18 @@ func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 		return
 	}
 
-	pnoc := p.ch[ch]
-	if pnoc == nil {
-		return
-	}
+	for _, pn := range p.order {
+		if pn.ch != ch {
+			continue
+		}
 
-	for _, pn := range pnoc.pn {
-		if pn.activeState.Voice == nil {
+		if !pn.IsValid() {
 			continue
 		}
 
 		switch action {
+		case note.ActionCut:
+			pn.activeState.Reset()
 		case note.ActionRelease:
 			pn.activeState.Voice.Release()
 		case note.ActionFadeout:
@@ -114,31 +64,24 @@ func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 			pn.activeState.Voice.Fadeout()
 		}
 	}
-
-	if action == note.ActionCut {
-		pnoc.pn = nil
-	}
 }
 
 func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {
 	var pastNotes []*Active
-	if pnoc := p.ch[ch]; pnoc != nil {
-		var npns []*pastNote
-		for _, pn := range pnoc.pn {
-			if !pn.IsValid() {
-				continue
-			}
-
-			pastNotes = append(pastNotes, pn.activeState)
+	for _, pn := range p.order {
+		if pn.ch != ch {
+			continue
 		}
-		pnoc.pn = npns
+
+		if !pn.IsValid() {
+			continue
+		}
+
+		pastNotes = append(pastNotes, pn.activeState)
 	}
 	return pastNotes
 }
 
 func (p *PastNotesProcessor) SetMax(max int) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	p.max = max
 }

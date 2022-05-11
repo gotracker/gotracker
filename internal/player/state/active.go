@@ -1,6 +1,7 @@
 package state
 
 import (
+	"sync"
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -113,13 +114,19 @@ func renderState(a *Active, centerAheadPan volume.Matrix, details RenderDetails)
 	}
 
 	mixBuffer := details.Mix.NewMixBuffer(details.Samples)
-	mixBuffer.MixInSample(sampleData)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		mixBuffer.MixInSample(sampleData)
+		wg.Done()
+	}()
 	data := &mixing.Data{
 		Data:       mixBuffer,
 		Pan:        pan,
 		Volume:     volume.Volume(1.0),
 		Pos:        0,
 		SamplesLen: details.Samples,
+		Flush:      wg.Wait,
 	}
 
 	a.Pos = voice.GetPos(ncv)

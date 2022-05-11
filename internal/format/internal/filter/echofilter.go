@@ -80,8 +80,11 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 		write := &e.delay[c]
 
 		readPos := e.writePos - read.delay
-		if readPos < 0 {
+		for readPos < 0 {
 			readPos += bufferLen
+		}
+		for readPos >= bufferLen {
+			readPos -= bufferLen
 		}
 
 		chnInput := dry.StaticMatrix[c]

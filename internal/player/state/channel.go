@@ -21,6 +21,8 @@ type ChannelState[TMemory, TChannelData any] struct {
 	targetState Playback
 	prevState   Active
 
+	ActiveEffect intf.Effect
+
 	TrackData     *TChannelData
 	PrevTrackData *TChannelData
 
@@ -85,15 +87,15 @@ func (cs *ChannelState[TMemory, TChannelData]) ResetStates() {
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) GetActiveEffect() intf.Effect {
-	return cs.activeState.ActiveEffect
+	return cs.ActiveEffect
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) SetActiveEffect(e intf.Effect) {
-	cs.activeState.ActiveEffect = e
+	cs.ActiveEffect = e
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) ProcessEffects(p intf.Playback, currentTick int, lastTick bool) error {
-	return intf.DoEffect[TMemory, TChannelData](cs.activeState.ActiveEffect, cs, p, currentTick, lastTick)
+	return intf.DoEffect[TMemory, TChannelData](cs.ActiveEffect, cs, p, currentTick, lastTick)
 }
 
 // FreezePlayback suspends mixer progression on the channel

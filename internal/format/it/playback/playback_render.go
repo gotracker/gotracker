@@ -10,6 +10,9 @@ import (
 // OnTick runs the IT tick processing
 func (m *Manager) OnTick() error {
 	m.premix = nil
+
+	m.PastNotes.Update()
+
 	premix, err := m.renderTick()
 	if err != nil {
 		return err

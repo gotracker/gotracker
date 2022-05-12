@@ -42,9 +42,8 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	if cs.GetData() != nil {
 		n = cs.GetData().GetNote()
 	}
-	keyOff := false
+	nna := note.ActionContinue
 	keyOn := false
-	stop := false
 	newNote := false
 	targetPeriod := cs.GetTargetPeriod()
 	if targetPeriod != nil && cs.WillTriggerOn(currentTick) {
@@ -70,18 +69,25 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 		cs.SetPos(cs.GetTargetPos())
 	}
 	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
+		if inst.IsReleaseNote(n) {
+			nna = note.ActionRelease
+		}
+		if inst.IsStopNote(n) {
+			nna = note.ActionCut
+		}
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn {
-			nc.Attack()
-			mem := cs.GetMemory()
-			mem.Retrigger()
-		} else if keyOff {
+		switch nna {
+		case note.ActionContinue:
+			if keyOn {
+				nc.Attack()
+				mem := cs.GetMemory()
+				mem.Retrigger()
+			}
+		case note.ActionRelease:
 			nc.Release()
-		} else if stop {
+		case note.ActionCut:
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}

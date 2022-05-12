@@ -1,7 +1,6 @@
 package state
 
 import (
-	"sync"
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -9,7 +8,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
@@ -18,8 +16,6 @@ type Active struct {
 	Playback
 	Voice       voice.Voice
 	PeriodDelta note.PeriodDelta
-
-	ActiveEffect intf.Effect
 }
 
 // Reset sets the active state to defaults
@@ -42,6 +38,23 @@ func (a *Active) Clone() *Active {
 	return &c
 }
 
+// Transitions the active state so that various interfaces do not collide
+func (a *Active) Transition() *Active {
+	var c *Active
+	if a.Voice != nil && !a.Voice.IsDone() {
+		c = &Active{
+			Playback:    a.Playback,
+			Voice:       a.Voice,
+			PeriodDelta: a.PeriodDelta,
+		}
+	}
+
+	a.Reset()
+	a.Voice = nil
+
+	return c
+}
+
 type RenderDetails struct {
 	Mix          *mixing.Mixer
 	Panmixer     mixing.PanMixer
@@ -56,20 +69,24 @@ func RenderStatesTogether(activeState *Active, pastNotes []*Active, details Rend
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	if data := renderState(activeState, centerAheadPan, details); data != nil {
-		mixData = append(mixData, *data)
+	if activeState != nil {
+		if data := activeState.renderState(centerAheadPan, details); data != nil {
+			mixData = append(mixData, *data)
+		}
 	}
 
 	for _, pn := range pastNotes {
-		if data := renderState(pn, centerAheadPan, details); data != nil {
-			mixData = append(mixData, *data)
+		if pn != nil {
+			if data := pn.renderState(centerAheadPan, details); data != nil {
+				mixData = append(mixData, *data)
+			}
 		}
 	}
 
 	return mixData
 }
 
-func renderState(a *Active, centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
+func (a *Active) renderState(centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
 	if a.Period == nil || a.Volume == 0 {
 		return nil
 	}
@@ -114,19 +131,13 @@ func renderState(a *Active, centerAheadPan volume.Matrix, details RenderDetails)
 	}
 
 	mixBuffer := details.Mix.NewMixBuffer(details.Samples)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		mixBuffer.MixInSample(sampleData)
-		wg.Done()
-	}()
+	mixBuffer.MixInSample(sampleData)
 	data := &mixing.Data{
 		Data:       mixBuffer,
 		Pan:        pan,
 		Volume:     volume.Volume(1.0),
 		Pos:        0,
 		SamplesLen: details.Samples,
-		Flush:      wg.Wait,
 	}
 
 	a.Pos = voice.GetPos(ncv)

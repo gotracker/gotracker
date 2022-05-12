@@ -23,6 +23,10 @@ type PastNotesProcessor struct {
 }
 
 func (p *PastNotesProcessor) Add(ch int, data *Active) {
+	if data == nil {
+		return
+	}
+
 	if c := len(p.order) - p.max; c > 0 {
 		o := p.order[0:c]
 		p.order = p.order[c:]
@@ -64,6 +68,19 @@ func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 			pn.activeState.Voice.Fadeout()
 		}
 	}
+}
+
+func (p *PastNotesProcessor) Update() {
+	var nl []*pastNote
+	for _, o := range p.order {
+		if !o.IsValid() {
+			o.activeState.Reset()
+			continue
+		}
+
+		nl = append(nl, o)
+	}
+	p.order = nl
 }
 
 func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {

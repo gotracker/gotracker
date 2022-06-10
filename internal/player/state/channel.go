@@ -416,3 +416,7 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPanningEnvelopeEnable(enabled 
 func (cs *ChannelState[TMemory, TChannelData]) SetPitchEnvelopeEnable(enabled bool) {
 	voice.EnablePitchEnvelope(cs.activeState.Voice, enabled)
 }
+
+func (cs *ChannelState[TMemory, TChannelData]) NoteCut() {
+	cs.activeState.Period = nil
+}

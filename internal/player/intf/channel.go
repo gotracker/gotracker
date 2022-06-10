@@ -63,4 +63,5 @@ type Channel[TMemory, TChannelData any] interface {
 	SetVolumeEnvelopeEnable(bool)
 	SetPanningEnvelopeEnable(bool)
 	SetPitchEnvelopeEnable(bool)
+	NoteCut()
 }

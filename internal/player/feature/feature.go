@@ -37,3 +37,7 @@ type PlayUntilOrderAndRow struct {
 type ITLongChannelOutput struct {
 	Enabled bool
 }
+
+type ITNewNoteActions struct {
+	Enabled bool
+}

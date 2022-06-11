@@ -163,10 +163,15 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	}
 
 	// this can probably just be assumed to be false
-	willTrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
+	targetTick, retrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
 
+	var (
+		wantVolCalc  bool
+		wantNoteCalc bool
+		noteCalcST   note.Semitone
+	)
 	if cs.GetData().HasNote() {
-		cs.UseTargetPeriod = true
+		cs.UseTargetPeriod = targetTick
 		inst := cs.GetData().GetInstrument(cs.StoredSemitone)
 		n := cs.GetData().GetNote()
 		if inst.IsEmpty() {
@@ -180,53 +185,62 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 			cs.SetTargetInst(inst)
 			cs.SetTargetPos(sampling.Pos{})
 			if cs.GetTargetInst() != nil {
-				cs.WantVolCalc = true
+				wantVolCalc = true
 			}
 		}
 
 		if note.IsEmpty(n) {
-			cs.WantNoteCalc = false
-			willTrigger = cs.GetData().HasInstrument()
-			if willTrigger {
+			wantNoteCalc = false
+			targetTick = cs.GetData().HasInstrument()
+			if targetTick {
 				cs.SetTargetPos(sampling.Pos{})
 			}
 		} else if note.IsInvalid(n) {
 			cs.SetTargetPeriod(nil)
-			cs.WantNoteCalc = false
-			willTrigger = false
+			wantNoteCalc = false
+			targetTick = false
 		} else if note.IsRelease(n) {
 			cs.SetTargetPeriod(cs.GetPeriod())
 			if prevInst := cs.GetPrevInst(); prevInst != nil {
 				cs.SetTargetInst(prevInst)
 			}
-			cs.WantNoteCalc = false
-			willTrigger = false
+			wantNoteCalc = false
+			targetTick = false
 		} else if cs.GetTargetInst() != nil {
 			if nn, ok := n.(note.Normal); ok {
 				cs.StoredSemitone = note.Semitone(nn)
-				cs.TargetSemitone = cs.StoredSemitone
-				cs.WantNoteCalc = true
+				noteCalcST = cs.StoredSemitone
+				wantNoteCalc = true
 			}
-			willTrigger = true
+			targetTick = true
+			retrigger = true
 		}
 	} else {
-		cs.WantNoteCalc = false
-		cs.WantVolCalc = false
-		willTrigger = false
+		wantNoteCalc = false
+		wantVolCalc = false
+		targetTick = false
 	}
 
-	cs.UseTargetPeriod = willTrigger
-	cs.SetNotePlayTick(willTrigger, m.rowRenderState.currentTick)
+	cs.UseTargetPeriod = targetTick
+	cs.SetNotePlayTick(targetTick, retrigger, m.rowRenderState.currentTick)
 
 	if cs.GetData().HasVolume() {
-		cs.WantVolCalc = false
+		wantVolCalc = false
 		v := cs.GetData().GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if cs.GetTargetInst() != nil {
-				cs.WantVolCalc = true
+				wantVolCalc = true
 			}
 		} else {
 			cs.SetActiveVolume(v)
 		}
+	}
+
+	if wantVolCalc {
+		cs.VolOps = append(cs.VolOps, doVolCalc{})
+	}
+
+	if wantNoteCalc {
+		cs.NoteOps = append(cs.NoteOps, m.semitoneSetterFactory(noteCalcST, cs.SetTargetPeriod))
 	}
 }

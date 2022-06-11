@@ -240,7 +240,8 @@ playlistLoop:
 		}
 		cfg = append(cfg,
 			feature.SongLoop{Count: loopCount},
-			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput})
+			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput},
+			feature.ITNewNoteActions{Enabled: settings.ITEnableNNA})
 
 		if err := playback.Configure(cfg); err != nil {
 			return playedAtLeastOne, err

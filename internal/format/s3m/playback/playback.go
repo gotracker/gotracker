@@ -130,6 +130,13 @@ func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
+func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory, channel.Data] {
+	return doNoteCalc{
+		Semitone:   st,
+		UpdateFunc: fn,
+	}
+}
+
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
 	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
@@ -137,6 +144,7 @@ func (m *Manager) SetNumChannels(num int) {
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		cs.ResetStates()
+		cs.SemitoneSetterFactory = m.semitoneSetterFactory
 
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()

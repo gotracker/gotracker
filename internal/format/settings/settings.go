@@ -12,6 +12,7 @@ const (
 	NamePreferredSampleFormat      string = "PreferredSampleFormat"
 	NameUseNativeSampleFormat      string = "UseNativeSampleFormat"
 	NameDisplayITLongChannelOutput string = "DisplayITLongChannelOutput"
+	NameEnableNewNoteActions       string = "EnableNewNoteActions"
 )
 
 type Settings struct {

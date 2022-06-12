@@ -43,20 +43,19 @@ type ChannelState[TMemory, TChannelData any] struct {
 
 	SemitoneSetterFactory func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
 
-	StoredSemitone       note.Semitone // from pattern, unmodified, current note
-	PortaTargetPeriod    optional.Value[note.Period]
-	Trigger              optional.Value[NoteTrigger]
-	RetriggerCount       uint8
-	Memory               *TMemory
-	freezePlayback       bool
-	Semitone             note.Semitone // from TargetSemitone, modified further, used in period calculations
-	UseTargetPeriod      bool
-	periodOverride       note.Period
-	UsePeriodOverride    bool
-	volumeActive         bool
-	PanEnabled           bool
-	enableNewNoteActions bool
-	NewNoteAction        note.Action
+	StoredSemitone    note.Semitone // from pattern, unmodified, current note
+	PortaTargetPeriod optional.Value[note.Period]
+	Trigger           optional.Value[NoteTrigger]
+	RetriggerCount    uint8
+	Memory            *TMemory
+	freezePlayback    bool
+	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
+	UseTargetPeriod   bool
+	periodOverride    note.Period
+	UsePeriodOverride bool
+	volumeActive      bool
+	PanEnabled        bool
+	NewNoteAction     note.Action
 
 	VolOps  []VolOp[TMemory, TChannelData]
 	NoteOps []NoteOp[TMemory, TChannelData]
@@ -352,10 +351,6 @@ func (cs *ChannelState[TMemory, TChannelData]) SetStoredSemitone(st note.Semiton
 	cs.StoredSemitone = st
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) EnableNewNoteActions(enabled bool) {
-	cs.enableNewNoteActions = enabled
-}
-
 // SetOutputChannel sets the output channel for the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetOutputChannel(outputCh *output.Channel) {
 	cs.Output = outputCh
@@ -395,7 +390,7 @@ func (cs *ChannelState[TMemory, TChannelData]) SetEnvelopePosition(ticks int) {
 // TransitionActiveToPastState will transition the current active state to the 'past' state
 // and will activate the specified New-Note Action on it
 func (cs *ChannelState[TMemory, TChannelData]) TransitionActiveToPastState() {
-	if cs.enableNewNoteActions && cs.PastNotes != nil {
+	if cs.PastNotes != nil {
 		switch cs.NewNoteAction {
 		case note.ActionCut:
 			// reset at end

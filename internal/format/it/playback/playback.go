@@ -72,7 +72,6 @@ func NewManager(song *layout.Song) (*Manager, error) {
 		cs.SetPan(ch.InitialPanning)
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
 		cs.SetStoredSemitone(note.UnchangedSemitone)
-		cs.EnableNewNoteActions(m.enableNewNoteActions)
 	}
 
 	txn := m.pattern.StartTransaction()
@@ -121,7 +120,10 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
-		cs.PastNotes = &m.PastNotes
+
+		if m.enableNewNoteActions {
+			cs.PastNotes = &m.PastNotes
+		}
 	}
 }
 

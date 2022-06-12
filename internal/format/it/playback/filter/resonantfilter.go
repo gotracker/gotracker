@@ -149,7 +149,7 @@ func (f *ResonantFilter) recalculate(v int8) {
 		freq = f2
 	}
 
-	fc := freq * 2.0 * math.Pi
+	fc := freq * 4.0 * math.Pi
 
 	var d, e float64
 	if f.extendedFilterRange {

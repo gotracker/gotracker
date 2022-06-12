@@ -14,11 +14,11 @@ func (pn *pastNote) IsValid() bool {
 		return false
 	}
 
-	return !pn.activeState.Voice.IsDone()
+	return pn.activeState.Voice.IsDone()
 }
 
 type PastNotesProcessor struct {
-	order []*pastNote
+	order []pastNote
 	max   int
 }
 
@@ -36,7 +36,7 @@ func (p *PastNotesProcessor) Add(ch int, data *Active) {
 		}
 	}
 
-	cl := &pastNote{
+	cl := pastNote{
 		ch:          ch,
 		activeState: data,
 	}
@@ -71,7 +71,7 @@ func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 }
 
 func (p *PastNotesProcessor) Update() {
-	var nl []*pastNote
+	var nl []pastNote
 	for _, o := range p.order {
 		if !o.IsValid() {
 			o.activeState.Reset()

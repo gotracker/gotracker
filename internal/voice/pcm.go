@@ -67,6 +67,7 @@ type pcmVoice struct {
 	pitchEnv  component.PitchEnvelope
 	panEnv    component.PanEnvelope
 	filterEnv component.FilterEnvelope
+	vol0ticks int
 }
 
 // NewPCM creates a new PCM voice
@@ -149,10 +150,11 @@ func (v *pcmVoice) IsFadeout() bool {
 }
 
 func (v *pcmVoice) IsDone() bool {
-	if !v.amp.IsFadeoutEnabled() {
-		return false
+	if v.amp.IsFadeoutEnabled() {
+		return v.amp.GetFadeoutVolume() <= 0
 	}
-	return v.amp.GetFadeoutVolume() <= 0
+
+	return v.vol0ticks >= 3
 }
 
 // == SampleStream ==
@@ -384,6 +386,12 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
 		fval := v.GetCurrentFilterEnvelope()
 		v.voiceFilter.UpdateEnv(fval)
+	}
+
+	if v.amp.GetFinalVolume() <= 0 {
+		v.vol0ticks++
+	} else {
+		v.vol0ticks = 0
 	}
 }
 

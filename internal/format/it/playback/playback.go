@@ -270,6 +270,14 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.longChannelOutput = f.Enabled
 		case feature.ITNewNoteActions:
 			m.enableNewNoteActions = f.Enabled
+			for ch := range m.channels {
+				cs := &m.channels[ch]
+				if m.enableNewNoteActions {
+					cs.PastNotes = &m.PastNotes
+				} else {
+					cs.PastNotes = nil
+				}
+			}
 		}
 	}
 	return nil

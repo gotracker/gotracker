@@ -10,77 +10,137 @@ import (
 	"github.com/gotracker/voice/period"
 )
 
-func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {
-	inst := cs.GetTargetInst()
-	if inst == nil {
-		return
-	}
+type doVolCalc struct{}
 
-	if cs.WantVolCalc {
-		cs.WantVolCalc = false
+func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if inst := cs.GetTargetInst(); inst != nil {
 		cs.SetActiveVolume(inst.GetDefaultVolume())
 	}
-	if cs.WantNoteCalc {
-		cs.WantNoteCalc = false
-		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.LinearFreqSlides
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
-		cs.SetTargetPeriod(period)
+	return nil
+}
+
+type doNoteCalc struct {
+	Semitone   note.Semitone
+	UpdateFunc state.PeriodUpdateFunc
+}
+
+func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if o.UpdateFunc == nil {
+		return nil
 	}
+
+	if inst := cs.GetTargetInst(); inst != nil {
+		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
+		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
+		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		o.UpdateFunc(period)
+	}
+	return nil
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
-	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessEffects(m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
-	m.doNoteVolCalcs(cs)
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
 	cs.SetGlobalVolume(m.GetGlobalVolume())
 
-	var n note.Note = note.EmptyNote{}
-	if cs.TrackData != nil {
-		n = cs.TrackData.GetNote()
+	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {
+		return err
 	}
-	keyOff := false
+
+	if err := m.processVoiceUpdates(ch, cs, currentTick, lastTick); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+	targetTick, retrigger := cs.WillTriggerOn(currentTick)
+	if !targetTick {
+		return nil
+	}
+
+	var n note.Note = note.EmptyNote{}
+	if cs.GetData() != nil {
+		n = cs.GetData().GetNote()
+	}
+	nna := note.ActionContinue
 	keyOn := false
-	stop := false
+	if nc := cs.GetVoice(); nc != nil {
+		keyOn = nc.IsKeyOn()
+	}
+	newNote := false
+	wantAttack := false
 	targetPeriod := cs.GetTargetPeriod()
-	if targetPeriod != nil && cs.WillTriggerOn(currentTick) {
-		if targetInst := cs.GetTargetInst(); targetInst != nil {
-			cs.TransitionActiveToPastState()
-			cs.SetInstrument(targetInst)
+	if targetPeriod != nil {
+		targetInst := cs.GetTargetInst()
+		if targetInst != nil {
+			newNote = true
 			keyOn = true
-		} else {
-			cs.SetInstrument(nil)
+			wantAttack = retrigger
 		}
 		if cs.UseTargetPeriod {
-			if nc := cs.GetVoice(); nc != nil {
-				nc.Release()
-			}
-			cs.SetPeriod(targetPeriod)
+			newNote = true
 			cs.SetPortaTargetPeriod(targetPeriod)
 		}
+
+		if newNote {
+			cs.TransitionActiveToPastState()
+		}
+
+		cs.SetInstrument(targetInst)
 		cs.SetPos(cs.GetTargetPos())
 	}
 	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
+		if inst.IsReleaseNote(n) {
+			nna = note.ActionRelease
+		}
+		if inst.IsStopNote(n) {
+			nna = note.ActionCut
+		}
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn {
-			nc.Attack()
-			mem := cs.GetMemory()
-			mem.Retrigger()
-		} else if keyOff {
+		switch nna {
+		case note.ActionContinue:
+			if keyOn && wantAttack {
+				nc.Attack()
+				mem := cs.GetMemory()
+				mem.Retrigger()
+			}
+		case note.ActionRelease:
 			nc.Release()
-		} else if stop {
+		case note.ActionCut:
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
 	}
+
+	return nil
+}
+
+func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+	if cs.UseTargetPeriod {
+		cs.UseTargetPeriod = false
+		targetPeriod := cs.GetTargetPeriod()
+		cs.SetPeriod(targetPeriod)
+	}
+
 	return nil
 }
 

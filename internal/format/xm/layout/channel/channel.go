@@ -1,6 +1,8 @@
 package channel
 
 import (
+	"fmt"
+
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
@@ -14,7 +16,6 @@ type DataEffect uint8
 
 // SampleID is an InstrumentID that is a combination of InstID and SampID
 type SampleID struct {
-	instrument.ID
 	InstID   uint8
 	Semitone note.Semitone
 }
@@ -22,6 +23,10 @@ type SampleID struct {
 // IsEmpty returns true if the sample ID is empty
 func (s SampleID) IsEmpty() bool {
 	return s.InstID == 0
+}
+
+func (s SampleID) String() string {
+	return fmt.Sprint(s.InstID)
 }
 
 // Data is the data for the channel

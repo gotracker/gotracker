@@ -22,7 +22,6 @@ type Playback struct {
 func (p *Playback) Reset() {
 	p.Instrument = nil
 	p.Period = nil
-	p.Volume = 1
 	p.Pos = sampling.Pos{}
 	p.Pan = panning.CenterAhead
 }

@@ -79,6 +79,12 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 
 	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !settings.PanicOnUnhandledEffect})
 
+	if settings.Tracing {
+		configuration = append(configuration, feature.EnableTracing{
+			Filename: settings.TracingFile,
+		})
+	}
+
 	logger.Printf("Output device: %s\n", waveOut.Name())
 
 	playedAtLeastOne, err := renderSongs(pl, outBufs, options, configuration, settings, func(pb intf.Playback, tickInterval time.Duration) error {
@@ -234,9 +240,12 @@ playlistLoop:
 		}
 		cfg = append(cfg,
 			feature.SongLoop{Count: loopCount},
-			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput})
+			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput},
+			feature.ITNewNoteActions{Enabled: settings.ITEnableNNA})
 
-		playback.Configure(cfg)
+		if err := playback.Configure(cfg); err != nil {
+			return playedAtLeastOne, err
+		}
 
 		if err = startPlayingCB(playback, tickInterval); err != nil {
 			continue

@@ -39,11 +39,12 @@ type Channel[TMemory, TChannelData any] interface {
 	GetNoteSemitone() note.Semitone
 	SetStoredSemitone(note.Semitone)
 	SetTargetSemitone(note.Semitone)
+	SetOverrideSemitone(note.Semitone)
 	GetTargetPos() sampling.Pos
 	SetTargetPos(sampling.Pos)
 	GetPos() sampling.Pos
 	SetPos(sampling.Pos)
-	SetNotePlayTick(bool, int)
+	SetNotePlayTick(bool, bool, int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPanEnabled(bool)
@@ -63,4 +64,5 @@ type Channel[TMemory, TChannelData any] interface {
 	SetVolumeEnvelopeEnable(bool)
 	SetPanningEnvelopeEnable(bool)
 	SetPitchEnvelopeEnable(bool)
+	NoteCut()
 }

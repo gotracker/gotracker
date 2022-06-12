@@ -21,6 +21,10 @@ type IgnoreUnknownEffect struct {
 	Enabled bool
 }
 
+type EnableTracing struct {
+	Filename string
+}
+
 type PreConvertSamples struct {
 	Enabled bool
 }
@@ -31,5 +35,9 @@ type PlayUntilOrderAndRow struct {
 }
 
 type ITLongChannelOutput struct {
+	Enabled bool
+}
+
+type ITNewNoteActions struct {
 	Enabled bool
 }

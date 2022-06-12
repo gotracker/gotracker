@@ -8,6 +8,8 @@ func init() {
 	if flags := playDebugCmd.Flags(); flags != nil {
 		flags.BoolVar(&playSettings.GatherEffectCoverage, "gather-effect-coverage", playSettings.GatherEffectCoverage, "gather and display effect coverage data")
 		flags.BoolVar(&playSettings.PanicOnUnhandledEffect, "unhandled-effect-panic", playSettings.PanicOnUnhandledEffect, "panic when an unhandled effect is encountered")
+		flags.BoolVar(&playSettings.Tracing, "tracing", playSettings.Tracing, "enable tracing")
+		flags.StringVar(&playSettings.TracingFile, "tracing-file", playSettings.TracingFile, "tracing file to output to if tracing is enabled")
 
 		registerPlayFlags(flags)
 	}

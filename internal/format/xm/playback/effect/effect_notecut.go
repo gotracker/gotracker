@@ -21,7 +21,7 @@ func (e NoteCut) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 	x := channel.DataEffect(e) & 0xf
 
 	if x != 0 && currentTick == int(x) {
-		cs.FreezePlayback()
+		cs.NoteCut()
 	}
 	return nil
 }

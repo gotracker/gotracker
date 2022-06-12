@@ -10,65 +10,101 @@ import (
 	"github.com/gotracker/voice/period"
 )
 
-func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {
-	inst := cs.GetTargetInst()
-	if inst == nil {
-		return
-	}
+type doVolCalc struct{}
 
-	if cs.WantVolCalc {
-		cs.WantVolCalc = false
+func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if inst := cs.GetTargetInst(); inst != nil {
 		cs.SetActiveVolume(inst.GetDefaultVolume())
 	}
-	if cs.WantNoteCalc {
-		cs.WantNoteCalc = false
-		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
-		cs.SetTargetPeriod(period)
+	return nil
+}
+
+type doNoteCalc struct {
+	Semitone   note.Semitone
+	UpdateFunc state.PeriodUpdateFunc
+}
+
+func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if o.UpdateFunc == nil {
+		return nil
 	}
+
+	if inst := cs.GetTargetInst(); inst != nil {
+		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
+		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		o.UpdateFunc(period)
+	}
+	return nil
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
-	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
-	m.doNoteVolCalcs(cs)
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
 
+	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {
+		return err
+	}
+
+	if err := m.processVoiceUpdates(ch, cs, currentTick, lastTick); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+	triggerTick, wantAttack := cs.WillTriggerOn(currentTick)
+	if !triggerTick {
+		return nil
+	}
 	var n note.Note = note.EmptyNote{}
-	if cs.TrackData != nil {
-		n = cs.TrackData.GetNote()
+	if cs.GetData() != nil {
+		n = cs.GetData().GetNote()
 	}
-	keyOff := false
 	keyOn := false
+	keyOff := false
 	stop := false
-	targetPeriod := cs.GetTargetPeriod()
-	if targetPeriod != nil && cs.WillTriggerOn(currentTick) {
-		if targetInst := cs.GetTargetInst(); targetInst != nil {
-			cs.SetInstrument(targetInst)
-			keyOn = true
-		} else {
-			cs.SetInstrument(nil)
-		}
-		if cs.UseTargetPeriod {
-			if nc := cs.GetVoice(); nc != nil {
-				nc.Release()
-				nc.Fadeout()
-			}
-			cs.SetPeriod(targetPeriod)
-			cs.SetPortaTargetPeriod(targetPeriod)
-		}
-		cs.SetPos(cs.GetTargetPos())
+
+	if targetInst := cs.GetTargetInst(); targetInst != nil {
+		cs.SetInstrument(targetInst)
+		keyOn = true
+	} else {
+		cs.SetInstrument(nil)
 	}
+
+	if cs.UseTargetPeriod {
+		if nc := cs.GetVoice(); nc != nil {
+			nc.Release()
+			nc.Fadeout()
+		}
+		targetPeriod := cs.GetTargetPeriod()
+		cs.SetPeriod(targetPeriod)
+		cs.SetPortaTargetPeriod(targetPeriod)
+	}
+	cs.SetPos(cs.GetTargetPos())
+
 	if inst := cs.GetInstrument(); inst != nil {
 		keyOff = inst.IsReleaseNote(n)
 		stop = inst.IsStopNote(n)
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn {
+		if keyOn && wantAttack {
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())
 			nc.Attack()
@@ -82,6 +118,15 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
+	}
+	return nil
+}
+
+func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+	if cs.UsePeriodOverride {
+		cs.UsePeriodOverride = false
+		arpeggioPeriod := cs.GetPeriodOverride()
+		cs.SetPeriod(arpeggioPeriod)
 	}
 	return nil
 }

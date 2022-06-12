@@ -26,7 +26,7 @@ func (e *EchoFilterFactory) Factory() filter.Factory {
 	return func(instrument, playback period.Frequency) filter.Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         instrument,
+			sampleRate:         playback,
 		}
 		echo.recalculate()
 		return &echo
@@ -48,17 +48,39 @@ type EchoFilter struct {
 	delay           [2]delayInfo // L,R
 }
 
+func (e *EchoFilter) Clone() filter.Filter {
+	clone := EchoFilter{
+		EchoFilterSettings: e.EchoFilterSettings,
+		sampleRate:         e.sampleRate,
+		writePos:           e.writePos,
+	}
+	clone.recalculate()
+	for i := range clone.delay {
+		copy(clone.delay[i].buf, e.delay[i].buf)
+	}
+	return &clone
+}
+
 func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	if dry.Channels == 0 {
 		return volume.Matrix{}
 	}
 	wetMix := volume.Volume(e.WetDryMix)
 	dryMix := 1 - wetMix
-	wet := dry
+	wet := dry.Apply(dryMix)
 
 	feedback := volume.Volume(e.Feedback)
 
 	crossEcho := e.PanDelay >= 0.5
+
+	bufferLen := len(e.delay[0].buf)
+
+	for e.writePos >= bufferLen {
+		e.writePos -= bufferLen
+	}
+	for e.writePos < 0 {
+		e.writePos += bufferLen
+	}
 
 	for c := 0; c < dry.Channels; c++ {
 		readChannel := c
@@ -69,8 +91,11 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 		write := &e.delay[c]
 
 		readPos := e.writePos - read.delay
-		if readPos < 0 {
-			readPos = readPos + len(read.buf)
+		for readPos < 0 {
+			readPos += bufferLen
+		}
+		for readPos >= bufferLen {
+			readPos -= bufferLen
 		}
 
 		chnInput := dry.StaticMatrix[c]
@@ -81,14 +106,10 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 
 		write.buf[e.writePos] = chnOutput
 
-		wet.StaticMatrix[c] = chnInput*dryMix + chnDelay*wetMix
+		wet.StaticMatrix[c] += chnDelay * wetMix
 	}
 
 	e.writePos++
-	bufferLen := len(e.delay[0].buf)
-	if e.writePos >= bufferLen {
-		e.writePos -= bufferLen
-	}
 
 	return wet
 }

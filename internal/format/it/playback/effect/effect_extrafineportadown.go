@@ -18,7 +18,7 @@ func (e ExtraFinePortaDown) Start(cs intf.Channel[channel.Memory, channel.Data],
 	mem := cs.GetMemory()
 	y := mem.PortaDown(channel.DataEffect(e)) & 0x0F
 
-	return doPortaDown(cs, float32(y), 1, mem.LinearFreqSlides)
+	return doPortaDown(cs, float32(y), 1, mem.Shared.LinearFreqSlides)
 }
 
 func (e ExtraFinePortaDown) String() string {

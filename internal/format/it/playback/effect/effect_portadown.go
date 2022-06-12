@@ -23,7 +23,7 @@ func (e PortaDown) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 	xx := mem.PortaDown(channel.DataEffect(e))
 
 	if currentTick != 0 {
-		return doPortaDown(cs, float32(xx), 4, mem.LinearFreqSlides)
+		return doPortaDown(cs, float32(xx), 4, mem.Shared.LinearFreqSlides)
 	}
 	return nil
 }

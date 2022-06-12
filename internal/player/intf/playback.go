@@ -27,7 +27,7 @@ type Playback interface {
 	SetNextRow(index.Row) error
 	SetNextRowWithBacktrack(index.Row, bool) error
 	GetCurrentRow() index.Row
-	Configure([]feature.Feature)
+	Configure([]feature.Feature) error
 	GetName() string
 	CanOrderLoop() bool
 	BreakOrder() error

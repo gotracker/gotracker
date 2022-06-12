@@ -9,10 +9,11 @@ import (
 
 // Channel is the important bits to make output to a particular downmixing channel work
 type Channel struct {
-	ChannelNum    int
-	Filter        filter.Filter
-	Config        ConfigIntf
-	ChannelVolume volume.Volume
+	ChannelNum       int
+	Filter           filter.Filter
+	Config           ConfigIntf
+	ChannelVolume    volume.Volume
+	LastGlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
 }
 
 // ApplyFilter will apply the channel filter, if there is one.
@@ -30,7 +31,7 @@ func (oc *Channel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 
 // GetPremixVolume returns the premix volume of the output channel
 func (oc *Channel) GetPremixVolume() volume.Volume {
-	return oc.Config.GetGlobalVolume() * oc.ChannelVolume
+	return oc.LastGlobalVolume * oc.ChannelVolume
 }
 
 // SetFilterEnvelopeValue updates the filter on the channel with the new envelope value

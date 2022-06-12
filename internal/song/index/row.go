@@ -1,6 +1,8 @@
 package index
 
-import "math"
+import (
+	"math"
+)
 
 // Row is an index into the pattern for the row
 type Row uint8

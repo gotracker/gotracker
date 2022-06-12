@@ -77,9 +77,11 @@ func (m *Manager) processPatternRow() error {
 		panmixer := s.GetPanMixer()
 
 		m.rowRenderState = &rowRenderState{
-			mix:          s.Mixer(),
-			samplerSpeed: s.GetSamplerSpeed(),
-			panmixer:     panmixer,
+			RenderDetails: state.RenderDetails{
+				Mix:          s.Mixer(),
+				SamplerSpeed: s.GetSamplerSpeed(),
+				Panmixer:     panmixer,
+			},
 		}
 	}
 
@@ -92,7 +94,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.TrackData = nil
+		cs.SetData(nil)
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -109,18 +111,18 @@ func (m *Manager) processPatternRow() error {
 		cdata := &channels[channelNum]
 
 		cs := &m.channels[channelNum]
-		cs.TrackData = cdata
+		cs.SetData(cdata)
 	}
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 
-		cs.ActiveEffect = effect.Factory(cs.GetMemory(), cs.TrackData)
-		if cs.ActiveEffect != nil {
+		cs.SetActiveEffect(effect.Factory(cs.GetMemory(), cs.GetData()))
+		if cs.GetActiveEffect() != nil {
 			if m.OnEffect != nil {
-				m.OnEffect(cs.ActiveEffect)
+				m.OnEffect(cs.GetActiveEffect())
 			}
-			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.ActiveEffect, cs, m); err != nil {
+			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m); err != nil {
 				return err
 			}
 		}
@@ -132,8 +134,8 @@ func (m *Manager) processPatternRow() error {
 
 	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
 
-	m.rowRenderState.tickDuration = tickDuration
-	m.rowRenderState.samplesPerTick = int(tickDuration.Seconds() * float64(s.SampleRate))
+	m.rowRenderState.Duration = tickDuration
+	m.rowRenderState.Samples = int(tickDuration.Seconds() * float64(s.SampleRate))
 	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
 	m.rowRenderState.currentTick = 0
 
@@ -156,17 +158,22 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	if cs.TrackData == nil {
+	if cs.GetData() == nil {
 		return
 	}
 
 	// this can probably just be assumed to be false
-	willTrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
+	targetTick, retrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
 
-	if cs.TrackData.HasNote() || cs.TrackData.HasInstrument() {
-		cs.UseTargetPeriod = true
-		instID := cs.TrackData.GetInstrument(cs.StoredSemitone)
-		n := cs.TrackData.GetNote()
+	var (
+		wantVolCalc  bool
+		wantNoteCalc bool
+		noteCalcST   note.Semitone
+	)
+	if cs.GetData().HasNote() || cs.GetData().HasInstrument() {
+		cs.UseTargetPeriod = targetTick
+		instID := cs.GetData().GetInstrument(cs.StoredSemitone)
+		n := cs.GetData().GetNote()
 		if instID.IsEmpty() {
 			// use current
 			cs.SetTargetPos(sampling.Pos{})
@@ -178,56 +185,65 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 			cs.SetTargetInst(inst)
 			cs.SetTargetPos(sampling.Pos{})
 			if cs.GetTargetInst() != nil {
-				cs.WantVolCalc = true
+				wantVolCalc = true
 			}
 		}
 
 		if note.IsEmpty(n) {
-			cs.WantNoteCalc = false
-			willTrigger = cs.TrackData.HasInstrument()
-			if willTrigger {
+			wantNoteCalc = false
+			targetTick = cs.GetData().HasInstrument()
+			if targetTick {
 				cs.SetTargetPos(sampling.Pos{})
 			}
 		} else if note.IsInvalid(n) {
 			cs.SetTargetPeriod(nil)
-			cs.WantNoteCalc = false
-			willTrigger = false
+			wantNoteCalc = false
+			targetTick = false
 		} else if note.IsRelease(n) {
 			cs.SetTargetPeriod(cs.GetPeriod())
 			if prevInst := cs.GetPrevInst(); prevInst != nil {
 				cs.SetTargetInst(prevInst)
 			}
-			cs.WantNoteCalc = false
-			willTrigger = false
+			wantNoteCalc = false
+			targetTick = false
 		} else if cs.GetTargetInst() != nil {
 			if nn, ok := n.(note.Normal); ok {
 				cs.StoredSemitone = note.Semitone(nn)
-				cs.TargetSemitone = cs.StoredSemitone
-				cs.WantNoteCalc = true
+				noteCalcST = cs.StoredSemitone
+				wantNoteCalc = true
 			}
-			willTrigger = true
+			targetTick = true
+			retrigger = true
 		}
 		if inst := cs.GetInstrument(); inst != nil {
 			cs.SetNewNoteAction(inst.GetNewNoteAction())
 		}
 	} else {
-		cs.WantNoteCalc = false
-		cs.WantVolCalc = false
-		willTrigger = false
+		wantNoteCalc = false
+		wantVolCalc = false
+		targetTick = false
 	}
 
-	cs.UseTargetPeriod = willTrigger
-	cs.SetNotePlayTick(willTrigger, m.rowRenderState.currentTick)
+	cs.UseTargetPeriod = targetTick
+	cs.SetNotePlayTick(targetTick, retrigger, m.rowRenderState.currentTick)
 
-	if cs.TrackData.HasVolume() {
-		cs.WantVolCalc = false
-		v := cs.TrackData.GetVolume()
+	if cs.GetData().HasVolume() {
+		wantVolCalc = false
+		v := cs.GetData().GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if cs.GetTargetInst() != nil {
-				cs.WantVolCalc = true
+				wantVolCalc = true
 			}
 		} else {
 			cs.SetActiveVolume(v)
 		}
+	}
+
+	if wantVolCalc {
+		cs.VolOps = append(cs.VolOps, doVolCalc{})
+	}
+
+	if wantNoteCalc {
+		cs.NoteOps = append(cs.NoteOps, m.semitoneSetterFactory(noteCalcST, cs.SetTargetPeriod))
 	}
 }

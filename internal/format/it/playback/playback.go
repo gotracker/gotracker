@@ -25,16 +25,18 @@ type Manager struct {
 
 	song *layout.Song
 
-	channels []state.ChannelState[channel.Memory, channel.Data]
-	pattern  pattern.State
+	channels  []state.ChannelState[channel.Memory, channel.Data]
+	PastNotes state.PastNotesProcessor
+	pattern   pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *device.PremixData
 
-	rowRenderState    *rowRenderState
-	OnEffect          func(intf.Effect)
-	longChannelOutput bool
+	rowRenderState       *rowRenderState
+	OnEffect             func(intf.Effect)
+	longChannelOutput    bool
+	enableNewNoteActions bool
 }
 
 // NewManager creates a new manager for an IT song
@@ -48,6 +50,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
+	m.Tracker.Traceable = &m
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
@@ -94,20 +97,33 @@ func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
+func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory, channel.Data] {
+	return doNoteCalc{
+		Semitone:   st,
+		UpdateFunc: fn,
+	}
+}
+
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
 	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
+	m.PastNotes.SetMax(channel.MaxTotalChannels - num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		cs.ResetStates()
+		cs.SemitoneSetterFactory = m.semitoneSetterFactory
 
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		cs.TrackData = nil
+		cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
+
+		if m.enableNewNoteActions {
+			cs.PastNotes = &m.PastNotes
+		}
 	}
 }
 
@@ -240,8 +256,10 @@ func (m *Manager) IncreaseTempo(delta int) error {
 }
 
 // Configure sets specified features
-func (m *Manager) Configure(features []feature.Feature) {
-	m.Tracker.Configure(features)
+func (m *Manager) Configure(features []feature.Feature) error {
+	if err := m.Tracker.Configure(features); err != nil {
+		return err
+	}
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.SongLoop:
@@ -250,8 +268,19 @@ func (m *Manager) Configure(features []feature.Feature) {
 			m.pattern.PlayUntilOrderAndRow = f
 		case feature.ITLongChannelOutput:
 			m.longChannelOutput = f.Enabled
+		case feature.ITNewNoteActions:
+			m.enableNewNoteActions = f.Enabled
+			for ch := range m.channels {
+				cs := &m.channels[ch]
+				if m.enableNewNoteActions {
+					cs.PastNotes = &m.PastNotes
+				} else {
+					cs.PastNotes = nil
+				}
+			}
 		}
 	}
+	return nil
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop

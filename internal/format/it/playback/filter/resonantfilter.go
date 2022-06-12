@@ -23,7 +23,7 @@ type ResonantFilter struct {
 	b1       volume.Volume
 
 	enabled             bool
-	resonance           optional.Value[int]
+	resonance           optional.Value[uint8]
 	cutoff              optional.Value[uint8]
 	playbackRate        period.Frequency
 	highpass            bool
@@ -39,7 +39,7 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 	}
 
 	if resonance&0x80 != 0 {
-		rf.resonance.Set(int(resonance) & 0x7f)
+		rf.resonance.Set(uint8(resonance) & 0x7f)
 	}
 	c := uint8(0x7F)
 	if (cutoff & 0x80) != 0 {
@@ -49,6 +49,15 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 
 	rf.recalculate(int8(c))
 	return rf
+}
+
+func (f *ResonantFilter) Clone() filter.Filter {
+	c := *f
+	c.channels = make([]channelData, len(f.channels))
+	for i := range f.channels {
+		c.channels[i] = f.channels[i]
+	}
+	return &c
 }
 
 // Filter processes incoming (dry) samples and produces an outgoing filtered (wet) result
@@ -64,10 +73,10 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 		}
 		c := &f.channels[i]
 
-		xn := s
-		yn := xn
+		yn := s
 		if f.enabled {
-			yn = (xn*f.a0 + c.ynz1*f.b0 + c.ynz2*f.b1)
+			yn *= f.a0
+			yn += c.ynz1*f.b0 + c.ynz2*f.b1
 		}
 		c.ynz2 = c.ynz1
 		c.ynz1 = yn
@@ -125,19 +134,22 @@ func (f *ResonantFilter) recalculate(v int8) {
 	const dampingFactorDivisor = ((24.0 / 128.0) / 20.0)
 	dampingFactor := math.Pow(10.0, -float64(resonance)*dampingFactorDivisor)
 
-	fcComputedCutoff := float64(computedCutoff)
-	freq := 110.0 * math.Pow(2.0, 0.25+fcComputedCutoff/filterRange)
-	if freq < 120.0 {
-		freq = 120.0
-	} else if freq > 20000 {
-		freq = 20000
-	}
 	f2 := float64(f.playbackRate) / 2.0
+	freq := f2
+	if computedCutoff < 254 {
+		fcComputedCutoff := float64(computedCutoff)
+		freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
+		if freq < 120.0 {
+			freq = 120.0
+		} else if freq > 20000 {
+			freq = 20000
+		}
+	}
 	if freq > f2 {
 		freq = f2
 	}
 
-	fc := freq * 2.0 * math.Pi
+	fc := freq * 4.0 * math.Pi
 
 	var d, e float64
 	if f.extendedFilterRange {

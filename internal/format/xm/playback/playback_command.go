@@ -12,49 +12,85 @@ import (
 	"github.com/gotracker/voice/period"
 )
 
-func (m *Manager) doNoteVolCalcs(cs *state.ChannelState[channel.Memory, channel.Data]) {
-	inst := cs.GetTargetInst()
-	if inst == nil {
-		return
-	}
+type doVolCalc struct{}
 
-	if cs.WantVolCalc {
-		cs.WantVolCalc = false
+func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if inst := cs.GetTargetInst(); inst != nil {
 		cs.SetActiveVolume(inst.GetDefaultVolume())
 	}
-	if cs.WantNoteCalc {
-		cs.WantNoteCalc = false
-		cs.Semitone = note.Semitone(int(cs.TargetSemitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.LinearFreqSlides
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
-		cs.SetTargetPeriod(period)
+	return nil
+}
+
+type doNoteCalc struct {
+	Semitone   note.Semitone
+	UpdateFunc func(note.Period)
+}
+
+func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	if o.UpdateFunc == nil {
+		return nil
 	}
+
+	if inst := cs.GetTargetInst(); inst != nil {
+		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
+		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
+		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		o.UpdateFunc(period)
+	}
+	return nil
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	// pre-effect
-	m.doNoteVolCalcs(cs)
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, m, currentTick, lastTick); err != nil {
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
-	m.doNoteVolCalcs(cs)
-	cs.SetGlobalVolume(m.GetGlobalVolume())
+	if err := cs.ProcessVolOps(m); err != nil {
+		return err
+	}
+	if err := cs.ProcessNoteOps(m); err != nil {
+		return err
+	}
 
+	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {
+		return err
+	}
+
+	if err := m.processVoiceUpdates(ch, cs, currentTick, lastTick); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	var n note.Note = note.EmptyNote{}
-	if cs.TrackData != nil {
-		n = cs.TrackData.GetNote()
+	if cs.GetData() != nil {
+		n = cs.GetData().GetNote()
 	}
 	keyOff := false
 	keyOn := false
+	if nc := cs.GetVoice(); nc != nil {
+		keyOn = nc.IsKeyOn()
+	}
 	stop := false
+	wantAttack := false
 	targetPeriod := cs.GetTargetPeriod()
-	if targetPeriod != nil && cs.WillTriggerOn(currentTick) {
+	if targetTick, retrigger := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true
+			wantAttack = retrigger
 		} else {
 			cs.SetInstrument(nil)
+			keyOn = false
 		}
 		if cs.UseTargetPeriod {
 			if nc := cs.GetVoice(); nc != nil {
@@ -74,7 +110,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn {
+		if keyOn && wantAttack {
 			nc.Attack()
 			mem := cs.GetMemory()
 			mem.Retrigger()
@@ -88,6 +124,15 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
+	}
+	return nil
+}
+
+func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+	if cs.UsePeriodOverride {
+		cs.UsePeriodOverride = false
+		arpeggioPeriod := cs.GetPeriodOverride()
+		cs.SetPeriod(arpeggioPeriod)
 	}
 	return nil
 }

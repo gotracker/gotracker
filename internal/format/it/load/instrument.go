@@ -19,7 +19,7 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/filter"
-	itNote "github.com/gotracker/gotracker/internal/format/it/note"
+	itNote "github.com/gotracker/gotracker/internal/format/it/conversion/note"
 	itfilter "github.com/gotracker/gotracker/internal/format/it/playback/filter"
 	"github.com/gotracker/gotracker/internal/format/settings"
 	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"

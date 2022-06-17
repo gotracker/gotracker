@@ -5,8 +5,8 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
+	itPanning "github.com/gotracker/gotracker/internal/format/it/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	itPanning "github.com/gotracker/gotracker/internal/format/it/panning"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 

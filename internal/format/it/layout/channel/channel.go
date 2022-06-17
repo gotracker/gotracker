@@ -7,8 +7,8 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	itNote "github.com/gotracker/gotracker/internal/format/it/note"
-	itVolume "github.com/gotracker/gotracker/internal/format/it/volume"
+	itNote "github.com/gotracker/gotracker/internal/format/it/conversion/note"
+	itVolume "github.com/gotracker/gotracker/internal/format/it/conversion/volume"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )

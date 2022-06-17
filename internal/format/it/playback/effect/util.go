@@ -5,9 +5,9 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/gotracker/internal/comparison"
+	itVolume "github.com/gotracker/gotracker/internal/format/it/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
 	effectIntf "github.com/gotracker/gotracker/internal/format/it/playback/effect/intf"
-	itVolume "github.com/gotracker/gotracker/internal/format/it/volume"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
 )

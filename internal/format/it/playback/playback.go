@@ -4,9 +4,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	itPeriod "github.com/gotracker/gotracker/internal/format/it/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/it/layout"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	itPeriod "github.com/gotracker/gotracker/internal/format/it/period"
 	"github.com/gotracker/gotracker/internal/format/it/playback/state/pattern"
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"

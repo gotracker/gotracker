@@ -2,8 +2,8 @@ package playback
 
 import (
 	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	itPeriod "github.com/gotracker/gotracker/internal/format/it/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	itPeriod "github.com/gotracker/gotracker/internal/format/it/period"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song/note"

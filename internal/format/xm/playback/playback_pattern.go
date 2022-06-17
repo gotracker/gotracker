@@ -9,10 +9,6 @@ import (
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song"
-	"github.com/gotracker/gotracker/internal/song/note"
-
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 )
 
 const (
@@ -94,6 +90,8 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
+		cs.VolOps = nil
+		cs.NoteOps = nil
 		cs.SetData(nil)
 		if resetMemory {
 			mem := cs.GetMemory()
@@ -158,89 +156,12 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	if cs.GetData() == nil {
+	data := cs.GetData()
+	if data == nil {
 		return
 	}
 
-	// this can probably just be assumed to be false
-	targetTick, retrigger := cs.WillTriggerOn(m.rowRenderState.currentTick)
-
-	var (
-		wantVolCalc  bool
-		wantNoteCalc bool
-		noteCalcST   note.Semitone
-	)
-	if cs.GetData().HasNote() {
-		cs.UseTargetPeriod = targetTick
-		inst := cs.GetData().GetInstrument(cs.StoredSemitone)
-		n := cs.GetData().GetNote()
-		if inst.IsEmpty() {
-			// use current
-			cs.SetTargetPos(sampling.Pos{})
-		} else if !m.song.IsValidInstrumentID(inst) {
-			cs.SetTargetInst(nil)
-		} else {
-			inst, str := m.song.GetInstrument(inst)
-			n = note.CoalesceNoteSemitone(n, str)
-			cs.SetTargetInst(inst)
-			cs.SetTargetPos(sampling.Pos{})
-			if cs.GetTargetInst() != nil {
-				wantVolCalc = true
-			}
-		}
-
-		if note.IsEmpty(n) {
-			wantNoteCalc = false
-			targetTick = cs.GetData().HasInstrument()
-			if targetTick {
-				cs.SetTargetPos(sampling.Pos{})
-			}
-		} else if note.IsInvalid(n) {
-			cs.SetTargetPeriod(nil)
-			wantNoteCalc = false
-			targetTick = false
-		} else if note.IsRelease(n) {
-			cs.SetTargetPeriod(cs.GetPeriod())
-			if prevInst := cs.GetPrevInst(); prevInst != nil {
-				cs.SetTargetInst(prevInst)
-			}
-			wantNoteCalc = false
-			targetTick = false
-		} else if cs.GetTargetInst() != nil {
-			if nn, ok := n.(note.Normal); ok {
-				cs.StoredSemitone = note.Semitone(nn)
-				noteCalcST = cs.StoredSemitone
-				wantNoteCalc = true
-			}
-			targetTick = true
-			retrigger = true
-		}
-	} else {
-		wantNoteCalc = false
-		wantVolCalc = false
-		targetTick = false
-	}
-
-	cs.UseTargetPeriod = targetTick
-	cs.SetNotePlayTick(targetTick, retrigger, m.rowRenderState.currentTick)
-
-	if cs.GetData().HasVolume() {
-		wantVolCalc = false
-		v := cs.GetData().GetVolume()
-		if v == volume.VolumeUseInstVol {
-			if cs.GetTargetInst() != nil {
-				wantVolCalc = true
-			}
-		} else {
-			cs.SetActiveVolume(v)
-		}
-	}
-
-	if wantVolCalc {
-		cs.VolOps = append(cs.VolOps, doVolCalc{})
-	}
-
-	if wantNoteCalc {
-		cs.NoteOps = append(cs.NoteOps, m.semitoneSetterFactory(noteCalcST, cs.SetTargetPeriod))
-	}
+	var dataToChannel channelDataTransaction
+	dataToChannel.Calculate(data, m.song, cs)
+	dataToChannel.Commit(cs, m.rowRenderState.currentTick, m.semitoneSetterFactory)
 }

@@ -6,7 +6,7 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	itPanning "github.com/gotracker/gotracker/internal/format/it/panning"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -21,7 +21,7 @@ func (e SetPanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p i
 
 	pan := itfile.PanValue(x)
 
-	cs.SetPan(util.PanningFromIt(pan))
+	cs.SetPan(itPanning.FromItPanning(pan))
 	return nil
 }
 

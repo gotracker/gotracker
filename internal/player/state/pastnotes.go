@@ -10,11 +10,7 @@ type pastNote struct {
 }
 
 func (pn *pastNote) IsValid() bool {
-	if pn.activeState.Voice == nil {
-		return false
-	}
-
-	return pn.activeState.Voice.IsDone()
+	return pn.activeState.Voice != nil && !pn.activeState.Voice.IsDone()
 }
 
 type PastNotesProcessor struct {

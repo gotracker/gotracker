@@ -10,15 +10,6 @@ import (
 	"github.com/gotracker/voice/period"
 )
 
-type doVolCalc struct{}
-
-func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.SetActiveVolume(inst.GetDefaultVolume())
-	}
-	return nil
-}
-
 type doNoteCalc struct {
 	Semitone   note.Semitone
 	UpdateFunc state.PeriodUpdateFunc
@@ -68,7 +59,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 }
 
 func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	triggerTick, wantAttack := cs.WillTriggerOn(currentTick)
+	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !triggerTick {
 		return nil
 	}
@@ -104,7 +95,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && wantAttack {
+		if keyOn && noteAction == note.ActionRetrigger {
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())
 			nc.Attack()

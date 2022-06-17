@@ -12,18 +12,9 @@ import (
 	"github.com/gotracker/voice/period"
 )
 
-type doVolCalc struct{}
-
-func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.SetActiveVolume(inst.GetDefaultVolume())
-	}
-	return nil
-}
-
 type doNoteCalc struct {
 	Semitone   note.Semitone
-	UpdateFunc func(note.Period)
+	UpdateFunc state.PeriodUpdateFunc
 }
 
 func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
@@ -48,7 +39,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	if err := cs.ProcessNoteOps(m); err != nil {
 		return err
 	}
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
+	if err := cs.ProcessEffects(m, currentTick, lastTick); err != nil {
 		return err
 	}
 	// post-effect
@@ -81,13 +72,13 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 		keyOn = nc.IsKeyOn()
 	}
 	stop := false
-	wantAttack := false
+	noteAction := note.ActionContinue
 	targetPeriod := cs.GetTargetPeriod()
-	if targetTick, retrigger := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
+	if targetTick, na := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true
-			wantAttack = retrigger
+			noteAction = na
 		} else {
 			cs.SetInstrument(nil)
 			keyOn = false
@@ -110,7 +101,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && wantAttack {
+		if keyOn && noteAction == note.ActionRetrigger {
 			nc.Attack()
 			mem := cs.GetMemory()
 			mem.Retrigger()

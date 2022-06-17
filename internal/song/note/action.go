@@ -14,4 +14,6 @@ const (
 	// ActionFadeout will fade out the old note/instrument playback
 	// (if the instrument's fadeout volume is 0, then this effectively becomes a NewNoteActionContinue)
 	ActionFadeout
+	// ActionRetrigger will perform a key-on for the note/instrument playback immediately
+	ActionRetrigger
 )

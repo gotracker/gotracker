@@ -16,8 +16,8 @@ import (
 )
 
 type NoteTrigger struct {
-	Retrigger bool
-	Tick      int
+	NoteAction note.Action
+	Tick       int
 }
 
 type VolOp[TMemory, TChannelData any] interface {
@@ -30,6 +30,8 @@ type NoteOp[TMemory, TChannelData any] interface {
 
 type PeriodUpdateFunc func(note.Period)
 
+type SemitoneSetterFactory[TMemory, TChannelData any] func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
+
 // ChannelState is the state of a single channel
 type ChannelState[TMemory, TChannelData any] struct {
 	activeState Active
@@ -41,7 +43,7 @@ type ChannelState[TMemory, TChannelData any] struct {
 	TrackData     *TChannelData
 	PrevTrackData *TChannelData
 
-	SemitoneSetterFactory func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
+	SemitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]
 
 	StoredSemitone    note.Semitone // from pattern, unmodified, current note
 	PortaTargetPeriod optional.Value[note.Period]
@@ -65,12 +67,12 @@ type ChannelState[TMemory, TChannelData any] struct {
 }
 
 // WillTriggerOn returns true if a note will trigger on the tick specified
-func (cs *ChannelState[TMemory, TChannelData]) WillTriggerOn(tick int) (bool, bool) {
+func (cs *ChannelState[TMemory, TChannelData]) WillTriggerOn(tick int) (bool, note.Action) {
 	if trigger, ok := cs.Trigger.Get(); ok {
-		return trigger.Tick == tick, trigger.Retrigger
+		return trigger.Tick == tick, trigger.NoteAction
 	}
 
-	return false, false
+	return false, note.ActionContinue
 }
 
 // AdvanceRow will update the current state to make room for the next row's state data
@@ -299,11 +301,11 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPos(pos sampling.Pos) {
 }
 
 // SetNotePlayTick sets the tick on which the note will retrigger
-func (cs *ChannelState[TMemory, TChannelData]) SetNotePlayTick(enabled bool, retrigger bool, tick int) {
+func (cs *ChannelState[TMemory, TChannelData]) SetNotePlayTick(enabled bool, action note.Action, tick int) {
 	if enabled {
 		cs.Trigger.Set(NoteTrigger{
-			Retrigger: retrigger,
-			Tick:      tick,
+			NoteAction: action,
+			Tick:       tick,
 		})
 	} else {
 		cs.Trigger.Reset()

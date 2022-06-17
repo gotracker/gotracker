@@ -8,7 +8,7 @@ import (
 )
 
 // VolumeSlideUp defines a volume slide up effect
-type VolumeSlideUp ChannelCommand // 'D'
+type VolumeSlideUp ChannelCommand // 'Dx0'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e VolumeSlideUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {

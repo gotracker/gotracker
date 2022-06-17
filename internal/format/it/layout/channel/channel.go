@@ -7,7 +7,8 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	itNote "github.com/gotracker/gotracker/internal/format/it/note"
+	itVolume "github.com/gotracker/gotracker/internal/format/it/volume"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
@@ -49,7 +50,7 @@ func (d *Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d *Data) GetNote() note.Note {
-	return util.NoteFromItNote(d.Note)
+	return itNote.FromItNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
@@ -84,7 +85,7 @@ func (d *Data) HasVolume() bool {
 
 // GetVolume returns the volume for the channel
 func (d *Data) GetVolume() volume.Volume {
-	return util.VolumeFromVolPan(d.VolPan)
+	return itVolume.FromVolPan(d.VolPan)
 }
 
 // HasCommand returns true if there exists a effect on the channel

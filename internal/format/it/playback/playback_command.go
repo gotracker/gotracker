@@ -3,21 +3,12 @@ package playback
 import (
 	"github.com/gotracker/gotracker/internal/format/internal/filter"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	itPeriod "github.com/gotracker/gotracker/internal/format/it/period"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song/note"
 	"github.com/gotracker/voice/period"
 )
-
-type doVolCalc struct{}
-
-func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.SetActiveVolume(inst.GetDefaultVolume())
-	}
-	return nil
-}
 
 type doNoteCalc struct {
 	Semitone   note.Semitone
@@ -32,7 +23,7 @@ func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memo
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		period := itPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
 		o.UpdateFunc(period)
 	}
 	return nil
@@ -70,54 +61,41 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 }
 
 func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	targetTick, retrigger := cs.WillTriggerOn(currentTick)
+	targetTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !targetTick {
 		return nil
 	}
 
-	var n note.Note = note.EmptyNote{}
-	if cs.GetData() != nil {
-		n = cs.GetData().GetNote()
-	}
-	nna := note.ActionContinue
 	keyOn := false
 	if nc := cs.GetVoice(); nc != nil {
 		keyOn = nc.IsKeyOn()
 	}
-	newNote := false
+
+	if noteAction == note.ActionRetrigger {
+		cs.TransitionActiveToPastState()
+	}
+
 	wantAttack := false
 	targetPeriod := cs.GetTargetPeriod()
 	if targetPeriod != nil {
 		targetInst := cs.GetTargetInst()
 		if targetInst != nil {
-			newNote = true
 			keyOn = true
-			wantAttack = retrigger
-		}
-		if cs.UseTargetPeriod {
-			newNote = true
-			cs.SetPortaTargetPeriod(targetPeriod)
+			wantAttack = noteAction == note.ActionRetrigger
 		}
 
-		if newNote {
-			cs.TransitionActiveToPastState()
+		if cs.UseTargetPeriod {
+			cs.SetPeriod(targetPeriod)
+			cs.SetPortaTargetPeriod(targetPeriod)
 		}
 
 		cs.SetInstrument(targetInst)
 		cs.SetPos(cs.GetTargetPos())
 	}
-	if inst := cs.GetInstrument(); inst != nil {
-		if inst.IsReleaseNote(n) {
-			nna = note.ActionRelease
-		}
-		if inst.IsStopNote(n) {
-			nna = note.ActionCut
-		}
-	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		switch nna {
-		case note.ActionContinue:
+		switch noteAction {
+		case note.ActionRetrigger:
 			if keyOn && wantAttack {
 				nc.Attack()
 				mem := cs.GetMemory()
@@ -135,12 +113,11 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 }
 
 func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	if cs.UseTargetPeriod {
-		cs.UseTargetPeriod = false
-		targetPeriod := cs.GetTargetPeriod()
-		cs.SetPeriod(targetPeriod)
+	if cs.UsePeriodOverride {
+		cs.UsePeriodOverride = false
+		arpeggioPeriod := cs.GetPeriodOverride()
+		cs.SetPeriod(arpeggioPeriod)
 	}
-
 	return nil
 }
 
@@ -151,7 +128,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetOutputChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(util.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(period.Frequency(itPeriod.DefaultC2Spd), m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

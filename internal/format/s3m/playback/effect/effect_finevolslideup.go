@@ -8,7 +8,7 @@ import (
 )
 
 // FineVolumeSlideUp defines a fine volume slide up effect
-type FineVolumeSlideUp ChannelCommand // 'D'
+type FineVolumeSlideUp ChannelCommand // 'DxF'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e FineVolumeSlideUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {

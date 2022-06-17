@@ -6,8 +6,8 @@ import (
 
 	"github.com/gotracker/gotracker/internal/format/it/layout"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
+	itPeriod "github.com/gotracker/gotracker/internal/format/it/period"
 	"github.com/gotracker/gotracker/internal/format/it/playback/state/pattern"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"
 	"github.com/gotracker/gotracker/internal/player/intf"
@@ -43,7 +43,7 @@ type Manager struct {
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: util.ITBaseClock,
+			BaseClockRate: itPeriod.ITBaseClock,
 		},
 		song: song,
 	}

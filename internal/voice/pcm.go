@@ -51,6 +51,7 @@ type pcmVoice struct {
 	voiceFilter   filter.Filter
 	pluginFilter  filter.Filter
 	fadeoutMode   fadeout.Mode
+	channels      int
 
 	active    bool
 	keyOn     bool
@@ -68,6 +69,7 @@ type pcmVoice struct {
 	panEnv    component.PanEnvelope
 	filterEnv component.FilterEnvelope
 	vol0ticks int
+	done      bool
 }
 
 // NewPCM creates a new PCM voice
@@ -98,6 +100,7 @@ func NewPCM(config PCMConfiguration) voice.Voice {
 		v.panEnv.Reset(&d.PanEnv)
 		v.filterEnv.SetEnabled(d.PitchFiltEnv.Enabled)
 		v.filterEnv.Reset(&d.PitchFiltEnv)
+		v.channels = d.Sample.Channels()
 	}
 
 	v.amp.SetVolume(config.InitialVolume)
@@ -113,6 +116,8 @@ func NewPCM(config PCMConfiguration) voice.Voice {
 
 func (v *pcmVoice) Attack() {
 	v.keyOn = true
+	v.vol0ticks = 0
+	v.done = false
 	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
 	v.sampler.Attack()
@@ -150,6 +155,10 @@ func (v *pcmVoice) IsFadeout() bool {
 }
 
 func (v *pcmVoice) IsDone() bool {
+	if v.done {
+		return true
+	}
+
 	if v.amp.IsFadeoutEnabled() {
 		return v.amp.GetFadeoutVolume() <= 0
 	}
@@ -161,6 +170,10 @@ func (v *pcmVoice) IsDone() bool {
 
 func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 	samp := v.sampler.GetSample(pos)
+	if samp.Channels == 0 {
+		v.done = true
+		samp.Channels = v.channels
+	}
 	vol := v.GetFinalVolume()
 	wet := samp.Apply(vol)
 	if v.voiceFilter != nil {
@@ -203,7 +216,8 @@ func (v *pcmVoice) GetPeriodDelta() period.Delta {
 func (v *pcmVoice) GetFinalPeriod() period.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
-		p = p.AddDelta(v.GetCurrentPitchEnvelope())
+		delta := v.GetCurrentPitchEnvelope()
+		p = p.AddDelta(delta)
 	}
 	return p
 }
@@ -388,7 +402,7 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 		v.voiceFilter.UpdateEnv(fval)
 	}
 
-	if v.amp.GetFinalVolume() <= 0 {
+	if vol := v.GetFinalVolume(); vol <= 0 {
 		v.vol0ticks++
 	} else {
 		v.vol0ticks = 0

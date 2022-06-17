@@ -19,8 +19,8 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/filter"
+	itNote "github.com/gotracker/gotracker/internal/format/it/note"
 	itfilter "github.com/gotracker/gotracker/internal/format/it/playback/filter"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/format/settings"
 	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -290,7 +290,7 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 		if si < 0 {
 			continue
 		}
-		n := util.NoteFromItNote(ns.Note)
+		n := itNote.FromItNote(ns.Note)
 		if nn, ok := n.(note.Normal); ok {
 			st := note.Semitone(nn)
 			ci, ok := noteKeyboard[si]

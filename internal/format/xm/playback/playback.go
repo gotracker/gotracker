@@ -60,6 +60,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 		oc := m.GetOutputChannel(ch.OutputChannelNum, m.channelInit)
 
 		cs := m.GetChannel(i)
+		cs.SetSongDataInterface(song)
 		cs.SetOutputChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
@@ -256,6 +257,20 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
+		case feature.SetDefaultTempo:
+			txn := m.pattern.StartTransaction()
+			defer txn.Cancel()
+			txn.Ticks.Set(f.Tempo)
+			if err := txn.Commit(); err != nil {
+				return err
+			}
+		case feature.SetDefaultBPM:
+			txn := m.pattern.StartTransaction()
+			defer txn.Cancel()
+			txn.Tempo.Set(f.BPM)
+			if err := txn.Commit(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

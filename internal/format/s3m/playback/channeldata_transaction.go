@@ -3,15 +3,16 @@ package playback
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/gotracker/internal/format/s3m/layout"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
 	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
+	"github.com/gotracker/gotracker/internal/song"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
-type channelDataTransaction struct {
+type noteTransaction struct {
 	noteAction optional.Value[note.Action]
 	noteCalcST optional.Value[note.Semitone]
 
@@ -22,81 +23,132 @@ type channelDataTransaction struct {
 	targetVolume         optional.Value[volume.Volume]
 }
 
-func (d *channelDataTransaction) Calculate(data *channel.Data, song *layout.Song, cs *state.ChannelState[channel.Memory, channel.Data]) {
+type channelDataTransaction struct {
+	data *channel.Data
+
+	nt noteTransaction
+
+	volOps  []state.VolOp[channel.Memory, channel.Data]
+	noteOps []state.NoteOp[channel.Memory, channel.Data]
+}
+
+func (d channelDataTransaction) GetData() *channel.Data {
+	return d.data
+}
+
+func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) {
+	d.data = cd
+
 	var inst *instrument.Instrument
 
-	if data.HasNote() || data.HasInstrument() {
-		instID := data.GetInstrument(cs.StoredSemitone)
-		n := data.GetNote()
+	if d.data.HasNote() || d.data.HasInstrument() {
+		instID := d.data.GetInstrument(cs.StoredSemitone)
+		n := d.data.GetNote()
 		if instID.IsEmpty() {
 			// use current
-			d.targetPos.Set(sampling.Pos{})
-		} else if !song.IsValidInstrumentID(instID) {
-			d.targetInst.Set(nil)
+			d.nt.targetPos.Set(sampling.Pos{})
+		} else if !s.IsValidInstrumentID(instID) {
+			d.nt.targetInst.Set(nil)
 			n = note.InvalidNote{}
 		} else {
 			var str note.Semitone
-			inst, str = song.GetInstrument(instID)
+			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
-			d.targetInst.Set(inst)
-			d.targetPos.Set(sampling.Pos{})
+			d.nt.targetInst.Set(inst)
+			d.nt.targetPos.Set(sampling.Pos{})
 			if inst != nil {
-				d.targetVolume.Set(inst.GetDefaultVolume())
-				d.noteAction.Set(note.ActionRetrigger)
+				d.nt.targetVolume.Set(inst.GetDefaultVolume())
+				d.nt.noteAction.Set(note.ActionRetrigger)
 			}
 		}
 
 		if note.IsInvalid(n) {
-			d.targetPeriod.Set(nil)
-			d.noteAction.Set(note.ActionCut)
+			d.nt.targetPeriod.Set(nil)
+			d.nt.noteAction.Set(note.ActionCut)
 		} else if note.IsRelease(n) {
-			d.noteAction.Set(note.ActionRelease)
+			d.nt.noteAction.Set(note.ActionRelease)
 		} else {
 			if nn, ok := n.(note.Normal); ok {
 				st := note.Semitone(nn)
-				d.targetStoredSemitone.Set(st)
-				d.noteCalcST.Set(st)
+				d.nt.targetStoredSemitone.Set(st)
+				d.nt.noteCalcST.Set(st)
 			}
 		}
 	}
 
-	if data.HasVolume() {
-		v := data.GetVolume()
+	if d.data.HasVolume() {
+		v := d.data.GetVolume()
 		if v == volume.VolumeUseInstVol {
 			if inst != nil {
 				v = inst.GetDefaultVolume()
 			}
 		}
-		d.targetVolume.Set(v)
+		d.nt.targetVolume.Set(v)
 	}
 }
 
 func (d channelDataTransaction) Commit(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
-	if pos, ok := d.targetPos.Get(); ok {
+	if pos, ok := d.nt.targetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
 
-	if inst, ok := d.targetInst.Get(); ok {
+	if inst, ok := d.nt.targetInst.Get(); ok {
 		cs.SetTargetInst(inst)
 	}
 
-	if period, ok := d.targetPeriod.Get(); ok {
+	if period, ok := d.nt.targetPeriod.Get(); ok {
 		cs.SetTargetPeriod(period)
 	}
 
-	if st, ok := d.targetStoredSemitone.Get(); ok {
+	if st, ok := d.nt.targetStoredSemitone.Get(); ok {
 		cs.SetStoredSemitone(st)
 	}
 
-	if v, ok := d.targetVolume.Get(); ok {
+	if v, ok := d.nt.targetVolume.Get(); ok {
 		cs.SetActiveVolume(v)
 	}
 
-	na, targetTick := d.noteAction.Get()
+	na, targetTick := d.nt.noteAction.Get()
 	cs.UseTargetPeriod = targetTick
 	cs.SetNotePlayTick(targetTick, na, currentTick)
 
-	if st, ok := d.noteCalcST.Get(); ok {
-		cs.NoteOps = append(cs.NoteOps, semitoneSetterFactory(st, cs.SetTargetPeriod))
+	if st, ok := d.nt.noteCalcST.Get(); ok {
+		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
 	}
+}
+
+func (d *channelDataTransaction) AddVolOp(op state.VolOp[channel.Memory, channel.Data]) {
+	d.volOps = append(d.volOps, op)
+}
+
+func (d *channelDataTransaction) ProcessVolOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	for _, op := range d.volOps {
+		if op == nil {
+			continue
+		}
+		if err := op.Process(p, cs); err != nil {
+			return err
+		}
+	}
+	d.volOps = nil
+
+	return nil
+}
+
+func (d *channelDataTransaction) AddNoteOp(op state.NoteOp[channel.Memory, channel.Data]) {
+	d.noteOps = append(d.noteOps, op)
+}
+
+func (d *channelDataTransaction) ProcessNoteOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+	for _, op := range d.noteOps {
+		if op == nil {
+			continue
+		}
+		if err := op.Process(p, cs); err != nil {
+			return err
+		}
+	}
+	d.noteOps = nil
+
+	return nil
 }

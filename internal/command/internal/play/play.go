@@ -232,6 +232,15 @@ playlistLoop:
 				Row:   endRow,
 			})
 		}
+
+		if tempo, ok := song.Tempo.Get(); ok {
+			cfg = append(cfg, feature.SetDefaultTempo{Tempo: tempo})
+		}
+
+		if bpm, ok := song.BPM.Get(); ok {
+			cfg = append(cfg, feature.SetDefaultBPM{BPM: bpm})
+		}
+
 		var loopCount int
 		if canPossiblyLoop {
 			if l, ok := song.Loop.Count.Get(); ok {

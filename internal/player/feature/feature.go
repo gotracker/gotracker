@@ -41,3 +41,11 @@ type ITLongChannelOutput struct {
 type ITNewNoteActions struct {
 	Enabled bool
 }
+
+type SetDefaultTempo struct {
+	Tempo int
+}
+
+type SetDefaultBPM struct {
+	BPM int
+}

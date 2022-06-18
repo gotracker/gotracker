@@ -90,9 +90,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.VolOps = nil
-		cs.NoteOps = nil
-		cs.SetData(nil)
+		cs.AdvanceRow(&channelDataTransaction{})
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -145,7 +143,6 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
-		cs.AdvanceRow()
 		m.processRowForChannel(cs)
 	}
 
@@ -156,12 +153,5 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	data := cs.GetData()
-	if data == nil {
-		return
-	}
-
-	var dataToChannel channelDataTransaction
-	dataToChannel.Calculate(data, m.song, cs)
-	dataToChannel.Commit(cs, m.rowRenderState.currentTick, m.semitoneSetterFactory)
+	cs.CommitTransaction(m.rowRenderState.currentTick)
 }

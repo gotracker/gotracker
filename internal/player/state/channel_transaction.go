@@ -9,7 +9,9 @@ type ChannelDataTransaction[TMemory, TChannelData any] interface {
 	GetData() *TChannelData
 	SetData(data *TChannelData, s song.Data, cs *ChannelState[TMemory, TChannelData])
 
-	Commit(cs *ChannelState[TMemory, TChannelData], currentTick int, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData])
+	CommitStartTick(cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData])
+	CommitTick(cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData])
+	CommitPostTick(cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData])
 
 	AddVolOp(op VolOp[TMemory, TChannelData])
 	ProcessVolOps(p intf.Playback, cs *ChannelState[TMemory, TChannelData]) error

@@ -153,5 +153,5 @@ func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, ch
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	cs.CommitTransaction(m.rowRenderState.currentTick)
+	cs.CommitStartTickTransaction(m.rowRenderState.currentTick, m.rowRenderState.currentTick == m.rowRenderState.ticksThisRow)
 }

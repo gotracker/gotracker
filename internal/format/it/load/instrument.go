@@ -199,11 +199,6 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			v.Fadeout()
 		}
 
-		if i == 13 {
-			a := 0
-			a++
-		}
-
 		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, convertPanEnvValue); err != nil {
 			return nil, err
 		}

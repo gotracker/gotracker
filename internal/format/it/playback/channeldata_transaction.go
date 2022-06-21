@@ -42,6 +42,7 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 
 	var n note.Note = note.EmptyNote{}
 	inst := cs.GetInstrument()
+	prevInst := inst
 
 	if d.data.HasNote() || d.data.HasInstrument() {
 		instID := d.data.GetInstrument(cs.StoredSemitone)
@@ -56,6 +57,9 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 			var str note.Semitone
 			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
+			if !note.IsEmpty(n) && inst == nil {
+				inst = prevInst
+			}
 			d.nt.targetInst.Set(inst)
 			d.nt.targetPos.Set(sampling.Pos{})
 			if inst != nil {
@@ -76,6 +80,8 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 			st := note.Semitone(nn)
 			d.nt.targetStoredSemitone.Set(st)
 			d.nt.noteCalcST.Set(st)
+		} else {
+			d.nt.noteAction.Set(note.ActionCut)
 		}
 	}
 
@@ -90,7 +96,7 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 	}
 }
 
-func (d *channelDataTransaction) Commit(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+func (d *channelDataTransaction) CommitStartTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
 	if pos, ok := d.nt.targetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
@@ -123,6 +129,12 @@ func (d *channelDataTransaction) Commit(cs *state.ChannelState[channel.Memory, c
 	if st, ok := d.nt.noteCalcST.Get(); ok {
 		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
 	}
+}
+
+func (d channelDataTransaction) CommitTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+}
+
+func (d channelDataTransaction) CommitPostTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
 }
 
 func (d *channelDataTransaction) AddVolOp(op state.VolOp[channel.Memory, channel.Data]) {

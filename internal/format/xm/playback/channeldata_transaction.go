@@ -88,7 +88,7 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 	}
 }
 
-func (d channelDataTransaction) Commit(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+func (d channelDataTransaction) CommitStartTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
 	if pos, ok := d.nt.targetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
@@ -123,6 +123,12 @@ func (d channelDataTransaction) Commit(cs *state.ChannelState[channel.Memory, ch
 	if st, ok := d.nt.noteCalcST.Get(); ok {
 		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
 	}
+}
+
+func (d channelDataTransaction) CommitTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+}
+
+func (d channelDataTransaction) CommitPostTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
 }
 
 func (d *channelDataTransaction) AddVolOp(op state.VolOp[channel.Memory, channel.Data]) {

@@ -178,9 +178,9 @@ func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) {
 	}
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) CommitTransaction(currentTick int) {
+func (cs *ChannelState[TMemory, TChannelData]) CommitStartTickTransaction(currentTick int, lastTick bool) {
 	if cs.txn != nil {
-		cs.txn.Commit(cs, currentTick, cs.SemitoneSetterFactory)
+		cs.txn.CommitStartTick(cs, currentTick, lastTick, cs.SemitoneSetterFactory)
 	}
 }
 

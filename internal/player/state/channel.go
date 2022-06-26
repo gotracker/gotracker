@@ -113,10 +113,6 @@ func (cs *ChannelState[TMemory, TChannelData]) SetActiveEffect(e intf.Effect) {
 	cs.ActiveEffect = e
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) ProcessEffects(p intf.Playback, currentTick int, lastTick bool) error {
-	return intf.DoEffect[TMemory, TChannelData](cs.ActiveEffect, cs, p, currentTick, lastTick)
-}
-
 // FreezePlayback suspends mixer progression on the channel
 func (cs *ChannelState[TMemory, TChannelData]) FreezePlayback() {
 	cs.freezePlayback = true
@@ -175,12 +171,6 @@ func (cs *ChannelState[TMemory, TChannelData]) GetData() *TChannelData {
 func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) {
 	if cs.txn != nil {
 		cs.txn.SetData(cdata, cs.s, cs)
-	}
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) CommitStartTickTransaction(currentTick int, lastTick bool) {
-	if cs.txn != nil {
-		cs.txn.CommitStartTick(cs, currentTick, lastTick, cs.SemitoneSetterFactory)
 	}
 }
 
@@ -477,20 +467,4 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPitchEnvelopeEnable(enabled bo
 
 func (cs *ChannelState[TMemory, TChannelData]) NoteCut() {
 	cs.activeState.Period = nil
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) ProcessVolOps(p intf.Playback) error {
-	if cs.txn == nil {
-		return nil
-	}
-
-	return cs.txn.ProcessVolOps(p, cs)
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) ProcessNoteOps(p intf.Playback) error {
-	if cs.txn == nil {
-		return nil
-	}
-
-	return cs.txn.ProcessNoteOps(p, cs)
 }

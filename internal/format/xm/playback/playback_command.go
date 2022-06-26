@@ -32,22 +32,16 @@ func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memo
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	// pre-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessEffects(m, currentTick, lastTick); err != nil {
-		return err
-	}
-	// post-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
+	if txn := cs.GetTxn(); txn != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
 	}
 
 	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {

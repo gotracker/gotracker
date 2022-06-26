@@ -32,6 +32,7 @@ type Playback interface {
 	CanOrderLoop() bool
 	BreakOrder() error
 	SetOnEffect(func(Effect))
+	GetOnEffect() func(Effect)
 	IgnoreUnknownEffect() bool
 
 	StartPatternTransaction() *pattern.RowUpdateTransaction

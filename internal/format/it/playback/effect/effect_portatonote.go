@@ -35,11 +35,14 @@ func (e PortaToNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.
 	}
 	period = period.AddDelta(cs.GetPeriodDelta()).(note.Period)
 	ptp := cs.GetPortaTargetPeriod()
-	if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
-		return doPortaUpToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // subtracts
-	} else {
-		return doPortaDownToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // adds
+	if !mem.Shared.OldEffectMode || currentTick != 0 {
+		if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
+			return doPortaUpToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // subtracts
+		} else {
+			return doPortaDownToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // adds
+		}
 	}
+	return nil
 }
 
 func (e PortaToNote) String() string {

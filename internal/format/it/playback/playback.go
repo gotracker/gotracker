@@ -48,6 +48,8 @@ func NewManager(song *layout.Song) (*Manager, error) {
 		song: song,
 	}
 
+	m.PastNotes.SetMaxPerChannel(1)
+
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
 	m.Tracker.Traceable = &m
@@ -336,6 +338,10 @@ func (m *Manager) GetName() string {
 // SetOnEffect sets the callback for an effect being generated for a channel
 func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
+}
+
+func (m Manager) GetOnEffect() func(intf.Effect) {
+	return m.OnEffect
 }
 
 func (m *Manager) SetEnvelopePosition(v int) {

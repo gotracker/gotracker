@@ -345,6 +345,10 @@ func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
 }
 
+func (m Manager) GetOnEffect() func(intf.Effect) {
+	return m.OnEffect
+}
+
 func (m *Manager) SetEnvelopePosition(v int) {
 }
 

@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/effect"
-	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song"
 )
@@ -113,12 +111,8 @@ func (m *Manager) processPatternRow() error {
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 
-		cs.SetActiveEffect(effect.Factory(cs.GetMemory(), cs.GetData()))
-		if cs.GetActiveEffect() != nil {
-			if m.OnEffect != nil {
-				m.OnEffect(cs.GetActiveEffect())
-			}
-			if err := intf.EffectPreStart[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m); err != nil {
+		if txn := cs.GetTxn(); txn != nil {
+			if err := txn.CommitPreRow(m, cs, cs.SemitoneSetterFactory); err != nil {
 				return err
 			}
 		}
@@ -143,15 +137,26 @@ func (m *Manager) processPatternRow() error {
 
 		cs := &m.channels[channelNum]
 
-		m.processRowForChannel(cs)
+		if err := m.processRowForChannel(cs); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, channel.Data]) {
+func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
-	cs.CommitStartTickTransaction(m.rowRenderState.currentTick, m.rowRenderState.currentTick == m.rowRenderState.ticksThisRow)
+	if txn := cs.GetTxn(); txn != nil {
+		if err := txn.CommitRow(m, cs, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+
+		if err := txn.CommitPostRow(m, cs, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+	}
+	return nil
 }

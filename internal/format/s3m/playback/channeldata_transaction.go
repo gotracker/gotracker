@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
+	"github.com/gotracker/gotracker/internal/format/s3m/playback/effect"
 	"github.com/gotracker/gotracker/internal/optional"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
@@ -32,7 +33,7 @@ type channelDataTransaction struct {
 	noteOps []state.NoteOp[channel.Memory, channel.Data]
 }
 
-func (d channelDataTransaction) GetData() *channel.Data {
+func (d *channelDataTransaction) GetData() *channel.Data {
 	return d.data
 }
 
@@ -87,7 +88,22 @@ func (d *channelDataTransaction) SetData(cd *channel.Data, s song.Data, cs *stat
 	}
 }
 
-func (d channelDataTransaction) CommitStartTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+func (d *channelDataTransaction) CommitPreRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+	e := effect.Factory(cs.GetMemory(), d.data)
+	cs.SetActiveEffect(e)
+	if e != nil {
+		if onEff := p.GetOnEffect(); onEff != nil {
+			onEff(e)
+		}
+		if err := intf.EffectPreStart[channel.Memory, channel.Data](e, cs, p); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *channelDataTransaction) CommitRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
 	if pos, ok := d.nt.targetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
@@ -110,24 +126,55 @@ func (d channelDataTransaction) CommitStartTick(cs *state.ChannelState[channel.M
 
 	na, targetTick := d.nt.noteAction.Get()
 	cs.UseTargetPeriod = targetTick
-	cs.SetNotePlayTick(targetTick, na, currentTick)
+	cs.SetNotePlayTick(targetTick, na, 0)
 
 	if st, ok := d.nt.noteCalcST.Get(); ok {
 		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
 	}
+
+	return nil
 }
 
-func (d channelDataTransaction) CommitTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+func (d *channelDataTransaction) CommitPostRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+	return nil
 }
 
-func (d channelDataTransaction) CommitPostTick(cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) {
+func (d *channelDataTransaction) CommitPreTick(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+	// pre-effect
+	if err := d.processVolOps(p, cs); err != nil {
+		return err
+	}
+	if err := d.processNoteOps(p, cs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *channelDataTransaction) CommitTick(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+	if err := intf.DoEffect[channel.Memory, channel.Data](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *channelDataTransaction) CommitPostTick(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool, semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+	// post-effect
+	if err := d.processVolOps(p, cs); err != nil {
+		return err
+	}
+	if err := d.processNoteOps(p, cs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *channelDataTransaction) AddVolOp(op state.VolOp[channel.Memory, channel.Data]) {
 	d.volOps = append(d.volOps, op)
 }
 
-func (d *channelDataTransaction) ProcessVolOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) processVolOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	for _, op := range d.volOps {
 		if op == nil {
 			continue
@@ -145,7 +192,7 @@ func (d *channelDataTransaction) AddNoteOp(op state.NoteOp[channel.Memory, chann
 	d.noteOps = append(d.noteOps, op)
 }
 
-func (d *channelDataTransaction) ProcessNoteOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) processNoteOps(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	for _, op := range d.noteOps {
 		if op == nil {
 			continue

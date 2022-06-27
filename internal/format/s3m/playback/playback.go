@@ -150,7 +150,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		cs.SetData(nil)
+		_ = cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
 	}

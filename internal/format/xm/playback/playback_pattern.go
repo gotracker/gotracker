@@ -105,7 +105,9 @@ func (m *Manager) processPatternRow() error {
 		cdata := &channels[channelNum]
 
 		cs := &m.channels[channelNum]
-		cs.SetData(cdata)
+		if err := cs.SetData(cdata); err != nil {
+			return err
+		}
 	}
 
 	for ch := range m.channels {

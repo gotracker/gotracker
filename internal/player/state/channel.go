@@ -168,10 +168,12 @@ func (cs *ChannelState[TMemory, TChannelData]) GetData() *TChannelData {
 	return cs.txn.GetData()
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) {
-	if cs.txn != nil {
-		cs.txn.SetData(cdata, cs.s, cs)
+func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) error {
+	if cs.txn == nil {
+		return nil
 	}
+
+	return cs.txn.SetData(cdata, cs.s, cs)
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) GetTxn() ChannelDataTransaction[TMemory, TChannelData] {

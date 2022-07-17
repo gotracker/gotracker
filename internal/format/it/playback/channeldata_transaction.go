@@ -25,7 +25,10 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
 		n = data.GetNote()
-		var wantRetrigger bool
+		var (
+			wantRetrigger    bool
+			wantRetriggerVol bool
+		)
 		if instID.IsEmpty() {
 			// use current
 			inst = prevInst
@@ -41,13 +44,16 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 				inst = prevInst
 			}
 			wantRetrigger = true
+			wantRetriggerVol = true
 		}
 
 		if wantRetrigger {
 			out.TargetInst.Set(inst)
 			out.TargetPos.Set(sampling.Pos{})
 			if inst != nil {
-				out.TargetVolume.Set(inst.GetDefaultVolume())
+				if wantRetriggerVol {
+					out.TargetVolume.Set(inst.GetDefaultVolume())
+				}
 				out.NoteAction.Set(note.ActionRetrigger)
 				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
 			}

@@ -1,5 +1,7 @@
 package note
 
+import "fmt"
+
 // Semitone is a specific note in a 12-step scale of notes / octaves
 type Semitone uint8
 
@@ -22,4 +24,8 @@ func (s Semitone) Key() Key {
 // Octave returns the octave from the Semitone
 func (s Semitone) Octave() Octave {
 	return Octave(s / 12)
+}
+
+func (s Semitone) String() string {
+	return fmt.Sprintf("%d (%s%d)", int(s), s.Key(), s.Octave())
 }

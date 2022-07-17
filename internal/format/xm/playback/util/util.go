@@ -44,7 +44,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 	}
 	if linearFreqSlides {
 		nft := int(semi)*64 + int(ft)
-		return &LinearPeriod{
+		return LinearPeriod{
 			Finetune: note.Finetune(nft),
 			C2Spd:    c2spd,
 		}

@@ -1,5 +1,7 @@
 package optional
 
+import "reflect"
+
 // Value is an optional value
 type Value[T any] struct {
 	set   bool
@@ -16,27 +18,12 @@ func NewValue[T any](value T) Value[T] {
 // IsZero is used by the yaml marshaller to determine "zero"-ness for omitempty
 // we're using it for the `set` bool
 func (o Value[T]) IsZero() bool {
-	return !o.set
-}
-
-// MarshalYAML outputs the value of the Value, if `set` is set.
-// otherwise, it returns nil
-func (o Value[T]) MarshalYAML() (T, error) {
-	if o.set {
-		return o.value, nil
+	if !o.set {
+		return false
 	}
-	var empty T
-	return empty, nil
-}
 
-// UnmarshalYAML unmarshals a value out of yaml and safely into our struct
-func (o *Value[T]) UnmarshalYAML(unmarshal func(any) error) error {
-	var val T
-	if err := unmarshal(&val); err != nil {
-		return err
-	}
-	o.Set(val)
-	return nil
+	v := reflect.ValueOf(o.value)
+	return !v.IsValid() || v.IsZero()
 }
 
 // Reset clears the memory on the value

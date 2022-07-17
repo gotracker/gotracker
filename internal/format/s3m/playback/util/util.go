@@ -57,7 +57,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD) 
 
 	period := (AmigaPeriod(floatDefaultC2Spd*semitonePeriodTable[key]) / AmigaPeriod(uint32(c2spd)<<octave))
 	period = period.AddInteger(0)
-	return &period
+	return period
 }
 
 // calcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment

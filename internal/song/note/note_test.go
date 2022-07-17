@@ -16,24 +16,24 @@ type testPeriod float32
 
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
-func (p *testPeriod) AddInteger(delta int) testPeriod {
-	period := testPeriod(int(*p) + delta)
+func (p testPeriod) AddInteger(delta int) testPeriod {
+	period := testPeriod(int(p) + delta)
 	return period
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p *testPeriod) AddDelta(delta period.Delta) period.Period {
-	period := *p
+func (p testPeriod) AddDelta(delta period.Delta) period.Period {
+	period := p
 	d := note.ToPeriodDelta(delta)
 	period += testPeriod(d)
-	return &period
+	return period
 }
 
 // Compare returns:
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *testPeriod) Compare(rhs note.Period) comparison.Spaceship {
+func (p testPeriod) Compare(rhs note.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
@@ -48,21 +48,21 @@ func (p *testPeriod) Compare(rhs note.Period) comparison.Spaceship {
 }
 
 // Lerp linear-interpolates the current period with the `rhs` period
-func (p *testPeriod) Lerp(t float64, rhs note.Period) note.Period {
+func (p testPeriod) Lerp(t float64, rhs note.Period) note.Period {
 	right := testPeriod(0)
 	if r, ok := rhs.(*testPeriod); ok {
 		right = *r
 	}
 
-	period := *p
+	period := p
 	delta := note.PeriodDelta(t * (float64(right) - float64(period)))
 	period.AddDelta(delta)
-	return &period
+	return period
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p *testPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
-	period := float64(*p)
+func (p testPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
+	period := float64(p)
 	if period == 0 {
 		return 0
 	}
@@ -70,7 +70,7 @@ func (p *testPeriod) GetSamplerAdd(samplerSpeed float64) float64 {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (p *testPeriod) GetFrequency() period.Frequency {
+func (p testPeriod) GetFrequency() period.Frequency {
 	return period.Frequency(p.GetSamplerAdd(float64(8363 * 1712)))
 }
 

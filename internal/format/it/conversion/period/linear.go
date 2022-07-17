@@ -26,14 +26,14 @@ func (p Linear) AddDelta(delta period.Delta) period.Period {
 			period.Finetune = 1
 		}
 	}
-	return &period
+	return period
 }
 
 // Compare returns:
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p *Linear) Compare(rhs note.Period) comparison.Spaceship {
+func (p Linear) Compare(rhs note.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
@@ -48,21 +48,21 @@ func (p *Linear) Compare(rhs note.Period) comparison.Spaceship {
 }
 
 // Lerp linear-interpolates the current period with the `rhs` period
-func (p *Linear) Lerp(t float64, rhs note.Period) note.Period {
+func (p Linear) Lerp(t float64, rhs note.Period) note.Period {
 	right := ToLinearPeriod(rhs)
 
-	period := *p
+	period := p
 
 	lnft := float64(period.Finetune)
 	rnft := float64(right.Finetune)
 
 	delta := note.PeriodDelta(t * (rnft - lnft))
 	period.AddDelta(delta)
-	return &period
+	return period
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p *Linear) GetSamplerAdd(samplerSpeed float64) float64 {
+func (p Linear) GetSamplerAdd(samplerSpeed float64) float64 {
 	period := float64(ToAmigaPeriod(p.Finetune, p.C2Spd))
 	if period == 0 {
 		return 0
@@ -71,18 +71,18 @@ func (p *Linear) GetSamplerAdd(samplerSpeed float64) float64 {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (p *Linear) GetFrequency() period.Frequency {
+func (p Linear) GetFrequency() period.Frequency {
 	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
 }
 
 // ToLinearPeriod returns the linear frequency period for a given period
-func ToLinearPeriod(p note.Period) *Linear {
+func ToLinearPeriod(p note.Period) Linear {
 	switch pp := p.(type) {
-	case *Linear:
+	case Linear:
 		return pp
-	case *Amiga:
-		linFreq := float64(semitonePeriodTable[0]) / float64(*pp)
+	case Amiga:
+		linFreq := float64(semitonePeriodTable[0]) / float64(pp)
 
 		fts := note.Finetune(semitonesPerOctave * math.Log2(linFreq))
 
@@ -90,7 +90,7 @@ func ToLinearPeriod(p note.Period) *Linear {
 			Finetune: fts,
 			C2Spd:    DefaultC2Spd,
 		}
-		return &lp
+		return lp
 	}
-	return nil
+	return Linear{}
 }

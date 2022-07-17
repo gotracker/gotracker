@@ -67,7 +67,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 
 	period := (AmigaPeriod(floatDefaultC2Spd*semitonePeriodTable[key]) / AmigaPeriod(uint32(c2spd)<<octave))
 	period = period.AddInteger(0)
-	return &period
+	return period
 }
 
 // CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
@@ -173,12 +173,12 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd note.C2SPD) AmigaPeriod {
 }
 
 // ToLinearPeriod returns the linear frequency period for a given period
-func ToLinearPeriod(p note.Period) *LinearPeriod {
+func ToLinearPeriod(p note.Period) LinearPeriod {
 	switch pp := p.(type) {
-	case *LinearPeriod:
+	case LinearPeriod:
 		return pp
-	case *AmigaPeriod:
-		linFreq := float64(semitonePeriodTable[0]) / float64(*pp)
+	case AmigaPeriod:
+		linFreq := float64(semitonePeriodTable[0]) / float64(pp)
 
 		fts := note.Finetune(768 * math.Log2(linFreq))
 
@@ -186,7 +186,7 @@ func ToLinearPeriod(p note.Period) *LinearPeriod {
 			Finetune: fts,
 			C2Spd:    DefaultC2Spd,
 		}
-		return &lp
+		return lp
 	}
-	return nil
+	return LinearPeriod{}
 }

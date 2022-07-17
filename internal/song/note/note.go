@@ -96,8 +96,8 @@ func (n InvalidNote) Type() SpecialType {
 	return SpecialTypeInvalid
 }
 
-// CoalesceNoteSemitone will coalesce a note and an included semitone value
-// the intention is that a special note (note-off, fade-out, etc.) will take precedence
+// CoalesceNoteSemitone will coalesce a note and an included semitone value.
+// The intention is that a special note (note-off, fade-out, etc.) will take precedence
 // over the semitone passed in, but if the semitone asks to override a normal note's
 // semitone value, it will.
 func CoalesceNoteSemitone(n Note, s Semitone) Note {

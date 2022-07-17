@@ -59,12 +59,16 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: inst.VibratoType,
-					Depth:             float32(inst.VibratoDepth) / 64,
+					Depth:             float32(inst.VibratoDepth),
 					Rate:              int(inst.VibratoRate),
 					Factory:           oscillator.NewProtrackerOscillator,
 				},
 			},
 			C2Spd: note.C2SPD(0), // uses si.Finetune, below
+		}
+
+		if !linearFrequencySlides {
+			sample.Static.AutoVibrato.Depth /= 64.0
 		}
 
 		instLen := int(si.Length)

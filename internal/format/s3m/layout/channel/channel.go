@@ -2,6 +2,7 @@ package channel
 
 import (
 	"fmt"
+	"strings"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
@@ -74,4 +75,26 @@ func (d *Data) HasCommand() bool {
 // Channel returns the channel ID for the channel
 func (d *Data) Channel() uint8 {
 	return d.What.Channel()
+}
+
+func (d Data) String() string {
+	pieces := []string{
+		"...", // note
+		"..",  // inst
+		"..",  // vol
+		"...", // eff
+	}
+	if d.HasNote() {
+		pieces[0] = d.GetNote().String()
+	}
+	if d.HasInstrument() {
+		pieces[1] = fmt.Sprintf("%02X", d.Instrument)
+	}
+	if d.HasVolume() {
+		pieces[2] = fmt.Sprintf("%02X", d.Volume)
+	}
+	if d.HasCommand() {
+		pieces[3] = fmt.Sprintf("%c%02X", d.Command+'@', d.Info)
+	}
+	return strings.Join(pieces, " ")
 }

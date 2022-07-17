@@ -24,9 +24,11 @@ func (c s3mChannelDataConverter) Process(out *state.ChannelDataActions, data *ch
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
 		n := data.GetNote()
+		var wantRetrigger bool
 		if instID.IsEmpty() {
 			// use current
-			out.TargetPos.Set(sampling.Pos{})
+			inst = cs.GetInstrument()
+			wantRetrigger = true
 		} else if !s.IsValidInstrumentID(instID) {
 			out.TargetInst.Set(nil)
 			n = note.InvalidNote{}
@@ -34,6 +36,10 @@ func (c s3mChannelDataConverter) Process(out *state.ChannelDataActions, data *ch
 			var str note.Semitone
 			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
+			wantRetrigger = true
+		}
+
+		if wantRetrigger {
 			out.TargetInst.Set(inst)
 			out.TargetPos.Set(sampling.Pos{})
 			if inst != nil {

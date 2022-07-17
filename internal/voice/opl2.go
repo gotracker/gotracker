@@ -94,8 +94,11 @@ func NewOPL2(config OPLConfiguration) voice.Voice {
 	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD.ToFrequency())
 	v.amp.SetVolume(config.InitialVolume)
 	v.freq.SetPeriod(config.InitialPeriod)
-	v.freq.ConfigureAutoVibrato(config.AutoVibrato)
-	v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
+	v.freq.SetAutoVibratoEnabled(config.AutoVibrato.Enabled)
+	if config.AutoVibrato.Enabled {
+		v.freq.ConfigureAutoVibrato(config.AutoVibrato)
+		v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
+	}
 
 	var o OPL2 = &v
 	return o

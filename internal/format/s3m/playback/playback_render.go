@@ -39,9 +39,9 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 		}
 	}
 
-	finalData := &render.RowRender{}
+	var finalData render.RowRender
 	premix := &device.PremixData{
-		Userdata:   finalData,
+		Userdata:   &finalData,
 		SamplesLen: m.rowRenderState.Samples,
 	}
 

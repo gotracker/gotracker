@@ -3,15 +3,9 @@ package playback
 import (
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
 	"github.com/gotracker/gotracker/internal/player/render"
-	"github.com/gotracker/gotracker/internal/song"
 )
 
-func itChannelRender(cdata song.ChannelData, longChannelOutput bool) string {
-	data, _ := cdata.(*channel.Data)
-	return channel.DataToString(data, longChannelOutput)
-}
-
-func (m *Manager) getRowText() *render.RowDisplay {
+func (m *Manager) getRowText() *render.RowDisplay[channel.Data] {
 	nCh := 0
 	for ch := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
@@ -19,13 +13,15 @@ func (m *Manager) getRowText() *render.RowDisplay {
 		}
 		nCh++
 	}
-	rowText := render.NewRowText(nCh, m.longChannelOutput, itChannelRender)
+	rowText := render.NewRowText[channel.Data](nCh, m.longChannelOutput)
 	for ch, cs := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {
 			continue
 		}
 
-		rowText.Channels[ch] = cs.GetData()
+		if cd := cs.GetData(); cd != nil {
+			rowText.Channels[ch] = *cd
+		}
 	}
 	return &rowText
 }

@@ -2,6 +2,7 @@ package channel
 
 import (
 	"fmt"
+	"strings"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
@@ -40,22 +41,22 @@ type Data struct {
 }
 
 // HasNote returns true if there exists a note on the channel
-func (d *Data) HasNote() bool {
+func (d Data) HasNote() bool {
 	return d.What.HasNote()
 }
 
 // GetNote returns the note for the channel
-func (d *Data) GetNote() note.Note {
+func (d Data) GetNote() note.Note {
 	return util.NoteFromXmNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
-func (d *Data) HasInstrument() bool {
+func (d Data) HasInstrument() bool {
 	return d.What.HasInstrument()
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument(stmem note.Semitone) instrument.ID {
+func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()
@@ -70,7 +71,7 @@ func (d *Data) GetInstrument(stmem note.Semitone) instrument.ID {
 }
 
 // HasVolume returns true if there exists a volume on the channel
-func (d *Data) HasVolume() bool {
+func (d Data) HasVolume() bool {
 	if !d.What.HasVolume() {
 		return false
 	}
@@ -79,12 +80,12 @@ func (d *Data) HasVolume() bool {
 }
 
 // GetVolume returns the volume for the channel
-func (d *Data) GetVolume() volume.Volume {
+func (d Data) GetVolume() volume.Volume {
 	return d.Volume.Volume()
 }
 
 // HasCommand returns true if there exists a command on the channel
-func (d *Data) HasCommand() bool {
+func (d Data) HasCommand() bool {
 	if d.What.HasEffect() || d.What.HasEffectParameter() {
 		return true
 	}
@@ -97,6 +98,58 @@ func (d *Data) HasCommand() bool {
 }
 
 // Channel returns the channel ID for the channel
-func (d *Data) Channel() uint8 {
+func (d Data) Channel() uint8 {
 	return 0
+}
+
+func (Data) getNoteString(n note.Note) string {
+	switch note.Type(n) {
+	case note.SpecialTypeRelease:
+		return "== "
+	case note.SpecialTypeNormal:
+		return n.String()
+	default:
+		return "???"
+	}
+}
+
+func (Data) getCommandString(cmd uint8) rune {
+	switch {
+	case cmd <= 9:
+		return '0' + rune(cmd)
+	case cmd >= 10 && cmd < 36:
+		return 'A' + rune(cmd-10)
+	default:
+		panic("effect out of range")
+	}
+}
+
+func (d Data) String() string {
+	pieces := []string{
+		"...", // note
+		"  ",  // inst
+		"..",  // vol
+		"...", // eff
+	}
+
+	if d.HasNote() {
+		pieces[0] = d.getNoteString(d.GetNote())
+	}
+	if d.HasInstrument() {
+		pieces[1] = fmt.Sprintf("%2X", d.Instrument)
+	}
+	if d.HasVolume() {
+		pieces[2] = fmt.Sprintf("%02X", d.Volume)
+	}
+	if d.HasCommand() {
+		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
+	}
+	return strings.Join(pieces, " ")
+}
+
+func (d Data) ShortString() string {
+	if d.HasNote() {
+		return d.getNoteString(d.GetNote())
+	}
+	return "..."
 }

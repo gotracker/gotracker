@@ -13,9 +13,9 @@ import (
 	"github.com/gotracker/voice"
 )
 
-type xmChannelDataConverter struct{}
+type channelDataConverter struct{}
 
-func (c xmChannelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (c channelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	if data == nil {
 		return nil
 	}
@@ -25,9 +25,11 @@ func (c xmChannelDataConverter) Process(out *state.ChannelDataActions, data *cha
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
 		n := data.GetNote()
+		var wantRetrigger bool
 		if instID.IsEmpty() {
 			// use current
-			out.TargetPos.Set(sampling.Pos{})
+			inst = cs.GetInstrument()
+			wantRetrigger = true
 		} else if !s.IsValidInstrumentID(instID) {
 			out.TargetInst.Set(nil)
 			n = note.InvalidNote{}
@@ -35,6 +37,10 @@ func (c xmChannelDataConverter) Process(out *state.ChannelDataActions, data *cha
 			var str note.Semitone
 			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
+			wantRetrigger = true
+		}
+
+		if wantRetrigger {
 			out.TargetInst.Set(inst)
 			out.TargetPos.Set(sampling.Pos{})
 			if inst != nil {
@@ -71,7 +77,7 @@ func (c xmChannelDataConverter) Process(out *state.ChannelDataActions, data *cha
 }
 
 type channelDataTransaction struct {
-	state.ChannelDataTxnHelper[channel.Memory, channel.Data, xmChannelDataConverter]
+	state.ChannelDataTxnHelper[channel.Memory, channel.Data, channelDataConverter]
 }
 
 func (d *channelDataTransaction) CommitPreRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
@@ -129,5 +135,5 @@ func (d *channelDataTransaction) CommitRow(p intf.Playback, cs *state.ChannelSta
 }
 
 func init() {
-	var _ xmChannelDataConverter
+	var _ channelDataConverter
 }

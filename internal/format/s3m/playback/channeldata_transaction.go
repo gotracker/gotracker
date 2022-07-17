@@ -12,9 +12,9 @@ import (
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
-type s3mChannelDataConverter struct{}
+type channelDataConverter struct{}
 
-func (c s3mChannelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (c channelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	if data == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (c s3mChannelDataConverter) Process(out *state.ChannelDataActions, data *ch
 }
 
 type channelDataTransaction struct {
-	state.ChannelDataTxnHelper[channel.Memory, channel.Data, s3mChannelDataConverter]
+	state.ChannelDataTxnHelper[channel.Memory, channel.Data, channelDataConverter]
 }
 
 func (d *channelDataTransaction) CommitPreRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
@@ -127,5 +127,5 @@ func (d *channelDataTransaction) CommitRow(p intf.Playback, cs *state.ChannelSta
 }
 
 func init() {
-	var _ s3mChannelDataConverter
+	var _ channelDataConverter
 }

@@ -252,7 +252,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 	return pat, int(maxCh)
 }
 
-func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, s *settings.Settings) (*layout.Song, error) {
+func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, s *settings.Settings, wasModFile bool) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -269,11 +269,11 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		signedSamples = true
 	}
 
-	//st2Vibrato := (f.Head.Flags & 0x0001) != 0
-	//st2Tempo := (f.Head.Flags & 0x0002) != 0
-	//amigaSlides := (f.Head.Flags & 0x0004) != 0
-	//zeroVolOpt := (f.Head.Flags & 0x0008) != 0
-	//amigaLimits := (f.Head.Flags & 0x0010) != 0
+	st2Vibrato := (f.Head.Flags & 0x0001) != 0
+	st2Tempo := (f.Head.Flags & 0x0002) != 0
+	amigaSlides := (f.Head.Flags & 0x0004) != 0
+	zeroVolOpt := (f.Head.Flags & 0x0008) != 0
+	amigaLimits := (f.Head.Flags & 0x0010) != 0
 	sbFilterEnable := (f.Head.Flags & 0x0020) != 0
 	st300volSlides := (f.Head.Flags & 0x0040) != 0
 	if f.Head.TrackerVersion == 0x1300 {
@@ -315,6 +315,12 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		VolSlideEveryFrame:         st300volSlides,
 		LowPassFilterEnable:        sbFilterEnable,
 		ResetMemoryAtStartOfOrder0: true,
+		ST2Vibrato:                 st2Vibrato,
+		ST2Tempo:                   st2Tempo,
+		AmigaSlides:                amigaSlides,
+		ZeroVolOptimization:        zeroVolOpt,
+		AmigaLimits:                amigaLimits,
+		ModCompatibility:           wasModFile,
 	}
 
 	channels := make([]layout.ChannelSetting, 0)
@@ -371,5 +377,5 @@ func readS3M(filename string, s *settings.Settings) (*layout.Song, error) {
 
 	return convertS3MFileToSong(f, func(patNum int) uint8 {
 		return 64
-	}, s)
+	}, s, false)
 }

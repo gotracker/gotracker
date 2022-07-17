@@ -21,4 +21,6 @@ const (
 	WaveTableSelectSquareContinue
 	// WaveTableSelectRandomContinue is for random data wave that does not retrigger when a new note is played
 	WaveTableSelectRandomContinue
+	// WaveTableSelectInverseSawtoothRetrigger is for a sawtooth wave that retriggers when a new note is played and has negated amplitude
+	WaveTableSelectInverseSawtoothRetrigger
 )

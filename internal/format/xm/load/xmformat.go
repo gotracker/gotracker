@@ -46,11 +46,11 @@ func xmAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	case 1:
 		return uint8(oscillator.WaveTableSelectSquareRetrigger)
 	case 2:
-		return uint8(oscillator.WaveTableSelectSineContinue)
+		return uint8(oscillator.WaveTableSelectInverseSawtoothRetrigger)
 	case 3:
 		return uint8(oscillator.WaveTableSelectSawtoothRetrigger)
 	case 4:
-		return uint8(oscillator.WaveTableSelectSquareRetrigger)
+		return uint8(oscillator.WaveTableSelectRandomRetrigger)
 	default:
 		return uint8(oscillator.WaveTableSelectSineRetrigger)
 	}

@@ -80,6 +80,8 @@ func (o *impulseOscillator) GetWave(depth float32) float32 {
 		vib = GetImpulseSine(int(o.Pos))
 	case WaveTableSelectSawtoothRetrigger, WaveTableSelectSawtoothContinue:
 		vib = GetImpulseSawtooth(int(o.Pos))
+	case WaveTableSelectInverseSawtoothRetrigger:
+		vib = -GetImpulseSawtooth(int(o.Pos))
 	case WaveTableSelectSquareRetrigger, WaveTableSelectSquareContinue:
 		v := GetImpulseSine(int(o.Pos))
 		if v > 0 {

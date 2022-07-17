@@ -320,6 +320,23 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDa
 	return pcm.SampleDataFormat8BitUnsigned
 }
 
+func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
+	switch vibtype {
+	case 0:
+		return uint8(oscillatorImpl.WaveTableSelectSineRetrigger)
+	case 1:
+		return uint8(oscillatorImpl.WaveTableSelectSawtoothRetrigger)
+	case 2:
+		return uint8(oscillatorImpl.WaveTableSelectSquareRetrigger)
+	case 3:
+		return uint8(oscillatorImpl.WaveTableSelectRandomRetrigger)
+	case 4:
+		return uint8(oscillatorImpl.WaveTableSelectInverseSawtoothRetrigger)
+	default:
+		return uint8(oscillatorImpl.WaveTableSelectSineRetrigger)
+	}
+}
+
 func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, s *settings.Settings) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
@@ -429,14 +446,18 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             0,
-		WaveformSelection: si.Header.VibratoType,
-		Depth:             float32(si.Header.VibratoDepth) / 64,
+		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),
+		Depth:             float32(si.Header.VibratoDepth),
 		Rate:              int(si.Header.VibratoSpeed),
 		Factory: func() oscillator.Oscillator {
 			return oscillatorImpl.NewImpulseTrackerOscillator(1)
 		},
 	}
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
+
+	if !convSettings.linearFrequencySlides {
+		ii.Static.AutoVibrato.Depth /= 64.0
+	}
 
 	if si.Header.VibratoSweep != 0 {
 		ii.Static.AutoVibrato.Sweep = int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep)

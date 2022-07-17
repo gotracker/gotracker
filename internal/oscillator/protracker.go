@@ -42,6 +42,8 @@ func (o *protrackerOscillator) GetWave(depth float32) float32 {
 		vib = GetProtrackerSine(int(o.Pos))
 	case WaveTableSelectSawtoothRetrigger, WaveTableSelectSawtoothContinue:
 		vib = (32.0 - float32(o.Pos&0x3f)) / 32.0
+	case WaveTableSelectInverseSawtoothRetrigger:
+		vib = -(32.0 - float32(o.Pos&0x3f)) / 32.0
 	case WaveTableSelectSquareRetrigger, WaveTableSelectSquareContinue:
 		v := GetProtrackerSine(int(o.Pos))
 		if v > 0 {

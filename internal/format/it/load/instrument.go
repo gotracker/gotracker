@@ -399,7 +399,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		deltaDecode(data, format)
 	}
 
-	bytesPerFrame := 2
+	bytesPerFrame := numChannels
 
 	if is16Bit {
 		bytesPerFrame *= 2

@@ -39,6 +39,23 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
+func xmAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
+	switch vibtype {
+	case 0:
+		return uint8(oscillator.WaveTableSelectSineRetrigger)
+	case 1:
+		return uint8(oscillator.WaveTableSelectSquareRetrigger)
+	case 2:
+		return uint8(oscillator.WaveTableSelectSineContinue)
+	case 3:
+		return uint8(oscillator.WaveTableSelectSawtoothRetrigger)
+	case 4:
+		return uint8(oscillator.WaveTableSelectSquareRetrigger)
+	default:
+		return uint8(oscillator.WaveTableSelectSineRetrigger)
+	}
+}
+
 func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, s *settings.Settings) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
@@ -58,7 +75,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				AutoVibrato: voice.AutoVibrato{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
-					WaveformSelection: inst.VibratoType,
+					WaveformSelection: xmAutoVibratoWSToProtrackerWS(inst.VibratoType),
 					Depth:             float32(inst.VibratoDepth),
 					Rate:              int(inst.VibratoRate),
 					Factory:           oscillator.NewProtrackerOscillator,

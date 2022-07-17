@@ -445,7 +445,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
-		Sweep:             0,
+		Sweep:             255,
 		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),
 		Depth:             float32(si.Header.VibratoDepth),
 		Rate:              int(si.Header.VibratoSpeed),
@@ -454,6 +454,10 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		},
 	}
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
+
+	if ii.C2Spd == 0 {
+		ii.C2Spd = 8363.0
+	}
 
 	if !convSettings.linearFrequencySlides {
 		ii.Static.AutoVibrato.Depth /= 64.0

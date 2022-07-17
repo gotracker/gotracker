@@ -144,7 +144,7 @@ func (d Data) String() string {
 	if d.HasVolume() {
 		pieces[2] = fmt.Sprintf("%02X", d.VolPan)
 	}
-	if d.HasCommand() {
+	if d.HasCommand() && d.Effect != 0 {
 		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
 	}
 	return strings.Join(pieces, " ")

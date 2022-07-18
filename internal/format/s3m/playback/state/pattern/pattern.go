@@ -161,7 +161,7 @@ func (state *State) setCurrentRow(row index.Row) error {
 func (state *State) Observe() error {
 	if state.SongLoop.Count >= 0 {
 		if state.loopDetect.Observe(state.currentOrder, state.currentRow) {
-			if state.SongLoop.Count > 0 && state.loopCount >= state.SongLoop.Count {
+			if state.SongLoop.Count == 0 || (state.SongLoop.Count > 0 && state.loopCount >= state.SongLoop.Count) {
 				return song.ErrStopSong
 			}
 			state.loopCount += 1

@@ -28,7 +28,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 		panic("how?")
 	}
 	if linearFreqSlides {
-		nft := int(semi)*64 + int(ft)
+		nft := int(semi)*semitonesPerNote + int(ft)
 		return Linear{
 			// NOTE: not sure why the magic downshift a whole octave,
 			// but it makes all the calculations work, so here we are.
@@ -63,8 +63,8 @@ func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlide
 		return c2spd
 	}
 
-	nft := (5*12)*64 + int(finetune)
-	period := CalcSemitonePeriod(note.Semitone(nft/64), note.Finetune(nft%64), c2spd, linearFreqSlides)
+	nft := 5*semitonesPerOctave + int(finetune)
+	period := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd, linearFreqSlides)
 	return note.C2SPD(period.GetFrequency())
 }
 

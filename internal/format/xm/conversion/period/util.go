@@ -2,17 +2,18 @@ package period
 
 import (
 	"github.com/gotracker/gotracker/internal/song/note"
+	"github.com/gotracker/voice/period"
 )
 
 const (
 	// DefaultC2Spd is the default C2SPD for XM samples
 	DefaultC2Spd = 8363
+	c2Period     = 1712
 
 	floatDefaultC2Spd = float32(DefaultC2Spd)
-	c2Period          = float32(1712)
 
 	// XMBaseClock is the base clock speed of xm files
-	XMBaseClock = floatDefaultC2Spd * c2Period
+	XMBaseClock period.Frequency = DefaultC2Spd * c2Period
 
 	notesPerOctave     = 12
 	semitonesPerNote   = 64

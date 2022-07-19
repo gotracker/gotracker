@@ -6,19 +6,20 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 const (
-	floatDefaultC2Spd = float32(s3mfile.DefaultC2Spd)
-	c2Period          = float32(1712)
+	floatDefaultC2Spd = float32(DefaultC2Spd)
+	c2Period          = 1712
 
 	// DefaultC2Spd is the default C2SPD for S3M samples
-	DefaultC2Spd = s3mfile.DefaultC2Spd
+	DefaultC2Spd = period.Frequency(s3mfile.DefaultC2Spd)
 
 	// S3MBaseClock is the base clock speed of S3M files
-	S3MBaseClock = floatDefaultC2Spd * c2Period
+	S3MBaseClock period.Frequency = DefaultC2Spd * c2Period
 )
 
 var (

@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/gotracker/gotracker/internal/comparison"
+	per "github.com/gotracker/gotracker/internal/format/internal/period"
 	"github.com/gotracker/gotracker/internal/song/note"
 
 	"github.com/gotracker/voice/period"
@@ -12,7 +13,7 @@ import (
 
 // Amiga defines a sampler period that follows the Amiga-style approach of note
 // definition. Useful in calculating resampling.
-type Amiga float32
+type Amiga per.AmigaPeriod
 
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
@@ -54,24 +55,18 @@ func (p Amiga) Lerp(t float64, rhs note.Period) note.Period {
 		right = r
 	}
 
-	period := p
-	delta := note.PeriodDelta(t * (float64(right) - float64(period)))
-	period.AddDelta(delta)
+	period := Amiga(per.AmigaPeriod(p).Lerp(t, per.AmigaPeriod(right)))
 	return period
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
 func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
-	period := float64(p)
-	if period == 0 {
-		return 0
-	}
-	return samplerSpeed / period
+	return float64(per.AmigaPeriod(p).GetFrequency(period.Frequency(samplerSpeed)))
 }
 
 // GetFrequency returns the frequency defined by the period
 func (p Amiga) GetFrequency() period.Frequency {
-	return period.Frequency(p.GetSamplerAdd(float64(XMBaseClock)))
+	return per.AmigaPeriod(p).GetFrequency(XMBaseClock)
 }
 
 func (p Amiga) String() string {

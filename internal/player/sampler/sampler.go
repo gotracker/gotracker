@@ -2,18 +2,19 @@ package sampler
 
 import (
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/voice/period"
 )
 
 // Sampler is a container of sampler/mixer settings
 type Sampler struct {
 	SampleRate    int
-	BaseClockRate float32
+	BaseClockRate period.Frequency
 
 	mixer mixing.Mixer
 }
 
 // NewSampler returns a new sampler object based on the input settings
-func NewSampler(samplesPerSec int, channels int, bitsPerSample int, baseClockRate float32) *Sampler {
+func NewSampler(samplesPerSec int, channels int, bitsPerSample int, baseClockRate period.Frequency) *Sampler {
 	s := Sampler{
 		SampleRate:    samplesPerSec,
 		BaseClockRate: baseClockRate,
@@ -29,7 +30,7 @@ func NewSampler(samplesPerSec int, channels int, bitsPerSample int, baseClockRat
 // which is a product of the base sampler clock rate and the inverse
 // of the output render rate (the sample rate)
 func (s *Sampler) GetSamplerSpeed() float32 {
-	return s.BaseClockRate / float32(s.SampleRate)
+	return float32(s.BaseClockRate) / float32(s.SampleRate)
 }
 
 // Mixer returns a pointer to the current mixer object

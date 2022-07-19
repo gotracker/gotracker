@@ -24,7 +24,7 @@ type GetPremixDataIntf interface {
 
 // Tracker is an extensible music tracker
 type Tracker struct {
-	BaseClockRate float32
+	BaseClockRate period.Frequency
 	Tickable      TickableIntf
 	Premixable    GetPremixDataIntf
 	Traceable     TraceableIntf

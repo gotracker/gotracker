@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	s3mPanning "github.com/gotracker/gotracker/internal/format/s3m/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -17,7 +17,7 @@ func (e SetPanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p i
 
 	x := uint8(e) & 0xf
 
-	cs.SetPan(util.PanningFromS3M(x))
+	cs.SetPan(s3mPanning.PanningFromS3M(x))
 	return nil
 }
 

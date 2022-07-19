@@ -7,7 +7,8 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
+	s3mNote "github.com/gotracker/gotracker/internal/format/s3m/conversion/note"
+	s3mVolume "github.com/gotracker/gotracker/internal/format/s3m/conversion/volume"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
@@ -44,7 +45,7 @@ func (d Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d Data) GetNote() note.Note {
-	return util.NoteFromS3MNote(d.Note)
+	return s3mNote.NoteFromS3MNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
@@ -64,7 +65,7 @@ func (d Data) HasVolume() bool {
 
 // GetVolume returns the volume for the channel
 func (d Data) GetVolume() volume.Volume {
-	return util.VolumeFromS3M(d.Volume)
+	return s3mVolume.VolumeFromS3M(d.Volume)
 }
 
 // HasCommand returns true if there exists a command on the channel

@@ -2,12 +2,11 @@ package playback
 
 import (
 	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	s3mPeriod "github.com/gotracker/gotracker/internal/format/s3m/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song/note"
-	"github.com/gotracker/voice/period"
 )
 
 type doNoteCalc struct {
@@ -22,7 +21,7 @@ func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memo
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
 		o.UpdateFunc(period)
 	}
 	return nil
@@ -123,7 +122,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetOutputChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(util.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(s3mPeriod.DefaultC2Spd, m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

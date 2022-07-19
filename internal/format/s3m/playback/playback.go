@@ -6,10 +6,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	s3mPeriod "github.com/gotracker/gotracker/internal/format/s3m/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
 	"github.com/gotracker/gotracker/internal/format/s3m/playback/state/pattern"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"
 	"github.com/gotracker/gotracker/internal/player/intf"
@@ -44,7 +44,7 @@ type Manager struct {
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: util.S3MBaseClock,
+			BaseClockRate: s3mPeriod.S3MBaseClock,
 		},
 		song: song,
 	}

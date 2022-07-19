@@ -13,9 +13,10 @@ import (
 	"github.com/gotracker/voice/pcm"
 
 	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	s3mPanning "github.com/gotracker/gotracker/internal/format/s3m/conversion/panning"
+	s3mVolume "github.com/gotracker/gotracker/internal/format/s3m/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/format/settings"
 	"github.com/gotracker/gotracker/internal/song/index"
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -31,7 +32,7 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 		Name:         fh.GetName(),
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
-		GlobalVolume: util.VolumeFromS3M(fh.GlobalVolume),
+		GlobalVolume: s3mVolume.VolumeFromS3M(fh.GlobalVolume),
 		Stereo:       (fh.MixingVolume & 0x80) != 0,
 	}
 
@@ -49,7 +50,7 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 		Static: instrument.StaticValues{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
-			Volume:   util.VolumeFromS3M(si.Volume),
+			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
 		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
@@ -61,7 +62,7 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 		Static: instrument.StaticValues{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
-			Volume:   util.VolumeFromS3M(si.Volume),
+			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
 		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
@@ -122,7 +123,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 		Static: instrument.StaticValues{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
-			Volume:   util.VolumeFromS3M(si.Volume),
+			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
 		C2Spd: note.C2SPD(si.C2Spd.Lo),
 	}
@@ -330,8 +331,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			Enabled:          ch.IsEnabled(),
 			Category:         chn.GetChannelCategory(),
 			OutputChannelNum: int(ch.GetChannel() & 0x07),
-			InitialVolume:    util.DefaultVolume,
-			InitialPanning:   util.DefaultPanning,
+			InitialVolume:    s3mVolume.DefaultVolume,
+			InitialPanning:   s3mPanning.DefaultPanning,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},
@@ -341,14 +342,14 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 
 		pf := f.Panning[chNum]
 		if pf.IsValid() {
-			cs.InitialPanning = util.PanningFromS3M(pf.Value())
+			cs.InitialPanning = s3mPanning.PanningFromS3M(pf.Value())
 		} else {
 			switch cs.Category {
 			case s3mfile.ChannelCategoryPCMLeft:
-				cs.InitialPanning = util.DefaultPanningLeft
+				cs.InitialPanning = s3mPanning.DefaultPanningLeft
 				cs.OutputChannelNum = int(chn - s3mfile.ChannelIDL1)
 			case s3mfile.ChannelCategoryPCMRight:
-				cs.InitialPanning = util.DefaultPanningRight
+				cs.InitialPanning = s3mPanning.DefaultPanningRight
 				cs.OutputChannelNum = int(chn - s3mfile.ChannelIDR1)
 			}
 		}

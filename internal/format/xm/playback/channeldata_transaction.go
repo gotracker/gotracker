@@ -10,7 +10,6 @@ import (
 	"github.com/gotracker/gotracker/internal/song"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
-	"github.com/gotracker/voice"
 )
 
 type channelDataConverter struct{}
@@ -107,18 +106,11 @@ func (d *channelDataTransaction) CommitRow(p intf.Playback, cs *state.ChannelSta
 	}
 
 	if inst, ok := d.TargetInst.Get(); ok {
-		if nc := cs.GetVoice(); nc != nil {
-			nc.Release()
-			if voice.IsVolumeEnvelopeEnabled(nc) {
-				nc.Fadeout()
-			}
-		}
 		cs.SetTargetInst(inst)
 	}
 
 	if period, ok := d.TargetPeriod.Get(); ok {
 		cs.SetTargetPeriod(period)
-		cs.SetPortaTargetPeriod(period)
 	}
 
 	if st, ok := d.TargetStoredSemitone.Get(); ok {

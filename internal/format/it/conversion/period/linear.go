@@ -1,6 +1,7 @@
 package period
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/gotracker/gotracker/internal/comparison"
@@ -74,6 +75,10 @@ func (p Linear) GetSamplerAdd(samplerSpeed float64) float64 {
 func (p Linear) GetFrequency() period.Frequency {
 	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
+}
+
+func (p Linear) String() string {
+	return fmt.Sprintf("Linear{ Finetune:%v C2Spd:%v }", p.Finetune, p.C2Spd)
 }
 
 // ToLinearPeriod returns the linear frequency period for a given period

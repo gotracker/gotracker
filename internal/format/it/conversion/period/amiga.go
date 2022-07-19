@@ -1,6 +1,7 @@
 package period
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/gotracker/gotracker/internal/comparison"
@@ -71,6 +72,10 @@ func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
 // GetFrequency returns the frequency defined by the period
 func (p Amiga) GetFrequency() period.Frequency {
 	return period.Frequency(p.GetSamplerAdd(float64(ITBaseClock)))
+}
+
+func (p Amiga) String() string {
+	return fmt.Sprintf("Amiga{ Period:%f }", float32(p))
 }
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period

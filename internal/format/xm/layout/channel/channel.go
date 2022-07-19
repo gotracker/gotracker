@@ -7,7 +7,8 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
+	xmNote "github.com/gotracker/gotracker/internal/format/xm/conversion/note"
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
@@ -35,7 +36,7 @@ type Data struct {
 	What            xmfile.ChannelFlags
 	Note            uint8
 	Instrument      uint8
-	Volume          util.VolEffect
+	Volume          xmVolume.VolEffect
 	Effect          uint8
 	EffectParameter DataEffect
 }
@@ -47,7 +48,7 @@ func (d Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d Data) GetNote() note.Note {
-	return util.NoteFromXmNote(d.Note)
+	return xmNote.FromXmNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel

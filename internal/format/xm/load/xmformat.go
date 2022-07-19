@@ -15,9 +15,11 @@ import (
 
 	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
 	"github.com/gotracker/gotracker/internal/format/settings"
+	xmPanning "github.com/gotracker/gotracker/internal/format/xm/conversion/panning"
+	xmPeriod "github.com/gotracker/gotracker/internal/format/xm/conversion/period"
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/oscillator"
 	"github.com/gotracker/gotracker/internal/song/index"
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -33,8 +35,8 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 		Name:         fh.GetName(),
 		InitialSpeed: int(fh.DefaultSpeed),
 		InitialTempo: int(fh.DefaultTempo),
-		GlobalVolume: util.DefaultVolume,
-		MixingVolume: util.DefaultMixingVolume,
+		GlobalVolume: xmVolume.DefaultVolume,
+		MixingVolume: xmVolume.DefaultMixingVolume,
 	}
 	return &head, nil
 }
@@ -62,7 +64,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 	var instruments []*instrument.Instrument
 
 	for _, si := range inst.Samples {
-		v := util.VolumeXM(si.Volume)
+		v := xmVolume.XmVolume(si.Volume)
 		if v >= 0x40 {
 			v = 0x40
 		}
@@ -127,7 +129,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				Mode:   fadeout.ModeOnlyIfVolEnvActive,
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
-			Panning: util.PanningFromXm(si.Panning),
+			Panning: xmPanning.PanningFromXm(si.Panning),
 			VolEnv: envelope.Envelope[volume.Volume]{
 				Enabled: (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
 			},
@@ -154,7 +156,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.VolEnv.Values[i].Init(x2-x1, util.VolumeXM(y1).Volume())
+				ii.VolEnv.Values[i].Init(x2-x1, xmVolume.XmVolume(y1).Volume())
 			}
 		}
 
@@ -179,15 +181,15 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				} else {
 					x2 = math.MaxInt64
 				}
-				ii.PanEnv.Values[i].Init(x2-x1, util.PanningFromXm(y1))
+				ii.PanEnv.Values[i].Init(x2-x1, xmPanning.PanningFromXm(y1))
 			}
 		}
 
 		if si.Finetune != 0 {
-			sample.C2Spd = util.CalcFinetuneC2Spd(util.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
+			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
 		}
 		if sample.C2Spd == 0 {
-			sample.C2Spd = note.C2SPD(util.DefaultC2Spd)
+			sample.C2Spd = note.C2SPD(xmPeriod.DefaultC2Spd)
 		}
 		if si.Flags.IsStereo() {
 			numChannels = 2
@@ -263,7 +265,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 				What:            chn.Flags,
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
-				Volume:          util.VolEffect(chn.Volume),
+				Volume:          xmVolume.VolEffect(chn.Volume),
 				Effect:          chn.Effect,
 				EffectParameter: channel.DataEffect(chn.EffectParameter),
 			}
@@ -351,8 +353,8 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
 			Enabled:        true,
-			InitialVolume:  util.DefaultVolume,
-			InitialPanning: util.DefaultPanning,
+			InitialVolume:  xmVolume.DefaultVolume,
+			InitialPanning: xmPanning.DefaultPanning,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},

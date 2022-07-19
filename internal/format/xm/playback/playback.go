@@ -4,10 +4,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	xmPeriod "github.com/gotracker/gotracker/internal/format/xm/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/xm/layout"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
 	"github.com/gotracker/gotracker/internal/format/xm/playback/state/pattern"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"
 	"github.com/gotracker/gotracker/internal/player/intf"
@@ -40,7 +40,7 @@ type Manager struct {
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: util.XMBaseClock,
+			BaseClockRate: xmPeriod.XMBaseClock,
 		},
 		song: song,
 	}

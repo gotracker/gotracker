@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
 	effectIntf "github.com/gotracker/gotracker/internal/format/xm/playback/effect/intf"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -25,7 +25,7 @@ func (e UnhandledCommand) PreStart(cs intf.Channel[channel.Memory, channel.Data]
 
 func (e UnhandledCommand) String() string {
 	switch {
-	case e.Command >= 0x00 && e.Command <= 0x09:
+	case e.Command <= 0x09:
 		return fmt.Sprintf("%c%0.2x", e.Command+'0', e.Info)
 	case e.Command >= 0x0A && e.Command <= 0x23:
 		return fmt.Sprintf("%c%0.2x", e.Command+'A', e.Info)
@@ -36,7 +36,7 @@ func (e UnhandledCommand) String() string {
 
 // UnhandledVolCommand is an unhandled volume command
 type UnhandledVolCommand struct {
-	Vol util.VolEffect
+	Vol xmVolume.VolEffect
 }
 
 // PreStart triggers when the effect enters onto the channel state

@@ -1,13 +1,13 @@
 package effect
 
 import (
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 )
 
-func volumeEffectFactory(mem *channel.Memory, v util.VolEffect) EffectXM {
+func volumeEffectFactory(mem *channel.Memory, v xmVolume.VolEffect) EffectXM {
 	switch {
-	case v >= 0x00 && v <= 0x0f: // nothing
+	case v <= 0x0f: // nothing
 		return nil
 	case v >= 0x10 && v <= 0x5f: // volume set - handled elsewhere
 		// really should be v >= 0x10 && v <= 0x50

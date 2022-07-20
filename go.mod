@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/cheggaaa/pb v1.0.29
-	github.com/gotracker/goaudiofile v1.0.13
+	github.com/gotracker/goaudiofile v1.0.14
 	github.com/gotracker/gomixing v1.1.2
 	github.com/gotracker/gosound v1.1.1
 	github.com/gotracker/opl2 v1.0.1

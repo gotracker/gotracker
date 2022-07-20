@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gotracker/gotracker/internal/command/internal/profiling"
+	"github.com/gotracker/gotracker/internal/profiling"
 )
 
 // flags

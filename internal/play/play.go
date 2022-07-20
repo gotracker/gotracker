@@ -12,9 +12,9 @@ import (
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
 
-	"github.com/gotracker/gotracker/internal/command/internal/logging"
-	"github.com/gotracker/gotracker/internal/command/internal/playlist"
+	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
+	"github.com/gotracker/gotracker/internal/playlist"
 	"github.com/gotracker/playback/format"
 	itEffect "github.com/gotracker/playback/format/it/playback/effect"
 	s3mEffect "github.com/gotracker/playback/format/s3m/playback/effect"

@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/gotracker/gotracker/internal/command/internal/logging"
-	"github.com/gotracker/gotracker/internal/command/internal/play"
-	"github.com/gotracker/gotracker/internal/command/internal/playlist"
+	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
+	"github.com/gotracker/gotracker/internal/play"
+	"github.com/gotracker/gotracker/internal/playlist"
 	"github.com/gotracker/playback/format/settings"
 )
 

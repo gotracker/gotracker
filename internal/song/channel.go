@@ -1,6 +1,8 @@
 package song
 
 import (
+	"fmt"
+
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -21,4 +23,7 @@ type ChannelData interface {
 	HasCommand() bool
 
 	Channel() uint8
+
+	fmt.Stringer
+	ShortString() string
 }

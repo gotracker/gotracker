@@ -7,7 +7,8 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
+	itNote "github.com/gotracker/gotracker/internal/format/it/conversion/note"
+	itVolume "github.com/gotracker/gotracker/internal/format/it/conversion/volume"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
@@ -43,22 +44,22 @@ type Data struct {
 }
 
 // HasNote returns true if there exists a note on the channel
-func (d *Data) HasNote() bool {
+func (d Data) HasNote() bool {
 	return d.What.HasNote()
 }
 
 // GetNote returns the note for the channel
-func (d *Data) GetNote() note.Note {
-	return util.NoteFromItNote(d.Note)
+func (d Data) GetNote() note.Note {
+	return itNote.FromItNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
-func (d *Data) HasInstrument() bool {
+func (d Data) HasInstrument() bool {
 	return d.What.HasInstrument()
 }
 
 // GetInstrument returns the instrument for the channel
-func (d *Data) GetInstrument(stmem note.Semitone) instrument.ID {
+func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()
@@ -73,7 +74,7 @@ func (d *Data) GetInstrument(stmem note.Semitone) instrument.ID {
 }
 
 // HasVolume returns true if there exists a volume on the channel
-func (d *Data) HasVolume() bool {
+func (d Data) HasVolume() bool {
 	if !d.What.HasVolPan() {
 		return false
 	}
@@ -83,12 +84,12 @@ func (d *Data) HasVolume() bool {
 }
 
 // GetVolume returns the volume for the channel
-func (d *Data) GetVolume() volume.Volume {
-	return util.VolumeFromVolPan(d.VolPan)
+func (d Data) GetVolume() volume.Volume {
+	return itVolume.FromVolPan(d.VolPan)
 }
 
 // HasCommand returns true if there exists a effect on the channel
-func (d *Data) HasCommand() bool {
+func (d Data) HasCommand() bool {
 	if d.What.HasCommand() {
 		return true
 	}
@@ -101,64 +102,57 @@ func (d *Data) HasCommand() bool {
 }
 
 // Channel returns the channel ID for the channel
-func (d *Data) Channel() uint8 {
+func (d Data) Channel() uint8 {
 	return 0
 }
 
-func (d Data) String() string {
-	return DataToString(&d, true)
+func (Data) getNoteString(n note.Note) string {
+	switch note.Type(n) {
+	case note.SpecialTypeRelease:
+		return "==="
+	case note.SpecialTypeStop:
+		return "^^^"
+	case note.SpecialTypeNormal:
+		return n.String()
+	default:
+		return "???"
+	}
 }
 
-func DataToString(data *Data, longChannelOutput bool) string {
-	n := "..."
-	i := ".."
-	v := ".."
-	e := "..."
-
-	if data != nil {
-		if data.HasNote() {
-			nt := data.GetNote()
-			switch note.Type(nt) {
-			case note.SpecialTypeRelease:
-				n = "==="
-			case note.SpecialTypeStop:
-				n = "^^^"
-			case note.SpecialTypeNormal:
-				n = nt.String()
-			default:
-				n = "???"
-			}
-		}
-
-		if longChannelOutput {
-			if data.HasInstrument() {
-				if inst := data.Instrument; inst != 0 {
-					i = fmt.Sprintf("%0.2X", inst)
-				}
-			}
-
-			if data.HasVolume() {
-				vol := data.VolPan
-				v = fmt.Sprintf("%0.2X", vol)
-			}
-
-			if data.HasCommand() && data.Effect != 0 {
-				var c uint8
-				switch {
-				case data.Effect <= 26:
-					c = '@' + data.Effect
-				default:
-					panic("effect out of range")
-				}
-				e = fmt.Sprintf("%c%0.2X", c, data.EffectParameter)
-			}
-		}
+func (Data) getCommandString(cmd uint8) rune {
+	switch {
+	case cmd > 0 && cmd <= 26:
+		return '@' + rune(cmd)
+	default:
+		panic("effect out of range")
 	}
+}
 
-	if longChannelOutput {
-		return strings.Join([]string{n, i, v, e}, " ")
-
+func (d Data) String() string {
+	pieces := []string{
+		"...", // note
+		"..",  // inst
+		"..",  // vol
+		"...", // eff
 	}
+	if d.HasNote() {
+		pieces[0] = d.getNoteString(d.GetNote())
+	}
+	if d.HasInstrument() {
+		pieces[1] = fmt.Sprintf("%02X", d.Instrument)
+	}
+	if d.HasVolume() {
+		pieces[2] = fmt.Sprintf("%02X", d.VolPan)
+	}
+	if d.HasCommand() && d.Effect != 0 {
+		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
+	}
+	return strings.Join(pieces, " ")
+}
 
-	return n
+func (d Data) ShortString() string {
+	if d.HasNote() {
+		return d.GetNote().String()
+	}
+	return "..."
 }

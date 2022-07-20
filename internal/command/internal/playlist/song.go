@@ -10,11 +10,13 @@ type Position struct {
 }
 
 type Song struct {
-	Filepath string   `yaml:"file,omitempty"`
-	Start    Position `yaml:"start,omitempty"`
-	End      Position `yaml:"end,omitempty"`
-	Loop     Loop     `yaml:"loop,omitempty"`
-	Fadeout  Fadeout  `yaml:"fadeout,omitempty"`
+	Filepath string              `yaml:"file,omitempty"`
+	Start    Position            `yaml:"start,omitempty"`
+	End      Position            `yaml:"end,omitempty"`
+	Loop     Loop                `yaml:"loop,omitempty"`
+	Fadeout  Fadeout             `yaml:"fadeout,omitempty"`
+	Tempo    optional.Value[int] `yaml:"tempo,omitempty"`
+	BPM      optional.Value[int] `yaml:"bpm,omitempty"`
 }
 
 type Loop struct {

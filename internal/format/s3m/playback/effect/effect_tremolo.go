@@ -21,8 +21,7 @@ func (e Tremolo) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Play
 	mem := cs.GetMemory()
 	x, y := mem.Tremolo(channel.DataEffect(e))
 	// NOTE: JBC - S3M does not update on tick 0, but MOD does.
-	// Maybe need to add a flag for converted MOD backward compatibility?
-	if currentTick != 0 {
+	if currentTick != 0 || mem.Shared.ModCompatibility {
 		return doTremolo(cs, currentTick, channel.DataEffect(x), channel.DataEffect(y), 4)
 	}
 	return nil

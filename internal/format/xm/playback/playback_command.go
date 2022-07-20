@@ -4,26 +4,17 @@ import (
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	xmPeriod "github.com/gotracker/gotracker/internal/format/xm/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song/note"
 	"github.com/gotracker/voice/period"
 )
 
-type doVolCalc struct{}
-
-func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.SetActiveVolume(inst.GetDefaultVolume())
-	}
-	return nil
-}
-
 type doNoteCalc struct {
 	Semitone   note.Semitone
-	UpdateFunc func(note.Period)
+	UpdateFunc state.PeriodUpdateFunc
 }
 
 func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
@@ -34,29 +25,23 @@ func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memo
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
+		period := xmPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
 		o.UpdateFunc(period)
 	}
 	return nil
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	// pre-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
-	}
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
-		return err
-	}
-	// post-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
+	if txn := cs.GetTxn(); txn != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
 	}
 
 	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {
@@ -81,13 +66,13 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 		keyOn = nc.IsKeyOn()
 	}
 	stop := false
-	wantAttack := false
+	noteAction := note.ActionContinue
 	targetPeriod := cs.GetTargetPeriod()
-	if targetTick, retrigger := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
+	if targetTick, na := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true
-			wantAttack = retrigger
+			noteAction = na
 		} else {
 			cs.SetInstrument(nil)
 			keyOn = false
@@ -110,7 +95,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && wantAttack {
+		if keyOn && noteAction == note.ActionRetrigger {
 			nc.Attack()
 			mem := cs.GetMemory()
 			mem.Retrigger()
@@ -144,7 +129,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetOutputChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(util.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(period.Frequency(xmPeriod.DefaultC2Spd), m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

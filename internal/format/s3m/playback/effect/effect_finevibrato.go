@@ -22,8 +22,7 @@ func (e FineVibrato) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.
 	mem := cs.GetMemory()
 	x, y := mem.Vibrato(channel.DataEffect(e))
 	// NOTE: JBC - S3M does not update on tick 0, but MOD does.
-	// Maybe need to add a flag for converted MOD backward compatibility?
-	if currentTick != 0 {
+	if currentTick != 0 || mem.Shared.ModCompatibility {
 		return doVibrato(cs, currentTick, x, y, 1)
 	}
 	return nil

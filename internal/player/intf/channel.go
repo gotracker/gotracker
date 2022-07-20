@@ -25,6 +25,7 @@ type Channel[TMemory, TChannelData any] interface {
 	SetPortaTargetPeriod(note.Period)
 	GetTargetPeriod() note.Period
 	SetTargetPeriod(note.Period)
+	SetPeriodOverride(note.Period)
 	GetPeriod() note.Period
 	SetPeriod(note.Period)
 	SetPeriodDelta(note.PeriodDelta)
@@ -44,7 +45,7 @@ type Channel[TMemory, TChannelData any] interface {
 	SetTargetPos(sampling.Pos)
 	GetPos() sampling.Pos
 	SetPos(sampling.Pos)
-	SetNotePlayTick(bool, bool, int)
+	SetNotePlayTick(bool, note.Action, int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPanEnabled(bool)

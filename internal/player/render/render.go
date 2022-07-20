@@ -1,36 +1,27 @@
 package render
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gotracker/gotracker/internal/song"
 )
 
-// ChannelData is the data used by the ChannelFormatterFunc to render the source data from a tracker channel
-type ChannelData any
-
-// ChannelFormatterFunc takes the data from a channel and converts it to a string
-type ChannelFormatterFunc func(song.ChannelData, bool) string
-
 // RowDisplay is an array of ChannelDisplays
-type RowDisplay struct {
-	Channels   []song.ChannelData
-	formatter  ChannelFormatterFunc
+type RowDisplay[TChannelData song.ChannelData] struct {
+	Channels   []TChannelData
 	longFormat bool
 }
 
 // NewRowText creates an array of ChannelDisplay information
-func NewRowText(channels int, longFormat bool, channelFmtFunc ChannelFormatterFunc) RowDisplay {
-	rd := RowDisplay{
-		Channels:   make([]song.ChannelData, channels),
-		formatter:  channelFmtFunc,
+func NewRowText[TChannelData song.ChannelData](channels int, longFormat bool) RowDisplay[TChannelData] {
+	rd := RowDisplay[TChannelData]{
+		Channels:   make([]TChannelData, channels),
 		longFormat: longFormat,
 	}
 	return rd
 }
 
-func (rt RowDisplay) String(options ...any) string {
+func (rt RowDisplay[TChannelData]) String(options ...any) string {
 	maxChannels := -1
 	if len(options) > 0 {
 		maxChannels = options[0].(int)
@@ -40,9 +31,17 @@ func (rt RowDisplay) String(options ...any) string {
 		if maxChannels >= 0 && i >= maxChannels {
 			break
 		}
-		items = append(items, fmt.Sprint(rt.formatter(c, rt.longFormat)))
+		if rt.longFormat {
+			items = append(items, c.String())
+		} else {
+			items = append(items, c.ShortString())
+		}
 	}
 	return "|" + strings.Join(items, "|") + "|"
+}
+
+type RowStringer interface {
+	String(options ...any) string
 }
 
 //RowRender is the final output of a single row's data
@@ -50,5 +49,5 @@ type RowRender struct {
 	Order   int
 	Row     int
 	Tick    int
-	RowText *RowDisplay
+	RowText RowStringer
 }

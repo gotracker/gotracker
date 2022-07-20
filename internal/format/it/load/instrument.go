@@ -19,8 +19,8 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/gotracker/internal/filter"
+	itNote "github.com/gotracker/gotracker/internal/format/it/conversion/note"
 	itfilter "github.com/gotracker/gotracker/internal/format/it/playback/filter"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/format/settings"
 	oscillatorImpl "github.com/gotracker/gotracker/internal/oscillator"
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -199,11 +199,6 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			v.Fadeout()
 		}
 
-		if i == 13 {
-			a := 0
-			a++
-		}
-
 		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, convertPanEnvValue); err != nil {
 			return nil, err
 		}
@@ -290,7 +285,7 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 		if si < 0 {
 			continue
 		}
-		n := util.NoteFromItNote(ns.Note)
+		n := itNote.FromItNote(ns.Note)
 		if nn, ok := n.(note.Normal); ok {
 			st := note.Semitone(nn)
 			ci, ok := noteKeyboard[si]
@@ -323,6 +318,23 @@ func getSampleFormat(is16Bit bool, isSigned bool, isBigEndian bool) pcm.SampleDa
 		return pcm.SampleDataFormat8BitSigned
 	}
 	return pcm.SampleDataFormat8BitUnsigned
+}
+
+func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
+	switch vibtype {
+	case 0:
+		return uint8(oscillatorImpl.WaveTableSelectSineRetrigger)
+	case 1:
+		return uint8(oscillatorImpl.WaveTableSelectSawtoothRetrigger)
+	case 2:
+		return uint8(oscillatorImpl.WaveTableSelectSquareRetrigger)
+	case 3:
+		return uint8(oscillatorImpl.WaveTableSelectRandomRetrigger)
+	case 4:
+		return uint8(oscillatorImpl.WaveTableSelectInverseSawtoothRetrigger)
+	default:
+		return uint8(oscillatorImpl.WaveTableSelectSineRetrigger)
+	}
 }
 
 func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, s *settings.Settings) error {
@@ -387,7 +399,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		deltaDecode(data, format)
 	}
 
-	bytesPerFrame := 2
+	bytesPerFrame := numChannels
 
 	if is16Bit {
 		bytesPerFrame *= 2
@@ -433,15 +445,23 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
-		Sweep:             0,
-		WaveformSelection: si.Header.VibratoType,
-		Depth:             float32(si.Header.VibratoDepth) / 64,
+		Sweep:             255,
+		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),
+		Depth:             float32(si.Header.VibratoDepth),
 		Rate:              int(si.Header.VibratoSpeed),
 		Factory: func() oscillator.Oscillator {
 			return oscillatorImpl.NewImpulseTrackerOscillator(1)
 		},
 	}
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
+
+	if ii.C2Spd == 0 {
+		ii.C2Spd = 8363.0
+	}
+
+	if !convSettings.linearFrequencySlides {
+		ii.Static.AutoVibrato.Depth /= 64.0
+	}
 
 	if si.Header.VibratoSweep != 0 {
 		ii.Static.AutoVibrato.Sweep = int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep)

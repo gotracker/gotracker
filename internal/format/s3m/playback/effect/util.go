@@ -5,15 +5,15 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/gotracker/internal/comparison"
+	s3mVolume "github.com/gotracker/gotracker/internal/format/s3m/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
-	v := util.VolumeToS3M(av)
+	v := s3mVolume.VolumeToS3M(av)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 64 {
 		vol = 63
@@ -22,7 +22,7 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 		vol = 0
 	}
 	sv := s3mfile.Volume(channel.DataEffect(vol))
-	nv := util.VolumeFromS3M(sv)
+	nv := s3mVolume.VolumeFromS3M(sv)
 	cs.SetActiveVolume(nv)
 	return nil
 }
@@ -134,11 +134,11 @@ var (
 )
 
 func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
-	vol := util.VolumeToS3M(cs.GetActiveVolume())
+	vol := s3mVolume.VolumeToS3M(cs.GetActiveVolume())
 	if vol >= 64 {
 		vol = 63
 	}
-	cs.SetActiveVolume(util.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
+	cs.SetActiveVolume(s3mVolume.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
 	return nil
 }
 

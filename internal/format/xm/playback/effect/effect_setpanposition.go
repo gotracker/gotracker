@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	xmPanning "github.com/gotracker/gotracker/internal/format/xm/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -17,7 +17,7 @@ func (e SetPanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p i
 
 	xx := uint8(e)
 
-	cs.SetPan(util.PanningFromXm(xx))
+	cs.SetPan(xmPanning.PanningFromXm(xx))
 	return nil
 }
 

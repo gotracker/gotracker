@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/gotracker/gotracker/internal/optional"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
@@ -10,16 +11,13 @@ type pastNote struct {
 }
 
 func (pn *pastNote) IsValid() bool {
-	if pn.activeState.Voice == nil {
-		return false
-	}
-
-	return pn.activeState.Voice.IsDone()
+	return pn.activeState.Voice != nil && !pn.activeState.Voice.IsDone()
 }
 
 type PastNotesProcessor struct {
-	order []pastNote
-	max   int
+	order    []pastNote
+	max      optional.Value[int]
+	maxPerCh optional.Value[int]
 }
 
 func (p *PastNotesProcessor) Add(ch int, data *Active) {
@@ -27,12 +25,14 @@ func (p *PastNotesProcessor) Add(ch int, data *Active) {
 		return
 	}
 
-	if c := len(p.order) - p.max; c > 0 {
-		o := p.order[0:c]
-		p.order = p.order[c:]
+	if max, ok := p.max.Get(); ok {
+		if c := len(p.order) - max; c > 0 {
+			o := p.order[0:c]
+			p.order = p.order[c:]
 
-		for _, pn := range o {
-			pn.activeState.Reset()
+			for _, pn := range o {
+				pn.activeState.Reset()
+			}
 		}
 	}
 
@@ -95,10 +95,32 @@ func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {
 		}
 
 		pastNotes = append(pastNotes, pn.activeState)
+		if max, ok := p.maxPerCh.Get(); ok {
+			if c := len(pastNotes) - max; c > 0 {
+				o := pastNotes[0:c]
+				pastNotes = pastNotes[c:]
+
+				for _, pn := range o {
+					pn.Reset()
+				}
+			}
+		}
 	}
 	return pastNotes
 }
 
 func (p *PastNotesProcessor) SetMax(max int) {
-	p.max = max
+	p.max.Set(max)
+}
+
+func (p *PastNotesProcessor) ClearMax() {
+	p.max.Reset()
+}
+
+func (p *PastNotesProcessor) SetMaxPerChannel(max int) {
+	p.maxPerCh.Set(max)
+}
+
+func (p *PastNotesProcessor) ClearMaxPerChannel() {
+	p.maxPerCh.Reset()
 }

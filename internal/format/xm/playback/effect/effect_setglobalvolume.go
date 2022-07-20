@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -13,7 +13,7 @@ type SetGlobalVolume channel.DataEffect // 'G'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	v := util.VolumeXM(e)
+	v := xmVolume.XmVolume(e)
 	p.SetGlobalVolume(v.Volume())
 	return nil
 }

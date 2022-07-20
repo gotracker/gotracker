@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	xmPanning "github.com/gotracker/gotracker/internal/format/xm/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -17,7 +17,7 @@ func (e PanSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 	x := xx >> 4
 	y := xx & 0x0F
 
-	xp := channel.DataEffect(util.PanningToXm(cs.GetPan()))
+	xp := channel.DataEffect(xmPanning.PanningToXm(cs.GetPan()))
 	if x == 0 {
 		// slide left y units
 		if xp < y {
@@ -33,7 +33,7 @@ func (e PanSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Pl
 			xp += x
 		}
 	}
-	cs.SetPan(util.PanningFromXm(uint8(xp)))
+	cs.SetPan(xmPanning.PanningFromXm(uint8(xp)))
 	return nil
 }
 

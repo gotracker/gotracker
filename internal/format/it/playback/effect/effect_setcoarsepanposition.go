@@ -5,8 +5,8 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
+	itPanning "github.com/gotracker/gotracker/internal/format/it/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -21,7 +21,7 @@ func (e SetCoarsePanPosition) Start(cs intf.Channel[channel.Memory, channel.Data
 
 	pan := itfile.PanValue(x << 2)
 
-	cs.SetPan(util.PanningFromIt(pan))
+	cs.SetPan(itPanning.FromItPanning(pan))
 	return nil
 }
 

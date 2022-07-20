@@ -2,22 +2,12 @@ package playback
 
 import (
 	"github.com/gotracker/gotracker/internal/format/internal/filter"
+	s3mPeriod "github.com/gotracker/gotracker/internal/format/s3m/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/state"
 	"github.com/gotracker/gotracker/internal/song/note"
-	"github.com/gotracker/voice/period"
 )
-
-type doVolCalc struct{}
-
-func (o doVolCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.SetActiveVolume(inst.GetDefaultVolume())
-	}
-	return nil
-}
 
 type doNoteCalc struct {
 	Semitone   note.Semitone
@@ -31,29 +21,23 @@ func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memo
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := util.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
 		o.UpdateFunc(period)
 	}
 	return nil
 }
 
 func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	// pre-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
-	}
-	if err := intf.DoEffect[channel.Memory, channel.Data](cs.GetActiveEffect(), cs, m, currentTick, lastTick); err != nil {
-		return err
-	}
-	// post-effect
-	if err := cs.ProcessVolOps(m); err != nil {
-		return err
-	}
-	if err := cs.ProcessNoteOps(m); err != nil {
-		return err
+	if txn := cs.GetTxn(); txn != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+			return err
+		}
 	}
 
 	if err := m.processRowNote(ch, cs, currentTick, lastTick); err != nil {
@@ -68,7 +52,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 }
 
 func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	triggerTick, wantAttack := cs.WillTriggerOn(currentTick)
+	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !triggerTick {
 		return nil
 	}
@@ -104,7 +88,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && wantAttack {
+		if keyOn && noteAction == note.ActionRetrigger {
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())
 			nc.Attack()
@@ -138,7 +122,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetOutputChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(util.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(s3mPeriod.DefaultC2Spd, m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

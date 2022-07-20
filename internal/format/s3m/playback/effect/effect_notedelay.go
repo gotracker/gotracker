@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
 	"github.com/gotracker/gotracker/internal/player/intf"
+	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 // NoteDelay defines a note delay effect
@@ -12,7 +13,7 @@ type NoteDelay ChannelCommand // 'SDx'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e NoteDelay) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	cs.SetNotePlayTick(true, true, int(channel.DataEffect(e)&0x0F))
+	cs.SetNotePlayTick(true, note.ActionRetrigger, int(channel.DataEffect(e)&0x0F))
 	return nil
 }
 

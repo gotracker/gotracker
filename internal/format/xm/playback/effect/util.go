@@ -4,16 +4,16 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/gotracker/internal/comparison"
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
 	effectIntf "github.com/gotracker/gotracker/internal/format/xm/playback/effect/intf"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
-	v := util.ToVolumeXM(av)
+	v := xmVolume.ToVolumeXM(av)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
 		vol = 0x40
@@ -21,14 +21,14 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 	if vol < 0x00 {
 		vol = 0x00
 	}
-	v = util.VolumeXM(channel.DataEffect(vol))
+	v = xmVolume.XmVolume(channel.DataEffect(vol))
 	cs.SetActiveVolume(v.Volume())
 	return nil
 }
 
 func doGlobalVolSlide(m effectIntf.XM, delta float32, multiplier float32) error {
 	gv := m.GetGlobalVolume()
-	v := util.ToVolumeXM(gv)
+	v := xmVolume.ToVolumeXM(gv)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
 		vol = 0x40
@@ -36,7 +36,7 @@ func doGlobalVolSlide(m effectIntf.XM, delta float32, multiplier float32) error 
 	if vol < 0x00 {
 		vol = 0x00
 	}
-	v = util.VolumeXM(channel.DataEffect(vol))
+	v = xmVolume.XmVolume(channel.DataEffect(vol))
 	m.SetGlobalVolume(v.Volume())
 	return nil
 }
@@ -142,7 +142,7 @@ func doArpeggio(cs intf.Channel[channel.Memory, channel.Data], currentTick int, 
 }
 
 var (
-	volSlideTwoThirdsTable = [...]util.VolumeXM{
+	volSlideTwoThirdsTable = [...]xmVolume.XmVolume{
 		0, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9,
 		10, 10, 11, 11, 12, 13, 13, 14, 15, 15, 16, 16, 17, 18, 18, 19,
 		20, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 26, 27, 28, 28, 29,
@@ -151,7 +151,7 @@ var (
 )
 
 func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
-	vol := util.ToVolumeXM(cs.GetActiveVolume())
+	vol := xmVolume.ToVolumeXM(cs.GetActiveVolume())
 	if vol >= 64 {
 		vol = 63
 	}

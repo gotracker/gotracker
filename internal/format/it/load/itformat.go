@@ -14,9 +14,9 @@ import (
 	"github.com/gotracker/gotracker/internal/filter"
 	fmtfilter "github.com/gotracker/gotracker/internal/format/internal/filter"
 	formatutil "github.com/gotracker/gotracker/internal/format/internal/util"
+	itPanning "github.com/gotracker/gotracker/internal/format/it/conversion/panning"
 	"github.com/gotracker/gotracker/internal/format/it/layout"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/format/settings"
 	"github.com/gotracker/gotracker/internal/song/index"
 	"github.com/gotracker/gotracker/internal/song/instrument"
@@ -182,7 +182,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 			Enabled:          true,
 			InitialVolume:    volume.Volume(1),
 			ChannelVolume:    volume.Volume(f.Head.ChannelVol[chNum].Value()),
-			InitialPanning:   util.PanningFromIt(f.Head.ChannelPan[chNum]),
+			InitialPanning:   itPanning.FromItPanning(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},

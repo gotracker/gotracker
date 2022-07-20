@@ -4,10 +4,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	xmPeriod "github.com/gotracker/gotracker/internal/format/xm/conversion/period"
 	"github.com/gotracker/gotracker/internal/format/xm/layout"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
 	"github.com/gotracker/gotracker/internal/format/xm/playback/state/pattern"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player"
 	"github.com/gotracker/gotracker/internal/player/feature"
 	"github.com/gotracker/gotracker/internal/player/intf"
@@ -40,7 +40,7 @@ type Manager struct {
 func NewManager(song *layout.Song) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: util.XMBaseClock,
+			BaseClockRate: xmPeriod.XMBaseClock,
 		},
 		song: song,
 	}
@@ -60,6 +60,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 		oc := m.GetOutputChannel(ch.OutputChannelNum, m.channelInit)
 
 		cs := m.GetChannel(i)
+		cs.SetSongDataInterface(song)
 		cs.SetOutputChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
@@ -120,7 +121,7 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		cs.SetData(nil)
+		_ = cs.SetData(nil)
 		ocNum := m.song.GetOutputChannel(ch)
 		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
 	}
@@ -256,6 +257,20 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
+		case feature.SetDefaultTempo:
+			txn := m.pattern.StartTransaction()
+			defer txn.Cancel()
+			txn.Ticks.Set(f.Tempo)
+			if err := txn.Commit(); err != nil {
+				return err
+			}
+		case feature.SetDefaultBPM:
+			txn := m.pattern.StartTransaction()
+			defer txn.Cancel()
+			txn.Tempo.Set(f.BPM)
+			if err := txn.Commit(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -299,6 +314,10 @@ func (m *Manager) GetName() string {
 // SetOnEffect sets the callback for an effect being generated for a channel
 func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
 	m.OnEffect = fn
+}
+
+func (m Manager) GetOnEffect() func(intf.Effect) {
+	return m.OnEffect
 }
 
 func (m *Manager) SetEnvelopePosition(v int) {

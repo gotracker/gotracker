@@ -21,7 +21,7 @@ func readMOD(filename string, s *settings.Settings) (*layout.Song, error) {
 
 	return convertS3MFileToSong(f, func(patNum int) uint8 {
 		return 64
-	}, s)
+	}, s, true)
 }
 
 // MOD loads a MOD file and upgrades it into an S3M file internally

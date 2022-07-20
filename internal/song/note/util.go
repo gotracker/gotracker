@@ -1,6 +1,8 @@
 package note
 
 import (
+	"fmt"
+
 	"github.com/gotracker/voice/period"
 )
 
@@ -13,3 +15,7 @@ func (c C2SPD) ToFrequency() period.Frequency {
 
 // Finetune is a 1/64th of a Semitone
 type Finetune int16
+
+func (f Finetune) String() string {
+	return fmt.Sprintf("%s(%d)", Normal(f/64), f%64)
+}

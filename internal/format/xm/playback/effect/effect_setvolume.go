@@ -3,8 +3,8 @@ package effect
 import (
 	"fmt"
 
+	xmVolume "github.com/gotracker/gotracker/internal/format/xm/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/xm/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/xm/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -15,7 +15,7 @@ type SetVolume channel.DataEffect // 'C'
 func (e SetVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
 	cs.ResetRetriggerCount()
 
-	xx := util.VolumeXM(e)
+	xx := xmVolume.XmVolume(e)
 
 	cs.SetActiveVolume(xx.Volume())
 	return nil

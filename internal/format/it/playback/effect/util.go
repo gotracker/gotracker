@@ -5,16 +5,16 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/gotracker/internal/comparison"
+	itVolume "github.com/gotracker/gotracker/internal/format/it/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/it/layout/channel"
 	effectIntf "github.com/gotracker/gotracker/internal/format/it/playback/effect/intf"
-	"github.com/gotracker/gotracker/internal/format/it/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/song/note"
 )
 
 func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
-	v := util.VolumeToIt(av)
+	v := itVolume.ToItVolume(av)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
 		vol = 0x40
@@ -23,14 +23,14 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 		vol = 0x00
 	}
 	v = itfile.Volume(vol)
-	nv := util.VolumeFromIt(v)
+	nv := itVolume.FromItVolume(v)
 	cs.SetActiveVolume(nv)
 	return nil
 }
 
 func doGlobalVolSlide(m effectIntf.IT, delta float32, multiplier float32) error {
 	gv := m.GetGlobalVolume()
-	v := util.VolumeToIt(gv)
+	v := itVolume.ToItVolume(gv)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
 		vol = 0x40
@@ -39,7 +39,7 @@ func doGlobalVolSlide(m effectIntf.IT, delta float32, multiplier float32) error 
 		vol = 0x00
 	}
 	v = itfile.Volume(vol)
-	ngv := util.VolumeFromIt(v)
+	ngv := itVolume.FromItVolume(v)
 	m.SetGlobalVolume(ngv)
 	return nil
 }
@@ -154,7 +154,7 @@ var (
 )
 
 func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
-	vol := util.VolumeToIt(cs.GetActiveVolume())
+	vol := itVolume.ToItVolume(cs.GetActiveVolume())
 	if vol >= 0x10 && vol <= 0x50 {
 		vol -= 0x10
 		if vol >= 64 {
@@ -167,7 +167,7 @@ func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
 		}
 
 		vv := itfile.Volume(v)
-		cs.SetActiveVolume(util.VolumeFromIt(vv))
+		cs.SetActiveVolume(itVolume.FromItVolume(vv))
 	}
 	return nil
 }

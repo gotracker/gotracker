@@ -42,6 +42,8 @@ var (
 	startingOrder int  = -1
 	startingRow   int  = -1
 	randomized    bool = false
+	startingBpm   int  = -1
+	startingTempo int  = -1
 )
 
 func init() {
@@ -71,10 +73,12 @@ func registerPlayFlags(flags *pflag.FlagSet) {
 	if flags == nil {
 		return
 	}
-	flags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order")
-	flags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row")
+	flags.IntVarP(&startingOrder, "starting-order", "o", startingOrder, "starting order (<0 = use song/format default)")
+	flags.IntVarP(&startingRow, "starting-row", "r", startingRow, "starting row (<0 = use song/format default)")
 	flags.BoolVarP(&loopSong, "loop-song", "l", loopSong, "enable pattern loop (only works in single-song mode)")
 	flags.BoolVarP(&randomized, "random", "R", randomized, "randomize the playlist")
+	flags.IntVarP(&startingBpm, "bpm", "", startingBpm, "starting BPM (<0 = use song/format default)")
+	flags.IntVarP(&startingTempo, "tempo", "", startingTempo, "starting Tempo (ticks per row) (<0 = use song/format default)")
 }
 
 var playCmd = &cobra.Command{
@@ -138,6 +142,12 @@ func getPlaylistFromArgList(args []string) (*playlist.Playlist, error) {
 		}
 		if startingRow >= 0 {
 			song.Start.Row.Set(startingRow)
+		}
+		if startingBpm >= 0 {
+			song.BPM.Set(startingBpm)
+		}
+		if startingTempo >= 0 {
+			song.Tempo.Set(startingTempo)
 		}
 		if len(args) == 1 {
 			if loopSong {

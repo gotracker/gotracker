@@ -5,8 +5,8 @@ import (
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
+	s3mVolume "github.com/gotracker/gotracker/internal/format/s3m/conversion/volume"
 	"github.com/gotracker/gotracker/internal/format/s3m/layout/channel"
-	"github.com/gotracker/gotracker/internal/format/s3m/playback/util"
 	"github.com/gotracker/gotracker/internal/player/intf"
 )
 
@@ -15,7 +15,7 @@ type SetGlobalVolume ChannelCommand // 'V'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
-	p.SetGlobalVolume(util.VolumeFromS3M(s3mfile.Volume(channel.DataEffect(e))))
+	p.SetGlobalVolume(s3mVolume.VolumeFromS3M(s3mfile.Volume(channel.DataEffect(e))))
 	return nil
 }
 

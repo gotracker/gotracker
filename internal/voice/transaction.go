@@ -73,13 +73,7 @@ func (t *txn) SetPeriod(period period.Period) {
 }
 
 func (t *txn) GetPendingPeriod() (period.Period, bool) {
-	if p, set := t.period.Get(); set {
-		if pp, ok := p.(period.Period); ok {
-			return pp, set
-		}
-		return nil, set
-	}
-	return nil, false
+	return t.period.Get()
 }
 
 func (t *txn) GetCurrentPeriod() period.Period {
@@ -217,11 +211,11 @@ func (t *txn) Commit() {
 	}
 
 	if p, ok := t.period.Get(); ok {
-		voice.SetPeriod(t.Voice, p.(period.Period))
+		voice.SetPeriod(t.Voice, p)
 	}
 
 	if delta, ok := t.periodDelta.Get(); ok {
-		voice.SetPeriodDelta(t.Voice, delta.(period.Delta))
+		voice.SetPeriodDelta(t.Voice, delta)
 	}
 
 	if vol, ok := t.vol.Get(); ok {

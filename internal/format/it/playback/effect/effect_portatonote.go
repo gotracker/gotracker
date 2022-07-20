@@ -18,7 +18,7 @@ func (e PortaToNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 	cs.UnfreezePlayback()
 	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
-		cs.SetNotePlayTick(false, false, 0)
+		cs.SetNotePlayTick(false, note.ActionContinue, 0)
 	}
 	return nil
 }
@@ -35,7 +35,7 @@ func (e PortaToNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.
 	}
 	period = period.AddDelta(cs.GetPeriodDelta()).(note.Period)
 	ptp := cs.GetPortaTargetPeriod()
-	if currentTick != 0 {
+	if !mem.Shared.OldEffectMode || currentTick != 0 {
 		if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
 			return doPortaUpToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // subtracts
 		} else {

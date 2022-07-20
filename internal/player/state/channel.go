@@ -10,14 +10,15 @@ import (
 	"github.com/gotracker/gotracker/internal/optional"
 	"github.com/gotracker/gotracker/internal/player/intf"
 	"github.com/gotracker/gotracker/internal/player/output"
+	"github.com/gotracker/gotracker/internal/song"
 	"github.com/gotracker/gotracker/internal/song/instrument"
 	"github.com/gotracker/gotracker/internal/song/note"
 	voiceImpl "github.com/gotracker/gotracker/internal/voice"
 )
 
 type NoteTrigger struct {
-	Retrigger bool
-	Tick      int
+	NoteAction note.Action
+	Tick       int
 }
 
 type VolOp[TMemory, TChannelData any] interface {
@@ -30,6 +31,8 @@ type NoteOp[TMemory, TChannelData any] interface {
 
 type PeriodUpdateFunc func(note.Period)
 
+type SemitoneSetterFactory[TMemory, TChannelData any] func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
+
 // ChannelState is the state of a single channel
 type ChannelState[TMemory, TChannelData any] struct {
 	activeState Active
@@ -38,10 +41,11 @@ type ChannelState[TMemory, TChannelData any] struct {
 
 	ActiveEffect intf.Effect
 
-	TrackData     *TChannelData
-	PrevTrackData *TChannelData
+	s       song.Data
+	txn     ChannelDataTransaction[TMemory, TChannelData]
+	prevTxn ChannelDataTransaction[TMemory, TChannelData]
 
-	SemitoneSetterFactory func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
+	SemitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]
 
 	StoredSemitone    note.Semitone // from pattern, unmodified, current note
 	PortaTargetPeriod optional.Value[note.Period]
@@ -57,33 +61,30 @@ type ChannelState[TMemory, TChannelData any] struct {
 	PanEnabled        bool
 	NewNoteAction     note.Action
 
-	VolOps  []VolOp[TMemory, TChannelData]
-	NoteOps []NoteOp[TMemory, TChannelData]
-
 	PastNotes *PastNotesProcessor
 	Output    *output.Channel
 }
 
 // WillTriggerOn returns true if a note will trigger on the tick specified
-func (cs *ChannelState[TMemory, TChannelData]) WillTriggerOn(tick int) (bool, bool) {
+func (cs *ChannelState[TMemory, TChannelData]) WillTriggerOn(tick int) (bool, note.Action) {
 	if trigger, ok := cs.Trigger.Get(); ok {
-		return trigger.Tick == tick, trigger.Retrigger
+		return trigger.Tick == tick, trigger.NoteAction
 	}
 
-	return false, false
+	return false, note.ActionContinue
 }
 
 // AdvanceRow will update the current state to make room for the next row's state data
-func (cs *ChannelState[TMemory, TChannelData]) AdvanceRow() {
+func (cs *ChannelState[TMemory, TChannelData]) AdvanceRow(txn ChannelDataTransaction[TMemory, TChannelData]) {
 	cs.prevState = cs.activeState
 	cs.targetState = cs.activeState.Playback
 	cs.Trigger.Reset()
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
 
-	cs.NoteOps = nil
-	cs.VolOps = nil
 	cs.UseTargetPeriod = false
+	cs.prevTxn = cs.txn
+	cs.txn = txn
 }
 
 // RenderRowTick renders a channel's row data for a single tick
@@ -110,10 +111,6 @@ func (cs *ChannelState[TMemory, TChannelData]) GetActiveEffect() intf.Effect {
 
 func (cs *ChannelState[TMemory, TChannelData]) SetActiveEffect(e intf.Effect) {
 	cs.ActiveEffect = e
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) ProcessEffects(p intf.Playback, currentTick int, lastTick bool) error {
-	return intf.DoEffect[TMemory, TChannelData](cs.ActiveEffect, cs, p, currentTick, lastTick)
 }
 
 // FreezePlayback suspends mixer progression on the channel
@@ -158,14 +155,29 @@ func (cs *ChannelState[TMemory, TChannelData]) SetActiveVolume(vol volume.Volume
 	}
 }
 
-// GetData returns the interface to the current channel song pattern data
-func (cs *ChannelState[TMemory, TChannelData]) GetData() *TChannelData {
-	return cs.TrackData
+func (cs *ChannelState[TMemory, TChannelData]) SetSongDataInterface(s song.Data) {
+	cs.s = s
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) {
-	cs.PrevTrackData = cs.TrackData
-	cs.TrackData = cdata
+// GetData returns the interface to the current channel song pattern data
+func (cs *ChannelState[TMemory, TChannelData]) GetData() *TChannelData {
+	if cs.txn == nil {
+		return nil
+	}
+
+	return cs.txn.GetData()
+}
+
+func (cs *ChannelState[TMemory, TChannelData]) SetData(cdata *TChannelData) error {
+	if cs.txn == nil {
+		return nil
+	}
+
+	return cs.txn.SetData(cdata, cs.s, cs)
+}
+
+func (cs *ChannelState[TMemory, TChannelData]) GetTxn() ChannelDataTransaction[TMemory, TChannelData] {
+	return cs.txn
 }
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period
@@ -299,11 +311,11 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPos(pos sampling.Pos) {
 }
 
 // SetNotePlayTick sets the tick on which the note will retrigger
-func (cs *ChannelState[TMemory, TChannelData]) SetNotePlayTick(enabled bool, retrigger bool, tick int) {
+func (cs *ChannelState[TMemory, TChannelData]) SetNotePlayTick(enabled bool, action note.Action, tick int) {
 	if enabled {
 		cs.Trigger.Set(NoteTrigger{
-			Retrigger: retrigger,
-			Tick:      tick,
+			NoteAction: action,
+			Tick:       tick,
 		})
 	} else {
 		cs.Trigger.Reset()
@@ -339,11 +351,15 @@ func (cs *ChannelState[TMemory, TChannelData]) GetPan() panning.Position {
 
 // SetTargetSemitone sets the target semitone for the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetTargetSemitone(st note.Semitone) {
-	cs.NoteOps = append(cs.NoteOps, cs.SemitoneSetterFactory(st, cs.SetTargetPeriod))
+	if cs.txn != nil {
+		cs.txn.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetTargetPeriod))
+	}
 }
 
 func (cs *ChannelState[TMemory, TChannelData]) SetOverrideSemitone(st note.Semitone) {
-	cs.NoteOps = append(cs.NoteOps, cs.SemitoneSetterFactory(st, cs.SetPeriodOverride))
+	if cs.txn != nil {
+		cs.txn.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetPeriodOverride))
+	}
 }
 
 // SetStoredSemitone sets the stored semitone for the channel
@@ -453,35 +469,4 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPitchEnvelopeEnable(enabled bo
 
 func (cs *ChannelState[TMemory, TChannelData]) NoteCut() {
 	cs.activeState.Period = nil
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) ProcessVolOps(p intf.Playback) error {
-	var volOps []VolOp[TMemory, TChannelData]
-	cs.VolOps, volOps = volOps, cs.VolOps
-
-	for _, op := range volOps {
-		if op == nil {
-			continue
-		}
-		if err := op.Process(p, cs); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (cs *ChannelState[TMemory, TChannelData]) ProcessNoteOps(p intf.Playback) error {
-	var noteOps []NoteOp[TMemory, TChannelData]
-	cs.NoteOps, noteOps = noteOps, cs.NoteOps
-
-	for _, op := range noteOps {
-		if op == nil {
-			continue
-		}
-		if err := op.Process(p, cs); err != nil {
-			return err
-		}
-	}
-	return nil
 }

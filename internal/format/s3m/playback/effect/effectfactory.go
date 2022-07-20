@@ -144,8 +144,6 @@ func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) Ef
 	// so we need to handle it by deferring to using a straight volume slide
 	// down instead of panicking with an unhandled command, which mimics what
 	// ScreamTracker 3.xx does.
-	// NOTE: JBC - when adding IT (Impulse Tracker) support, do a no-op instead
-	// of a VolumeSlideDown
 	return VolumeSlideDown(xy)
 	//return UnhandledCommand{Command: cd, Info: xy}
 }

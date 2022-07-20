@@ -6,10 +6,10 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gotracker/gotracker/internal/format"
-	"github.com/gotracker/gotracker/internal/player/feature"
-	"github.com/gotracker/gotracker/internal/player/intf"
-	"github.com/gotracker/gotracker/internal/song"
+	"github.com/gotracker/playback/format"
+	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback/song"
 
 	"github.com/gotracker/gosound"
 )

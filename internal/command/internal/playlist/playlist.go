@@ -12,7 +12,7 @@ import (
 	"github.com/Masterminds/semver"
 	"gopkg.in/yaml.v2"
 
-	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/heucuva/optional"
 )
 
 type Playlist struct {

@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/cheggaaa/pb v1.0.29
 	github.com/gotracker/gosound v1.1.1
-	github.com/gotracker/playback v0.2.1
+	github.com/gotracker/playback v0.2.2
 	github.com/heucuva/optional v0.0.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5

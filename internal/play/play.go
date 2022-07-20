@@ -11,6 +11,7 @@ import (
 
 	progressBar "github.com/cheggaaa/pb"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/playback"
 
 	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
@@ -18,19 +19,17 @@ import (
 	"github.com/gotracker/playback/format"
 	itEffect "github.com/gotracker/playback/format/it/playback/effect"
 	s3mEffect "github.com/gotracker/playback/format/s3m/playback/effect"
-	"github.com/gotracker/playback/format/settings"
 	xmEffect "github.com/gotracker/playback/format/xm/playback/effect"
-	"github.com/gotracker/playback/player"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/player/render"
+	"github.com/gotracker/playback/settings"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
 )
 
 func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Settings, logger logging.Log) (bool, error) {
 	var (
-		playback  intf.Playback
+		play      playback.Playback
 		progress  *progressBar.ProgressBar
 		lastOrder int
 	)
@@ -44,7 +43,7 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 			}
 		case device.KindFile:
 			if progress == nil {
-				progress = progressBar.StartNew(playback.GetNumOrders())
+				progress = progressBar.StartNew(play.GetNumOrders())
 				lastOrder = row.Order
 			}
 			if lastOrder != row.Order {
@@ -87,8 +86,8 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 
 	logger.Printf("Output device: %s\n", waveOut.Name())
 
-	playedAtLeastOne, err := renderSongs(pl, outBufs, options, configuration, settings, func(pb intf.Playback, tickInterval time.Duration) error {
-		playback = pb
+	playedAtLeastOne, err := renderSongs(pl, outBufs, options, configuration, settings, func(pb playback.Playback, tickInterval time.Duration) error {
+		play = pb
 		defer func() {
 			if progress != nil {
 				progress.Set64(progress.Total)
@@ -99,7 +98,7 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 		var effectMap map[string]int
 		if settings.GatherEffectCoverage {
 			effectMap = make(map[string]int)
-			playback.SetOnEffect(func(e intf.Effect) {
+			play.SetOnEffect(func(e playback.Effect) {
 				var name string
 				switch t := e.(type) {
 				case *xmEffect.VolEff:
@@ -125,15 +124,15 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 			})
 		}
 
-		logger.Printf("Order Looping Enabled: %v\n", playback.CanOrderLoop())
-		logger.Printf("Song: %s\n", playback.GetName())
+		logger.Printf("Order Looping Enabled: %v\n", play.CanOrderLoop())
+		logger.Printf("Song: %s\n", play.GetName())
 
-		p, err := player.NewPlayer(context.TODO(), outBufs, tickInterval)
+		p, err := NewPlayer(context.TODO(), outBufs, tickInterval)
 		if err != nil {
 			return err
 		}
 
-		if err := p.Play(playback); err != nil {
+		if err := p.Play(play); err != nil {
 			return err
 		}
 
@@ -171,7 +170,7 @@ func findFeatureByName(configuration []feature.Feature, name string) (feature.Fe
 	return nil, false
 }
 
-func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, settings *Settings, startPlayingCB func(pb intf.Playback, tickInterval time.Duration) error) (bool, error) {
+func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, settings *Settings, startPlayingCB func(pb playback.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
@@ -201,10 +200,10 @@ playlistLoop:
 		}
 		playback, songFmt, err := format.Load(song.Filepath, options...)
 		if err != nil {
-			return playedAtLeastOne, fmt.Errorf("Could not create song state! err[%v]", err)
+			return playedAtLeastOne, fmt.Errorf("could not create song state! err[%v]", err)
 		} else if songFmt != nil {
 			if err := playback.SetupSampler(settings.Output.SamplesPerSecond, settings.Output.Channels, settings.Output.BitsPerSample); err != nil {
-				return playedAtLeastOne, fmt.Errorf("Could not setup playback sampler! err[%v]", err)
+				return playedAtLeastOne, fmt.Errorf("could not setup playback sampler! err[%v]", err)
 			}
 		}
 		startOrder, startOrderSet := song.Start.Order.Get()

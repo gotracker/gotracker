@@ -12,7 +12,7 @@ import (
 	"github.com/gotracker/gotracker/internal/output"
 	"github.com/gotracker/gotracker/internal/play"
 	"github.com/gotracker/gotracker/internal/playlist"
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/settings"
 )
 
 // persistent flags

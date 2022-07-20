@@ -6,29 +6,29 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/song"
 
 	"github.com/gotracker/gosound"
 )
 
 func BenchmarkPlayerS3M(b *testing.B) {
-	var playback intf.Playback
+	var pb playback.Playback
 	var err error
 	b.Run("load_s3m", func(b *testing.B) {
-		playback, _, err = format.Load("test/celestial_fantasia.s3m")
+		pb, _, err = format.Load("test/celestial_fantasia.s3m")
 		if err != nil {
 			b.Error(err)
 		}
 	})
 
-	if err := playback.SetupSampler(44100, 2, 16); err != nil {
+	if err := pb.SetupSampler(44100, 2, 16); err != nil {
 		b.Error(err)
 	}
 
-	if err := playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+	if err := pb.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
 		b.Error(err)
 	}
 
@@ -39,7 +39,7 @@ func BenchmarkPlayerS3M(b *testing.B) {
 			b.Helper()
 			b.ReportAllocs()
 			var premix *gosound.PremixData
-			premix, err = playback.Generate(now.Sub(lastTime))
+			premix, err = pb.Generate(now.Sub(lastTime))
 			if err != nil {
 				if !errors.Is(err, song.ErrStopSong) {
 					b.Error(err)
@@ -66,27 +66,27 @@ func BenchmarkPlayerS3M(b *testing.B) {
 }
 
 func BenchmarkIT(b *testing.B) {
-	var playback intf.Playback
+	var pb playback.Playback
 	var err error
 	b.Run("load_it", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			playback, _, err = format.Load(".vscode/test/beyond_the_network.it")
+			pb, _, err = format.Load(".vscode/test/beyond_the_network.it")
 			if err != nil {
 				b.Error(err)
 			}
 		}
 	})
 
-	if err := playback.SetupSampler(44100, 2, 16); err != nil {
+	if err := pb.SetupSampler(44100, 2, 16); err != nil {
 		b.Error(err)
 	}
 
-	if err := playback.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+	if err := pb.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
 		b.Error(err)
 	}
-	playback.SetNextOrder(38)
+	pb.SetNextOrder(38)
 
 	var step time.Duration
 	for err == nil {
@@ -95,7 +95,7 @@ func BenchmarkIT(b *testing.B) {
 			b.ResetTimer()
 			var premix *gosound.PremixData
 			for i := 0; i < b.N; i++ {
-				premix, err = playback.Generate(step)
+				premix, err = pb.Generate(step)
 				if err != nil {
 					if !errors.Is(err, song.ErrStopSong) {
 						b.Error(err)
@@ -103,7 +103,7 @@ func BenchmarkIT(b *testing.B) {
 					return
 				}
 				if premix != nil {
-					step += time.Duration(premix.SamplesLen) / time.Duration(int(playback.GetSampleRate())*playback.GetNumChannels()*2)
+					step += time.Duration(premix.SamplesLen) / time.Duration(int(pb.GetSampleRate())*pb.GetNumChannels()*2)
 					b.SetBytes(int64(premix.SamplesLen))
 				}
 			}

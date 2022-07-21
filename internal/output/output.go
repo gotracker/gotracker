@@ -5,6 +5,7 @@ import (
 
 	device "github.com/gotracker/gosound"
 
+	playerFeature "github.com/gotracker/gotracker/internal/feature"
 	"github.com/gotracker/playback/player/feature"
 )
 
@@ -57,7 +58,7 @@ func CreateOutputDevice(settings device.Settings) (device.Device, []feature.Feat
 	case device.KindFile:
 		featureDisable = []feature.Feature{
 			feature.SongLoop{Count: 0},
-			feature.PlayerSleepInterval{Enabled: false},
+			playerFeature.PlayerSleepInterval{Enabled: false},
 		}
 	}
 

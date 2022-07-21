@@ -12,7 +12,7 @@ import (
 	"github.com/gotracker/gotracker/internal/output"
 	"github.com/gotracker/gotracker/internal/play"
 	"github.com/gotracker/gotracker/internal/playlist"
-	"github.com/gotracker/playback/settings"
+	"github.com/gotracker/playback/player/feature"
 )
 
 // persistent flags
@@ -165,18 +165,8 @@ func getPlaylistFromArgList(args []string) (*playlist.Playlist, error) {
 }
 
 func playSongs(pl *playlist.Playlist) (bool, error) {
-	var options []settings.OptionFunc
-	// NOTE: JBC - disabled because Native Samples are working now :)
-	// leaving this code here so down-rezing of samples can be added later.
-	//if !disablePreconvertSamples {
-	//	var preferredSampleFormat pcm.SampleDataFormat = pcm.SampleDataFormat32BitLEFloat
-	//	// HACK: I wish we had access to the `sys.BigEndian` bool
-	//	if (*(*[2]uint8)(unsafe.Pointer(&[]uint16{1}[0])))[0] == 0 {
-	//		preferredSampleFormat = pcm.SampleDataFormat32BitBEFloat
-	//	}
-	//	options = append(options, settings.PreferredSampleFormat(preferredSampleFormat))
-	//}
-	options = append(options, settings.UseNativeSampleFormat(!disableNativeSamples))
+	var features []feature.Feature
+	features = append(features, feature.UseNativeSampleFormat(!disableNativeSamples))
 
-	return play.Playlist(pl, options, &playSettings, &logger)
+	return play.Playlist(pl, features, &playSettings, &logger)
 }

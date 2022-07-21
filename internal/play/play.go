@@ -13,21 +13,22 @@ import (
 	device "github.com/gotracker/gosound"
 	"github.com/gotracker/playback"
 
+	playerFeature "github.com/gotracker/gotracker/internal/feature"
 	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
 	"github.com/gotracker/gotracker/internal/playlist"
 	"github.com/gotracker/playback/format"
-	itEffect "github.com/gotracker/playback/format/it/playback/effect"
-	s3mEffect "github.com/gotracker/playback/format/s3m/playback/effect"
-	xmEffect "github.com/gotracker/playback/format/xm/playback/effect"
+	itEffect "github.com/gotracker/playback/format/it/effect"
+	itFeature "github.com/gotracker/playback/format/it/feature"
+	s3mEffect "github.com/gotracker/playback/format/s3m/effect"
+	xmEffect "github.com/gotracker/playback/format/xm/effect"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/settings"
 	"github.com/gotracker/playback/song"
 )
 
-func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Settings, logger logging.Log) (bool, error) {
+func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Settings, logger logging.Log) (bool, error) {
 	var (
 		play      playback.Playback
 		progress  *progressBar.ProgressBar
@@ -53,7 +54,7 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 		}
 	}
 
-	waveOut, configuration, err := output.CreateOutputDevice(settings.Output)
+	waveOut, features, err := output.CreateOutputDevice(settings.Output)
 	if err != nil {
 		return false, err
 	}
@@ -76,17 +77,17 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 		}
 	}()
 
-	configuration = append(configuration, feature.IgnoreUnknownEffect{Enabled: !settings.PanicOnUnhandledEffect})
+	features = append(features, feature.IgnoreUnknownEffect{Enabled: !settings.PanicOnUnhandledEffect})
 
 	if settings.Tracing {
-		configuration = append(configuration, feature.EnableTracing{
+		features = append(features, feature.EnableTracing{
 			Filename: settings.TracingFile,
 		})
 	}
 
 	logger.Printf("Output device: %s\n", waveOut.Name())
 
-	playedAtLeastOne, err := renderSongs(pl, outBufs, options, configuration, settings, func(pb playback.Playback, tickInterval time.Duration) error {
+	playedAtLeastOne, err := renderSongs(pl, outBufs, features, settings, func(pb playback.Playback, tickInterval time.Duration) error {
 		play = pb
 		defer func() {
 			if progress != nil {
@@ -101,21 +102,36 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 			play.SetOnEffect(func(e playback.Effect) {
 				var name string
 				switch t := e.(type) {
+				case *s3mEffect.UnhandledCommand:
+					name = fmt.Sprintf("UnhandledCommand(%s)", t.String())
+					effectMap[name]++
+
 				case *xmEffect.VolEff:
 					for _, eff := range t.Effects {
 						typ := reflect.TypeOf(eff)
 						name = typ.Name()
 						effectMap[name]++
 					}
+				case *xmEffect.UnhandledCommand:
+					name = fmt.Sprintf("UnhandledCommand(%c)", t.Command.ToRune())
+					effectMap[name]++
+				case *xmEffect.UnhandledVolCommand:
+					name = fmt.Sprintf("UnhandledVolCommand(%s)", t.String())
+					effectMap[name]++
+
 				case *itEffect.VolEff:
 					for _, eff := range t.Effects {
 						typ := reflect.TypeOf(eff)
 						name = typ.Name()
 						effectMap[name]++
 					}
-				case *s3mEffect.UnhandledCommand:
-					name = fmt.Sprintf("UnhandledCommand(%c)", t.Command+'@')
+				case *itEffect.UnhandledCommand:
+					name = fmt.Sprintf("UnhandledCommand(%c)", t.Command.ToRune())
 					effectMap[name]++
+				case *itEffect.UnhandledVolCommand:
+					name = fmt.Sprintf("UnhandledVolCommand(%s)", t.String())
+					effectMap[name]++
+
 				default:
 					typ := reflect.TypeOf(t)
 					name = typ.Name()
@@ -160,35 +176,38 @@ func Playlist(pl *playlist.Playlist, options []settings.OptionFunc, settings *Se
 	return true, nil
 }
 
-func findFeatureByName(configuration []feature.Feature, name string) (feature.Feature, bool) {
-	for _, feature := range configuration {
-		tf := reflect.TypeOf(feature)
-		if tf.Name() == name {
-			return feature, true
+func getFeatureByType[T feature.Feature](features []feature.Feature) (T, bool) {
+	var empty T
+	if len(features) == 0 {
+		return empty, false
+	}
+
+	tt := reflect.TypeOf(empty)
+	for _, f := range features {
+		v := reflect.ValueOf(f)
+		if v.CanConvert(tt) {
+			return v.Convert(tt).Interface().(T), true
 		}
 	}
-	return nil, false
+
+	return empty, false
 }
 
-func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, options []settings.OptionFunc, configuration []feature.Feature, settings *Settings, startPlayingCB func(pb playback.Playback, tickInterval time.Duration) error) (bool, error) {
+func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, features []feature.Feature, settings *Settings, startPlayingCB func(pb playback.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond
-	if feat, found := findFeatureByName(configuration, "PlayerSleepInterval"); found {
-		if f, ok := feat.(feature.PlayerSleepInterval); ok {
-			if f.Enabled {
-				tickInterval = f.Interval
-			} else {
-				tickInterval = time.Duration(0)
-			}
+	if setting, ok := getFeatureByType[playerFeature.PlayerSleepInterval](features); ok {
+		if setting.Enabled {
+			tickInterval = setting.Interval
+		} else {
+			tickInterval = 0
 		}
 	}
 
 	canPossiblyLoop := true
-	if feat, found := findFeatureByName(configuration, "SongLoop"); found {
-		if f, ok := feat.(feature.SongLoop); ok {
-			canPossiblyLoop = (f.Count != 0)
-		}
+	if setting, ok := getFeatureByType[feature.SongLoop](features); ok {
+		canPossiblyLoop = (setting.Count != 0)
 	}
 
 	var playedAtLeastOne bool
@@ -198,7 +217,7 @@ playlistLoop:
 		if song == nil {
 			continue
 		}
-		playback, songFmt, err := format.Load(song.Filepath, options...)
+		playback, songFmt, err := format.Load(song.Filepath, features...)
 		if err != nil {
 			return playedAtLeastOne, fmt.Errorf("could not create song state! err[%v]", err)
 		} else if songFmt != nil {
@@ -206,11 +225,13 @@ playlistLoop:
 				return playedAtLeastOne, fmt.Errorf("could not setup playback sampler! err[%v]", err)
 			}
 		}
+
+		cfg := features
+
 		startOrder, startOrderSet := song.Start.Order.Get()
 		startRow, startRowSet := song.Start.Row.Get()
 		if startOrderSet || startRowSet {
 			txn := playback.StartPatternTransaction()
-			defer txn.Cancel()
 			if startOrderSet && startOrder >= 0 {
 				txn.SetNextOrder(index.Order(startOrder))
 			}
@@ -222,7 +243,6 @@ playlistLoop:
 			}
 		}
 
-		cfg := append([]feature.Feature{}, configuration...)
 		endOrder, endOrderSet := song.End.Order.Get()
 		endRow, endRowSet := song.End.Row.Get()
 		if endOrderSet && endRowSet && endOrder >= 0 && endRow >= 0 {
@@ -248,8 +268,8 @@ playlistLoop:
 		}
 		cfg = append(cfg,
 			feature.SongLoop{Count: loopCount},
-			feature.ITLongChannelOutput{Enabled: settings.ITLongChannelOutput},
-			feature.ITNewNoteActions{Enabled: settings.ITEnableNNA})
+			itFeature.LongChannelOutput{Enabled: settings.ITLongChannelOutput},
+			itFeature.NewNoteActions{Enabled: settings.ITEnableNNA})
 
 		if err := playback.Configure(cfg); err != nil {
 			return playedAtLeastOne, err

@@ -15,12 +15,10 @@ github.com/gotracker/goaudiofile v1.0.14 h1:gbut0vivYxV0EWH/rzvqukmx6GjbtvMylLHQ
 github.com/gotracker/goaudiofile v1.0.14/go.mod h1:+biBmTEKcFRF4hCR1flCtqOA76p6OReIAwqqV+07N8Y=
 github.com/gotracker/gomixing v1.1.2 h1:ybaPf1MBtBQaAeSj40Os8EUPurDySULHA0YR7KtL0JI=
 github.com/gotracker/gomixing v1.1.2/go.mod h1:KSwLWBk4HMKTVZH+zq4Db7nlDVcRegIL4uStkat0ASg=
-github.com/gotracker/gosound v1.1.1 h1:r5/0m5Z1bG4ZCN5sw7wMK93iXtWalX+VVm2PHKHq4q4=
-github.com/gotracker/gosound v1.1.1/go.mod h1:fdSlHuyjMmgqbdHCBroJO0eyI1OZ+qw5APfgQ+dHC7k=
 github.com/gotracker/opl2 v1.0.1 h1:1PVNs0dXqEAQxdws7fz2WEE3nSKkMb1osTTT7KgEi5g=
 github.com/gotracker/opl2 v1.0.1/go.mod h1:lW1WbZlh7svEMpurp9LLYWSyf1WPAb750cQ7xGIhCnY=
-github.com/gotracker/playback v0.2.4 h1:LilHNmek04jEheHvUtWk7n+U79rovTEM8WQ+/poWCCU=
-github.com/gotracker/playback v0.2.4/go.mod h1:3HHSzSO6hixuesItRYD40/XUWM2pmnG8IzxZWI2KK5M=
+github.com/gotracker/playback v0.2.5 h1:jqx1SgjdFg/wP0v2KZXUsD7pApMUyTTeUy9mU3BSklA=
+github.com/gotracker/playback v0.2.5/go.mod h1:X8xUj7TVwYecRZNqJ0xjzGyrhxkqiIkRv3Xr5R20I6I=
 github.com/heucuva/comparison v1.0.0 h1:xxXNKS9GKHetQavOz35FitlAXWvmvM3U6M5IRIw7kN8=
 github.com/heucuva/comparison v1.0.0/go.mod h1:5l0Va1uxFyy7S4DgdflnayxV2HStFwWI2rzbrlNNNMk=
 github.com/heucuva/go-directsound v1.0.0 h1:bN33QBwLmF95ZACyvJL9NDhauhMANi3g0tlsg0FaoEQ=

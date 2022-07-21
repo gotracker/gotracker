@@ -6,9 +6,8 @@ import (
 	"log"
 	"time"
 
-	device "github.com/gotracker/gosound"
-
 	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/song"
 )
 
@@ -23,7 +22,7 @@ const (
 
 // Player is a player of fine tracked musics
 type Player struct {
-	output         chan<- *device.PremixData
+	output         chan<- *output.PremixData
 	ctx            context.Context
 	cancel         context.CancelFunc
 	state          playerState
@@ -43,7 +42,7 @@ type Player struct {
 }
 
 // NewPlayer returns a new Player instance
-func NewPlayer(ctx context.Context, output chan<- *device.PremixData, tickInterval time.Duration) (*Player, error) {
+func NewPlayer(ctx context.Context, output chan<- *output.PremixData, tickInterval time.Duration) (*Player, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}

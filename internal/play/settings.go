@@ -1,11 +1,11 @@
 package play
 
 import (
-	device "github.com/gotracker/gosound"
+	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 )
 
 type Settings struct {
-	Output                 device.Settings
+	Output                 deviceCommon.Settings
 	NumPremixBuffers       int
 	PanicOnUnhandledEffect bool
 	GatherEffectCoverage   bool

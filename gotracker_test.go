@@ -8,10 +8,9 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format"
+	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
-
-	"github.com/gotracker/gosound"
 )
 
 func BenchmarkPlayerS3M(b *testing.B) {
@@ -38,7 +37,7 @@ func BenchmarkPlayerS3M(b *testing.B) {
 		b.Run("generate_s3m", func(b *testing.B) {
 			b.Helper()
 			b.ReportAllocs()
-			var premix *gosound.PremixData
+			var premix *output.PremixData
 			premix, err = pb.Generate(now.Sub(lastTime))
 			if err != nil {
 				if !errors.Is(err, song.ErrStopSong) {
@@ -93,7 +92,7 @@ func BenchmarkIT(b *testing.B) {
 		b.Run("generate_it", func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			var premix *gosound.PremixData
+			var premix *output.PremixData
 			for i := 0; i < b.N; i++ {
 				premix, err = pb.Generate(step)
 				if err != nil {

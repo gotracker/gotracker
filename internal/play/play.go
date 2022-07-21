@@ -10,12 +10,12 @@ import (
 	"time"
 
 	progressBar "github.com/cheggaaa/pb"
-	device "github.com/gotracker/gosound"
 	"github.com/gotracker/playback"
 
 	playerFeature "github.com/gotracker/gotracker/internal/feature"
 	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
+	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/gotracker/internal/playlist"
 	"github.com/gotracker/playback/format"
 	itEffect "github.com/gotracker/playback/format/it/effect"
@@ -23,6 +23,7 @@ import (
 	s3mEffect "github.com/gotracker/playback/format/s3m/effect"
 	xmEffect "github.com/gotracker/playback/format/xm/effect"
 	"github.com/gotracker/playback/index"
+	playbackOutput "github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
@@ -35,14 +36,14 @@ func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Setti
 		lastOrder int
 	)
 
-	settings.Output.OnRowOutput = func(deviceKind device.Kind, premix *device.PremixData) {
+	settings.Output.OnRowOutput = func(kind deviceCommon.Kind, premix *playbackOutput.PremixData) {
 		row := premix.Userdata.(*render.RowRender)
-		switch deviceKind {
-		case device.KindSoundCard:
+		switch kind {
+		case deviceCommon.KindSoundCard:
 			if row.RowText != nil {
 				logger.Printf("[%0.3d:%0.3d] %s\n", row.Order, row.Row, row.RowText.String())
 			}
-		case device.KindFile:
+		case deviceCommon.KindFile:
 			if progress == nil {
 				progress = progressBar.StartNew(play.GetNumOrders())
 				lastOrder = row.Order
@@ -60,7 +61,7 @@ func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Setti
 	}
 	defer waveOut.Close()
 
-	outBufs := make(chan *device.PremixData, settings.NumPremixBuffers)
+	outBufs := make(chan *playbackOutput.PremixData, settings.NumPremixBuffers)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -193,7 +194,7 @@ func getFeatureByType[T feature.Feature](features []feature.Feature) (T, bool) {
 	return empty, false
 }
 
-func renderSongs(pl *playlist.Playlist, outBufs chan<- *device.PremixData, features []feature.Feature, settings *Settings, startPlayingCB func(pb playback.Playback, tickInterval time.Duration) error) (bool, error) {
+func renderSongs(pl *playlist.Playlist, outBufs chan<- *playbackOutput.PremixData, features []feature.Feature, settings *Settings, startPlayingCB func(pb playback.Playback, tickInterval time.Duration) error) (bool, error) {
 	defer close(outBufs)
 
 	tickInterval := time.Duration(5) * time.Millisecond

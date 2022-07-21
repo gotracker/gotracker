@@ -3,9 +3,9 @@ package output
 import (
 	"errors"
 
-	device "github.com/gotracker/gosound"
-
 	playerFeature "github.com/gotracker/gotracker/internal/feature"
+	"github.com/gotracker/gotracker/internal/output/device"
+	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/playback/player/feature"
 )
 
@@ -41,7 +41,7 @@ func calculateOptimalDefaultOutputDeviceName() string {
 }
 
 // CreateOutputDevice creates an output device based on the provided settings
-func CreateOutputDevice(settings device.Settings) (device.Device, []feature.Feature, error) {
+func CreateOutputDevice(settings deviceCommon.Settings) (device.Device, []feature.Feature, error) {
 	d, err := device.CreateOutputDevice(settings)
 	if err != nil {
 		return nil, nil, err
@@ -55,7 +55,7 @@ func CreateOutputDevice(settings device.Settings) (device.Device, []feature.Feat
 
 	kind := device.GetKind(d)
 	switch kind {
-	case device.KindFile:
+	case deviceCommon.KindFile:
 		featureDisable = []feature.Feature{
 			feature.SongLoop{Count: 0},
 			playerFeature.PlayerSleepInterval{Enabled: false},
@@ -73,7 +73,7 @@ func Setup() {
 // DeviceInfo returns information about a device
 type DeviceInfo struct {
 	Priority int
-	Kind     device.Kind
+	Kind     deviceCommon.Kind
 }
 
 func GetOutputDevices() map[string]DeviceInfo {

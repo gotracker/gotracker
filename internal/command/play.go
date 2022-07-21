@@ -4,12 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
+	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/gotracker/internal/play"
 	"github.com/gotracker/gotracker/internal/playlist"
 	"github.com/gotracker/playback/player/feature"
@@ -18,7 +18,7 @@ import (
 // persistent flags
 var (
 	playSettings = play.Settings{
-		Output: device.Settings{
+		Output: deviceCommon.Settings{
 			Channels:         2,
 			SamplesPerSecond: 44100,
 			BitsPerSample:    16,

@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/playback/output"
 	"github.com/pkg/errors"
 
@@ -66,6 +67,14 @@ func (d *pulseaudioDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Pr
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var sampFmt sampling.Format
+	switch d.mix.BitsPerSample {
+	case 8:
+		sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		sampFmt = sampling.Format16BitLESigned
+	}
+
 	for {
 		select {
 		case <-myCtx.Done():
@@ -74,8 +83,7 @@ func (d *pulseaudioDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Pr
 			if !ok {
 				return nil
 			}
-			// TODO: in 8-bit mode, pulseaudio wants uint8 format, instead of int8
-			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume)
+			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
 			d.pa.Output(mixedData)
 			if d.onRowOutput != nil {
 				d.onRowOutput(deviceCommon.KindSoundCard, row)

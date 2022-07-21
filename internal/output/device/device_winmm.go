@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/sampling"
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/playback/output"
 	winmm "github.com/heucuva/go-winmm"
@@ -73,6 +74,14 @@ func (d *winmmDevice) PlayWithCtx(ctx context.Context, in <-chan *output.PremixD
 
 	out := make(chan RowWave, 3)
 
+	var sampFmt sampling.Format
+	switch d.mix.BitsPerSample {
+	case 8:
+		sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		sampFmt = sampling.Format16BitLESigned
+	}
+
 	go func() {
 		defer cancel()
 		defer close(out)
@@ -84,7 +93,7 @@ func (d *winmmDevice) PlayWithCtx(ctx context.Context, in <-chan *output.PremixD
 				if !ok {
 					return
 				}
-				mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume)
+				mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
 				rowWave := RowWave{
 					Wave: d.waveout.Write(mixedData),
 					Row:  row,

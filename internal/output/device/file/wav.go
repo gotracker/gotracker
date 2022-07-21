@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/sampling"
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/playback/output"
 )
@@ -112,6 +113,14 @@ func (d *fileWav) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData,
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var sampFmt sampling.Format
+	switch d.mix.BitsPerSample {
+	case 8:
+		sampFmt = sampling.Format8BitSigned
+	case 16:
+		sampFmt = sampling.Format16BitLESigned
+	}
+
 	for {
 		select {
 		case <-myCtx.Done():
@@ -120,7 +129,7 @@ func (d *fileWav) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData,
 			if !ok {
 				return nil
 			}
-			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume)
+			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
 			sz, err := d.w.Write(mixedData)
 			if err != nil {
 				return err

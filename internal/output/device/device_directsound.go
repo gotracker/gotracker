@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/sampling"
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/playback/output"
 	directsound "github.com/heucuva/go-directsound"
@@ -89,7 +90,7 @@ type playbackBuffer struct {
 	writePos   int
 }
 
-func (p *playbackBuffer) Add(mix *mixing.Mixer, row *output.PremixData, pos int, size int, blockAlign int, panmixer mixing.PanMixer) (int, error) {
+func (p *playbackBuffer) Add(mix *mixing.Mixer, row *output.PremixData, pos int, size int, blockAlign int, panmixer mixing.PanMixer, format sampling.Format) (int, error) {
 	remaining := p.maxSamples - p.writePos
 	samples := row.SamplesLen - pos
 	if samples >= remaining {
@@ -112,7 +113,7 @@ func (p *playbackBuffer) Add(mix *mixing.Mixer, row *output.PremixData, pos int,
 		rear := make([]byte, rem*blockAlign)
 		writeSegs = append(writeSegs, rear)
 	}
-	mix.FlattenTo(writeSegs, panmixer, row.SamplesLen, row.Data, row.MixerVolume)
+	mix.FlattenTo(writeSegs, panmixer, row.SamplesLen, row.Data, row.MixerVolume, format)
 	if err := p.buffer.Unlock(segments); err != nil {
 		return 0, err
 	}
@@ -140,6 +141,14 @@ func (d *dsoundDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Premix
 
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	var sampFmt sampling.Format
+	switch d.mix.BitsPerSample {
+	case 8:
+		sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		sampFmt = sampling.Format16BitLESigned
+	}
 
 	events := []windows.Handle{}
 	availableEvents := make(chan windows.Handle, maxOutstandingEvents)
@@ -215,7 +224,7 @@ func (d *dsoundDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Premix
 					})
 				}
 				for size > 0 {
-					n, err := currentBuffer.Add(&d.mix, row, pos, row.SamplesLen, blockAlign, panmixer)
+					n, err := currentBuffer.Add(&d.mix, row, pos, row.SamplesLen, blockAlign, panmixer, sampFmt)
 					size -= n
 					pos += n
 					if err != nil {

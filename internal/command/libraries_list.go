@@ -111,10 +111,10 @@ var librariesList = []libraryInfo{
 		Homepage: "https://github.com/gotracker/goaudiofile",
 	},
 	{
-		Name:     "github.com/gotracker/gotracker/voice",
-		Package:  "github.com/gotracker/voice",
+		Name:     "github.com/gotracker/gotracker/playback",
+		Package:  "github.com/gotracker/playback",
 		License:  "Unlicense",
-		Homepage: "https://github.com/gotracker/voice",
+		Homepage: "https://github.com/gotracker/playback",
 	},
 	{
 		Name:     "go-runewidth",

@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gotracker/gotracker/internal/command/internal/playlist"
-	"github.com/gotracker/gotracker/internal/optional"
+	"github.com/gotracker/gotracker/internal/playlist"
+	"github.com/heucuva/optional"
 
 	"github.com/spf13/cobra"
 )

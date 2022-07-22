@@ -7,10 +7,10 @@ import (
 	"os"
 	"text/tabwriter"
 
-	device "github.com/gotracker/gosound"
 	"github.com/spf13/cobra"
 
 	"github.com/gotracker/gotracker/internal/output"
+	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 )
 
 var (
@@ -87,11 +87,11 @@ func deviceListSerialized(pmap []map[string]output.DeviceInfo, recordFunc record
 		for k, v := range m {
 			var kind string
 			switch v.Kind {
-			case device.KindNone:
+			case deviceCommon.KindNone:
 				kind = "none"
-			case device.KindSoundCard:
+			case deviceCommon.KindSoundCard:
 				kind = "sound-card"
-			case device.KindFile:
+			case deviceCommon.KindFile:
 				kind = "file-writer"
 			default:
 				kind = "unknown"

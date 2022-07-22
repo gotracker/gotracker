@@ -222,7 +222,7 @@ playlistLoop:
 		if err != nil {
 			return playedAtLeastOne, fmt.Errorf("could not create song state! err[%v]", err)
 		} else if songFmt != nil {
-			if err := playback.SetupSampler(settings.Output.SamplesPerSecond, settings.Output.Channels, settings.Output.BitsPerSample); err != nil {
+			if err := playback.SetupSampler(settings.Output.SamplesPerSecond, settings.Output.Channels); err != nil {
 				return playedAtLeastOne, fmt.Errorf("could not setup playback sampler! err[%v]", err)
 			}
 		}

@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/cheggaaa/pb v1.0.29
-	github.com/gotracker/gomixing v1.2.0
-	github.com/gotracker/playback v0.2.6
+	github.com/gotracker/gomixing v1.3.0
+	github.com/gotracker/playback v0.2.7
 	github.com/heucuva/go-directsound v1.0.0
 	github.com/heucuva/go-win32 v1.0.0
 	github.com/heucuva/go-winmm v1.0.0

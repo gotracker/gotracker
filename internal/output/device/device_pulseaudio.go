@@ -19,8 +19,9 @@ const pulseaudioName = "pulseaudio"
 
 type pulseaudioDevice struct {
 	device
-	mix mixing.Mixer
-	pa  *pulseaudio.Client
+	mix     mixing.Mixer
+	sampFmt sampling.Format
+	pa      *pulseaudio.Client
 }
 
 func (pulseaudioDevice) GetKind() deviceCommon.Kind {
@@ -38,9 +39,15 @@ func newPulseAudioDevice(settings deviceCommon.Settings) (Device, error) {
 			onRowOutput: settings.OnRowOutput,
 		},
 		mix: mixing.Mixer{
-			Channels:      settings.Channels,
-			BitsPerSample: settings.BitsPerSample,
+			Channels: settings.Channels,
 		},
+	}
+
+	switch settings.BitsPerSample {
+	case 8:
+		d.sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		d.sampFmt = sampling.Format16BitLESigned
 	}
 
 	play, err := pulseaudio.New("Music", settings.SamplesPerSecond, settings.Channels, settings.BitsPerSample)
@@ -67,14 +74,6 @@ func (d *pulseaudioDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Pr
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var sampFmt sampling.Format
-	switch d.mix.BitsPerSample {
-	case 8:
-		sampFmt = sampling.Format8BitUnsigned
-	case 16:
-		sampFmt = sampling.Format16BitLESigned
-	}
-
 	for {
 		select {
 		case <-myCtx.Done():
@@ -83,7 +82,7 @@ func (d *pulseaudioDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Pr
 			if !ok {
 				return nil
 			}
-			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
+			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, d.sampFmt)
 			d.pa.Output(mixedData)
 			if d.onRowOutput != nil {
 				d.onRowOutput(deviceCommon.KindSoundCard, row)

@@ -23,7 +23,7 @@ func BenchmarkPlayerS3M(b *testing.B) {
 		}
 	})
 
-	if err := pb.SetupSampler(44100, 2, 16); err != nil {
+	if err := pb.SetupSampler(44100, 2); err != nil {
 		b.Error(err)
 	}
 
@@ -78,7 +78,7 @@ func BenchmarkIT(b *testing.B) {
 		}
 	})
 
-	if err := pb.SetupSampler(44100, 2, 16); err != nil {
+	if err := pb.SetupSampler(44100, 2); err != nil {
 		b.Error(err)
 	}
 

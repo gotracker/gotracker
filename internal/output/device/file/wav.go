@@ -14,7 +14,8 @@ import (
 )
 
 type fileWav struct {
-	mix mixing.Mixer
+	mix     mixing.Mixer
+	sampFmt sampling.Format
 
 	f  *os.File
 	w  *bufio.Writer
@@ -29,10 +30,16 @@ const (
 func newFileWavDevice(settings deviceCommon.Settings) (File, error) {
 	fd := fileWav{
 		mix: mixing.Mixer{
-			Channels:      settings.Channels,
-			BitsPerSample: settings.BitsPerSample,
+			Channels: settings.Channels,
 		},
 	}
+	switch settings.BitsPerSample {
+	case 8:
+		fd.sampFmt = sampling.Format8BitSigned
+	case 16:
+		fd.sampFmt = sampling.Format16BitLESigned
+	}
+
 	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, err
@@ -113,14 +120,6 @@ func (d *fileWav) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData,
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var sampFmt sampling.Format
-	switch d.mix.BitsPerSample {
-	case 8:
-		sampFmt = sampling.Format8BitSigned
-	case 16:
-		sampFmt = sampling.Format16BitLESigned
-	}
-
 	for {
 		select {
 		case <-myCtx.Done():
@@ -129,7 +128,7 @@ func (d *fileWav) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData,
 			if !ok {
 				return nil
 			}
-			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
+			mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, d.sampFmt)
 			sz, err := d.w.Write(mixedData)
 			if err != nil {
 				return err

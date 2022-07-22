@@ -20,6 +20,7 @@ const winmmName = "winmm"
 type winmmDevice struct {
 	device
 	mix     mixing.Mixer
+	sampFmt sampling.Format
 	waveout *winmm.WaveOut
 }
 
@@ -38,10 +39,17 @@ func newWinMMDevice(settings deviceCommon.Settings) (Device, error) {
 			onRowOutput: settings.OnRowOutput,
 		},
 		mix: mixing.Mixer{
-			Channels:      settings.Channels,
-			BitsPerSample: settings.BitsPerSample,
+			Channels: settings.Channels,
 		},
 	}
+
+	switch settings.BitsPerSample {
+	case 8:
+		d.sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		d.sampFmt = sampling.Format16BitLESigned
+	}
+
 	var err error
 	d.waveout, err = winmm.New(settings.Channels, settings.SamplesPerSecond, settings.BitsPerSample)
 	if err != nil {
@@ -74,14 +82,6 @@ func (d *winmmDevice) PlayWithCtx(ctx context.Context, in <-chan *output.PremixD
 
 	out := make(chan RowWave, 3)
 
-	var sampFmt sampling.Format
-	switch d.mix.BitsPerSample {
-	case 8:
-		sampFmt = sampling.Format8BitUnsigned
-	case 16:
-		sampFmt = sampling.Format16BitLESigned
-	}
-
 	go func() {
 		defer cancel()
 		defer close(out)
@@ -93,7 +93,7 @@ func (d *winmmDevice) PlayWithCtx(ctx context.Context, in <-chan *output.PremixD
 				if !ok {
 					return
 				}
-				mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, sampFmt)
+				mixedData := d.mix.Flatten(panmixer, row.SamplesLen, row.Data, row.MixerVolume, d.sampFmt)
 				rowWave := RowWave{
 					Wave: d.waveout.Write(mixedData),
 					Row:  row,

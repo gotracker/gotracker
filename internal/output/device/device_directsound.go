@@ -27,7 +27,8 @@ type dsoundDevice struct {
 	lpdsbPrimary *directsound.Buffer
 	wfx          *winmm.WAVEFORMATEX
 
-	mix mixing.Mixer
+	mix     mixing.Mixer
+	sampFmt sampling.Format
 }
 
 // Name returns the device name
@@ -45,12 +46,18 @@ func newDSoundDevice(settings deviceCommon.Settings) (Device, error) {
 			onRowOutput: settings.OnRowOutput,
 		},
 		mix: mixing.Mixer{
-			Channels:      settings.Channels,
-			BitsPerSample: settings.BitsPerSample,
+			Channels: settings.Channels,
 		},
 	}
-	preferredDeviceName := ""
 
+	switch settings.BitsPerSample {
+	case 8:
+		d.sampFmt = sampling.Format8BitUnsigned
+	case 16:
+		d.sampFmt = sampling.Format16BitLESigned
+	}
+
+	preferredDeviceName := ""
 	ds, err := directsound.NewDSound(preferredDeviceName)
 	if err != nil {
 		return nil, err
@@ -142,14 +149,6 @@ func (d *dsoundDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Premix
 	myCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var sampFmt sampling.Format
-	switch d.mix.BitsPerSample {
-	case 8:
-		sampFmt = sampling.Format8BitUnsigned
-	case 16:
-		sampFmt = sampling.Format16BitLESigned
-	}
-
 	events := []windows.Handle{}
 	availableEvents := make(chan windows.Handle, maxOutstandingEvents)
 	defer func() {
@@ -224,7 +223,7 @@ func (d *dsoundDevice) PlayWithCtx(ctx context.Context, in <-chan *output.Premix
 					})
 				}
 				for size > 0 {
-					n, err := currentBuffer.Add(&d.mix, row, pos, row.SamplesLen, blockAlign, panmixer, sampFmt)
+					n, err := currentBuffer.Add(&d.mix, row, pos, row.SamplesLen, blockAlign, panmixer, d.sampFmt)
 					size -= n
 					pos += n
 					if err != nil {

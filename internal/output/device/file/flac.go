@@ -21,6 +21,7 @@ import (
 type fileFlac struct {
 	mix              mixing.Mixer
 	samplesPerSecond int
+	bitsPerSample    int
 
 	f *os.File
 	w *bufio.Writer
@@ -29,10 +30,10 @@ type fileFlac struct {
 func newFileFlacDevice(settings deviceCommon.Settings) (File, error) {
 	fd := fileFlac{
 		mix: mixing.Mixer{
-			Channels:      settings.Channels,
-			BitsPerSample: settings.BitsPerSample,
+			Channels: settings.Channels,
 		},
 		samplesPerSecond: settings.SamplesPerSecond,
+		bitsPerSample:    settings.BitsPerSample,
 	}
 	f, err := os.OpenFile(settings.Filepath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
@@ -63,7 +64,7 @@ func (d *fileFlac) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData
 		BlockSizeMax:  65535,
 		SampleRate:    uint32(d.samplesPerSecond),
 		NChannels:     uint8(d.mix.Channels),
-		BitsPerSample: uint8(d.mix.BitsPerSample),
+		BitsPerSample: uint8(d.bitsPerSample),
 	}
 	enc, err := flac.NewEncoder(w, si)
 	if err != nil {
@@ -97,7 +98,7 @@ func (d *fileFlac) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData
 			if !ok {
 				return nil
 			}
-			mixedData := d.mix.FlattenToInts(panmixer, row.SamplesLen, row.Data, row.MixerVolume)
+			mixedData := d.mix.FlattenToInts(panmixer, row.SamplesLen, d.bitsPerSample, row.Data, row.MixerVolume)
 			subframes := make([]*frame.Subframe, d.mix.Channels)
 			for i := range subframes {
 				subframe := &frame.Subframe{
@@ -128,7 +129,7 @@ func (d *fileFlac) PlayWithCtx(ctx context.Context, in <-chan *output.PremixData
 					BlockSize:         uint16(row.SamplesLen),
 					SampleRate:        uint32(d.samplesPerSecond),
 					Channels:          channels,
-					BitsPerSample:     uint8(d.mix.BitsPerSample),
+					BitsPerSample:     uint8(d.bitsPerSample),
 				},
 				Subframes: subframes,
 			}

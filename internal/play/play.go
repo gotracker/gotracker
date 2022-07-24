@@ -218,13 +218,20 @@ playlistLoop:
 		if song == nil {
 			continue
 		}
-		playback, songFmt, err := format.Load(song.Filepath, features...)
+		s, err := format.Load(song.Filepath, features...)
 		if err != nil {
 			return playedAtLeastOne, fmt.Errorf("could not create song state! err[%v]", err)
-		} else if songFmt != nil {
-			if err := playback.SetupSampler(settings.Output.SamplesPerSecond, settings.Output.Channels); err != nil {
-				return playedAtLeastOne, fmt.Errorf("could not setup playback sampler! err[%v]", err)
-			}
+		} else if s == nil {
+			return playedAtLeastOne, fmt.Errorf("unexpectedly empty song state! file[%s]", song.Filepath)
+		}
+
+		playback, err := s.ConstructPlayer()
+		if err != nil {
+			return playedAtLeastOne, fmt.Errorf("could not construct playback sampler! err[%v]", err)
+		}
+
+		if err := playback.SetupSampler(settings.Output.SamplesPerSecond, settings.Output.Channels); err != nil {
+			return playedAtLeastOne, fmt.Errorf("could not setup playback sampler! err[%v]", err)
 		}
 
 		cfg := features

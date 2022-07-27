@@ -13,4 +13,5 @@ type Settings struct {
 	ITEnableNNA            bool
 	Tracing                bool
 	TracingFile            string
+	SoloChannels           []int
 }

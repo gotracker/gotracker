@@ -55,7 +55,7 @@ func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Setti
 		}
 	}
 
-	waveOut, features, err := output.CreateOutputDevice(settings.Output)
+	waveOut, outFeatures, err := output.CreateOutputDevice(settings.Output)
 	if err != nil {
 		return false, err
 	}
@@ -78,6 +78,7 @@ func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Setti
 		}
 	}()
 
+	features = append(features, outFeatures...)
 	features = append(features, feature.IgnoreUnknownEffect{Enabled: !settings.PanicOnUnhandledEffect})
 
 	if settings.Tracing {
@@ -278,6 +279,22 @@ playlistLoop:
 			feature.SongLoop{Count: loopCount},
 			itFeature.LongChannelOutput{Enabled: settings.ITLongChannelOutput},
 			itFeature.NewNoteActions{Enabled: settings.ITEnableNNA})
+
+		if setting, ok := getFeatureByType[playerFeature.SoloChannels](features); ok && len(setting.Channels) > 0 {
+			cm := make([]feature.ChannelMute, playback.GetNumChannels())
+			for i := range cm {
+				cm[i].Channel = i + 1
+				cm[i].Muted = true
+			}
+			for _, solo := range setting.Channels {
+				if solo > 0 && solo <= len(cm) {
+					cm[solo-1].Muted = false
+				}
+			}
+			for _, f := range cm {
+				cfg = append(cfg, f)
+			}
+		}
 
 		if err := playback.Configure(cfg); err != nil {
 			return playedAtLeastOne, err

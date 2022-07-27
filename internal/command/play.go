@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	playerFeature "github.com/gotracker/gotracker/internal/feature"
 	"github.com/gotracker/gotracker/internal/logging"
 	"github.com/gotracker/gotracker/internal/output"
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
@@ -62,6 +63,7 @@ func init() {
 		persistFlags.StringVarP(&playSettings.Output.Filepath, "output-file", "f", playSettings.Output.Filepath, "output filepath")
 		persistFlags.BoolVar(&disableNativeSamples, "disable-native-samples", disableNativeSamples, "disable preconversion of samples to native sampling format")
 		//persistFlags.BoolVar(&disablePreconvertSamples, "disable-preconvert-samples", disablePreconvertSamples, "disable preconversion of samples to 32-bit floats")
+		persistFlags.IntSliceVar(&playSettings.SoloChannels, "channel-solo", playSettings.SoloChannels, "solo/soli one or more channels")
 	}
 
 	registerPlayFlags(playCmd.Flags())
@@ -167,6 +169,7 @@ func getPlaylistFromArgList(args []string) (*playlist.Playlist, error) {
 func playSongs(pl *playlist.Playlist) (bool, error) {
 	var features []feature.Feature
 	features = append(features, feature.UseNativeSampleFormat(!disableNativeSamples))
+	features = append(features, playerFeature.SoloChannels{Channels: playSettings.SoloChannels})
 
 	return play.Playlist(pl, features, &playSettings, &logger)
 }

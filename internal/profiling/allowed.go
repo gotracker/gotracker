@@ -1,3 +1,4 @@
+//go:build debug
 // +build debug
 
 package profiling
@@ -7,5 +8,5 @@ import (
 )
 
 func init() {
-	Allowed = true
+	allowed = true
 }

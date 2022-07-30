@@ -1,14 +1,11 @@
-package profiling
+package api
 
 import (
-	"net/http"
-
 	"github.com/gorilla/mux"
 )
 
 var (
 	allowed bool
-	Enabled bool
 )
 
 func Allowed() bool {
@@ -16,8 +13,9 @@ func Allowed() bool {
 }
 
 func ActivateRoute(router *mux.Router) {
-	if !allowed || !Enabled {
+	if !allowed {
 		return
 	}
-	router.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+
+	router.HandleFunc("/api/load", LoadHandler)
 }

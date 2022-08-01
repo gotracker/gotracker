@@ -14,8 +14,9 @@ import (
 
 // flags
 var (
-	profiler       bool   = false
-	webBindAddress string = "localhost:6060"
+	profiler         bool   = false
+	webBindAddress   string = "localhost:6060"
+	additionalRoutes []web.RouteActivator
 )
 
 var rootCmd = &cobra.Command{
@@ -32,7 +33,7 @@ var rootCmd = &cobra.Command{
 		sigCtx, sigHandlerStop := signal.NotifyContext(context.Background(), os.Interrupt)
 
 		// start up the web server (if enabled)
-		web.Activate(sigCtx, webBindAddress)
+		web.Activate(sigCtx, webBindAddress, additionalRoutes...)
 		go func() {
 			defer sigHandlerStop()
 			web.WaitForShutdown()
@@ -71,8 +72,8 @@ func init() {
 		if profiling.Allowed() {
 			persistFlags.BoolVar(&profiler, "profiler", profiler, "enable profiler (and supporting http server)")
 		}
-		if web.Allowed() {
-			persistFlags.StringVarP(&webBindAddress, "web-bind-addr", "w", webBindAddress, "web (and profiler, if enabled) bind address")
+		if web.Allowed() || profiling.Allowed() {
+			persistFlags.StringVarP(&webBindAddress, "web-bind-addr", "w", webBindAddress, "web (and/or profiler) bind address")
 		}
 	}
 }

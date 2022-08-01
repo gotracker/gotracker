@@ -15,9 +15,10 @@ func Allowed() bool {
 	return allowed
 }
 
-func ActivateRoute(router *mux.Router) {
+func ActivateRoute(router *mux.Router) error {
 	if !allowed || !Enabled {
-		return
+		return nil
 	}
 	router.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+	return nil
 }

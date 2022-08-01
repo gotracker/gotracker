@@ -41,7 +41,13 @@ func ShutdownHandler(w http.ResponseWriter, r *http.Request) {
 	Shutdown()
 }
 
-func Activate(ctx context.Context, webBindAddress string) {
+type RouteActivator func(router *mux.Router) error
+
+func UnhandledHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("web server: unhandled route %v\n", r.URL.Path)
+}
+
+func Activate(ctx context.Context, webBindAddress string, additionalRoutes ...RouteActivator) {
 	if !allowed || !Enabled {
 		return
 	}
@@ -51,12 +57,17 @@ func Activate(ctx context.Context, webBindAddress string) {
 	router := mux.NewRouter()
 
 	// activate profiling (if enabled)
-	profiling.ActivateRoute(router)
+	// activate webApi (if allowed)
+	additionalRoutes = append([]RouteActivator{profiling.ActivateRoute, webApi.ActivateRoute}, additionalRoutes...)
 
-	webApi.ActivateRoute(router)
+	for _, additionalRoute := range additionalRoutes {
+		additionalRoute(router)
+	}
 
 	// add shutdown handler
 	router.HandleFunc("/shutdown", ShutdownHandler)
+
+	router.PathPrefix("/").HandlerFunc(UnhandledHandler)
 
 	srv := &http.Server{
 		Handler: router,

@@ -1,5 +1,5 @@
-//go:build web || debug
-// +build web debug
+//go:build web
+// +build web
 
 package api
 

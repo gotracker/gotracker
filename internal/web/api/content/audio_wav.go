@@ -21,13 +21,16 @@ func (a AudioWav) WriteHeader(w http.ResponseWriter) {
 }
 
 func (a *AudioWav) Write(w http.ResponseWriter, data []byte) (int, error) {
-	var err error
+	var (
+		n   int
+		err error
+	)
 	a.once.Do(func() {
 		header := a.generateHeader()
-		_, err = w.Write(header)
+		n, err = w.Write(header)
 	})
 	if err != nil {
-		return 0, err
+		return n, err
 	}
 
 	return w.Write(data)

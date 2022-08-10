@@ -93,7 +93,6 @@ func Playlist(pl *playlist.Playlist, features []feature.Feature, settings *Setti
 		play = pb
 		defer func() {
 			if progress != nil {
-				progress.Set64(progress.Total)
 				progress.Finish()
 			}
 		}()

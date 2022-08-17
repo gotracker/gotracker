@@ -5,13 +5,14 @@ import (
 )
 
 type Settings struct {
-	Output                 deviceCommon.Settings
-	NumPremixBuffers       int
-	PanicOnUnhandledEffect bool
-	GatherEffectCoverage   bool
-	ITLongChannelOutput    bool
-	ITEnableNNA            bool
-	Tracing                bool
-	TracingFile            string
-	SoloChannels           []int
+	Output                        deviceCommon.Settings
+	NumPremixBuffers              int
+	PanicOnUnhandledEffect        bool
+	GatherEffectCoverage          bool
+	ITLongChannelOutput           bool
+	ITEnableNNA                   bool
+	MovingAverageFilterWindowSize int
+	Tracing                       bool
+	TracingFile                   string
+	SoloChannels                  []int
 }

@@ -25,11 +25,12 @@ var (
 			BitsPerSample:    16,
 			Filepath:         "output.wav",
 		},
-		NumPremixBuffers:       64,
-		PanicOnUnhandledEffect: false,
-		GatherEffectCoverage:   false,
-		ITLongChannelOutput:    false,
-		ITEnableNNA:            false,
+		NumPremixBuffers:              64,
+		PanicOnUnhandledEffect:        false,
+		GatherEffectCoverage:          false,
+		ITLongChannelOutput:           false,
+		ITEnableNNA:                   false,
+		MovingAverageFilterWindowSize: 0,
 	}
 	loopPlaylist         bool = false
 	logger               logging.Squelchable
@@ -58,6 +59,7 @@ func init() {
 		persistFlags.BoolVarP(&loopPlaylist, "loop-playlist", "L", loopPlaylist, "enable playlist loop (only useful in multi-song mode)")
 		persistFlags.BoolVar(&playSettings.ITLongChannelOutput, "it-long", playSettings.ITLongChannelOutput, "enable Impulse Tracker long channel display")
 		persistFlags.BoolVar(&playSettings.ITEnableNNA, "it-enable-nna", playSettings.ITEnableNNA, "enable Impulse Tracker New Note Actions")
+		persistFlags.IntVar(&playSettings.MovingAverageFilterWindowSize, "movavg-filter-window", playSettings.MovingAverageFilterWindowSize, "moving average filter window size (0=off)")
 		persistFlags.BoolVarP(&logger.Squelch, "silent", "q", logger.Squelch, "disable non-error logging")
 		persistFlags.StringVarP(&playSettings.Output.Name, "output", "O", output.DefaultOutputDeviceName, "output device")
 		persistFlags.StringVarP(&playSettings.Output.Filepath, "output-file", "f", playSettings.Output.Filepath, "output filepath")

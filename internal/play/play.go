@@ -277,7 +277,8 @@ playlistLoop:
 		cfg = append(cfg,
 			feature.SongLoop{Count: loopCount},
 			itFeature.LongChannelOutput{Enabled: settings.ITLongChannelOutput},
-			itFeature.NewNoteActions{Enabled: settings.ITEnableNNA})
+			itFeature.NewNoteActions{Enabled: settings.ITEnableNNA},
+			feature.MovingAverageFilter{Enabled: settings.MovingAverageFilterWindowSize != 0, WindowSize: settings.MovingAverageFilterWindowSize})
 
 		if setting, ok := getFeatureByType[playerFeature.SoloChannels](features); ok && len(setting.Channels) > 0 {
 			cm := make([]feature.ChannelMute, playback.GetNumChannels())

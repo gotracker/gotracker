@@ -35,7 +35,7 @@ func newFileWavDevice(settings deviceCommon.Settings) (File, error) {
 	}
 	switch settings.BitsPerSample {
 	case 8:
-		fd.sampFmt = sampling.Format8BitSigned
+		fd.sampFmt = sampling.Format8BitUnsigned
 	case 16:
 		fd.sampFmt = sampling.Format16BitLESigned
 	}

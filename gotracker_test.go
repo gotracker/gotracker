@@ -4,106 +4,111 @@ import (
 	"errors"
 	"testing"
 	"time"
-	"unsafe"
 
-	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/settings"
+	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
+	"github.com/heucuva/optional"
 )
 
 func BenchmarkPlayerS3M(b *testing.B) {
-	var pb playback.Playback
+	var sd song.Data
+	var sfmt format.Format
 	var err error
 	b.Run("load_s3m", func(b *testing.B) {
-		pb, _, err = format.Load("test/celestial_fantasia.s3m")
+		sd, sfmt, err = format.Load("test/celestial_fantasia.s3m")
 		if err != nil {
 			b.Error(err)
 		}
 	})
 
-	if err := pb.SetupSampler(44100, 2); err != nil {
+	var us settings.UserSettings
+	us.Reset()
+
+	if err := sfmt.ConvertFeaturesToSettings(&us, []feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
 		b.Error(err)
 	}
 
-	if err := pb.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+	pb, err := machine.NewMachine(sd, us)
+	if err != nil {
 		b.Error(err)
 	}
 
-	lastTime := time.Now()
+	out := sampler.NewSampler(44100, 2, nil)
+
 	for err == nil {
-		now := time.Now()
 		b.Run("generate_s3m", func(b *testing.B) {
 			b.Helper()
 			b.ReportAllocs()
-			var premix *output.PremixData
-			premix, err = pb.Generate(now.Sub(lastTime))
-			if err != nil {
+			if err := pb.Tick(out); err != nil {
 				if !errors.Is(err, song.ErrStopSong) {
 					b.Error(err)
 				}
 				return
 			}
-			bb := int64(0)
-			if premix != nil {
-				for _, d := range premix.Data {
-					for _, c := range d {
-						for _, f := range c.Data {
-							l := f.Channels
-							if l > 0 {
-								bb += int64(l * int(unsafe.Sizeof(f.StaticMatrix[0])))
-							}
-						}
-					}
-				}
-			}
-			b.SetBytes(bb)
 		})
-		lastTime = now
 	}
 }
 
 func BenchmarkIT(b *testing.B) {
-	var pb playback.Playback
+	var sd song.Data
+	var sfmt format.Format
 	var err error
 	b.Run("load_it", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			pb, _, err = format.Load(".vscode/test/beyond_the_network.it")
+			sd, _, err = format.Load(".vscode/test/beyond_the_network.it")
 			if err != nil {
 				b.Error(err)
 			}
 		}
 	})
 
-	if err := pb.SetupSampler(44100, 2); err != nil {
+	const (
+		sampleRate     = 44100
+		outputChannels = 2
+
+		stepDuration = time.Duration(sampleRate * outputChannels * 2)
+	)
+
+	var us settings.UserSettings
+	us.Reset()
+
+	if err := sfmt.ConvertFeaturesToSettings(&us, []feature.Feature{
+		feature.SongLoop{Count: 0},
+		feature.StartOrderAndRow{Order: optional.NewValue[int](38)},
+	}); err != nil {
 		b.Error(err)
 	}
 
-	if err := pb.Configure([]feature.Feature{feature.SongLoop{Count: 0}}); err != nil {
+	pb, err := machine.NewMachine(sd, us)
+	if err != nil {
 		b.Error(err)
 	}
-	pb.SetNextOrder(38)
 
 	var step time.Duration
+	out := sampler.NewSampler(sampleRate, outputChannels, func(premix *output.PremixData) {
+		if premix != nil {
+			step += time.Duration(premix.SamplesLen) / stepDuration
+			b.SetBytes(int64(premix.SamplesLen))
+		}
+	})
+
 	for err == nil {
 		b.Run("generate_it", func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			var premix *output.PremixData
 			for i := 0; i < b.N; i++ {
-				premix, err = pb.Generate(step)
-				if err != nil {
+				if err := pb.Tick(out); err != nil {
 					if !errors.Is(err, song.ErrStopSong) {
 						b.Error(err)
 					}
 					return
-				}
-				if premix != nil {
-					step += time.Duration(premix.SamplesLen) / time.Duration(int(pb.GetSampleRate())*pb.GetNumChannels()*2)
-					b.SetBytes(int64(premix.SamplesLen))
 				}
 			}
 		})

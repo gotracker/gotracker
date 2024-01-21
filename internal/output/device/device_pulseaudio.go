@@ -5,11 +5,11 @@ package device
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/playback/output"
-	"github.com/pkg/errors"
 
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/gotracker/internal/output/device/pulseaudio"

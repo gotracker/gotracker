@@ -26,9 +26,8 @@ var (
 		},
 		NumPremixBuffers:       64,
 		PanicOnUnhandledEffect: false,
-		GatherEffectCoverage:   false,
 		ITLongChannelOutput:    false,
-		ITEnableNNA:            false,
+		ITEnableNNA:            true,
 	}
 	loopPlaylist         bool = false
 	logger               logging.Squelchable
@@ -87,6 +86,9 @@ var playCmd = &cobra.Command{
 	Long:  "Play one or more tracked music file(s) using Gotracker.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 && args[0] == "help" {
+			return rootCmd.Help()
+		}
 		pl, err := getPlaylist(args)
 		if err != nil {
 			return err

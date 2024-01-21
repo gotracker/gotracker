@@ -93,18 +93,6 @@ var librariesList = []libraryInfo{
 		Homepage: "https://github.com/cheggaaa/pb",
 	},
 	{
-		Name:     "gosound",
-		Package:  "github.com/gotracker/gosound",
-		License:  "Unlicense",
-		Homepage: "https://github.com/gotracker/gosound",
-	},
-	{
-		Name:     "errors",
-		Package:  "github.com/pkg/errors",
-		License:  "BSD-2-Clause",
-		Homepage: "https://github.com/pkg/errors",
-	},
-	{
 		Name:     "goaudiofile",
 		Package:  "github.com/gotracker/goaudiofile",
 		License:  "Unlicense",

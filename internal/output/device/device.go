@@ -2,10 +2,11 @@ package device
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
 	"github.com/gotracker/playback/output"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -55,7 +56,7 @@ func CreateOutputDevice(settings deviceCommon.Settings) (Device, error) {
 		return dev, nil
 	}
 
-	return nil, errors.Wrap(ErrDeviceNotSupported, settings.Name)
+	return nil, fmt.Errorf("%w: %s", ErrDeviceNotSupported, settings.Name)
 }
 
 type device struct {

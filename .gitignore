@@ -15,5 +15,5 @@
 # vendor/
 
 .vscode/
-__debug_bin
+__debug_bin*
 .env

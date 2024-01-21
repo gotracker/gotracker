@@ -92,7 +92,7 @@ Not well, but it's good enough to play some moderately complex stuff.
 | `windows` `directsound` | DirectSound integration is not great code. It works well enough after recent code changes fixing event support, but it's still pretty ugly. |
 | `flac` | Flac encoding is still very beta. |
 
-NOTE: for more known bugs, please check the list from the [gotracker/player](https://github.com/gotracker/player) library.
+NOTE: for more known bugs, please check the list from the [gotracker/playback](https://github.com/gotracker/playback) library.
 
 ### Unknown bugs
 

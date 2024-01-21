@@ -41,14 +41,14 @@ Files from/of the following formats/trackers:
 ### What you need
 
 For a Windows build, we recommend the following:
-* Windows 2000 (or newer) - we used Windows 10 Pro (Windows 10 Version 20H2)
+* Windows 2000 (or newer) - we used Windows 11 Pro (Windows 11 Version 23H2 - 22631.3007)
 * Visual Studio Code
   * Go extension for VSCode v0.19.0 (or newer) 
-  * Go v1.18.1 (or newer)
+  * Go v1.21.5 (or newer)
 
 For a non-Windows (e.g.: Linux) build, we recommend the following:
-* Ubuntu 20.04 (or newer) - we used Ubuntu 20.04.1 LTS running in WSL2
-* Go v1.18.1 (or newer)
+* Ubuntu 20.04 (or newer) - we used Ubuntu 22.04.2 LTS running in WSL2
+* Go v1.21.5 (or newer)
 
 ### How to build (on Windows)
 

@@ -36,7 +36,9 @@ func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, setting
 		lastOrder int
 	)
 
-	settings.Output.OnRowOutput = func(kind deviceCommon.Kind, premix *playbackOutput.PremixData) {
+	outCfg := *settings.Output.Get()
+
+	outCfg.OnRowOutput = func(kind deviceCommon.Kind, premix *playbackOutput.PremixData) {
 		row := premix.Userdata.(*render.RowRender)
 		switch kind {
 		case deviceCommon.KindSoundCard:
@@ -55,7 +57,7 @@ func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, setting
 		}
 	}
 
-	waveOut, features, err := output.CreateOutputDevice(settings.Output)
+	waveOut, features, err := output.CreateOutputDevice(outCfg)
 	if err != nil {
 		return false, err
 	}
@@ -80,11 +82,11 @@ func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, setting
 		}
 	}()
 
-	features = append(features, playbackFeature.IgnoreUnknownEffect{Enabled: !settings.PanicOnUnhandledEffect})
+	features = append(features, playbackFeature.IgnoreUnknownEffect{Enabled: !settings.Debug.Values.PanicOnUnhandledEffect})
 
-	if settings.Tracing {
+	if settings.Debug.Values.Tracing {
 		features = append(features, feature.EnableTracing{
-			Filename: settings.TracingFile,
+			Filename: settings.Debug.Values.TracingFile,
 		})
 	}
 
@@ -186,7 +188,9 @@ func (p *renderer) renderSongs(pl *playlist.Playlist, features []playbackFeature
 		canPossiblyLoop = (setting.Count != 0)
 	}
 
-	out := sampler.NewSampler(renderSettings.Output.SamplesPerSecond, renderSettings.Output.Channels, func(premix *playbackOutput.PremixData) {
+	outCfg := renderSettings.Output.Get()
+
+	out := sampler.NewSampler(outCfg.SamplesPerSecond, outCfg.Channels, func(premix *playbackOutput.PremixData) {
 		p.outBufs <- premix
 	})
 	if out == nil {

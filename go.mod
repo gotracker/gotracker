@@ -7,6 +7,7 @@ require (
 	github.com/cheggaaa/pb v1.0.29
 	github.com/gotracker/gomixing v1.3.1
 	github.com/gotracker/playback v1.0.0
+	github.com/hashicorp/go-envparse v0.1.0
 	github.com/heucuva/go-directsound v1.0.1
 	github.com/heucuva/go-win32 v1.0.1
 	github.com/heucuva/go-winmm v1.0.1
@@ -15,6 +16,7 @@ require (
 	github.com/mewkiz/flac v1.0.10
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 	golang.org/x/sys v0.16.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -30,6 +32,5 @@ require (
 	github.com/mewkiz/pkg v0.0.0-20231012081350-95d6616c5403 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -2,11 +2,18 @@ package command
 
 import (
 	"github.com/gotracker/gotracker/internal/config"
+	"github.com/gotracker/gotracker/internal/play"
 	"github.com/spf13/cobra"
 )
 
+var playDebugSettings = config.NewConfig(play.DebugSettings{
+	PanicOnUnhandledEffect: false,
+	Tracing:                false,
+	TracingFile:            "",
+})
+
 func init() {
-	if err := playSettings.Values.Debug.Overlay(config.StandardOverlays...).Update(playDebugCmd); err != nil {
+	if err := playDebugSettings.Overlay(config.StandardOverlays...).Update(playDebugCmd); err != nil {
 		panic(err)
 	}
 

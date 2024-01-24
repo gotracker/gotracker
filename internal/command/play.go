@@ -17,20 +17,16 @@ import (
 
 // persistent flags
 var playSettings = config.NewConfig(play.Settings{
-	Output: config.NewConfig(deviceCommon.Settings{
-		Channels:         2,
-		SamplesPerSecond: 44100,
-		BitsPerSample:    16,
-		Filepath:         "output.wav",
-	}),
 	NumPremixBuffers:    64,
 	ITLongChannelOutput: false,
 	ITEnableNNA:         true,
-	Debug: config.NewConfig(play.DebugSettings{
-		PanicOnUnhandledEffect: false,
-		Tracing:                false,
-		TracingFile:            "",
-	}),
+})
+
+var playOutputSettings = config.NewConfig(deviceCommon.Settings{
+	Channels:         2,
+	SamplesPerSecond: 44100,
+	BitsPerSample:    16,
+	Filepath:         "output.wav",
 })
 
 // flags
@@ -65,15 +61,13 @@ var logger = config.NewConfig(logging.Squelchable{
 func init() {
 	output.Setup()
 
-	out := playSettings.Get().Output
-
-	out.Get().Name = output.DefaultOutputDeviceName
+	playOutputSettings.Get().Name = output.DefaultOutputDeviceName
 
 	if err := playSettings.Overlay(config.StandardOverlays...).Update(playCmd); err != nil {
 		panic(err)
 	}
 
-	if err := out.Overlay(config.StandardOverlays...).Update(playCmd); err != nil {
+	if err := playOutputSettings.Overlay(config.StandardOverlays...).Update(playCmd); err != nil {
 		panic(err)
 	}
 
@@ -189,5 +183,5 @@ func playSongs(pl *playlist.Playlist) (bool, error) {
 	var features []feature.Feature
 	features = append(features, feature.UseNativeSampleFormat(!cfg.DisableNativeSamples))
 
-	return play.Playlist(pl, features, playSettings.Get(), logger.Get())
+	return play.Playlist(pl, features, playSettings.Get(), playOutputSettings.Get(), playDebugSettings.Get(), logger.Get())
 }

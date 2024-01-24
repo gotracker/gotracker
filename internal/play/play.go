@@ -29,14 +29,12 @@ import (
 	"github.com/gotracker/playback/tracing"
 )
 
-func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, settings *Settings, logger logging.Log) (bool, error) {
+func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, settings *Settings, outCfg *deviceCommon.Settings, debugCfg *DebugSettings, logger logging.Log) (bool, error) {
 	var (
 		play      playback.Playback
 		progress  *progressBar.ProgressBar
 		lastOrder int
 	)
-
-	outCfg := *settings.Output.Get()
 
 	outCfg.OnRowOutput = func(kind deviceCommon.Kind, premix *playbackOutput.PremixData) {
 		row := premix.Userdata.(*render.RowRender)
@@ -57,7 +55,7 @@ func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, setting
 		}
 	}
 
-	waveOut, features, err := output.CreateOutputDevice(outCfg)
+	waveOut, features, err := output.CreateOutputDevice(*outCfg)
 	if err != nil {
 		return false, err
 	}
@@ -82,17 +80,17 @@ func Playlist(pl *playlist.Playlist, features []playbackFeature.Feature, setting
 		}
 	}()
 
-	features = append(features, playbackFeature.IgnoreUnknownEffect{Enabled: !settings.Debug.Values.PanicOnUnhandledEffect})
+	features = append(features, playbackFeature.IgnoreUnknownEffect{Enabled: !debugCfg.PanicOnUnhandledEffect})
 
-	if settings.Debug.Values.Tracing {
+	if debugCfg.Tracing {
 		features = append(features, feature.EnableTracing{
-			Filename: settings.Debug.Values.TracingFile,
+			Filename: debugCfg.TracingFile,
 		})
 	}
 
 	logger.Printf("Output device: %s\n", waveOut.Name())
 
-	err = r.renderSongs(pl, features, settings, func(m machine.MachineTicker, out *sampler.Sampler, tickInterval time.Duration, tracer tracing.Tracer) error {
+	err = r.renderSongs(pl, features, settings, outCfg, func(m machine.MachineTicker, outCfg *deviceCommon.Settings, out *sampler.Sampler, tickInterval time.Duration, tracer tracing.Tracer) error {
 		defer func() {
 			if progress != nil {
 				progress.Set64(progress.Total)
@@ -171,9 +169,9 @@ func (p *renderer) Close() error {
 	return nil
 }
 
-type playerCBFunc func(pb machine.MachineTicker, out *sampler.Sampler, tickInterval time.Duration, tracer tracing.Tracer) error
+type playerCBFunc func(pb machine.MachineTicker, outCfg *deviceCommon.Settings, out *sampler.Sampler, tickInterval time.Duration, tracer tracing.Tracer) error
 
-func (p *renderer) renderSongs(pl *playlist.Playlist, features []playbackFeature.Feature, renderSettings *Settings, startPlayingCB playerCBFunc) error {
+func (p *renderer) renderSongs(pl *playlist.Playlist, features []playbackFeature.Feature, renderSettings *Settings, outCfg *deviceCommon.Settings, startPlayingCB playerCBFunc) error {
 	tickInterval := time.Duration(5) * time.Millisecond
 	if setting, ok := getFeatureByType[feature.PlayerSleepInterval](features); ok {
 		if setting.Enabled {
@@ -187,8 +185,6 @@ func (p *renderer) renderSongs(pl *playlist.Playlist, features []playbackFeature
 	if setting, ok := getFeatureByType[playbackFeature.SongLoop](features); ok {
 		canPossiblyLoop = (setting.Count != 0)
 	}
-
-	outCfg := renderSettings.Output.Get()
 
 	out := sampler.NewSampler(outCfg.SamplesPerSecond, outCfg.Channels, func(premix *playbackOutput.PremixData) {
 		p.outBufs <- premix
@@ -268,7 +264,7 @@ playlistLoop:
 			return fmt.Errorf("could not create playback machine: %w", err)
 		}
 
-		if err = startPlayingCB(playback, out, tickInterval, us.Tracer); err != nil {
+		if err = startPlayingCB(playback, outCfg, out, tickInterval, us.Tracer); err != nil {
 			continue
 		}
 

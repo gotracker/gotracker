@@ -1,16 +1,9 @@
 package play
 
-import (
-	"github.com/gotracker/gotracker/internal/config"
-	deviceCommon "github.com/gotracker/gotracker/internal/output/device/common"
-)
-
 type Settings struct {
-	Output              *config.Config[deviceCommon.Settings]
 	NumPremixBuffers    int  `pflag:"num-buffers" env:"num_buffers" usage:"number of premixed buffers"`
 	ITLongChannelOutput bool `pflag:"it-long" env:"it_long" usage:"enable Impulse Tracker long channel display"`
 	ITEnableNNA         bool `pflag:"it-enable-nna" env:"it_enable_nna" usage:"enable Impulse Tracker New Note Actions"`
-	Debug               *config.Config[DebugSettings]
 }
 
 type DebugSettings struct {

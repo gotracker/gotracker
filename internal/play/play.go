@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"reflect"
 	"sync"
 	"time"
 
@@ -138,11 +137,10 @@ func getFeatureByType[T playbackFeature.Feature](features []playbackFeature.Feat
 		return empty, false
 	}
 
-	tt := reflect.TypeOf(empty)
 	for _, f := range features {
-		v := reflect.ValueOf(f)
-		if v.CanConvert(tt) {
-			return v.Convert(tt).Interface().(T), true
+		switch v := f.(type) {
+		case T:
+			return v, true
 		}
 	}
 
@@ -186,7 +184,7 @@ func (p *renderer) renderSongs(pl *playlist.Playlist, features []playbackFeature
 		canPossiblyLoop = (setting.Count != 0)
 	}
 
-	out := sampler.NewSampler(outCfg.SamplesPerSecond, outCfg.Channels, func(premix *playbackOutput.PremixData) {
+	out := sampler.NewSampler(outCfg.SamplesPerSecond, outCfg.Channels, float32(outCfg.StereoSeparation)/100.0, func(premix *playbackOutput.PremixData) {
 		p.outBufs <- premix
 	})
 	if out == nil {

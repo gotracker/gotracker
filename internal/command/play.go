@@ -26,6 +26,7 @@ var playOutputSettings = config.NewConfig(deviceCommon.Settings{
 	Channels:         2,
 	SamplesPerSecond: 44100,
 	BitsPerSample:    16,
+	StereoSeparation: 50, // 50%
 	Filepath:         "output.wav",
 })
 

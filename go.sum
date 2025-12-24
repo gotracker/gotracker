@@ -15,8 +15,8 @@ github.com/gotracker/goaudiofile v1.0.16 h1:+QlrDbZluWs01NZdg3JOuM+Zm98o1NNFVbtt
 github.com/gotracker/goaudiofile v1.0.16/go.mod h1:mX/CjpkoClUFrGQ8MU6x2hm4ma/ClQTh83wwHhLC7RY=
 github.com/gotracker/opl2 v1.0.2 h1:G1KaUAbl+3Khwq++1L+Bs55Iep1AimhCmGFs5hJOBOU=
 github.com/gotracker/opl2 v1.0.2/go.mod h1:lW1WbZlh7svEMpurp9LLYWSyf1WPAb750cQ7xGIhCnY=
-github.com/gotracker/playback v1.1.1 h1:5f0brKmtSoCaJRpLEjudTAje54j67mj8601gd+EOM+Q=
-github.com/gotracker/playback v1.1.1/go.mod h1:63xfrZegp6VIQPMl5VxRekFUGIYHI1ie+E1f6LuDS2o=
+github.com/gotracker/playback v1.5.0 h1:ESuK2uEUzztYa7lkrH7l8VJY8Cy5X6Ch3YyiTR018kY=
+github.com/gotracker/playback v1.5.0/go.mod h1:63xfrZegp6VIQPMl5VxRekFUGIYHI1ie+E1f6LuDS2o=
 github.com/hashicorp/go-envparse v0.1.0 h1:bE++6bhIsNCPLvgDZkYqo3nA+/PFI51pkrHdmPSDFPY=
 github.com/hashicorp/go-envparse v0.1.0/go.mod h1:OHheN1GoygLlAkTlXLXvAdnXdZxy8JUweQ1rAXx1xnc=
 github.com/heucuva/comparison v1.0.0 h1:xxXNKS9GKHetQavOz35FitlAXWvmvM3U6M5IRIw7kN8=

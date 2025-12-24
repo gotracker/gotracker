@@ -269,8 +269,13 @@ func (p *Player) update(delta time.Duration) error {
 			}()
 
 			start := time.Now()
-			if err := p.m.Tick(p.s); err != nil {
+			if err := p.m.Advance(); err != nil {
 				return err
+			}
+			if p.s != nil {
+				if err := p.m.Render(p.s); err != nil {
+					return err
+				}
 			}
 			dur := time.Since(start)
 

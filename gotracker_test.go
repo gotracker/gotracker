@@ -44,7 +44,13 @@ func BenchmarkPlayerS3M(b *testing.B) {
 		b.Run("generate_s3m", func(b *testing.B) {
 			b.Helper()
 			b.ReportAllocs()
-			if err := pb.Tick(out); err != nil {
+			if err := pb.Advance(); err != nil {
+				if !errors.Is(err, song.ErrStopSong) {
+					b.Error(err)
+				}
+				return
+			}
+			if err := pb.Render(out); err != nil {
 				if !errors.Is(err, song.ErrStopSong) {
 					b.Error(err)
 				}
@@ -105,7 +111,13 @@ func BenchmarkIT(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				if err := pb.Tick(out); err != nil {
+				if err := pb.Advance(); err != nil {
+					if !errors.Is(err, song.ErrStopSong) {
+						b.Error(err)
+					}
+					return
+				}
+				if err := pb.Render(out); err != nil {
 					if !errors.Is(err, song.ErrStopSong) {
 						b.Error(err)
 					}

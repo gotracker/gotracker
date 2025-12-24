@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/cheggaaa/pb v1.0.29
-	github.com/gotracker/playback v1.1.1
+	github.com/gotracker/playback v1.5.0
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/heucuva/go-directsound v1.0.1
 	github.com/heucuva/go-win32 v1.0.1
